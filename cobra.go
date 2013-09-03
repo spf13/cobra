@@ -210,6 +210,9 @@ func (c *Command) HasParent() bool {
 func (c *Command) Flags() *flag.FlagSet {
 	if c.flags == nil {
 		c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
 		c.flags.SetOutput(c.flagErrorBuf)
 	}
 	return c.flags
@@ -219,6 +222,9 @@ func (c *Command) Flags() *flag.FlagSet {
 func (c *Command) PersistentFlags() *flag.FlagSet {
 	if c.pflags == nil {
 		c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
 		c.pflags.SetOutput(c.flagErrorBuf)
 	}
 	return c.flags
@@ -226,6 +232,7 @@ func (c *Command) PersistentFlags() *flag.FlagSet {
 
 // Intended for use in testing
 func (c *Command) ResetFlags() {
+	c.flagErrorBuf = new(bytes.Buffer)
 	c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
