@@ -35,9 +35,11 @@ var cmdTimes = &Command{
 	Use:   "times [string to echo]",
 	Short: "Echo anything to the screen more times",
 	Long:  `an slightly useless command for testing.`,
-	Run: func(cmd *Command, args []string) {
-		tt = args
-	},
+	Run:   timesRunner,
+}
+
+func timesRunner(cmd *Command, args []string) {
+	tt = args
 }
 
 func flagInit() {
