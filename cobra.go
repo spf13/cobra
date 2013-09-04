@@ -67,12 +67,13 @@ func (c *Commander) SetArgs(a []string) {
 	c.args = a
 }
 
-func (c *Commander) Execute() {
+func (c *Commander) Execute() (err error) {
 	if len(c.args) == 0 {
-		c.execute(os.Args[1:])
+		err = c.execute(os.Args[1:])
 	} else {
-		c.execute(c.args)
+		err = c.execute(c.args)
 	}
+	return
 }
 
 // Command is just that, a command for your application.
@@ -137,9 +138,13 @@ func (c *Command) execute(args []string) (err error) {
 	cmd, a, e := c.Find(args)
 	if e == nil {
 		err = cmd.ParseFlags(a)
-		argWoFlags := cmd.Flags().Args()
-		cmd.Run(cmd, argWoFlags)
-		return nil
+		if err != nil {
+			return err
+		} else {
+			argWoFlags := cmd.Flags().Args()
+			cmd.Run(cmd, argWoFlags)
+			return nil
+		}
 	}
 	err = e
 	return err
