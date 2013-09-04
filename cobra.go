@@ -136,7 +136,7 @@ func (c *Command) execute(args []string) (err error) {
 
 	cmd, a, e := c.Find(args)
 	if e == nil {
-		cmd.Flags().Parse(a)
+		err = cmd.ParseFlags(a)
 		argWoFlags := cmd.Flags().Args()
 		cmd.Run(cmd, argWoFlags)
 		return nil
@@ -296,16 +296,20 @@ func (c *Command) ParseFlags(args []string) (err error) {
 
 // Climbs up the command tree parsing flags from top to bottom
 func (c *Command) ParsePersistentFlags(args []string) (err error) {
-	if !c.HasParent() || c.parent.PersistentFlags().Parsed() {
-		err = c.PersistentFlags().Parse(args)
-		if err != nil {
-			return err
+	if !c.HasParent() || (c.parent.HasPersistentFlags() && c.parent.PersistentFlags().Parsed()) {
+		if c.HasPersistentFlags() {
+			err = c.PersistentFlags().Parse(args)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
-		err = c.parent.ParsePersistentFlags(args)
-		if err != nil {
-			return err
+		if c.HasParent() && c.parent.HasPersistentFlags() {
+			err = c.parent.ParsePersistentFlags(args)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return nil
+	return
 }
