@@ -57,11 +57,18 @@ func flagInit() {
 	cmdPrint.Flags().BoolVarP(&flagb3, "boolthree", "b", true, "help message for flag boolthree")
 }
 
+func commandInit() {
+	cmdEcho.ResetCommands()
+	cmdPrint.ResetCommands()
+	cmdTimes.ResetCommands()
+}
+
 func initialize() *Commander {
 	tt, tp, te = nil, nil, nil
 	var c = NewCommander()
 	c.SetName("cobra test")
-
+	flagInit()
+	commandInit()
 	return c
 }
 
@@ -103,7 +110,6 @@ func TestChildCommand(t *testing.T) {
 func TestFlagLong(t *testing.T) {
 	c := initialize()
 	c.AddCommand(cmdPrint, cmdEcho, cmdTimes)
-	flagInit()
 	c.SetArgs(strings.Split("echo --intone=13 something here", " "))
 	c.Execute()
 
@@ -121,7 +127,6 @@ func TestFlagLong(t *testing.T) {
 func TestFlagShort(t *testing.T) {
 	c := initialize()
 	c.AddCommand(cmdPrint, cmdEcho, cmdTimes)
-	flagInit()
 	c.SetArgs(strings.Split("echo -i13 something here", " "))
 	c.Execute()
 
@@ -137,7 +142,6 @@ func TestFlagShort(t *testing.T) {
 
 	c = initialize()
 	c.AddCommand(cmdPrint, cmdEcho, cmdTimes)
-	flagInit()
 	c.SetArgs(strings.Split("echo -i 13 something here", " "))
 	c.Execute()
 
@@ -154,7 +158,6 @@ func TestFlagShort(t *testing.T) {
 	// Testing same shortcode, different command
 	c = initialize()
 	c.AddCommand(cmdPrint, cmdEcho, cmdTimes)
-	flagInit()
 	c.SetArgs(strings.Split("print -i99 one two", " "))
 	c.Execute()
 

@@ -150,6 +150,11 @@ func (c *Command) execute(args []string) (err error) {
 	return err
 }
 
+// Used for testing
+func (c *Command) ResetCommands() {
+	c.commands = nil
+}
+
 // Add one or many commands as children of this
 func (c *Command) AddCommand(cmds ...*Command) {
 	for i, x := range cmds {
