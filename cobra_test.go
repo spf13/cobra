@@ -2,9 +2,12 @@ package cobra_test
 
 import (
 	. "cobra"
+	"fmt"
 	"strings"
 	"testing"
 )
+
+var _ = fmt.Println
 
 var tp, te, tt, t1 []string
 var flagb1, flagb2, flagb3 bool
@@ -168,7 +171,7 @@ func TestFlagShort(t *testing.T) {
 		t.Errorf("int flag didn't get correct value, had %d", flagi3)
 	}
 	if flagi1 != 123 {
-		t.Errorf("default flag value changed on different comamnd with same shortname, 234 expected, %d given", flagi2)
+		t.Errorf("default flag value changed on different command with same shortname, 234 expected, %d given", flagi2)
 	}
 }
 
@@ -183,22 +186,30 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("flags didn't leave proper args remaining..%s given", tt)
 	}
 
-	//c = initialize()
-	//cmdEcho.AddCommand(cmdTimes)
-	//c.AddCommand(cmdPrint, cmdEcho)
-	//c.SetArgs(strings.Split("echo times -j 99 -i 77 one two", " "))
-	//c.Execute()
+	// Testing with flag that shouldn't be persistent
+	c = initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("echo times -j 99 -i77 one two", " "))
+	e := c.Execute()
 
-	//if strings.Join(tt, " ") != "one two" {
-	//t.Errorf("flags didn't leave proper args remaining..%s given", tt)
-	//}
+	if e == nil {
+		t.Errorf("invalid flag should generate error")
+	}
+
+	if flagi2 != 99 {
+		t.Errorf("flag value should be 99, %d given", flagi2)
+	}
+
+	if flagi1 != 123 {
+		t.Errorf("unset flag should have default value, expecting 123, given %d", flagi1)
+	}
 }
 
 func TestPersistentFlags(t *testing.T) {
 	c := initialize()
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
-	flagInit()
 	c.SetArgs(strings.Split("echo -s something more here", " "))
 	c.Execute()
 
