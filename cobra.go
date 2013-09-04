@@ -179,6 +179,21 @@ func (c *Command) Usage(depth ...int) string {
 	}
 }
 
+func (c *Command) DebugFlags() {
+	fmt.Println("called on", c.Name())
+	if c.HasSubCommands() {
+		for _, x := range c.commands {
+			fmt.Println(x.Name())
+			x.flags.VisitAll(func(f *flag.Flag) { fmt.Println("   l:"+f.Name, f.Shorthand, f.DefValue, ":", f.Value) })
+			x.pflags.VisitAll(func(f *flag.Flag) { fmt.Println("   p:"+f.Name, f.Shorthand, f.DefValue, ":", f.Value) })
+			fmt.Println(x.flagErrorBuf)
+			if x.HasSubCommands() {
+				x.DebugFlags()
+			}
+		}
+	}
+}
+
 // Usage prints the usage details to the standard output.
 func (c *Command) PrintUsage() {
 	if c.Runnable() {
