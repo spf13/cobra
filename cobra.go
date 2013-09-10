@@ -158,6 +158,9 @@ func (c *Command) ResetCommands() {
 // Add one or many commands as children of this
 func (c *Command) AddCommand(cmds ...*Command) {
 	for i, x := range cmds {
+		if cmds[i] == c {
+			panic("Command can't be a child of itself")
+		}
 		cmds[i].parent = c
 		c.commands = append(c.commands, x)
 	}
