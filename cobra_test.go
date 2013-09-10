@@ -223,4 +223,21 @@ func TestPersistentFlags(t *testing.T) {
 		t.Errorf("string flag didn't get correct value, had %v", flags1)
 	}
 
+	c = initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("echo times -s again -c test here", " "))
+	c.Execute()
+
+	if strings.Join(tt, " ") != "test here" {
+		t.Errorf("flags didn't leave proper args remaining..%s given", tt)
+	}
+
+	if flags1 != "again" {
+		t.Errorf("string flag didn't get correct value, had %v", flags1)
+	}
+
+	if flagb2 != true {
+		t.Errorf("local flag not parsed correctly. Expected false, had %v", flagb2)
+	}
 }
