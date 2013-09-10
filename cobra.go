@@ -180,18 +180,46 @@ func (c *Command) Usage(depth ...int) string {
 }
 
 func (c *Command) DebugFlags() {
-	fmt.Println("called on", c.Name())
-	if c.HasSubCommands() {
-		for _, x := range c.commands {
+	fmt.Println("DebugFlags called on", c.Name())
+	var debugflags func(*Command)
+
+	debugflags = func(x *Command) {
+		if x.HasFlags() || x.HasPersistentFlags() {
 			fmt.Println(x.Name())
-			x.flags.VisitAll(func(f *flag.Flag) { fmt.Println("   l:"+f.Name, f.Shorthand, f.DefValue, ":", f.Value) })
-			x.pflags.VisitAll(func(f *flag.Flag) { fmt.Println("   p:"+f.Name, f.Shorthand, f.DefValue, ":", f.Value) })
-			fmt.Println(x.flagErrorBuf)
-			if x.HasSubCommands() {
-				x.DebugFlags()
+		}
+		if x.HasFlags() {
+			x.flags.VisitAll(func(f *flag.Flag) {
+				if x.HasPersistentFlags() {
+					if x.persistentFlag(f.Name) == nil {
+						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
+					} else {
+						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [LP]")
+					}
+				} else {
+					fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
+				}
+			})
+		}
+		if x.HasPersistentFlags() {
+			x.pflags.VisitAll(func(f *flag.Flag) {
+				if x.HasFlags() {
+					if x.flags.Lookup(f.Name) == nil {
+						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+					}
+				} else {
+					fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+				}
+			})
+		}
+		fmt.Println(x.flagErrorBuf)
+		if x.HasSubCommands() {
+			for _, y := range x.commands {
+				debugflags(y)
 			}
 		}
 	}
+
+	debugflags(c)
 }
 
 // Usage prints the usage details to the standard output.
