@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	flag "github.com/spf13/pflag"
+	"io"
 	"os"
 	"strings"
 )
@@ -31,14 +32,14 @@ type Commander struct {
 	// A Commander is also a Command for top level and global help & flags
 	Command
 
-	args []string
+	args   []string
+	output io.Writer // nil means stderr; use out() accessor
 }
 
 // Provide the user with a new commander.
-// Not of a lot of value today, was intended to do more than just
-// create a new commander.
 func NewCommander() (c *Commander) {
 	c = new(Commander)
+	c.cmdr = c
 	return
 }
 
@@ -63,6 +64,24 @@ func (c *Commander) Execute() (err error) {
 		err = c.execute(c.args)
 	}
 	return
+}
+
+func (c *Commander) out() io.Writer {
+	if c.output == nil {
+		return os.Stderr
+	}
+	return c.output
+}
+
+//Print to out
+func (c *Commander) POut(i ...interface{}) {
+	fmt.Fprint(c.out(), i...)
+}
+
+// SetOutput sets the destination for usage and error messages.
+// If output is nil, os.Stderr is used.
+func (c *Commander) SetOutput(output io.Writer) {
+	c.output = output
 }
 
 // Command is just that, a command for your application.
@@ -90,7 +109,7 @@ type Command struct {
 	// Parent Command for this command
 	parent *Command
 	// Commander
-	//cmdr *Commander
+	cmdr         *Commander
 	flagErrorBuf *bytes.Buffer
 }
 
@@ -151,8 +170,23 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
+		cmds[i].cmdr = cmds[i].parent.cmdr
 		c.commands = append(c.commands, x)
 	}
+}
+
+func (c *Command) Print(i ...interface{}) {
+	c.cmdr.POut(i...)
+}
+
+func (c *Command) Println(i ...interface{}) {
+	str := fmt.Sprintln(i...)
+	c.Print(str)
+}
+
+func (c *Command) Printf(format string, i ...interface{}) {
+	str := fmt.Sprintf(format, i...)
+	c.Print(str)
 }
 
 // The full usage for a given command (including parents)
@@ -174,23 +208,23 @@ func (c *Command) Usage(depth ...int) string {
 // For use in determining which flags have been assigned to which commands
 // and which persist
 func (c *Command) DebugFlags() {
-	fmt.Println("DebugFlags called on", c.Name())
+	c.Println("DebugFlags called on", c.Name())
 	var debugflags func(*Command)
 
 	debugflags = func(x *Command) {
 		if x.HasFlags() || x.HasPersistentFlags() {
-			fmt.Println(x.Name())
+			c.Println(x.Name())
 		}
 		if x.HasFlags() {
 			x.flags.VisitAll(func(f *flag.Flag) {
 				if x.HasPersistentFlags() {
 					if x.persistentFlag(f.Name) == nil {
-						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
+						c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
 					} else {
-						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [LP]")
+						c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [LP]")
 					}
 				} else {
-					fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
+					c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
 				}
 			})
 		}
@@ -198,14 +232,14 @@ func (c *Command) DebugFlags() {
 			x.pflags.VisitAll(func(f *flag.Flag) {
 				if x.HasFlags() {
 					if x.flags.Lookup(f.Name) == nil {
-						fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+						c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
 					}
 				} else {
-					fmt.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+					c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
 				}
 			})
 		}
-		fmt.Println(x.flagErrorBuf)
+		c.Println(x.flagErrorBuf)
 		if x.HasSubCommands() {
 			for _, y := range x.commands {
 				debugflags(y)
@@ -219,10 +253,10 @@ func (c *Command) DebugFlags() {
 // Usage prints the usage details to the standard output.
 func (c *Command) PrintUsage() {
 	if c.Runnable() {
-		fmt.Printf("usage: %s\n\n", c.Usage())
+		c.Printf("usage: %s\n\n", c.Usage())
 	}
 
-	fmt.Println(strings.Trim(c.Long, "\n"))
+	c.Println(strings.Trim(c.Long, "\n"))
 }
 
 // Name returns the command's name: the first word in the use line.
