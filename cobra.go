@@ -26,47 +26,36 @@ import (
 
 var _ = flag.ContinueOnError
 
-type Flag interface {
-	Args() []string
-}
-
-type Flags interface {
-	Lookup(string) *Flag
-	VisitAll(fn func(*Flag))
-	Parse(arguments []string) error
-}
-
 // A Commander holds the configuration for the command line tool.
 type Commander struct {
 	// A Commander is also a Command for top level and global help & flags
 	Command
-	//ExitOnError, ContinueOnError or PanicOnError
-	behavior flag.ErrorHandling
 
 	args []string
 }
 
+// Provide the user with a new commander.
+// Not of a lot of value today, was intended to do more than just
+// create a new commander.
 func NewCommander() (c *Commander) {
 	c = new(Commander)
 	return
 }
 
-func (c *Commander) setFlagBehavior(b flag.ErrorHandling) error {
-	if b == flag.ExitOnError || b == flag.ContinueOnError || b == flag.PanicOnError {
-		c.behavior = b
-		return nil
-	}
-	return fmt.Errorf("%v is not a valid behavior", b)
-}
-
+// Name for commander, should match application name
 func (c *Commander) SetName(name string) {
 	c.name = name
 }
 
+// os.Args[1:] by default, if desired, can be overridden
+// particularly useful when testing.
 func (c *Commander) SetArgs(a []string) {
 	c.args = a
 }
 
+// Call execute to use the args (os.Args[1:] by default)
+// and run through the command tree finding appropriate matches
+// for commands and then corresponding flags.
 func (c *Commander) Execute() (err error) {
 	if len(c.args) == 0 {
 		err = c.execute(os.Args[1:])
@@ -182,6 +171,8 @@ func (c *Command) Usage(depth ...int) string {
 	}
 }
 
+// For use in determining which flags have been assigned to which commands
+// and which persist
 func (c *Command) DebugFlags() {
 	fmt.Println("DebugFlags called on", c.Name())
 	var debugflags func(*Command)
@@ -257,7 +248,7 @@ func (c *Command) HasSubCommands() bool {
 	return len(c.commands) > 0
 }
 
-// Determine if the command has children commands
+// Determine if the command is a child command
 func (c *Command) HasParent() bool {
 	return c.parent != nil
 }
@@ -295,10 +286,12 @@ func (c *Command) ResetFlags() {
 	c.pflags.SetOutput(c.flagErrorBuf)
 }
 
+// Does the command contain flags (local not persistent)
 func (c *Command) HasFlags() bool {
 	return c.Flags().HasFlags()
 }
 
+// Does the command contain persistent flags
 func (c *Command) HasPersistentFlags() bool {
 	return c.PersistentFlags().HasFlags()
 }
@@ -354,24 +347,4 @@ func (c *Command) mergePersistentFlags() {
 	}
 
 	rmerge(c)
-}
-
-// Climbs up the command tree parsing flags from top to bottom
-func (c *Command) ParsePersistentFlags(args []string) (err error) {
-	if !c.HasParent() || (c.parent.HasPersistentFlags() && c.parent.PersistentFlags().Parsed()) {
-		if c.HasPersistentFlags() {
-			err = c.PersistentFlags().Parse(args)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		if c.HasParent() && c.parent.HasPersistentFlags() {
-			err = c.parent.ParsePersistentFlags(args)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return
 }
