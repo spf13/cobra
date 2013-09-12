@@ -35,7 +35,7 @@ var cmdEcho = &Command{
 }
 
 var cmdTimes = &Command{
-	Use:   "times [string to echo]",
+	Use:   "times [# times] [string to echo]",
 	Short: "Echo anything to the screen more times",
 	Long:  `an slightly useless command for testing.`,
 	Run:   timesRunner,
@@ -69,7 +69,7 @@ func commandInit() {
 func initialize() *Commander {
 	tt, tp, te = nil, nil, nil
 	var c = NewCommander()
-	c.SetName("cobra test")
+	c.SetName("cobratest")
 	flagInit()
 	commandInit()
 	return c

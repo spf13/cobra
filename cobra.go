@@ -22,7 +22,10 @@ import (
 	flag "github.com/spf13/pflag"
 	"io"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
+	"text/template"
 )
 
 var _ = flag.ContinueOnError
@@ -32,14 +35,19 @@ type Commander struct {
 	// A Commander is also a Command for top level and global help & flags
 	Command
 
-	args   []string
-	output io.Writer // nil means stderr; use out() accessor
+	args          []string
+	output        io.Writer            // nil means stderr; use out() accessor
+	UsageFunc     func(*Command) error // Usage can be defined by application
+	UsageTemplate string               // Can be defined by Application
+	HelpTemplate  string               // Can be defined by Application
 }
 
 // Provide the user with a new commander.
 func NewCommander() (c *Commander) {
 	c = new(Commander)
 	c.cmdr = c
+	c.UsageFunc = c.defaultUsage
+	c.initTemplates()
 	return
 }
 
@@ -73,6 +81,14 @@ func (c *Commander) out() io.Writer {
 	return c.output
 }
 
+func (cmdr *Commander) defaultUsage(c *Command) error {
+	err := tmpl(cmdr.out(), cmdr.UsageTemplate, c)
+	if err != nil {
+		c.Println(err)
+	}
+	return err
+}
+
 //Print to out
 func (c *Commander) POut(i ...interface{}) {
 	fmt.Fprint(c.out(), i...)
@@ -82,6 +98,29 @@ func (c *Commander) POut(i ...interface{}) {
 // If output is nil, os.Stderr is used.
 func (c *Commander) SetOutput(output io.Writer) {
 	c.output = output
+}
+
+func (c *Commander) initTemplates() {
+	c.UsageTemplate = `{{ $cmd := . }}{{.CommandPath | printf "%-11s"}} :: {{.Short}}
+Usage:
+    {{.UseLine}}{{if .HasSubCommands}} command{{end}}{{if .HasFlags}} [flags]{{end}}
+{{ if .HasSubCommands}}
+The commands are:
+{{range .Commands}}{{if .Runnable}}
+    {{.UseLine | printf "%-11s"}} {{.Short}}{{end}}{{end}}
+Use "{{$.CommandPath}} help [command]" for more information about a command.
+{{end}}
+Additional help topics: {{if gt .Commands 0 }}
+    {{range .Commands}}{{if not .Runnable}}{{.CommandPath | printf "%-11s"}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}
+    {{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+    {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}
+    Use "{{.Commander.Name}} help [topic]" for more information about that topic.
+`
+
+	c.HelpTemplate = `{{if .Runnable}}Usage: {{.ProgramName}} {{.UsageLine}}
+
+{{end}}{{.Long | trim}}
+`
 }
 
 // Command is just that, a command for your application.
@@ -135,6 +174,10 @@ func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
 	return nil, nil, nil
 }
 
+func (c *Command) Commander() *Commander {
+	return c.cmdr
+}
+
 // execute the command determined by args and the command tree
 func (c *Command) execute(args []string) (err error) {
 	err = fmt.Errorf("unknown subcommand %q\nRun 'help' for usage.\n", args[0])
@@ -147,6 +190,7 @@ func (c *Command) execute(args []string) (err error) {
 	if e == nil {
 		err = cmd.ParseFlags(a)
 		if err != nil {
+			cmd.Usage()
 			return err
 		} else {
 			argWoFlags := cmd.Flags().Args()
@@ -161,6 +205,10 @@ func (c *Command) execute(args []string) (err error) {
 // Used for testing
 func (c *Command) ResetCommands() {
 	c.commands = nil
+}
+
+func (c *Command) Commands() []*Command {
+	return c.commands
 }
 
 // Add one or many commands as children of this
@@ -189,20 +237,33 @@ func (c *Command) Printf(format string, i ...interface{}) {
 	c.Print(str)
 }
 
-// The full usage for a given command (including parents)
-func (c *Command) Usage(depth ...int) string {
-	i := 0
-	if len(depth) > 0 {
-		i = depth[0]
+func (c *Command) Usage() error {
+	err := c.cmdr.UsageFunc(c)
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	if c.HasParent() {
-		return c.parent.Usage(i+1) + " " + c.Use
-	} else if i > 0 {
-		return c.Name()
-	} else {
-		return c.Use
+	return err
+}
+
+func (c *Command) CommandPath() string {
+	str := c.Name()
+	x := c
+	for x.HasParent() {
+		str = x.parent.Name() + " " + str
+		x = x.parent
 	}
+
+	return str
+}
+
+//The full usage for a given command (including parents)
+func (c *Command) UseLine() string {
+	str := ""
+	if c.HasParent() {
+		str = c.parent.CommandPath() + " "
+	}
+	return str + c.Use
 }
 
 // For use in determining which flags have been assigned to which commands
@@ -251,13 +312,13 @@ func (c *Command) DebugFlags() {
 }
 
 // Usage prints the usage details to the standard output.
-func (c *Command) PrintUsage() {
-	if c.Runnable() {
-		c.Printf("usage: %s\n\n", c.Usage())
-	}
+//func (c *Command) PrintUsage() {
+//if c.Runnable() {
+//c.Printf("usage: %s\n\n", c.Usage())
+//}
 
-	c.Println(strings.Trim(c.Long, "\n"))
-}
+//c.Println(strings.Trim(c.Long, "\n"))
+//}
 
 // Name returns the command's name: the first word in the use line.
 func (c *Command) Name() string {
@@ -381,4 +442,62 @@ func (c *Command) mergePersistentFlags() {
 	}
 
 	rmerge(c)
+}
+
+func (c *Command) Parent() *Command {
+	return c.parent
+}
+
+func Gt(a interface{}, b interface{}) bool {
+	var left, right int64
+	av := reflect.ValueOf(a)
+
+	switch av.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		left = int64(av.Len())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		left = av.Int()
+	case reflect.String:
+		left, _ = strconv.ParseInt(av.String(), 10, 64)
+	}
+
+	bv := reflect.ValueOf(b)
+
+	switch bv.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		right = int64(bv.Len())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		right = bv.Int()
+	case reflect.String:
+		right, _ = strconv.ParseInt(bv.String(), 10, 64)
+	}
+
+	return left > right
+}
+
+func Eq(a interface{}, b interface{}) bool {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+
+	switch av.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		panic("Eq called on unsupported type")
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return av.Int() == bv.Int()
+	case reflect.String:
+		return av.String() == bv.String()
+	}
+	return false
+}
+
+// tmpl executes the given template text on data, writing the result to w.
+func tmpl(w io.Writer, text string, data interface{}) error {
+	t := template.New("top")
+	t.Funcs(template.FuncMap{
+		"trim": strings.TrimSpace,
+		"gt":   Gt,
+		"eq":   Eq,
+	})
+	template.Must(t.Parse(text))
+	return t.Execute(w, data)
 }
