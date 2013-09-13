@@ -102,19 +102,20 @@ func (c *Commander) SetOutput(output io.Writer) {
 
 func (c *Commander) initTemplates() {
 	c.UsageTemplate = `{{ $cmd := . }}{{.CommandPath | printf "%-11s"}} :: {{.Short}}
-Usage:
-    {{.UseLine}}{{if .HasSubCommands}} command{{end}}{{if .HasFlags}} [flags]{{end}}
+Usage: {{if .Runnable}}
+  {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
+  {{ .CommandPath}} [command]{{end}}
 {{ if .HasSubCommands}}
-The commands are:
-{{range .Commands}}{{if .Runnable}}
-    {{.UseLine | printf "%-11s"}} {{.Short}}{{end}}{{end}}
-Use "{{$.CommandPath}} help [command]" for more information about a command.
+Available Commands: {{range .Commands}}{{if .Runnable}}
+  {{.Use | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}
 {{end}}
-Additional help topics: {{if gt .Commands 0 }}
-    {{range .Commands}}{{if not .Runnable}}{{.CommandPath | printf "%-11s"}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}
-    {{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
-    {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}
-    Use "{{.Commander.Name}} help [topic]" for more information about that topic.
+{{ if .HasFlags}} Available Flags:
+{{.Flags.FlagUsages}}{{end}}
+Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}}
+  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}
+
+Use "{{.Commander.Name}} help [command]" for more information about that command.
 `
 
 	c.HelpTemplate = `{{if .Runnable}}Usage: {{.ProgramName}} {{.UsageLine}}
@@ -375,6 +376,7 @@ func (c *Command) PersistentFlags() *flag.FlagSet {
 // Intended for use in testing
 func (c *Command) ResetFlags() {
 	c.flagErrorBuf = new(bytes.Buffer)
+	c.flagErrorBuf.Reset()
 	c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
