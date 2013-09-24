@@ -53,13 +53,14 @@ type Command struct {
 }
 
 // find the target command given the args and command tree
+// Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
 	if c == nil {
 		return nil, nil, fmt.Errorf("Called find() on a nil Command")
 	}
 
 	validSubCommand := false
-	if len(args) > 1 && c.HasSubCommands() {
+	if len(args) > 0 && c.HasSubCommands() {
 		for _, cmd := range c.commands {
 			if cmd.Name() == args[0] {
 				validSubCommand = true
@@ -74,7 +75,7 @@ func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
 	return nil, nil, nil
 }
 
-func (c *Command) Commander() *Commander {
+func (c *Command) Root() *Command {
 	var findRoot func(*Command) *Command
 
 	findRoot = func(x *Command) *Command {
@@ -84,7 +85,12 @@ func (c *Command) Commander() *Commander {
 			return x
 		}
 	}
-	cmdr := findRoot(c)
+
+	return findRoot(c)
+}
+
+func (c *Command) Commander() *Commander {
+	cmdr := c.Root()
 	if cmdr.cmdr != nil {
 		return cmdr.cmdr
 	} else {
@@ -108,7 +114,12 @@ func (c *Command) execute(args []string) (err error) {
 	if e == nil {
 		err = cmd.ParseFlags(a)
 		if err != nil {
-			cmd.Usage()
+			// report flag parsing error
+			c.Println(strings.Split(err.Error(), "\n")[0])
+			erx := cmd.Usage()
+			if erx != nil {
+				return erx
+			}
 			return err
 		} else {
 			argWoFlags := cmd.Flags().Args()
@@ -162,9 +173,6 @@ func (c *Command) Printf(format string, i ...interface{}) {
 // Can be defined by user by overriding Commander.UsageFunc
 func (c *Command) Usage() error {
 	err := c.Commander().UsageFunc(c)
-	if err != nil {
-		fmt.Println(err)
-	}
 	return err
 }
 

@@ -215,9 +215,9 @@ func TestChildCommandFlags(t *testing.T) {
 	}
 
 	// Testing with flag only existing on child
-	buf2 := new(bytes.Buffer)
+	buf.Reset()
 	c = initialize()
-	c.SetOutput(buf2)
+	c.SetOutput(buf)
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(strings.Split("echo -j 99 -i77 one two", " "))
@@ -227,10 +227,9 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid flag should generate error")
 	}
 
-	if !strings.Contains(buf2.String(), "intone=123") {
+	if !strings.Contains(buf.String(), "intone=123") {
 		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
-
 }
 
 func TestPersistentFlags(t *testing.T) {
@@ -266,5 +265,31 @@ func TestPersistentFlags(t *testing.T) {
 
 	if flagb2 != true {
 		t.Errorf("local flag not parsed correctly. Expected false, had %v", flagb2)
+	}
+}
+
+func TestHelpCommand(t *testing.T) {
+	buf := new(bytes.Buffer)
+	c := initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("help echo", " "))
+	c.SetOutput(buf)
+	c.Execute()
+
+	if !strings.Contains(buf.String(), cmdEcho.Long) {
+		t.Errorf("Wrong error message displayed, \n %s", buf.String())
+	}
+
+	buf.Reset()
+	c = initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("help echo times", " "))
+	c.SetOutput(buf)
+	c.Execute()
+
+	if !strings.Contains(buf.String(), cmdTimes.Long) {
+		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
 }
