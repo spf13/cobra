@@ -336,10 +336,11 @@ func (c *Command) ParseFlags(args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	if c.flagErrorBuf != nil {
-		//fmt.Println(c.flagErrorBuf.String())
-		return nil
-		//return fmt.Errorf("%s", c.flagErrorBuf.String())
+	// The upstream library adds spaces to the error
+	// response regardless of success.
+	// Handling it here until fixing upstream
+	if len(strings.TrimSpace(c.flagErrorBuf.String())) > 1 {
+		return fmt.Errorf("%s", c.flagErrorBuf.String())
 	}
 	return nil
 }

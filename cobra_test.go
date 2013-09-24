@@ -215,18 +215,21 @@ func TestChildCommandFlags(t *testing.T) {
 	}
 
 	// Testing with flag only existing on child
+	buf2 := new(bytes.Buffer)
 	c = initialize()
+	c.SetOutput(buf2)
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(strings.Split("echo -j 99 -i77 one two", " "))
 	err := c.Execute()
-	_ = err
-	//c.DebugFlags()
 
-	// TODO figure out why this isn't passing
-	//if err == nil {
-	//t.Errorf("invalid flag should generate error")
-	//}
+	if err == nil {
+		t.Errorf("invalid flag should generate error")
+	}
+
+	if !strings.Contains(buf2.String(), "intone=123") {
+		t.Errorf("Wrong error message displayed, \n %s", buf.String())
+	}
 
 }
 
