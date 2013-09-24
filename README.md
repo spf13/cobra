@@ -2,6 +2,8 @@
 
 A Commander for modern go CLI interactions
 
+[![Build Status](https://travis-ci.org/spf13/cobra.png)](https://travis-ci.org/spf13/cobra)
+
 ## Overview
 Cobra provides a simple interface to create powerful modern CLI
 interfaces similar to git & go tools.
