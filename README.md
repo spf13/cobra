@@ -79,16 +79,30 @@ execute the commander.
         var cmdPrint = &cobra.Command{
             Use:   "print [string to print]",
             Short: "Print anything to the screen",
-            Long:  `an utterly useless command for testing.`,
+            Long:  `print is for printing anything back to the screen.
+            For many years people have printed back to the screen.
+            `,
             Run: func(cmd *cobra.Command, args []string) {
                 fmt.Println("Print: " + strings.Join(args, " "))
             },
         }
 
-        var cmdEcho = &cobra.Command{
+        var cmdEcho = &Command{
             Use:   "echo [string to echo]",
             Short: "Echo anything to the screen",
-            Long:  `an utterly useless command for testing.`,
+            Long:  `echo is for echoing anything back.
+            Echo works a lot like print, except it has a child command.
+            `,
+            Run: func(cmd *cobra.Command, args []string) {
+                fmt.Println("Print: " + strings.Join(args, " "))
+            },
+        }
+
+        var cmdTimes = &Command{
+            Use:   "times [# times] [string to echo]",
+            Short: "Echo anything to the screen more times",
+            Long:  `echo things multiple times back to the user by providing
+            a count and a string.`,
             Run: func(cmd *cobra.Command, args []string) {
                 for i:=0; i < echoTimes; i++ {
                     fmt.Println("Echo: " + strings.Join(args, " "))
@@ -97,21 +111,31 @@ execute the commander.
         }
 
 
-        cmdEcho.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+        cmdTimes().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
         var commander = cobra.Commander()
-        commander.SetName("Cobra")
+        commander.SetName("CobraExample")
         commander.AddCommand(cmdPrint, cmdEcho)
+        cmdEcho.AddCommand(cmdTimes)
         commander.Execute()
     }
 
-
-
-
 ## Release Notes
-
+* **0.7.0** Sept 24, 2013
+  * Needs more eyes
+  * Test suite
+  * Support for automatic error messages
+  * Support for help command
+  * Support for printing to any io.Writer instead of os.Stderr
+  * Support for persistent flags which cascade down tree
+  * Ready for integration into Hugo
 * **0.1.0** Sept 3, 2013
   * Implement first draft
+
+## ToDo
+* More testing of non-runnable
+* More testing
+* Launch proper documentation site
 
 ## Contributing
 
