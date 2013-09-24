@@ -1,8 +1,7 @@
-package cobra_test
+package cobra
 
 import (
 	"bytes"
-	. "cobra"
 	"fmt"
 	"strings"
 	"testing"
