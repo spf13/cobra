@@ -36,7 +36,7 @@ type Commander struct {
 	Command
 
 	args          []string
-	output        io.Writer            // nil means stderr; use out() accessor
+	output        *io.Writer           // nil means stderr; use out() accessor
 	UsageFunc     func(*Command) error // Usage can be defined by application
 	UsageTemplate string               // Can be defined by Application
 	HelpTemplate  string               // Can be defined by Application
@@ -78,7 +78,7 @@ func (c *Commander) out() io.Writer {
 	if c.output == nil {
 		return os.Stderr
 	}
-	return c.output
+	return *c.output
 }
 
 func (cmdr *Commander) defaultUsage(c *Command) error {
@@ -90,18 +90,19 @@ func (cmdr *Commander) defaultUsage(c *Command) error {
 }
 
 //Print to out
-func (c *Commander) POut(i ...interface{}) {
+func (c *Commander) PrintOut(i ...interface{}) {
 	fmt.Fprint(c.out(), i...)
 }
 
 // SetOutput sets the destination for usage and error messages.
 // If output is nil, os.Stderr is used.
 func (c *Commander) SetOutput(output io.Writer) {
-	c.output = output
+	c.output = &output
+	//*c.output = output
 }
 
 func (c *Commander) initTemplates() {
-	c.UsageTemplate = `{{ $cmd := . }}{{.CommandPath | printf "%-11s"}} :: {{.Short}}
+	c.UsageTemplate = `{{ $cmd := . }}
 Usage: {{if .Runnable}}
   {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
   {{ .CommandPath}} [command]{{end}}
@@ -110,11 +111,12 @@ Available Commands: {{range .Commands}}{{if .Runnable}}
   {{.Use | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasFlags}} Available Flags:
-{{.Flags.FlagUsages}}{{end}}
+{{.Flags.FlagUsages}}{{end}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
 Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}}
   {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
   {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}
 
+{{end}}
 Use "{{.Commander.Name}} help [command]" for more information about that command.
 `
 
@@ -147,8 +149,7 @@ type Command struct {
 	// Commands is the list of commands supported by this Commander program.
 	commands []*Command
 	// Parent Command for this command
-	parent *Command
-	// Commander
+	parent       *Command
 	cmdr         *Commander
 	flagErrorBuf *bytes.Buffer
 }
@@ -176,7 +177,25 @@ func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
 }
 
 func (c *Command) Commander() *Commander {
-	return c.cmdr
+	var findRoot func(*Command) *Command
+
+	findRoot = func(x *Command) *Command {
+		if x.HasParent() {
+			return findRoot(x.parent)
+		} else {
+			return x
+		}
+	}
+	cmdr := findRoot(c)
+	if cmdr.cmdr != nil {
+		return cmdr.cmdr
+	} else {
+		panic("commander not found")
+	}
+}
+
+func (c *Command) Out() io.Writer {
+	return c.Commander().out()
 }
 
 // execute the command determined by args and the command tree
@@ -219,34 +238,39 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		cmds[i].cmdr = cmds[i].parent.cmdr
 		c.commands = append(c.commands, x)
 	}
 }
 
+// Convenience method to Print to the defined output
 func (c *Command) Print(i ...interface{}) {
-	c.cmdr.POut(i...)
+	c.Commander().PrintOut(i...)
 }
 
+// Convenience method to Println to the defined output
 func (c *Command) Println(i ...interface{}) {
 	str := fmt.Sprintln(i...)
 	c.Print(str)
 }
 
+// Convenience method to Printf to the defined output
 func (c *Command) Printf(format string, i ...interface{}) {
 	str := fmt.Sprintf(format, i...)
 	c.Print(str)
 }
 
+// Output the usage for the command
+// Used when a user provides invalid input
+// Can be defined by user by overriding Commander.UsageFunc
 func (c *Command) Usage() error {
-	err := c.cmdr.UsageFunc(c)
+	err := c.Commander().UsageFunc(c)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 	return err
 }
 
+// The full path to this command
 func (c *Command) CommandPath() string {
 	str := c.Name()
 	x := c
@@ -254,7 +278,6 @@ func (c *Command) CommandPath() string {
 		str = x.parent.Name() + " " + str
 		x = x.parent
 	}
-
 	return str
 }
 
@@ -312,15 +335,6 @@ func (c *Command) DebugFlags() {
 	debugflags(c)
 }
 
-// Usage prints the usage details to the standard output.
-//func (c *Command) PrintUsage() {
-//if c.Runnable() {
-//c.Printf("usage: %s\n\n", c.Usage())
-//}
-
-//c.Println(strings.Trim(c.Long, "\n"))
-//}
-
 // Name returns the command's name: the first word in the use line.
 func (c *Command) Name() string {
 	if c.name != "" {
@@ -373,7 +387,7 @@ func (c *Command) PersistentFlags() *flag.FlagSet {
 	return c.pflags
 }
 
-// Intended for use in testing
+// For use in testing
 func (c *Command) ResetFlags() {
 	c.flagErrorBuf = new(bytes.Buffer)
 	c.flagErrorBuf.Reset()
@@ -423,6 +437,11 @@ func (c *Command) ParseFlags(args []string) (err error) {
 	err = c.Flags().Parse(args)
 	if err != nil {
 		return err
+	}
+	if c.flagErrorBuf != nil {
+		//fmt.Println(c.flagErrorBuf.String())
+		return nil
+		//return fmt.Errorf("%s", c.flagErrorBuf.String())
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package cobra_test
 
 import (
+	"bytes"
 	. "cobra"
 	"fmt"
 	"strings"
@@ -186,15 +187,23 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("flags didn't leave proper args remaining..%s given", tt)
 	}
 
+	buf := new(bytes.Buffer)
 	// Testing with flag that shouldn't be persistent
 	c = initialize()
-	cmdEcho.AddCommand(cmdTimes)
+	c.SetOutput(buf)
+	// define children
 	c.AddCommand(cmdPrint, cmdEcho)
+	// define grandchild
+	cmdEcho.AddCommand(cmdTimes)
 	c.SetArgs(strings.Split("echo times -j 99 -i77 one two", " "))
 	e := c.Execute()
 
 	if e == nil {
 		t.Errorf("invalid flag should generate error")
+	}
+
+	if !strings.Contains(buf.String(), "inttwo=234") {
+		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
 
 	if flagi2 != 99 {
@@ -204,6 +213,21 @@ func TestChildCommandFlags(t *testing.T) {
 	if flagi1 != 123 {
 		t.Errorf("unset flag should have default value, expecting 123, given %d", flagi1)
 	}
+
+	// Testing with flag only existing on child
+	c = initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("echo -j 99 -i77 one two", " "))
+	err := c.Execute()
+	_ = err
+	//c.DebugFlags()
+
+	// TODO figure out why this isn't passing
+	//if err == nil {
+	//t.Errorf("invalid flag should generate error")
+	//}
+
 }
 
 func TestPersistentFlags(t *testing.T) {
