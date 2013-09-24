@@ -56,15 +56,22 @@ Next include cobra in your application.
 
     import "github.com/spf13/cobra"
 
+Now you are ready to implement Cobra. 
 
-While it may be counter intuitive, You define your commands first,
-assign flags to them, add them to the commander and lastly
-execute the commander.
+Cobra works by creating a set of commands and then organizing them into a tree.
+The tree defines the structure of the application.
 
-### Examples
+Once each command is defined with it's corresponding flags, then the
+tree is assigned to the commander which is finally executed.
 
+In the example below we have defined three commands. Two are at the top
+level and one (cmdTimes) is a child of one of the top commands.
 
-## Simple Example
+We have only defined one flag for a single command.
+
+More documentation about flags is available at https://github.com/spf13/pflag
+
+## Example
 
     Import(
         "github.com/spf13/cobra"
@@ -87,7 +94,7 @@ execute the commander.
             },
         }
 
-        var cmdEcho = &Command{
+        var cmdEcho = &cobra.Command{
             Use:   "echo [string to echo]",
             Short: "Echo anything to the screen",
             Long:  `echo is for echoing anything back.
@@ -98,7 +105,7 @@ execute the commander.
             },
         }
 
-        var cmdTimes = &Command{
+        var cmdTimes = &cobra.Command{
             Use:   "times [# times] [string to echo]",
             Short: "Echo anything to the screen more times",
             Long:  `echo things multiple times back to the user by providing
