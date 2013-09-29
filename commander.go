@@ -33,7 +33,8 @@ type Commander struct {
 	UsageTemplate string                   // Can be defined by Application
 	HelpTemplate  string                   // Can be defined by Application
 	HelpFunc      func(*Command, []string) // Help can be defined by application
-	HelpCommand   *Command
+	HelpCommand   *Command                 // The help command
+	cmd           *Command                 // The command version of itself
 }
 
 // Provide the user with a new commander.
@@ -49,7 +50,7 @@ func NewCommander() (c *Commander) {
 func (c *Commander) initHelp() {
 	if c.HelpCommand == nil {
 		c.HelpCommand = &Command{
-			Use:   "help [command to learn about]",
+			Use:   "help [command]",
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
     Simply type ` + c.Name() + ` help [path to command] for full details.`,
@@ -98,15 +99,19 @@ func (cmdr *Commander) defaultUsage(c *Command) error {
 }
 
 func (cmdr *Commander) defaultHelp(c *Command, args []string) {
-	cmd, _, e := c.Root().Find(args)
-	if cmd == nil {
-		cmdr.Printf("Unknown help topic %#q.  Run '%v help'.\n", args, cmdr.Name())
+	if len(args) == 0 {
+		// Help called without any topic, calling on root
+		c.Root().Help()
 		return
 	}
-	if e != nil {
-		cmdr.Printf("Unknown help topic %#q.  Run '%v help'.\n", args, cmdr.Name())
+
+	cmd, _, e := c.Root().Find(args)
+	if cmd == nil || e != nil {
+		cmdr.Printf("Unknown help topic %#q.", args)
+
+		c.Root().Usage()
 	} else {
-		err := tmpl(cmdr.out(), cmdr.HelpTemplate, cmd)
+		err := cmd.Help()
 		if err != nil {
 			c.Println(err)
 		}
@@ -131,14 +136,12 @@ Usage: {{if .Runnable}}
   {{ .CommandPath}} [command]{{end}}
 {{ if .HasSubCommands}}
 Available Commands: {{range .Commands}}{{if .Runnable}}
-  {{.Use | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}
+  {{.Use | printf "%-15s"}} :: {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasFlags}} Available Flags:
-{{.Flags.FlagUsages}}{{end}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
-Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}}
-  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
-  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}
-
+{{.Flags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
+Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}
 Use "{{.Commander.Name}} help [command]" for more information about that command.
 `

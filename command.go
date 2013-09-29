@@ -201,7 +201,17 @@ func (c *Command) Printf(format string, i ...interface{}) {
 // Used when a user provides invalid input
 // Can be defined by user by overriding Commander.UsageFunc
 func (c *Command) Usage() error {
+	c.mergePersistentFlags()
 	err := c.Commander().UsageFunc(c)
+	return err
+}
+
+// Output the help for the command
+// Used when a user calls help [command]
+// by the default HelpFunc in the commander
+func (c *Command) Help() error {
+	c.mergePersistentFlags()
+	err := tmpl(c.Commander().Out(), c.Commander().HelpTemplate, c)
 	return err
 }
 
