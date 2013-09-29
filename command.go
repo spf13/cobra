@@ -77,25 +77,37 @@ func (c *Command) resetChildrensParents() {
 
 // find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
-func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
+func (c *Command) Find(arrs []string) (*Command, []string, error) {
 	if c == nil {
 		return nil, nil, fmt.Errorf("Called find() on a nil Command")
 	}
 
-	validSubCommand := false
-	if len(args) > 0 && c.HasSubCommands() {
-		for _, cmd := range c.commands {
-			if cmd.Name() == args[0] {
-				validSubCommand = true
-				return cmd.Find(args[1:])
-			}
-		}
-	}
-	if !validSubCommand && c.Runnable() {
-		return c, args, nil
+	if len(arrs) == 0 {
+		return c.Commander().cmd, arrs, nil
 	}
 
-	return nil, nil, nil
+	var innerfind func(*Command, []string) (*Command, []string)
+
+	innerfind = func(c *Command, args []string) (*Command, []string) {
+		if len(args) > 0 && c.HasSubCommands() {
+			for _, cmd := range c.commands {
+				if cmd.Name() == args[0] {
+					return innerfind(cmd, args[1:])
+				}
+			}
+		}
+
+		return c, args
+	}
+
+	commandFound, a := innerfind(c, arrs)
+
+	// if commander returned and not appropriately matched return nil & error
+	if commandFound.Name() == c.Name() && commandFound.Name() != arrs[0] {
+		return nil, a, fmt.Errorf("Command not found")
+	}
+
+	return commandFound, a, nil
 }
 
 func (c *Command) Root() *Command {
