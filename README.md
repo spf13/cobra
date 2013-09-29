@@ -120,9 +120,9 @@ More documentation about flags is available at https://github.com/spf13/pflag
         }
 
 
-        cmdTimes().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+        cmdTimes().Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
-        var commander = cobra.Commander()
+        var commander = cobra.NewCommander()
         commander.SetName("CobraExample")
         commander.AddCommand(cmdPrint, cmdEcho)
         cmdEcho.AddCommand(cmdTimes)
