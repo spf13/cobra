@@ -201,7 +201,7 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid flag should generate error")
 	}
 
-	if !strings.Contains(buf.String(), "inttwo=234") {
+	if !strings.Contains(buf.String(), "unknown shorthand") {
 		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
 

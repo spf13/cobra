@@ -149,12 +149,6 @@ func (c *Command) execute(args []string) (err error) {
 	if e == nil {
 		err = cmd.ParseFlags(a)
 		if err != nil {
-			// report flag parsing error
-			c.Println(strings.Split(err.Error(), "\n")[0])
-			erx := cmd.Usage()
-			if erx != nil {
-				return erx
-			}
 			return err
 		} else {
 			argWoFlags := cmd.Flags().Args()
