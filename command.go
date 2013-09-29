@@ -52,6 +52,29 @@ type Command struct {
 	flagErrorBuf *bytes.Buffer
 }
 
+// Convert a Command into an (initialized) Commander
+func (cmd *Command) ToCommander() (c *Commander) {
+	c = NewCommander()
+	c.name = cmd.Name()
+	c.Use = cmd.Use
+	c.Short = cmd.Short
+	c.Long = cmd.Long
+	c.flags = cmd.flags
+	c.pflags = cmd.pflags
+	c.Run = cmd.Run
+	c.commands = cmd.commands
+	c.resetChildrensParents()
+	c.flagErrorBuf = cmd.flagErrorBuf
+	return
+}
+
+// Really only used when casting a command to a commander
+func (c *Command) resetChildrensParents() {
+	for _, x := range c.commands {
+		x.parent = c
+	}
+}
+
 // find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(args []string) (cmd *Command, a []string, err error) {
