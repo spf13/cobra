@@ -79,9 +79,25 @@ func (c *Commander) Execute() (err error) {
 	// overriding
 	c.initHelp()
 	if len(c.args) == 0 {
-		err = c.execute(os.Args[1:])
+		if len(os.Args) == 1 {
+			// If only the executable is called and the root is runnable, run it
+			if c.Runnable() {
+				argWoFlags := c.Flags().Args()
+				c.Run(c.cmd, argWoFlags)
+			} else {
+				c.Usage()
+			}
+		} else {
+			err = c.execute(os.Args[1:])
+		}
 	} else {
 		err = c.execute(c.args)
+	}
+
+	if err != nil {
+		c.Println("Error:", err.Error())
+		c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
+		c.Printf("Run '%v help' for usage\n", c.Root().Name())
 	}
 	return
 }
