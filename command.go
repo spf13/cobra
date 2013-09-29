@@ -176,6 +176,15 @@ func (c *Command) Usage() error {
 	return err
 }
 
+func (c *Command) UsageString() string {
+	tmpOutput := c.Commander().cmdr.output
+	bb := new(bytes.Buffer)
+	c.Commander().SetOutput(bb)
+	c.Usage()
+	c.Commander().cmdr.output = tmpOutput
+	return bb.String()
+}
+
 // The full path to this command
 func (c *Command) CommandPath() string {
 	str := c.Name()

@@ -143,8 +143,7 @@ Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runna
 Use "{{.Commander.Name}} help [command]" for more information about that command.
 `
 
-	c.HelpTemplate = `{{.Name}}
-{{.Long | trim}}
-{{if .Runnable}}{{.Usage}}{{end}}
+	c.HelpTemplate = `{{.Long | trim}}
+{{if .Runnable}}{{.UsageString}}{{end}}
 `
 }
