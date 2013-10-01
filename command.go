@@ -104,7 +104,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	// if commander returned and not appropriately matched return nil & error
 	if commandFound.Name() == c.Name() && commandFound.Name() != arrs[0] {
-		return nil, a, fmt.Errorf("Command not found")
+		return nil, a, fmt.Errorf("unknown command %q\nRun 'help' for usage.\n", a[0])
 	}
 
 	return commandFound, a, nil
@@ -138,26 +138,28 @@ func (c *Command) Out() io.Writer {
 }
 
 // execute the command determined by args and the command tree
-func (c *Command) execute(args []string) (err error) {
-	err = fmt.Errorf("unknown subcommand %q\nRun 'help' for usage.\n", args[0])
+func (c *Command) findAndExecute(args []string) (err error) {
 
+	cmd, a, e := c.Find(args)
+	if e != nil {
+		return e
+	}
+	return cmd.execute(a)
+}
+
+func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
 	}
 
-	cmd, a, e := c.Find(args)
-	if e == nil {
-		err = cmd.ParseFlags(a)
-		if err != nil {
-			return err
-		} else {
-			argWoFlags := cmd.Flags().Args()
-			cmd.Run(cmd, argWoFlags)
-			return nil
-		}
+	err = c.ParseFlags(a)
+	if err != nil {
+		return err
+	} else {
+		argWoFlags := c.Flags().Args()
+		c.Run(c, argWoFlags)
+		return nil
 	}
-	err = e
-	return err
 }
 
 // Used for testing

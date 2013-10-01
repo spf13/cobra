@@ -10,11 +10,11 @@ import (
 var _ = fmt.Println
 
 var tp, te, tt, t1 []string
-var flagb1, flagb2, flagb3 bool
+var flagb1, flagb2, flagb3, flagbr bool
 var flags1, flags2, flags3 string
-var flagi1, flagi2, flagi3 int
+var flagi1, flagi2, flagi3, flagir int
 var globalFlag1 bool
-var flagEcho bool
+var flagEcho, rootcalled bool
 
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
@@ -41,6 +41,15 @@ var cmdTimes = &Command{
 	Run:   timesRunner,
 }
 
+var cmdRoot = &Command{
+	Use:   "cobra-test",
+	Short: "The root can run it's own function",
+	Long:  "The root description for help",
+	Run: func(cmd *Command, args []string) {
+		rootcalled = true
+	},
+}
+
 func timesRunner(cmd *Command, args []string) {
 	tt = args
 }
@@ -49,6 +58,7 @@ func flagInit() {
 	cmdEcho.ResetFlags()
 	cmdPrint.ResetFlags()
 	cmdTimes.ResetFlags()
+	cmdRoot.ResetFlags()
 	cmdEcho.Flags().IntVarP(&flagi1, "intone", "i", 123, "help message for flag intone")
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
 	cmdPrint.Flags().IntVarP(&flagi3, "intthree", "i", 345, "help message for flag intthree")
@@ -70,6 +80,17 @@ func initialize() *Commander {
 	tt, tp, te = nil, nil, nil
 	var c = NewCommander()
 	c.SetName("cobratest")
+	flagInit()
+	commandInit()
+	return c
+}
+
+func initializeWithRootCmd() *Commander {
+	cmdRoot.ResetCommands()
+	tt, tp, te, rootcalled = nil, nil, nil, false
+	cmdRoot.Flags().BoolVarP(&flagbr, "boolroot", "b", false, "help message for flag boolroot")
+	cmdRoot.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag intthree")
+	var c = cmdRoot.ToCommander()
 	flagInit()
 	commandInit()
 	return c
@@ -291,4 +312,31 @@ func TestHelpCommand(t *testing.T) {
 	if !strings.Contains(buf.String(), cmdTimes.Long) {
 		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
+}
+
+func TestCommandToCommander(t *testing.T) {
+	c := initializeWithRootCmd()
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs([]string(nil))
+	c.Execute()
+
+	if rootcalled != true {
+		t.Errorf("Root Function was not called")
+	}
+}
+
+func TestRootFlags(t *testing.T) {
+	c := initializeWithRootCmd()
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("-i 17 -b", " "))
+	c.Execute()
+
+	if flagbr != true {
+		t.Errorf("flag value should be true, %v given", flagbr)
+	}
+
+	if flagir != 17 {
+		t.Errorf("flag value should be 17, %d given", flagir)
+	}
+
 }

@@ -78,20 +78,39 @@ func (c *Commander) Execute() (err error) {
 	// initialize help as the last point possible to allow for user
 	// overriding
 	c.initHelp()
+	var args []string
+
 	if len(c.args) == 0 {
-		if len(os.Args) == 1 {
-			// If only the executable is called and the root is runnable, run it
-			if c.Runnable() {
-				argWoFlags := c.Flags().Args()
-				c.Run(c.cmd, argWoFlags)
-			} else {
-				c.Usage()
-			}
+		args = os.Args[1:]
+	} else {
+		args = c.args
+	}
+
+	if len(args) == 0 {
+		// Only the executable is called and the root is runnable, run it
+		if c.Runnable() {
+			err = c.execute([]string(nil))
 		} else {
-			err = c.execute(os.Args[1:])
+			c.Usage()
 		}
 	} else {
-		err = c.execute(c.args)
+		err = c.findAndExecute(args)
+	}
+
+	// Now handle the case where the root is runnable and only flags are provided
+	if err != nil && c.Runnable() {
+		e := c.ParseFlags(args)
+		if e != nil {
+			return e
+		} else {
+			argWoFlags := c.Flags().Args()
+			if len(argWoFlags) > 0 {
+				c.Usage()
+			} else {
+				c.Run(c.cmd, argWoFlags)
+				err = nil
+			}
+		}
 	}
 
 	if err != nil {
@@ -99,6 +118,7 @@ func (c *Commander) Execute() (err error) {
 		c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
 		c.Printf("Run '%v help' for usage\n", c.Root().Name())
 	}
+
 	return
 }
 
