@@ -21,6 +21,7 @@ import (
 	"fmt"
 	flag "github.com/spf13/pflag"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -44,28 +45,152 @@ type Command struct {
 	// Run runs the command.
 	// The args are the arguments after the command name.
 	Run func(cmd *Command, args []string)
-	// Commands is the list of commands supported by this Commander program.
+	// Commands is the list of commands supported by this program.
 	commands []*Command
 	// Parent Command for this command
-	parent       *Command
-	cmdr         *Commander
+	parent *Command
+
 	flagErrorBuf *bytes.Buffer
+
+	args          []string
+	output        *io.Writer               // nil means stderr; use out() accessor
+	usageFunc     func(*Command) error     // Usage can be defined by application
+	usageTemplate string                   // Can be defined by Application
+	helpTemplate  string                   // Can be defined by Application
+	helpFunc      func(*Command, []string) // Help can be defined by application
+	helpCommand   *Command                 // The help command
 }
 
-// Convert a Command into an (initialized) Commander
-func (cmd *Command) ToCommander() (c *Commander) {
-	c = NewCommander()
-	c.name = cmd.Name()
-	c.Use = cmd.Use
-	c.Short = cmd.Short
-	c.Long = cmd.Long
-	c.flags = cmd.flags
-	c.pflags = cmd.pflags
-	c.Run = cmd.Run
-	c.commands = cmd.commands
-	c.resetChildrensParents()
-	c.flagErrorBuf = cmd.flagErrorBuf
-	return
+// os.Args[1:] by default, if desired, can be overridden
+// particularly useful when testing.
+func (c *Command) SetArgs(a []string) {
+	c.args = a
+}
+
+func (c *Command) Out() io.Writer {
+	if c.output != nil {
+		return *c.output
+	}
+
+	if c.HasParent() {
+		return c.parent.Out()
+	} else {
+		return os.Stderr
+	}
+}
+
+// SetOutput sets the destination for usage and error messages.
+// If output is nil, os.Stderr is used.
+func (c *Command) SetOutput(output io.Writer) {
+	c.output = &output
+}
+
+// Usage can be defined by application
+func (c *Command) SetUsageFunc(f func(*Command) error) {
+	c.usageFunc = f
+}
+
+// Can be defined by Application
+func (c *Command) SetUsageTemplate(s string) {
+	c.usageTemplate = s
+}
+
+// Can be defined by Application
+func (c *Command) SetHelpFunc(f func(*Command, []string)) {
+	c.helpFunc = f
+}
+
+func (c *Command) SetHelpCommand(cmd *Command) {
+	c.helpCommand = cmd
+}
+
+// Can be defined by Application
+func (c *Command) SetHelpTemplate(s string) {
+	c.helpTemplate = s
+}
+
+func (c *Command) UsageFunc() (f func(*Command) error) {
+	if c.usageFunc != nil {
+		return c.usageFunc
+	}
+
+	if c.HasParent() {
+		return c.parent.UsageFunc()
+	} else {
+		return func(c *Command) error {
+			err := tmpl(c.Out(), c.UsageTemplate(), c)
+			return err
+		}
+	}
+}
+func (c *Command) HelpFunc() func(*Command, []string) {
+	if c.helpFunc != nil {
+		return c.helpFunc
+	}
+
+	if c.HasParent() {
+		return c.parent.HelpFunc()
+	} else {
+		return func(c *Command, args []string) {
+			if len(args) == 0 {
+				// Help called without any topic, calling on root
+				c.Root().Help()
+				return
+			}
+
+			cmd, _, e := c.Root().Find(args)
+			if cmd == nil || e != nil {
+				c.Printf("Unknown help topic %#q.", args)
+
+				c.Root().Usage()
+			} else {
+				err := cmd.Help()
+				if err != nil {
+					c.Println(err)
+				}
+			}
+		}
+	}
+}
+
+func (c *Command) UsageTemplate() string {
+	if c.usageTemplate != "" {
+		return c.usageTemplate
+	}
+
+	if c.HasParent() {
+		return c.parent.UsageTemplate()
+	} else {
+		return `{{ $cmd := . }}
+Usage: {{if .Runnable}}
+  {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
+  {{ .CommandPath}} [command]{{end}}
+{{ if .HasSubCommands}}
+Available Commands: {{range .Commands}}{{if .Runnable}}
+  {{.Use | printf "%-15s"}} :: {{.Short}}{{end}}{{end}}
+{{end}}
+{{ if .HasFlags}} Available Flags:
+{{.Flags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
+Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{end}}
+{{end}}
+Use "{{.Root.Name}} help [command]" for more information about that command.
+`
+	}
+}
+
+func (c *Command) HelpTemplate() string {
+	if c.helpTemplate != "" {
+		return c.helpTemplate
+	}
+
+	if c.HasParent() {
+		return c.parent.HelpTemplate()
+	} else {
+		return `{{.Long | trim}}
+{{if .Runnable}}{{.UsageString}}{{end}}
+`
+	}
 }
 
 // Really only used when casting a command to a commander
@@ -83,7 +208,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 	}
 
 	if len(arrs) == 0 {
-		return c.Commander().cmd, arrs, nil
+		return c.Root(), arrs, nil
 	}
 
 	var innerfind func(*Command, []string) (*Command, []string)
@@ -124,19 +249,6 @@ func (c *Command) Root() *Command {
 	return findRoot(c)
 }
 
-func (c *Command) Commander() *Commander {
-	cmdr := c.Root()
-	if cmdr.cmdr != nil {
-		return cmdr.cmdr
-	} else {
-		panic("commander not found")
-	}
-}
-
-func (c *Command) Out() io.Writer {
-	return c.Commander().out()
-}
-
 // execute the command determined by args and the command tree
 func (c *Command) findAndExecute(args []string) (err error) {
 
@@ -162,6 +274,77 @@ func (c *Command) execute(a []string) (err error) {
 	}
 }
 
+// Call execute to use the args (os.Args[1:] by default)
+// and run through the command tree finding appropriate matches
+// for commands and then corresponding flags.
+func (c *Command) Execute() (err error) {
+
+	// Regardless of what command execute is called on, run on Root only
+	if c.HasParent() {
+		return c.Root().Execute()
+	}
+
+	// initialize help as the last point possible to allow for user
+	// overriding
+	c.initHelp()
+
+	var args []string
+
+	if len(c.args) == 0 {
+		args = os.Args[1:]
+	} else {
+		args = c.args
+	}
+
+	if len(args) == 0 {
+		// Only the executable is called and the root is runnable, run it
+		if c.Runnable() {
+			err = c.execute([]string(nil))
+		} else {
+			c.Usage()
+		}
+	} else {
+		err = c.findAndExecute(args)
+	}
+
+	// Now handle the case where the root is runnable and only flags are provided
+	if err != nil && c.Runnable() {
+		e := c.ParseFlags(args)
+		if e != nil {
+			return e
+		} else {
+			argWoFlags := c.Flags().Args()
+			if len(argWoFlags) > 0 {
+				c.Usage()
+			} else {
+				c.Run(c, argWoFlags)
+				err = nil
+			}
+		}
+	}
+
+	if err != nil {
+		c.Println("Error:", err.Error())
+		c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
+		c.Printf("Run '%v help' for usage\n", c.Root().Name())
+	}
+
+	return
+}
+
+func (c *Command) initHelp() {
+	if c.helpCommand == nil {
+		c.helpCommand = &Command{
+			Use:   "help [command]",
+			Short: "Help about any command",
+			Long: `Help provides help for any command in the application.
+    Simply type ` + c.Name() + ` help [path to command] for full details.`,
+			Run: c.HelpFunc(),
+		}
+	}
+	c.AddCommand(c.helpCommand)
+}
+
 // Used for testing
 func (c *Command) ResetCommands() {
 	c.commands = nil
@@ -184,7 +367,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 
 // Convenience method to Print to the defined output
 func (c *Command) Print(i ...interface{}) {
-	c.Commander().PrintOut(i...)
+	fmt.Fprint(c.Out(), i...)
 }
 
 // Convenience method to Println to the defined output
@@ -201,10 +384,10 @@ func (c *Command) Printf(format string, i ...interface{}) {
 
 // Output the usage for the command
 // Used when a user provides invalid input
-// Can be defined by user by overriding Commander.UsageFunc
+// Can be defined by user by overriding UsageFunc
 func (c *Command) Usage() error {
 	c.mergePersistentFlags()
-	err := c.Commander().UsageFunc(c)
+	err := c.UsageFunc()(c)
 	return err
 }
 
@@ -213,16 +396,16 @@ func (c *Command) Usage() error {
 // by the default HelpFunc in the commander
 func (c *Command) Help() error {
 	c.mergePersistentFlags()
-	err := tmpl(c.Commander().Out(), c.Commander().HelpTemplate, c)
+	err := tmpl(c.Out(), c.HelpTemplate(), c)
 	return err
 }
 
 func (c *Command) UsageString() string {
-	tmpOutput := c.Commander().cmdr.output
+	tmpOutput := c.output
 	bb := new(bytes.Buffer)
-	c.Commander().SetOutput(bb)
+	c.SetOutput(bb)
 	c.Usage()
-	c.Commander().cmdr.output = tmpOutput
+	c.output = tmpOutput
 	return bb.String()
 }
 

@@ -41,7 +41,13 @@ var cmdTimes = &Command{
 	Run:   timesRunner,
 }
 
-var cmdRoot = &Command{
+var cmdRootNoRun = &Command{
+	Use:   "cobra-test",
+	Short: "The root can run it's own function",
+	Long:  "The root description for help",
+}
+
+var cmdRootWithRun = &Command{
 	Use:   "cobra-test",
 	Short: "The root can run it's own function",
 	Long:  "The root description for help",
@@ -58,7 +64,8 @@ func flagInit() {
 	cmdEcho.ResetFlags()
 	cmdPrint.ResetFlags()
 	cmdTimes.ResetFlags()
-	cmdRoot.ResetFlags()
+	cmdRootNoRun.ResetFlags()
+	cmdRootWithRun.ResetFlags()
 	cmdEcho.Flags().IntVarP(&flagi1, "intone", "i", 123, "help message for flag intone")
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
 	cmdPrint.Flags().IntVarP(&flagi3, "intthree", "i", 345, "help message for flag intthree")
@@ -76,24 +83,22 @@ func commandInit() {
 	cmdTimes.ResetCommands()
 }
 
-func initialize() *Commander {
+func initialize() *Command {
 	tt, tp, te = nil, nil, nil
-	var c = NewCommander()
-	c.SetName("cobratest")
+	var c = cmdRootNoRun
 	flagInit()
 	commandInit()
 	return c
 }
 
-func initializeWithRootCmd() *Commander {
-	cmdRoot.ResetCommands()
+func initializeWithRootCmd() *Command {
+	cmdRootWithRun.ResetCommands()
 	tt, tp, te, rootcalled = nil, nil, nil, false
-	cmdRoot.Flags().BoolVarP(&flagbr, "boolroot", "b", false, "help message for flag boolroot")
-	cmdRoot.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag intthree")
-	var c = cmdRoot.ToCommander()
 	flagInit()
+	cmdRootWithRun.Flags().BoolVarP(&flagbr, "boolroot", "b", false, "help message for flag boolroot")
+	cmdRootWithRun.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag intthree")
 	commandInit()
-	return c
+	return cmdRootWithRun
 }
 
 func TestSingleCommand(t *testing.T) {
@@ -314,7 +319,7 @@ func TestHelpCommand(t *testing.T) {
 	}
 }
 
-func TestCommandToCommander(t *testing.T) {
+func TestRunnableRootCommand(t *testing.T) {
 	c := initializeWithRootCmd()
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs([]string(nil))
