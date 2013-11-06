@@ -257,6 +257,20 @@ func TestChildCommandFlags(t *testing.T) {
 	}
 }
 
+func TestTrailingCommandFlags(t *testing.T) {
+	buf := new(bytes.Buffer)
+	c := initialize()
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("echo two -x", " "))
+	e3 := c.Execute()
+
+	if e3 == nil {
+		t.Errorf("invalid flag should generate error")
+	}
+}
+
 func TestPersistentFlags(t *testing.T) {
 	c := initialize()
 	cmdEcho.AddCommand(cmdTimes)
