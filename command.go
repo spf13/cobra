@@ -265,6 +265,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	err = c.ParseFlags(a)
+
 	if err != nil {
 		return err
 	} else {
@@ -574,15 +575,15 @@ func (c *Command) ParseFlags(args []string) (err error) {
 	c.mergePersistentFlags()
 
 	err = c.Flags().Parse(args)
-	if err != nil {
-		return err
-	}
+
 	// The upstream library adds spaces to the error
 	// response regardless of success.
 	// Handling it here until fixing upstream
 	if len(strings.TrimSpace(c.flagErrorBuf.String())) > 1 {
 		return fmt.Errorf("%s", c.flagErrorBuf.String())
 	}
+
+	//always return nil because upstream library is inconsistent & we always check the error buffer anyway
 	return nil
 }
 
