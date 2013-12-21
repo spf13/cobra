@@ -151,7 +151,7 @@ We have only defined one flag for a single command.
 
 More documentation about flags is available at https://github.com/spf13/pflag
 
-    Import(
+    import(
         "github.com/spf13/cobra"
         "fmt"
         "strings"
@@ -195,7 +195,7 @@ More documentation about flags is available at https://github.com/spf13/pflag
             },
         }
 
-        cmdTimes().Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+        cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
         var rootCmd = &cobra.Command{Use: "app"}
         rootCmd.AddCommand(cmdPrint, cmdEcho)
