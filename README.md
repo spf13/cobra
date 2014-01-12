@@ -49,7 +49,7 @@ A Command has the following structure:
 
 A Flag is a way to modify the behavior of an command. Cobra supports
 fully posix compliant flags as well as the go flag package. 
-A Cobra command has can define flags that persist through to children commands
+A Cobra command can define flags that persist through to children commands
 and flags that are only available to that command.
 
 In the example above 'port' is the flag.
