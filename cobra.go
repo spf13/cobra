@@ -17,6 +17,7 @@
 package cobra
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -66,11 +67,17 @@ func Eq(a interface{}, b interface{}) bool {
 	return false
 }
 
+func rpad(s string, padding int) string {
+	template := fmt.Sprintf("%%-%ds", padding)
+	return fmt.Sprintf(template, s)
+}
+
 // tmpl executes the given template text on data, writing the result to w.
 func tmpl(w io.Writer, text string, data interface{}) error {
 	t := template.New("top")
 	t.Funcs(template.FuncMap{
 		"trim": strings.TrimSpace,
+		"rpad": rpad,
 		"gt":   Gt,
 		"eq":   Eq,
 	})

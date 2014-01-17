@@ -49,6 +49,9 @@ type Command struct {
 	commands []*Command
 	// Parent Command for this command
 	parent *Command
+	// max lengths of commands' string lengths for use in padding
+	commandsMaxUseLen         int
+	commandsMaxCommandPathLen int
 
 	flagErrorBuf *bytes.Buffer
 
@@ -153,6 +156,26 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 }
 
+var minUsagePadding int = 25
+
+func (c *Command) UsagePadding() int {
+	if c.parent == nil || minUsagePadding > c.parent.commandsMaxUseLen {
+		return minUsagePadding
+	} else {
+		return c.parent.commandsMaxUseLen
+	}
+}
+
+var minCommandPathPadding int = 11
+
+func (c *Command) CommandPathPadding() int {
+	if c.parent == nil || minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
+		return minCommandPathPadding
+	} else {
+		return c.parent.commandsMaxCommandPathLen
+	}
+}
+
 func (c *Command) UsageTemplate() string {
 	if c.usageTemplate != "" {
 		return c.usageTemplate
@@ -167,12 +190,12 @@ Usage: {{if .Runnable}}
   {{ .CommandPath}} [command]{{end}}
 {{ if .HasSubCommands}}
 Available Commands: {{range .Commands}}{{if .Runnable}}
-  {{.Use | printf "%-15s"}} :: {{.Short}}{{end}}{{end}}
+  {{rpad .Use .UsagePadding }} :: {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasFlags}} Available Flags:
 {{.Flags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
-Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
-  {{.CommandPath | printf "%-11s"}} :: {{.Short}}{{end}}{{end}}{{end}}{{end}}
+Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} :: {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+  {{rpad .CommandPath .CommandPathPadding}} :: {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}
 Use "{{.Root.Name}} help [command]" for more information about that command.
 `
@@ -362,6 +385,15 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
+		// update max lengths
+		usageLen := len(x.Use)
+		if usageLen > c.commandsMaxUseLen {
+			c.commandsMaxUseLen = usageLen
+		}
+		commandPathLen := len(x.CommandPath())
+		if commandPathLen > c.commandsMaxCommandPathLen {
+			c.commandsMaxCommandPathLen = commandPathLen
+		}
 		c.commands = append(c.commands, x)
 	}
 }
