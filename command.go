@@ -19,10 +19,11 @@ package cobra
 import (
 	"bytes"
 	"fmt"
-	flag "github.com/spf13/pflag"
 	"io"
 	"os"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 // Command is just that, a command for your application.
@@ -137,7 +138,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		return func(c *Command, args []string) {
 			if len(args) == 0 {
 				// Help called without any topic, calling on root
-				c.Root().Help()
+				c.Root().Usage()
 				return
 			}
 
