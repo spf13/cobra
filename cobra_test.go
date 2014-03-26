@@ -81,6 +81,8 @@ func commandInit() {
 	cmdEcho.ResetCommands()
 	cmdPrint.ResetCommands()
 	cmdTimes.ResetCommands()
+	cmdRootNoRun.ResetCommands()
+	cmdRootWithRun.ResetCommands()
 }
 
 func initialize() *Command {
