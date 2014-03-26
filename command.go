@@ -239,10 +239,18 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	innerfind = func(c *Command, args []string) (*Command, []string) {
 		if len(args) > 0 && c.HasSubCommands() {
+			matches := make([]*Command, 0)
 			for _, cmd := range c.commands {
-				if cmd.Name() == args[0] {
+				if cmd.Name() == args[0] { // exact name match
 					return innerfind(cmd, args[1:])
+				} else if strings.HasPrefix(cmd.Name(), args[0]) { // prefix match
+					matches = append(matches, cmd)
 				}
+			}
+
+			// only accept a single prefix match - multiple matches would be ambiguous
+			if len(matches) == 1 {
+				return innerfind(matches[0], args[1:])
 			}
 		}
 
@@ -252,7 +260,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 	commandFound, a := innerfind(c, arrs)
 
 	// if commander returned and not appropriately matched return nil & error
-	if commandFound.Name() == c.Name() && commandFound.Name() != arrs[0] {
+	if commandFound.Name() == c.Name() && !strings.HasPrefix(commandFound.Name(), arrs[0]) {
 		return nil, a, fmt.Errorf("unknown command %q\nRun 'help' for usage.\n", a[0])
 	}
 
