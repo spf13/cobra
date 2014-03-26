@@ -239,10 +239,18 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	innerfind = func(c *Command, args []string) (*Command, []string) {
 		if len(args) > 0 && c.HasSubCommands() {
+			matches := make([]*Command, 0)
 			for _, cmd := range c.commands {
-				if cmd.Name() == args[0] {
+				if cmd.Name() == args[0] { // exact name match
 					return innerfind(cmd, args[1:])
+				} else if strings.HasPrefix(cmd.Name(), args[0]) { // prefix match
+					matches = append(matches, cmd)
 				}
+			}
+
+			// only accept a single prefix match - multiple matches would be ambiguous
+			if len(matches) == 1 {
+				return innerfind(matches[0], args[1:])
 			}
 		}
 
