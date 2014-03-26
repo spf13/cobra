@@ -47,6 +47,12 @@ var cmdRootNoRun = &Command{
 	Long:  "The root description for help",
 }
 
+var cmdRootSameName = &Command{
+	Use:   "print",
+	Short: "Root with the same name as a subcommand",
+	Long:  "The root description for help",
+}
+
 var cmdRootWithRun = &Command{
 	Use:   "cobra-test",
 	Short: "The root can run it's own function",
@@ -65,6 +71,7 @@ func flagInit() {
 	cmdPrint.ResetFlags()
 	cmdTimes.ResetFlags()
 	cmdRootNoRun.ResetFlags()
+	cmdRootSameName.ResetFlags()
 	cmdRootWithRun.ResetFlags()
 	cmdEcho.Flags().IntVarP(&flagi1, "intone", "i", 123, "help message for flag intone")
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
@@ -82,12 +89,21 @@ func commandInit() {
 	cmdPrint.ResetCommands()
 	cmdTimes.ResetCommands()
 	cmdRootNoRun.ResetCommands()
+	cmdRootSameName.ResetCommands()
 	cmdRootWithRun.ResetCommands()
 }
 
 func initialize() *Command {
 	tt, tp, te = nil, nil, nil
 	var c = cmdRootNoRun
+	flagInit()
+	commandInit()
+	return c
+}
+
+func initializeWithSameName() *Command {
+	tt, tp, te = nil, nil, nil
+	var c = cmdRootSameName
 	flagInit()
 	commandInit()
 	return c
@@ -152,6 +168,40 @@ func TestChildCommandPrefix(t *testing.T) {
 		t.Error("Wrong command called")
 	}
 	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
+func TestChildSameName(t *testing.T) {
+	c := initializeWithSameName()
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("print one two", " "))
+	c.Execute()
+
+	if te != nil || tt != nil {
+		t.Error("Wrong command called")
+	}
+	if tp == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tp, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
+func TestChildSameNamePrefix(t *testing.T) {
+	c := initializeWithSameName()
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("pr one two", " "))
+	c.Execute()
+
+	if te != nil || tt != nil {
+		t.Error("Wrong command called")
+	}
+	if tp == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tp, " ") != "one two" {
 		t.Error("Command didn't parse correctly")
 	}
 }

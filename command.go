@@ -260,7 +260,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 	commandFound, a := innerfind(c, arrs)
 
 	// if commander returned and not appropriately matched return nil & error
-	if commandFound.Name() == c.Name() && commandFound.Name() != arrs[0] {
+	if commandFound.Name() == c.Name() && !strings.HasPrefix(commandFound.Name(), arrs[0]) {
 		return nil, a, fmt.Errorf("unknown command %q\nRun 'help' for usage.\n", a[0])
 	}
 
