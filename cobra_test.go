@@ -138,6 +138,24 @@ func TestChildCommand(t *testing.T) {
 	}
 }
 
+func TestChildCommandPrefix(t *testing.T) {
+	c := initialize()
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("ech tim one two", " "))
+	c.Execute()
+
+	if te != nil || tp != nil {
+		t.Error("Wrong command called")
+	}
+	if tt == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
 func TestFlagLong(t *testing.T) {
 	c := initialize()
 	c.AddCommand(cmdPrint, cmdEcho, cmdTimes)
