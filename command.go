@@ -57,7 +57,7 @@ type Command struct {
 	flagErrorBuf *bytes.Buffer
 
 	args          []string
-	output        *io.Writer               // nil means stderr; use out() accessor
+	output        *io.Writer               // nil means stderr; use Out() method instead
 	usageFunc     func(*Command) error     // Usage can be defined by application
 	usageTemplate string                   // Can be defined by Application
 	helpTemplate  string                   // Can be defined by Application
