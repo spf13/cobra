@@ -369,7 +369,7 @@ Names in no particular order:
 
 ## License
 
-nitro is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/spf13/nitro/blob/master/LICENSE.txt)
+Cobra is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/spf13/cobra/blob/master/LICENSE.txt)
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/spf13/cobra/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
