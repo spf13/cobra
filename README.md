@@ -106,7 +106,7 @@ Additional commands can be defined.
         },
     }
 
-### Attach command to it's parent
+### Attach command to its parent
 In this example we are attaching it to the root, but commands can be attached at any level.
 
 	HugoCmd.AddCommand(versionCmd)
