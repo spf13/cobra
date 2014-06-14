@@ -335,6 +335,24 @@ func TestChildCommandFlags(t *testing.T) {
 	if !strings.Contains(buf.String(), "intone=123") {
 		t.Errorf("Wrong error message displayed, \n %s", buf.String())
 	}
+
+	// Testing flag with invalid input
+	buf.Reset()
+	c = initialize()
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("echo -i10E", " "))
+	err = c.Execute()
+
+	if err == nil {
+		t.Errorf("invalid input should generate error")
+	}
+
+	if !strings.Contains(buf.String(), "invalid argument \"10E\" for -i10E") {
+		t.Errorf("Wrong error message displayed, \n %s", buf.String())
+	}
+
 }
 
 func TestTrailingCommandFlags(t *testing.T) {
