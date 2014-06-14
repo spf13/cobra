@@ -344,6 +344,9 @@ func (c *Command) Execute() (err error) {
 	if err != nil && c.Runnable() {
 		e := c.ParseFlags(args)
 		if e != nil {
+			// Flags parsing had an error.
+			fmt.Println(e)
+			c.Usage()
 			return e
 		} else {
 			argWoFlags := c.Flags().Args()

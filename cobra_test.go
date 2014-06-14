@@ -119,6 +119,16 @@ func initializeWithRootCmd() *Command {
 	return cmdRootWithRun
 }
 
+func checkOutputContains(t *testing.T, c *Command, check string) {
+	buf := new(bytes.Buffer)
+	c.SetOutput(buf)
+	c.Execute()
+
+	if !strings.Contains(buf.String(), check) {
+		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", check, buf.String())
+	}
+}
+
 func TestSingleCommand(t *testing.T) {
 	c := initialize()
 	c.AddCommand(cmdPrint, cmdEcho)
@@ -378,29 +388,19 @@ func TestPersistentFlags(t *testing.T) {
 }
 
 func TestHelpCommand(t *testing.T) {
-	buf := new(bytes.Buffer)
 	c := initialize()
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(strings.Split("help echo", " "))
-	c.SetOutput(buf)
-	c.Execute()
 
-	if !strings.Contains(buf.String(), cmdEcho.Long) {
-		t.Errorf("Wrong error message displayed, \n %s", buf.String())
-	}
+	checkOutputContains(t, c, cmdEcho.Long)
 
-	buf.Reset()
 	c = initialize()
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(strings.Split("help echo times", " "))
-	c.SetOutput(buf)
-	c.Execute()
 
-	if !strings.Contains(buf.String(), cmdTimes.Long) {
-		t.Errorf("Wrong error message displayed, \n %s", buf.String())
-	}
+	checkOutputContains(t, c, cmdTimes.Long)
 }
 
 func TestRunnableRootCommand(t *testing.T) {
@@ -427,5 +427,15 @@ func TestRootFlags(t *testing.T) {
 	if flagir != 17 {
 		t.Errorf("flag value should be 17, %d given", flagir)
 	}
+}
 
+func TestRootHelp(t *testing.T) {
+	fmt.Println("testing root help")
+	c := initializeWithRootCmd()
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split("--help", " "))
+	e := c.Execute()
+	fmt.Println(e)
+
+	checkOutputContains(t, c, "Available Commands:")
 }
