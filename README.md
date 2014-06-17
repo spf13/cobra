@@ -18,6 +18,13 @@ all commands.
 Cobra has an exceptionally clean interface and simple design without needless
 constructors or initialization methods.
 
+Applications built with Cobra commands are designed to be as user friendly as
+possible. Flags can be placed before or after the command (as long as a
+confusing space isn’t provided). Both short and long flags can be used. A
+command need not even be fully typed. The shortest unambiguous string will
+suffice. Help is automatically generated and available for the application or
+for a specific command using either the help command or the --help flag.
+
 ## Concepts
 
 Cobra is built on a structure of commands & flags.
@@ -283,14 +290,13 @@ You can provide your own command, function or template through the following met
 
 The latter two will also apply to any children commands.
 
-
 ## Usage
 
 When the user provides an invalid flag or invalid command Cobra responds by
 showing the user the 'usage'
 
 ### Example
-You may recognize this from the help above. That's because the default help 
+You may recognize this from the help above. That's because the default help
 embeds the usage as part of it's output.
 
     Usage:
@@ -332,7 +338,22 @@ Like help the function and template are over ridable through public methods.
     command.SetUsageTemplate(s string)
 
 
+## Debugging
+
+Cobra provides a ‘DebugFlags’ method on a command which when called will print
+out everything Cobra knows about the flags for each command
+
+### Example
+
+    command.DebugFlags()
+
 ## Release Notes
+* **0.9.0** June 17, 2014
+  * flags can appears anywhere in the args (provided they are unambiguous)
+  * --help prints usage screen for app or command
+  * Prefix matching for commands
+  * Cleaner looking help and usage output
+  * Extensive test suite
 * **0.8.0** Nov 5, 2013
   * Reworked interface to remove commander completely
   * Command now primary structure

@@ -225,6 +225,45 @@ func (c *Command) resetChildrensParents() {
 	}
 }
 
+func stripFlags(args []string) []string {
+	if len(args) < 1 {
+		return args
+	}
+
+	commands := []string{}
+
+	inQuote := false
+	for _, y := range args {
+		if !inQuote {
+			switch {
+			case strings.HasPrefix(y, "\""):
+				inQuote = true
+			case strings.Contains(y, "=\""):
+				inQuote = true
+			case !strings.HasPrefix(y, "-"):
+				commands = append(commands, y)
+			}
+		}
+
+		if strings.HasSuffix(y, "\"") && !strings.HasSuffix(y, "\\\"") {
+			inQuote = false
+		}
+	}
+
+	return commands
+}
+
+func argsMinusX(args []string, x string) []string {
+	newargs := []string{}
+
+	for _, y := range args {
+		if x != y {
+			newargs = append(newargs, y)
+		}
+	}
+	return newargs
+}
+
 // find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(arrs []string) (*Command, []string, error) {
@@ -240,18 +279,21 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	innerfind = func(c *Command, args []string) (*Command, []string) {
 		if len(args) > 0 && c.HasSubCommands() {
-			matches := make([]*Command, 0)
-			for _, cmd := range c.commands {
-				if cmd.Name() == args[0] { // exact name match
-					return innerfind(cmd, args[1:])
-				} else if strings.HasPrefix(cmd.Name(), args[0]) { // prefix match
-					matches = append(matches, cmd)
+			argsWOflags := stripFlags(args)
+			if len(argsWOflags) > 0 {
+				matches := make([]*Command, 0)
+				for _, cmd := range c.commands {
+					if cmd.Name() == argsWOflags[0] { // exact name match
+						return innerfind(cmd, argsMinusX(args, cmd.Name()))
+					} else if strings.HasPrefix(cmd.Name(), argsWOflags[0]) { // prefix match
+						matches = append(matches, cmd)
+					}
 				}
-			}
 
-			// only accept a single prefix match - multiple matches would be ambiguous
-			if len(matches) == 1 {
-				return innerfind(matches[0], args[1:])
+				// only accept a single prefix match - multiple matches would be ambiguous
+				if len(matches) == 1 {
+					return innerfind(matches[0], argsMinusX(args, argsWOflags[0]))
+				}
 			}
 		}
 
@@ -314,6 +356,18 @@ func (c *Command) execute(a []string) (err error) {
 	}
 }
 
+func (c *Command) errorMsgFromParse() string {
+	s := c.flagErrorBuf.String()
+
+	x := strings.Split(s, "\n")
+
+	if len(x) > 0 {
+		return x[0]
+	} else {
+		return ""
+	}
+}
+
 // Call execute to use the args (os.Args[1:] by default)
 // and run through the command tree finding appropriate matches
 // for commands and then corresponding flags.
@@ -352,7 +406,8 @@ func (c *Command) Execute() (err error) {
 		e := c.ParseFlags(args)
 		if e != nil {
 			// Flags parsing had an error.
-			fmt.Println(e)
+			//fmt.Println(e)
+			c.Println(c.errorMsgFromParse())
 			c.Usage()
 			return e
 		} else {
