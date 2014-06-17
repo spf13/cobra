@@ -114,9 +114,47 @@ func initializeWithRootCmd() *Command {
 	tt, tp, te, rootcalled = nil, nil, nil, false
 	flagInit()
 	cmdRootWithRun.Flags().BoolVarP(&flagbr, "boolroot", "b", false, "help message for flag boolroot")
-	cmdRootWithRun.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag intthree")
+	cmdRootWithRun.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag introot")
 	commandInit()
 	return cmdRootWithRun
+}
+
+type resulter struct {
+	Error   error
+	Output  string
+	Command *Command
+}
+
+func fullSetupTest(input string) resulter {
+	c := initializeWithRootCmd()
+
+	return fullTester(c, input)
+}
+
+func noRRSetupTest(input string) resulter {
+	c := initialize()
+
+	return fullTester(c, input)
+}
+
+func fullTester(c *Command, input string) resulter {
+	buf := new(bytes.Buffer)
+	// Testing flag with invalid input
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(strings.Split(input, " "))
+
+	err := c.Execute()
+	output := buf.String()
+
+	return resulter{err, output, c}
+}
+
+func checkResultContains(t *testing.T, x resulter, check string) {
+	if !strings.Contains(x.Output, check) {
+		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", check, x.Output)
+	}
 }
 
 func checkOutputContains(t *testing.T, c *Command, check string) {
@@ -448,12 +486,23 @@ func TestRootFlags(t *testing.T) {
 }
 
 func TestRootHelp(t *testing.T) {
-	fmt.Println("testing root help")
-	c := initializeWithRootCmd()
-	c.AddCommand(cmdPrint, cmdEcho)
-	c.SetArgs(strings.Split("--help", " "))
-	e := c.Execute()
-	fmt.Println(e)
+	x := fullSetupTest("--help")
+
+	checkResultContains(t, x, "Available Commands:")
+
+	if strings.Contains(x.Output, "unknown flag: --help") {
+		t.Errorf("--help shouldn't trigger an error, Got: \n %s", x.Output)
+	}
+
+	x = fullSetupTest("echo --help")
+
+	checkResultContains(t, x, "Available Commands:")
+
+	if strings.Contains(x.Output, "unknown flag: --help") {
+		t.Errorf("--help shouldn't trigger an error, Got: \n %s", x.Output)
+	}
+
+}
 
 	checkOutputContains(t, c, "Available Commands:")
 }

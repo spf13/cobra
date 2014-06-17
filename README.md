@@ -298,11 +298,11 @@ embeds the usage as part of it's output.
       hugo [command]
 
     Available Commands:
-      server          :: Hugo runs it's own a webserver to render the files
-      version         :: Print the version number of Hugo
-      check           :: Check content in the source directory
-      benchmark       :: Benchmark hugo by building a site a number of times
-      help [command]  :: Help about any command
+      server          Hugo runs it's own a webserver to render the files
+      version         Print the version number of Hugo
+      check           Check content in the source directory
+      benchmark       Benchmark hugo by building a site a number of times
+      help [command]  Help about any command
 
      Available Flags:
       -b, --base-url="": hostname (and path) to the root eg. http://spf13.com/

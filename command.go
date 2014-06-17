@@ -63,6 +63,7 @@ type Command struct {
 	helpTemplate  string                   // Can be defined by Application
 	helpFunc      func(*Command, []string) // Help can be defined by application
 	helpCommand   *Command                 // The help command
+	helpFlagVal   bool
 }
 
 // os.Args[1:] by default, if desired, can be overridden
@@ -301,6 +302,12 @@ func (c *Command) execute(a []string) (err error) {
 	if err != nil {
 		return err
 	} else {
+		// If help is called, regardless of other flags, we print that
+		if c.helpFlagVal {
+			c.Help()
+			return nil
+		}
+
 		argWoFlags := c.Flags().Args()
 		c.Run(c, argWoFlags)
 		return nil
@@ -349,6 +356,13 @@ func (c *Command) Execute() (err error) {
 			c.Usage()
 			return e
 		} else {
+
+			// If help is called, regardless of other flags, we print that
+			if c.helpFlagVal {
+				c.Help()
+				return nil
+			}
+
 			argWoFlags := c.Flags().Args()
 			if len(argWoFlags) > 0 {
 				c.Usage()
@@ -555,6 +569,7 @@ func (c *Command) Flags() *flag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
+		c.flags.BoolVar(&c.helpFlagVal, "help", false, "help for "+c.Name())
 	}
 	return c.flags
 }
@@ -617,7 +632,6 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 // Parses persistent flag tree & local flags
 func (c *Command) ParseFlags(args []string) (err error) {
 	c.mergePersistentFlags()
-
 	err = c.Flags().Parse(args)
 
 	// The upstream library adds spaces to the error
