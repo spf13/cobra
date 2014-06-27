@@ -350,10 +350,15 @@ func (c *Command) execute(a []string) (err error) {
 			return nil
 		}
 
+		c.preRun()
 		argWoFlags := c.Flags().Args()
 		c.Run(c, argWoFlags)
 		return nil
 	}
+}
+
+func (c *Command) preRun() {
+	InitializeConfig()
 }
 
 func (c *Command) errorMsgFromParse() string {
@@ -403,15 +408,16 @@ func (c *Command) Execute() (err error) {
 
 	// Now handle the case where the root is runnable and only flags are provided
 	if err != nil && c.Runnable() {
+		// This is pretty much a custom version of the *Command.execute method
+		// with a few differences because it's the final command (no fall back)
 		e := c.ParseFlags(args)
 		if e != nil {
 			// Flags parsing had an error.
-			//fmt.Println(e)
+			// If an error happens here, we have to report it to the user
 			c.Println(c.errorMsgFromParse())
 			c.Usage()
 			return e
 		} else {
-
 			// If help is called, regardless of other flags, we print that
 			if c.helpFlagVal {
 				c.Help()
@@ -420,8 +426,13 @@ func (c *Command) Execute() (err error) {
 
 			argWoFlags := c.Flags().Args()
 			if len(argWoFlags) > 0 {
+				// If there are arguments (not flags) one of the earlier
+				// cases should have caught it.. It means invalid usage
+				// print the usage
 				c.Usage()
 			} else {
+				// Only flags left... Call root.Run
+				c.preRun()
 				c.Run(c, argWoFlags)
 				err = nil
 			}

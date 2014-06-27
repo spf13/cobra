@@ -25,6 +25,13 @@ import (
 	"text/template"
 )
 
+// Called after flags are parsed immediately before executing any Command
+var InitializeConfig func()
+
+func init() {
+	InitializeConfig = func() {}
+}
+
 func Gt(a interface{}, b interface{}) bool {
 	var left, right int64
 	av := reflect.ValueOf(a)
