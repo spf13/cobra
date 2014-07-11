@@ -358,7 +358,9 @@ func (c *Command) execute(a []string) (err error) {
 }
 
 func (c *Command) preRun() {
-	InitializeConfig()
+	for _, x := range initializers {
+		x()
+	}
 }
 
 func (c *Command) errorMsgFromParse() string {

@@ -25,11 +25,12 @@ import (
 	"text/template"
 )
 
-// Called after flags are parsed immediately before executing any Command
-var InitializeConfig func()
+var initializers []func()
 
-func init() {
-	InitializeConfig = func() {}
+func OnInitialize(y ...func()) {
+	for _, x := range y {
+		initializers = append(initializers, x)
+	}
 }
 
 func Gt(a interface{}, b interface{}) bool {
