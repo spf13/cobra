@@ -151,7 +151,7 @@ Execute should be run on the root for clarity, though it can be called on any co
 
 In the example below we have defined three commands. Two are at the top level
 and one (cmdTimes) is a child of one of the top commands. In this case the root
-is not executible meaning that a subcommand is required. This is accomplished
+is not executable meaning that a subcommand is required. This is accomplished
 by not providing a 'Run' for the 'rootCmd'.
 
 We have only defined one flag for a single command.
