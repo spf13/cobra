@@ -139,7 +139,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		return func(c *Command, args []string) {
 			if len(args) == 0 {
 				// Help called without any topic, calling on root
-				c.Root().Usage()
+				c.Root().Help()
 				return
 			}
 
@@ -213,7 +213,7 @@ func (c *Command) HelpTemplate() string {
 		return c.parent.HelpTemplate()
 	} else {
 		return `{{.Long | trim}}
-{{if .Runnable}}{{.UsageString}}{{end}}
+{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}
 `
 	}
 }
@@ -402,7 +402,7 @@ func (c *Command) Execute() (err error) {
 		if c.Runnable() {
 			err = c.execute([]string(nil))
 		} else {
-			c.Usage()
+			c.Help()
 		}
 	} else {
 		err = c.findAndExecute(args)
