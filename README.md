@@ -7,7 +7,7 @@ A Commander for modern go CLI interactions
 ## Overview
 
 Cobra is a commander providing a simple interface to create powerful modern CLI
-interfaces similar to git & go tools. In addition to providing an iterface, Cobra
+interfaces similar to git & go tools. In addition to providing an interface, Cobra
 simultaneously provides a controller to organize your application code.
 
 Inspired by go, go-Commander, gh and subcommand, Cobra improves on these by
