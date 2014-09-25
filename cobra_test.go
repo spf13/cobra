@@ -26,9 +26,10 @@ var cmdPrint = &Command{
 }
 
 var cmdEcho = &Command{
-	Use:   "echo [string to echo]",
-	Short: "Echo anything to the screen",
-	Long:  `an utterly useless command for testing.`,
+	Use:     "echo [string to echo]",
+	Aliases: []string{"say"},
+	Short:   "Echo anything to the screen",
+	Long:    `an utterly useless command for testing.`,
 	Run: func(cmd *Command, args []string) {
 		te = args
 	},
@@ -38,7 +39,9 @@ var cmdTimes = &Command{
 	Use:   "times [# times] [string to echo]",
 	Short: "Echo anything to the screen more times",
 	Long:  `an slightly useless command for testing.`,
-	Run:   timesRunner,
+	Run: func(cmd *Command, args []string) {
+		tt = args
+	},
 }
 
 var cmdRootNoRun = &Command{
@@ -60,10 +63,6 @@ var cmdRootWithRun = &Command{
 	Run: func(cmd *Command, args []string) {
 		rootcalled = true
 	},
-}
-
-func timesRunner(cmd *Command, args []string) {
-	tt = args
 }
 
 func flagInit() {
@@ -195,8 +194,8 @@ func TestChildCommand(t *testing.T) {
 	}
 }
 
-func TestChildCommandPrefix(t *testing.T) {
-	noRRSetupTest("ech tim one two")
+func TestCommandAlias(t *testing.T) {
+	noRRSetupTest("say times one two")
 
 	if te != nil || tp != nil {
 		t.Error("Wrong command called")
@@ -213,23 +212,6 @@ func TestChildSameName(t *testing.T) {
 	c := initializeWithSameName()
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(strings.Split("print one two", " "))
-	c.Execute()
-
-	if te != nil || tt != nil {
-		t.Error("Wrong command called")
-	}
-	if tp == nil {
-		t.Error("Wrong command called")
-	}
-	if strings.Join(tp, " ") != "one two" {
-		t.Error("Command didn't parse correctly")
-	}
-}
-
-func TestChildSameNamePrefix(t *testing.T) {
-	c := initializeWithSameName()
-	c.AddCommand(cmdPrint, cmdEcho)
-	c.SetArgs(strings.Split("pr one two", " "))
 	c.Execute()
 
 	if te != nil || tt != nil {
