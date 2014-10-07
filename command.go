@@ -286,10 +286,25 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 		if len(args) > 0 && c.HasSubCommands() {
 			argsWOflags := stripFlags(args)
 			if len(argsWOflags) > 0 {
+				matches := make([]*Command, 0)
 				for _, cmd := range c.commands {
 					if cmd.Name() == argsWOflags[0] || cmd.HasAlias(argsWOflags[0]) { // exact name or alias match
 						return innerfind(cmd, argsMinusX(args, argsWOflags[0]))
+					} else {
+						if strings.HasPrefix(cmd.Name(), argsWOflags[0]) { // prefix match
+							matches = append(matches, cmd)
+						}
+						for _, x := range cmd.Aliases {
+							if strings.HasPrefix(x, argsWOflags[0]) {
+								matches = append(matches, cmd)
+							}
+						}
 					}
+				}
+
+				// only accept a single prefix match - multiple matches would be ambiguous
+				if len(matches) == 1 {
+					return innerfind(matches[0], argsMinusX(args, argsWOflags[0]))
 				}
 			}
 		}

@@ -208,6 +208,34 @@ func TestCommandAlias(t *testing.T) {
 	}
 }
 
+func TestPrefixMatching(t *testing.T) {
+	noRRSetupTest("ech times one two")
+
+	if te != nil || tp != nil {
+		t.Error("Wrong command called")
+	}
+	if tt == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
+func TestAliasPrefixMatching(t *testing.T) {
+	noRRSetupTest("sa times one two")
+
+	if te != nil || tp != nil {
+		t.Error("Wrong command called")
+	}
+	if tt == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
 func TestChildSameName(t *testing.T) {
 	c := initializeWithSameName()
 	c.AddCommand(cmdPrint, cmdEcho)
