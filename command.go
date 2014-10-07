@@ -290,7 +290,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 				for _, cmd := range c.commands {
 					if cmd.Name() == argsWOflags[0] || cmd.HasAlias(argsWOflags[0]) { // exact name or alias match
 						return innerfind(cmd, argsMinusX(args, argsWOflags[0]))
-					} else {
+					} else if EnablePrefixMatching {
 						if strings.HasPrefix(cmd.Name(), argsWOflags[0]) { // prefix match
 							matches = append(matches, cmd)
 						}

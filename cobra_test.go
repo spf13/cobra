@@ -209,6 +209,7 @@ func TestCommandAlias(t *testing.T) {
 }
 
 func TestPrefixMatching(t *testing.T) {
+	EnablePrefixMatching = true
 	noRRSetupTest("ech times one two")
 
 	if te != nil || tp != nil {
@@ -220,9 +221,22 @@ func TestPrefixMatching(t *testing.T) {
 	if strings.Join(tt, " ") != "one two" {
 		t.Error("Command didn't parse correctly")
 	}
+
+	EnablePrefixMatching = false
+}
+
+func TestNoPrefixMatching(t *testing.T) {
+	EnablePrefixMatching = false
+
+	noRRSetupTest("ech times one two")
+
+	if !(tt == nil && te == nil && tp == nil) {
+		t.Error("Wrong command called")
+	}
 }
 
 func TestAliasPrefixMatching(t *testing.T) {
+	EnablePrefixMatching = true
 	noRRSetupTest("sa times one two")
 
 	if te != nil || tp != nil {
@@ -234,6 +248,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 	if strings.Join(tt, " ") != "one two" {
 		t.Error("Command didn't parse correctly")
 	}
+	EnablePrefixMatching = false
 }
 
 func TestChildSameName(t *testing.T) {
