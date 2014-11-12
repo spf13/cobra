@@ -203,9 +203,9 @@ Available Commands: {{range .Commands}}{{if .Runnable}}
 {{.Flags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
 Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
-{{end}}
+{{end}}{{ if .HasSubCommands }}
 Use "{{.Root.Name}} help [command]" for more information about that command.
-`
+{{end}}`
 	}
 }
 
@@ -465,6 +465,10 @@ func (c *Command) Execute() (err error) {
 
 func (c *Command) initHelp() {
 	if c.helpCommand == nil {
+		if !c.HasSubCommands() {
+			return
+		}
+
 		c.helpCommand = &Command{
 			Use:   "help [command]",
 			Short: "Help about any command",
@@ -479,6 +483,7 @@ func (c *Command) initHelp() {
 // Used for testing
 func (c *Command) ResetCommands() {
 	c.commands = nil
+	c.helpCommand = nil
 }
 
 func (c *Command) Commands() []*Command {
