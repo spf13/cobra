@@ -57,6 +57,7 @@ type Command struct {
 	commandsMaxCommandPathLen int
 
 	flagErrorBuf *bytes.Buffer
+	cmdErrorBuf  *bytes.Buffer
 
 	args          []string
 	output        *io.Writer               // nil means stderr; use Out() method instead
@@ -355,6 +356,15 @@ func (c *Command) execute(a []string) (err error) {
 	err = c.ParseFlags(a)
 
 	if err != nil {
+		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
+		if c.Root().cmdErrorBuf == nil {
+			c.Root().cmdErrorBuf = new(bytes.Buffer)
+		}
+		// for writing the usage to the buffer we need to switch the output temporarily
+		out := c.Out()
+		c.SetOutput(c.Root().cmdErrorBuf)
+		c.Usage()
+		c.SetOutput(out)
 		return err
 	} else {
 		// If help is called, regardless of other flags, we print that
@@ -430,7 +440,12 @@ func (c *Command) Execute() (err error) {
 			// Flags parsing had an error.
 			// If an error happens here, we have to report it to the user
 			c.Println(c.errorMsgFromParse())
-			c.Usage()
+			// If an error happens search also for subcommand info about that
+			if c.cmdErrorBuf != nil && c.cmdErrorBuf.Len() > 0 {
+				c.Println(c.cmdErrorBuf.String())
+			} else {
+				c.Usage()
+			}
 			return e
 		} else {
 			// If help is called, regardless of other flags, we print that
