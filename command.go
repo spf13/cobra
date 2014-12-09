@@ -357,14 +357,16 @@ func (c *Command) execute(a []string) (err error) {
 
 	if err != nil {
 		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
-		if c.Root().cmdErrorBuf == nil {
-			c.Root().cmdErrorBuf = new(bytes.Buffer)
+		r := c.Root()
+		if r.cmdErrorBuf == nil {
+			r.cmdErrorBuf = new(bytes.Buffer)
 		}
 		// for writing the usage to the buffer we need to switch the output temporarily
-		out := c.Out()
-		c.SetOutput(c.Root().cmdErrorBuf)
+		// since Out() returns root output, you also need to revert that on root
+		out := r.Out()
+		r.SetOutput(r.cmdErrorBuf)
 		c.Usage()
-		c.SetOutput(out)
+		r.SetOutput(out)
 		return err
 	} else {
 		// If help is called, regardless of other flags, we print that
@@ -499,6 +501,8 @@ func (c *Command) initHelp() {
 func (c *Command) ResetCommands() {
 	c.commands = nil
 	c.helpCommand = nil
+	c.cmdErrorBuf = new(bytes.Buffer)
+	c.cmdErrorBuf.Reset()
 }
 
 func (c *Command) Commands() []*Command {
