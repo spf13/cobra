@@ -141,6 +141,11 @@ A flag can also be assigned locally which will only apply to that specific comma
 
 	HugoCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 
+### Help Topics
+
+Help topics are just subcommands with no Run function.  They allow you to give
+long-form help output for topics relevant to your tool.
+
 ### Once all commands and flags are defined, Execute the commands
 
 Execute should be run on the root for clarity, though it can be called on any command.

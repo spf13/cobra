@@ -189,15 +189,15 @@ func (c *Command) UsageTemplate() string {
 		return `{{ $cmd := . }}
 Usage: {{if .Runnable}}
   {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
-  {{ .CommandPath}} [command]{{end}}
-{{ if .HasSubCommands}}
+  {{ .CommandPath}} [command]
+
 Available Commands: {{range .Commands}}{{if .Runnable}}
+  {{rpad .Use .UsagePadding }} {{.Short}}{{end}}{{end}}{{end}}
+{{ if .HasFlags}}
+Available Flags:
+{{.Flags.FlagUsages}}{{end}}{{if .HasHelpTopics}}
+Additional help topics: {{range .Commands}}{{if not .Runnable}}
   {{rpad .Use .UsagePadding }} {{.Short}}{{end}}{{end}}
-{{end}}
-{{ if .HasFlags}} Available Flags:
-{{.Flags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
-Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}
 Use "{{.Root.Name}} help [command]" for more information about that command.
 `
@@ -621,7 +621,22 @@ func (c *Command) Runnable() bool {
 
 // Determine if the command has children commands
 func (c *Command) HasSubCommands() bool {
-	return len(c.commands) > 0
+	for _, sub := range c.commands {
+		if sub.Runnable() {
+			return true
+		}
+	}
+	return false
+}
+
+// Determine if the command has help topics
+func (c *Command) HasHelpTopics() bool {
+	for _, sub := range c.commands {
+		if !sub.Runnable() {
+			return true
+		}
+	}
+	return false
 }
 
 // Determine if the command is a child command
