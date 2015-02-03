@@ -18,13 +18,14 @@ package cobra
 import (
 	"bytes"
 	"fmt"
-	"github.com/inconshreveable/mousetrap"
-	flag "github.com/spf13/pflag"
 	"io"
 	"os"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/inconshreveable/mousetrap"
+	flag "github.com/spf13/pflag"
 )
 
 // Command is just that, a command for your application.
@@ -370,6 +371,9 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 				// only accept a single prefix match - multiple matches would be ambiguous
 				if len(matches) == 1 {
 					return innerfind(matches[0], argsMinusX(args, argsWOflags[0]))
+				} else if len(matches) == 0 && len(args) > 0 && args[0] == "help" {
+					// special case help command
+					return innerfind(c, argsMinusX(append(args, "--help"), argsWOflags[0]))
 				}
 			}
 		}
@@ -790,6 +794,13 @@ func (c *Command) HasParent() bool {
 	return c.parent != nil
 }
 
+func (c *Command) assureHelpFlag() {
+	if c.Flags().Lookup("help") == nil && c.PersistentFlags().Lookup("help") == nil {
+		c.PersistentFlags().BoolVarP(&c.helpFlagVal, "help", "h", false, "help for "+c.Name())
+	}
+	c.mergePersistentFlags()
+}
+
 // Get the complete FlagSet that applies to this command (local and persistent declared here and by all parents)
 func (c *Command) Flags() *flag.FlagSet {
 	if c.flags == nil {
@@ -798,7 +809,7 @@ func (c *Command) Flags() *flag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
-		c.PersistentFlags().BoolVarP(&c.helpFlagVal, "help", "h", false, "help for "+c.Name())
+		c.assureHelpFlag()
 	}
 	return c.flags
 }
@@ -934,7 +945,9 @@ func (c *Command) mergePersistentFlags() {
 		}
 		c.lflags.SetOutput(c.flagErrorBuf)
 		addtolocal := func(f *flag.Flag) {
-			c.lflags.AddFlag(f)
+			if c.lflags.Lookup(f.Name) == nil {
+				c.lflags.AddFlag(f)
+			}
 		}
 		c.Flags().VisitAll(addtolocal)
 		c.PersistentFlags().VisitAll(addtolocal)
