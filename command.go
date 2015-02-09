@@ -59,6 +59,12 @@ type Command struct {
 	// Run runs the command.
 	// The args are the arguments after the command name.
 	Run func(cmd *Command, args []string)
+	// PreRun runs the command after the flags are parsed and before run.
+	// The args are the arguments after the command name.
+	PreRun func(cmd *Command, args []string)
+	// PostRun runs the command after run.
+	// The args are the arguments after the command name.
+	PostRun func(cmd *Command, args []string)
 	// Commands is the list of commands supported by this program.
 	commands []*Command
 	// Parent Command for this command
@@ -448,7 +454,17 @@ func (c *Command) execute(a []string) (err error) {
 
 	c.preRun()
 	argWoFlags := c.Flags().Args()
+
+	if c.PreRun != nil {
+		c.PreRun(c, argWoFlags)
+	}
+
 	c.Run(c, argWoFlags)
+
+	if c.PostRun != nil {
+		c.PostRun(c, argWoFlags)
+	}
+
 	return nil
 }
 
@@ -942,7 +958,7 @@ func (c *Command) mergePersistentFlags() {
 		c.PersistentFlags().VisitAll(addtolocal)
 	}
 	rmerge = func(x *Command) {
-		if ! x.HasParent() {
+		if !x.HasParent() {
 			flag.CommandLine.VisitAll(func(f *flag.Flag) {
 				if x.PersistentFlags().Lookup(f.Name) == nil {
 					x.PersistentFlags().AddFlag(f)
