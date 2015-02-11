@@ -54,6 +54,7 @@ type Command struct {
 	// max lengths of commands' string lengths for use in padding
 	commandsMaxUseLen         int
 	commandsMaxCommandPathLen int
+	commandsMaxNameLen        int
 
 	flagErrorBuf *bytes.Buffer
 	cmdErrorBuf  *bytes.Buffer
@@ -181,6 +182,16 @@ func (c *Command) CommandPathPadding() int {
 	}
 }
 
+var minNamePadding int = 11
+
+func (c *Command) NamePadding() int {
+	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
+		return minNamePadding
+	} else {
+		return c.parent.commandsMaxNameLen
+	}
+}
+
 func (c *Command) UsageTemplate() string {
 	if c.usageTemplate != "" {
 		return c.usageTemplate
@@ -198,7 +209,7 @@ Aliases:
   {{.NameAndAliases}}{{end}}
 {{ if .HasSubCommands}}
 Available Commands: {{range .Commands}}{{if .Runnable}}
-  {{rpad .Use .UsagePadding }} {{.Short}}{{end}}{{end}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasLocalFlags}}Flags:
 {{.LocalFlags.FlagUsages}}{{end}}
@@ -528,6 +539,10 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		commandPathLen := len(x.CommandPath())
 		if commandPathLen > c.commandsMaxCommandPathLen {
 			c.commandsMaxCommandPathLen = commandPathLen
+		}
+		nameLen := len(x.Name())
+		if nameLen > c.commandsMaxNameLen {
+			c.commandsMaxNameLen = nameLen
 		}
 		c.commands = append(c.commands, x)
 	}
