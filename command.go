@@ -40,6 +40,8 @@ type Command struct {
 	Short string
 	// The long message shown in the 'help <this-command>' output.
 	Long string
+	// Examples of how to use the command
+	Example string
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
@@ -195,8 +197,11 @@ Usage: {{if .Runnable}}
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
 Aliases:
-  {{.NameAndAliases}}{{end}}
-{{ if .HasSubCommands}}
+  {{.NameAndAliases}}
+{{end}}{{if .HasExample}}
+Examples:
+{{ .Example }}
+{{end}}{{ if .HasSubCommands}}
 Available Commands: {{range .Commands}}{{if .Runnable}}
   {{rpad .Use .UsagePadding }} {{.Short}}{{end}}{{end}}
 {{end}}
@@ -667,6 +672,10 @@ func (c *Command) HasAlias(s string) bool {
 
 func (c *Command) NameAndAliases() string {
 	return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
+}
+
+func (c *Command) HasExample() bool {
+	return len(c.Example) > 0
 }
 
 // Determine if the command is itself runnable
