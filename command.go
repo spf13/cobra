@@ -765,6 +765,22 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 	return local
 }
 
+// All Flags which were not inherited from parent commands
+func (c *Command) NonInheritedFlags() *flag.FlagSet {
+	c.mergePersistentFlags()
+
+	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	inheritedFlags := c.InheritedFlags()
+
+	c.Flags().VisitAll(func(f *flag.Flag) {
+		if inheritedFlags.Lookup(f.Name) == nil {
+			local.AddFlag(f)
+		}
+	})
+
+	return local
+}
+
 // Get the Persistent FlagSet specifically set in the current command
 func (c *Command) PersistentFlags() *flag.FlagSet {
 	if c.pflags == nil {
