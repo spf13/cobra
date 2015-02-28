@@ -46,6 +46,8 @@ type Command struct {
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
 	pflags *flag.FlagSet
+	// Flags that are declared specifically by this command (not inherited).
+	lflags *flag.FlagSet
 	// Run runs the command.
 	// The args are the arguments after the command name.
 	Run func(cmd *Command, args []string)
@@ -218,8 +220,8 @@ Available Commands: {{range .Commands}}{{if .Runnable}}
 {{end}}
 {{ if .HasLocalFlags}}Flags:
 {{.LocalFlags.FlagUsages}}{{end}}
-{{ if .HasAnyPersistentFlags}}Global Flags:
-{{.AllPersistentFlags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
+{{ if .HasInheritedFlags}}Global Flags:
+{{.InheritedFlags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
 Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
@@ -726,14 +728,9 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
 	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	allPersistent := c.AllPersistentFlags()
-
-	c.Flags().VisitAll(func(f *flag.Flag) {
-		if allPersistent.Lookup(f.Name) == nil {
-			local.AddFlag(f)
-		}
+	c.lflags.VisitAll(func(f *flag.Flag) {
+		local.AddFlag(f)
 	})
-
 	return local
 }
 
@@ -741,44 +738,34 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 func (c *Command) InheritedFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
-	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	inherited := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	local := c.LocalFlags()
 
-        var rmerge func(x *Command)
+	var rmerge func(x *Command)
 
-        rmerge = func(x *Command) {
-                if x.HasPersistentFlags() {
-                        x.PersistentFlags().VisitAll(func(f *flag.Flag) {
-                                if local.Lookup(f.Name) == nil {
-                                        local.AddFlag(f)
-                                }
-                        })
-                }
-                if x.HasParent() {
-                        rmerge(x.parent)
-                }
-        }
+	rmerge = func(x *Command) {
+		if x.HasPersistentFlags() {
+			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
+				if inherited.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
+					inherited.AddFlag(f)
+				}
+			})
+		}
+		if x.HasParent() {
+			rmerge(x.parent)
+		}
+	}
 
 	if c.HasParent() {
 		rmerge(c.parent)
 	}
 
-	return local
+	return inherited
 }
 
 // All Flags which were not inherited from parent commands
 func (c *Command) NonInheritedFlags() *flag.FlagSet {
-	c.mergePersistentFlags()
-
-	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	inheritedFlags := c.InheritedFlags()
-
-	c.Flags().VisitAll(func(f *flag.Flag) {
-		if inheritedFlags.Lookup(f.Name) == nil {
-			local.AddFlag(f)
-		}
-	})
-
-	return local
+	return c.LocalFlags()
 }
 
 // Get the Persistent FlagSet specifically set in the current command
@@ -791,29 +778,6 @@ func (c *Command) PersistentFlags() *flag.FlagSet {
 		c.pflags.SetOutput(c.flagErrorBuf)
 	}
 	return c.pflags
-}
-
-// Get the Persistent FlagSet traversing the Command hierarchy
-func (c *Command) AllPersistentFlags() *flag.FlagSet {
-	allPersistent := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-
-	var visit func(x *Command)
-	visit = func(x *Command) {
-		if x.HasPersistentFlags() {
-			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
-				if allPersistent.Lookup(f.Name) == nil {
-					allPersistent.AddFlag(f)
-				}
-			})
-		}
-		if x.HasParent() {
-			visit(x.parent)
-		}
-	}
-
-	visit(c)
-
-	return allPersistent
 }
 
 // For use in testing
@@ -836,14 +800,13 @@ func (c *Command) HasPersistentFlags() bool {
 	return c.PersistentFlags().HasFlags()
 }
 
-// Does the command hierarchy contain persistent flags
-func (c *Command) HasAnyPersistentFlags() bool {
-	return c.AllPersistentFlags().HasFlags()
-}
-
 // Does the command has flags specifically declared locally
 func (c *Command) HasLocalFlags() bool {
 	return c.LocalFlags().HasFlags()
+}
+
+func (c *Command) HasInheritedFlags() bool {
+	return c.InheritedFlags().HasFlags()
 }
 
 // Climbs up the command tree looking for matching flag
@@ -892,6 +855,19 @@ func (c *Command) Parent() *Command {
 func (c *Command) mergePersistentFlags() {
 	var rmerge func(x *Command)
 
+	// Save the set of local flags
+	if c.lflags == nil {
+		c.lflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
+		c.lflags.SetOutput(c.flagErrorBuf)
+		addtolocal := func(f *flag.Flag) {
+			c.lflags.AddFlag(f)
+		}
+		c.Flags().VisitAll(addtolocal)
+		c.PersistentFlags().VisitAll(addtolocal)
+	}
 	rmerge = func(x *Command) {
 		if x.HasPersistentFlags() {
 			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
