@@ -42,6 +42,8 @@ type Command struct {
 	Long string
 	// Examples of how to use the command
 	Example string
+	// Files that are passed to the program after flags
+	Files string
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
@@ -204,7 +206,7 @@ func (c *Command) UsageTemplate() string {
 	} else {
 		return `{{ $cmd := . }}
 Usage: {{if .Runnable}}
-  {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
+  {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{if .HasFiles}} [files ...]{{end}}{{end}}{{if .HasSubCommands}}
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
 Aliases:
@@ -212,6 +214,10 @@ Aliases:
 {{end}}{{if .HasExample}}
 Examples:
 {{ .Example }}
+{{end}}
+{{if .HasFiles}}
+Files:
+  {{ .Files }}
 {{end}}{{ if .HasSubCommands}}
 Available Commands: {{range .Commands}}{{if .Runnable}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
@@ -708,6 +714,11 @@ func (c *Command) HasParent() bool {
 	return c.parent != nil
 }
 
+// Does the command take file inputs
+func (c *Command) HasFiles() bool {
+	return c.Files != ""
+}
+
 // Get the complete FlagSet that applies to this command (local and persistent declared here and by all parents)
 func (c *Command) Flags() *flag.FlagSet {
 	if c.flags == nil {
@@ -743,20 +754,20 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 
 	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 
-        var rmerge func(x *Command)
+	var rmerge func(x *Command)
 
-        rmerge = func(x *Command) {
-                if x.HasPersistentFlags() {
-                        x.PersistentFlags().VisitAll(func(f *flag.Flag) {
-                                if local.Lookup(f.Name) == nil {
-                                        local.AddFlag(f)
-                                }
-                        })
-                }
-                if x.HasParent() {
-                        rmerge(x.parent)
-                }
-        }
+	rmerge = func(x *Command) {
+		if x.HasPersistentFlags() {
+			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
+				if local.Lookup(f.Name) == nil {
+					local.AddFlag(f)
+				}
+			})
+		}
+		if x.HasParent() {
+			rmerge(x.parent)
+		}
+	}
 
 	if c.HasParent() {
 		rmerge(c.parent)
