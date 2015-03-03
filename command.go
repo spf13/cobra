@@ -581,6 +581,40 @@ func (c *Command) AddCommand(cmds ...*Command) {
 	}
 }
 
+// AddCommand removes one or more commands from a parent command.
+func (c *Command) RemoveCommand(cmds ...*Command) {
+	commands := []*Command{}
+main:
+	for _, command := range c.commands {
+		for _, cmd := range cmds {
+			if command == cmd {
+				command.parent = nil
+				continue main
+			}
+		}
+		commands = append(commands, command)
+	}
+	c.commands = commands
+	// recompute all lengths
+	c.commandsMaxUseLen = 0
+	c.commandsMaxCommandPathLen = 0
+	c.commandsMaxNameLen = 0
+	for _, command := range c.commands {
+		usageLen := len(command.Use)
+		if usageLen > c.commandsMaxUseLen {
+			c.commandsMaxUseLen = usageLen
+		}
+		commandPathLen := len(command.CommandPath())
+		if commandPathLen > c.commandsMaxCommandPathLen {
+			c.commandsMaxCommandPathLen = commandPathLen
+		}
+		nameLen := len(command.Name())
+		if nameLen > c.commandsMaxNameLen {
+			c.commandsMaxNameLen = nameLen
+		}
+	}
+}
+
 // Convenience method to Print to the defined output
 func (c *Command) Print(i ...interface{}) {
 	fmt.Fprint(c.Out(), i...)
