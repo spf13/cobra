@@ -213,14 +213,14 @@ Aliases:
 Examples:
 {{ .Example }}
 {{end}}{{ if .HasSubCommands}}
-Available Commands: {{range .Commands}}{{if .Runnable}}
+Available Commands: {{range .Commands}}{{if or .Runnable .HasSubCommands}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasLocalFlags}}Flags:
 {{.LocalFlags.FlagUsages}}{{end}}
 {{ if .HasAnyPersistentFlags}}Global Flags:
 {{.AllPersistentFlags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
-Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if or .Runnable .HasSubCommands}}{{if not (eq .Name $cmd.Name) }}{{end}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
 Use "{{.Root.Name}} help [command]" for more information about a command.
@@ -743,20 +743,20 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 
 	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 
-        var rmerge func(x *Command)
+	var rmerge func(x *Command)
 
-        rmerge = func(x *Command) {
-                if x.HasPersistentFlags() {
-                        x.PersistentFlags().VisitAll(func(f *flag.Flag) {
-                                if local.Lookup(f.Name) == nil {
-                                        local.AddFlag(f)
-                                }
-                        })
-                }
-                if x.HasParent() {
-                        rmerge(x.parent)
-                }
-        }
+	rmerge = func(x *Command) {
+		if x.HasPersistentFlags() {
+			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
+				if local.Lookup(f.Name) == nil {
+					local.AddFlag(f)
+				}
+			})
+		}
+		if x.HasParent() {
+			rmerge(x.parent)
+		}
+	}
 
 	if c.HasParent() {
 		rmerge(c.parent)
