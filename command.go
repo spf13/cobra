@@ -262,8 +262,12 @@ func isBooleanFlag(name string, f *flag.FlagSet) bool {
 
 // Test if the named flag is a boolean flag.
 func isBooleanShortFlag(name string, f *flag.FlagSet) bool {
-     	result := false
-	f.VisitAll(func (f *flag.Flag) { if f.Shorthand == name && f.Value.Type() == "bool" { result = true } })
+	result := false
+	f.VisitAll(func(f *flag.Flag) {
+		if f.Shorthand == name && f.Value.Type() == "bool" {
+			result = true
+		}
+	})
 	return result
 }
 
@@ -399,7 +403,10 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	err = c.ParseFlags(a)
-
+	if err == flag.ErrHelp {
+		c.Help()
+		return nil
+	}
 	if err != nil {
 		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
 		r := c.Root()
@@ -519,9 +526,13 @@ func (c *Command) Execute() (err error) {
 	}
 
 	if err != nil {
-		c.Println("Error:", err.Error())
-		c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
-		c.Printf("Run '%v help' for usage\n", c.Root().Name())
+		if err == flag.ErrHelp {
+			c.Help()
+		} else {
+			c.Println("Error:", err.Error())
+			c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
+			c.Printf("Run '%v help' for usage\n", c.Root().Name())
+		}
 	}
 
 	return
