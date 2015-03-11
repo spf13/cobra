@@ -381,7 +381,7 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid flag should generate error")
 	}
 
-	if !strings.Contains(r.Output, "intone=123") {
+	if !strings.Contains(r.Output, "unknown shorthand flag") {
 		t.Errorf("Wrong error message displayed, \n %s", r.Output)
 	}
 

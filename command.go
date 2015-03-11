@@ -262,8 +262,12 @@ func isBooleanFlag(name string, f *flag.FlagSet) bool {
 
 // Test if the named flag is a boolean flag.
 func isBooleanShortFlag(name string, f *flag.FlagSet) bool {
-     	result := false
-	f.VisitAll(func (f *flag.Flag) { if f.Shorthand == name && f.Value.Type() == "bool" { result = true } })
+	result := false
+	f.VisitAll(func(f *flag.Flag) {
+		if f.Shorthand == name && f.Value.Type() == "bool" {
+			result = true
+		}
+	})
 	return result
 }
 
@@ -399,7 +403,10 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	err = c.ParseFlags(a)
-
+	if err == flag.ErrHelp {
+		c.Help()
+		return nil
+	}
 	if err != nil {
 		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
 		r := c.Root()
@@ -487,14 +494,15 @@ func (c *Command) Execute() (err error) {
 		if e != nil {
 			// Flags parsing had an error.
 			// If an error happens here, we have to report it to the user
-			c.Println(c.errorMsgFromParse())
+			c.Println(e.Error())
 			// If an error happens search also for subcommand info about that
 			if c.cmdErrorBuf != nil && c.cmdErrorBuf.Len() > 0 {
 				c.Println(c.cmdErrorBuf.String())
 			} else {
 				c.Usage()
 			}
-			return e
+			err = e
+			return
 		} else {
 			// If help is called, regardless of other flags, we print that
 			if c.helpFlagVal {
@@ -518,9 +526,13 @@ func (c *Command) Execute() (err error) {
 	}
 
 	if err != nil {
-		c.Println("Error:", err.Error())
-		c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
-		c.Printf("Run '%v help' for usage\n", c.Root().Name())
+		if err == flag.ErrHelp {
+			c.Help()
+		} else {
+			c.Println("Error:", err.Error())
+			c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
+			c.Printf("Run '%v help' for usage\n", c.Root().Name())
+		}
 	}
 
 	return
@@ -861,16 +873,7 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 func (c *Command) ParseFlags(args []string) (err error) {
 	c.mergePersistentFlags()
 	err = c.Flags().Parse(args)
-
-	// The upstream library adds spaces to the error
-	// response regardless of success.
-	// Handling it here until fixing upstream
-	if len(strings.TrimSpace(c.flagErrorBuf.String())) > 1 {
-		return fmt.Errorf("%s", c.flagErrorBuf.String())
-	}
-
-	//always return nil because upstream library is inconsistent & we always check the error buffer anyway
-	return nil
+	return
 }
 
 func (c *Command) Parent() *Command {
