@@ -487,14 +487,15 @@ func (c *Command) Execute() (err error) {
 		if e != nil {
 			// Flags parsing had an error.
 			// If an error happens here, we have to report it to the user
-			c.Println(c.errorMsgFromParse())
+			c.Println(e.Error())
 			// If an error happens search also for subcommand info about that
 			if c.cmdErrorBuf != nil && c.cmdErrorBuf.Len() > 0 {
 				c.Println(c.cmdErrorBuf.String())
 			} else {
 				c.Usage()
 			}
-			return e
+			err = e
+			return
 		} else {
 			// If help is called, regardless of other flags, we print that
 			if c.helpFlagVal {
@@ -861,16 +862,7 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 func (c *Command) ParseFlags(args []string) (err error) {
 	c.mergePersistentFlags()
 	err = c.Flags().Parse(args)
-
-	// The upstream library adds spaces to the error
-	// response regardless of success.
-	// Handling it here until fixing upstream
-	if len(strings.TrimSpace(c.flagErrorBuf.String())) > 1 {
-		return fmt.Errorf("%s", c.flagErrorBuf.String())
-	}
-
-	//always return nil because upstream library is inconsistent & we always check the error buffer anyway
-	return nil
+	return
 }
 
 func (c *Command) Parent() *Command {
