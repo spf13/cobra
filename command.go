@@ -251,7 +251,23 @@ func (c *Command) resetChildrensParents() {
 	}
 }
 
-func stripFlags(args []string) []string {
+// Test if the named flag is a boolean flag.
+func isBooleanFlag(name string, f *flag.FlagSet) bool {
+	flag := f.Lookup(name)
+	if flag == nil {
+		return false
+	}
+	return flag.Value.Type() == "bool"
+}
+
+// Test if the named flag is a boolean flag.
+func isBooleanShortFlag(name string, f *flag.FlagSet) bool {
+     	result := false
+	f.VisitAll(func (f *flag.Flag) { if f.Shorthand == name && f.Value.Type() == "bool" { result = true } })
+	return result
+}
+
+func stripFlags(args []string, c *Command) []string {
 	if len(args) < 1 {
 		return args
 	}
@@ -259,6 +275,7 @@ func stripFlags(args []string) []string {
 	commands := []string{}
 
 	inQuote := false
+	inFlag := false
 	for _, y := range args {
 		if !inQuote {
 			switch {
@@ -266,8 +283,16 @@ func stripFlags(args []string) []string {
 				inQuote = true
 			case strings.Contains(y, "=\""):
 				inQuote = true
+			case strings.HasPrefix(y, "--") && !strings.Contains(y, "="):
+				// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
+				inFlag = !isBooleanFlag(y[2:], c.Flags())
+			case strings.HasPrefix(y, "-") && !strings.Contains(y, "=") && len(y) == 2 && !isBooleanShortFlag(y[1:], c.Flags()):
+				inFlag = true
+			case inFlag:
+				inFlag = false
 			case !strings.HasPrefix(y, "-"):
 				commands = append(commands, y)
+				inFlag = false
 			}
 		}
 
@@ -305,7 +330,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	innerfind = func(c *Command, args []string) (*Command, []string) {
 		if len(args) > 0 && c.HasSubCommands() {
-			argsWOflags := stripFlags(args)
+			argsWOflags := stripFlags(args, c)
 			if len(argsWOflags) > 0 {
 				matches := make([]*Command, 0)
 				for _, cmd := range c.commands {
