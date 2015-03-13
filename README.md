@@ -143,6 +143,15 @@ A flag can also be assigned locally which will only apply to that specific comma
 
 	HugoCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 
+### Remove a command from its parent
+
+Removing a command is not a common action is simple program but it allows 3rd parties to customize an existing command tree.
+
+In this exemple, we remove the existing `VersionCmd` command of an existing root command, and we replace it by our own version.
+
+	mainlib.RootCmd.RemoveCommand(mainlib.VersionCmd)
+	mainlib.RootCmd.AddCommand(versionCmd)
+
 ### Once all commands and flags are defined, Execute the commands
 
 Execute should be run on the root for clarity, though it can be called on any command.
