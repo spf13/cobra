@@ -15,6 +15,7 @@ var flags1, flags2, flags3 string
 var flagi1, flagi2, flagi3, flagir int
 var globalFlag1 bool
 var flagEcho, rootcalled bool
+var versionUsed int
 
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
@@ -65,6 +66,24 @@ var cmdRootWithRun = &Command{
 	},
 }
 
+var cmdVersion1 = &Command{
+	Use:   "version",
+	Short: "Print the version number",
+	Long:  `First version of the version command`,
+	Run: func(cmd *Command, args []string) {
+		versionUsed = 1
+	},
+}
+
+var cmdVersion2 = &Command{
+	Use:   "version",
+	Short: "Print the version number",
+	Long:  `Second version of the version command`,
+	Run: func(cmd *Command, args []string) {
+		versionUsed = 2
+	},
+}
+
 func flagInit() {
 	cmdEcho.ResetFlags()
 	cmdPrint.ResetFlags()
@@ -81,6 +100,8 @@ func flagInit() {
 	cmdEcho.Flags().BoolVarP(&flagb1, "boolone", "b", true, "help message for flag boolone")
 	cmdTimes.Flags().BoolVarP(&flagb2, "booltwo", "c", false, "help message for flag booltwo")
 	cmdPrint.Flags().BoolVarP(&flagb3, "boolthree", "b", true, "help message for flag boolthree")
+	cmdVersion1.ResetFlags()
+	cmdVersion2.ResetFlags()
 }
 
 func commandInit() {
@@ -558,4 +579,35 @@ func TestFlagsBeforeCommand(t *testing.T) {
 		t.Errorf("Valid Input shouldn't have errors, got:\n %q", x.Error)
 	}
 
+}
+
+func TestRemoveCommand(t *testing.T) {
+	versionUsed = 0
+	c := initializeWithRootCmd()
+	c.AddCommand(cmdVersion1)
+	c.RemoveCommand(cmdVersion1)
+	x := fullTester(c, "version")
+	if x.Error == nil {
+		t.Errorf("Removed command should not have been called\n")
+		return
+	}
+}
+
+func TestReplaceCommandWithRemove(t *testing.T) {
+	versionUsed = 0
+	c := initializeWithRootCmd()
+	c.AddCommand(cmdVersion1)
+	c.RemoveCommand(cmdVersion1)
+	c.AddCommand(cmdVersion2)
+	x := fullTester(c, "version")
+	if x.Error != nil {
+		t.Errorf("Valid Input shouldn't have errors, got:\n %q", x.Error)
+		return
+	}
+	if versionUsed == 1 {
+		t.Errorf("Removed command shouldn't be called\n")
+	}
+	if versionUsed != 2 {
+		t.Errorf("Replacing command should have been called but didn't\n")
+	}
 }
