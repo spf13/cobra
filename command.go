@@ -220,9 +220,11 @@ Usage: {{if .Runnable}}
 Aliases:
   {{.NameAndAliases}}
 {{end}}{{if .HasExample}}
+
 Examples:
 {{ .Example }}
 {{end}}{{ if .HasSubCommands}}
+
 Available Commands: {{range .Commands}}{{if .Runnable}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
 {{end}}
