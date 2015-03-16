@@ -275,6 +275,7 @@ func stripFlags(args []string, c *Command) []string {
 	if len(args) < 1 {
 		return args
 	}
+	c.mergePersistentFlags()
 
 	commands := []string{}
 
