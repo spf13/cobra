@@ -348,6 +348,9 @@ Like help the function and template are over ridable through public methods.
 
     command.SetUsageTemplate(s string)
 
+## Generating bash completions for your command
+
+Cobra can generate a bash completions file. If you add more information to your command these completions can be amazingly powerful and flexible.  Read more about [Bash Completions](bash_completions.md)
 
 ## Debugging
 
