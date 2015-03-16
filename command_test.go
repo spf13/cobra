@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// TODO Test persistent flags on subcommands.  This requires testing the full execute function.
+
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
@@ -54,6 +56,14 @@ func TestStripFlags(t *testing.T) {
 			[]string{"-c", "bar", "-i", "foo", "blah"},
 			[]string{"bar", "blah"},
 		},
+		{
+			[]string{"--persist", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-p", "bar"},
+			[]string{"bar"},
+		},
 	}
 
 	cmdPrint := &Command{
@@ -68,6 +78,7 @@ func TestStripFlags(t *testing.T) {
 	var flagi int
 	var flagstr string
 	var flagbool bool
+	cmdPrint.PersistentFlags().BoolVarP(&flagbool, "persist", "p", false, "help for persistent one")
 	cmdPrint.Flags().IntVarP(&flagi, "int", "i", 345, "help message for flag int")
 	cmdPrint.Flags().StringVarP(&flagstr, "bar", "b", "bar", "help message for flag string")
 	cmdPrint.Flags().BoolVarP(&flagbool, "cat", "c", false, "help message for flag bool")
