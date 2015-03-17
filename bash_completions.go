@@ -328,3 +328,16 @@ func (cmd *Command) GenBashCompletionFile(filename string) error {
 	}
 	return nil
 }
+
+func (cmd *Command) MarkFlagRequired(name string) {
+	flag := cmd.Flags().Lookup(name)
+	if flag == nil {
+		return
+	}
+	if flag.Annotations == nil {
+		flag.Annotations = make(map[string][]string)
+	}
+	annotation := make([]string, 1)
+	annotation[0] = "true"
+	flag.Annotations[BashCompOneRequiredFlag] = annotation
+}
