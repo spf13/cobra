@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// TODO Test persistent flags on subcommands.  This requires testing the full execute function.
-
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
