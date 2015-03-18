@@ -79,7 +79,7 @@ func (c *Command) SetArgs(a []string) {
 	c.args = a
 }
 
-func (c *Command) Out() io.Writer {
+func (c *Command) getOut(def io.Writer) io.Writer {
 	if c.output != nil {
 		return *c.output
 	}
@@ -87,8 +87,16 @@ func (c *Command) Out() io.Writer {
 	if c.HasParent() {
 		return c.parent.Out()
 	} else {
-		return os.Stderr
+		return def
 	}
+}
+
+func (c *Command) Out() io.Writer {
+	return c.getOut(os.Stderr)
+}
+
+func (c *Command) getOutOrStdout() io.Writer {
+	return c.getOut(os.Stdout)
 }
 
 // SetOutput sets the destination for usage and error messages.
@@ -658,7 +666,7 @@ func (c *Command) Usage() error {
 // by the default HelpFunc in the commander
 func (c *Command) Help() error {
 	c.mergePersistentFlags()
-	err := tmpl(c.Out(), c.HelpTemplate(), c)
+	err := tmpl(c.getOutOrStdout(), c.HelpTemplate(), c)
 	return err
 }
 
