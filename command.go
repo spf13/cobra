@@ -942,6 +942,13 @@ func (c *Command) mergePersistentFlags() {
 		c.PersistentFlags().VisitAll(addtolocal)
 	}
 	rmerge = func(x *Command) {
+		if ! x.HasParent() {
+			flag.CommandLine.VisitAll(func(f *flag.Flag) {
+				if x.PersistentFlags().Lookup(f.Name) == nil {
+					x.PersistentFlags().AddFlag(f)
+				}
+			})
+		}
 		if x.HasPersistentFlags() {
 			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
 				if c.Flags().Lookup(f.Name) == nil {
