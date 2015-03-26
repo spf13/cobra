@@ -417,6 +417,33 @@ func TestTrailingCommandFlags(t *testing.T) {
 	}
 }
 
+func TestInvalidSubCommandFlags(t *testing.T) {
+	sub := &Command{
+		Use:   "sub",
+		Short: "Invalid sub command test sub",
+		Run: func(cmd *Command, args []string) {
+		},
+	}
+	sub.Flags().String("images", "", "images flag")
+
+	root := &Command{
+		Use:   "root",
+		Short: "Invalid sub command test root",
+		Run: func(cmd *Command, args []string) {
+		},
+	}
+	root.AddCommand(sub)
+
+	result := simpleTester(root, "sub --images=foo --master=bar")
+
+	checkResultContains(t, result, "unknown flag: --master")
+
+	if strings.Contains(result.Output, "unknown flag: --images") {
+		t.Errorf("invalid --master flag shouldn't fail on images, Got: \n %s", result.Output)
+	}
+
+}
+
 func TestPersistentFlags(t *testing.T) {
 	fullSetupTest("echo -s something -p more here")
 

@@ -399,13 +399,13 @@ func (c *Command) Root() *Command {
 }
 
 // execute the command determined by args and the command tree
-func (c *Command) findAndExecute(args []string) (err error) {
+func (c *Command) findAndExecute(args []string) (findErr error, err error) {
 
 	cmd, a, e := c.Find(args)
 	if e != nil {
-		return e
+		return e, nil
 	}
-	return cmd.execute(a)
+	return nil, cmd.execute(a)
 }
 
 func (c *Command) execute(a []string) (err error) {
@@ -486,19 +486,25 @@ func (c *Command) Execute() (err error) {
 		args = c.args
 	}
 
+	var findErr error
+	var rootCommandError error
+
 	if len(args) == 0 {
 		// Only the executable is called and the root is runnable, run it
 		if c.Runnable() {
-			err = c.execute([]string(nil))
+			rootCommandError = c.execute([]string(nil))
+			err = rootCommandError
+
 		} else {
 			c.Help()
 		}
 	} else {
-		err = c.findAndExecute(args)
+		findErr, err = c.findAndExecute(args)
 	}
 
-	// Now handle the case where the root is runnable and only flags are provided
-	if err != nil && c.Runnable() {
+	// if there was an error caused by running the root command or an inability to locate the requested command
+	// try to reparse the flags and run using the root command.
+	if (findErr != nil || rootCommandError != nil) && c.Runnable() {
 		// This is pretty much a custom version of the *Command.execute method
 		// with a few differences because it's the final command (no fall back)
 		e := c.ParseFlags(args)
