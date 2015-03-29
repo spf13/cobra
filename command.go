@@ -305,6 +305,8 @@ func stripFlags(args []string, c *Command) []string {
 				inFlag = true
 			case inFlag:
 				inFlag = false
+			case y == "":
+				// strip empty commands, as the go tests expect this to be ok....
 			case !strings.HasPrefix(y, "-"):
 				commands = append(commands, y)
 				inFlag = false
@@ -375,9 +377,8 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	commandFound, a := innerfind(c, arrs)
 
-	// if commander returned and the first argument (if it exists) doesn't
-	// match the command name, return nil & error
-	if commandFound.Name() == c.Name() && len(arrs[0]) > 0 && commandFound.Name() != arrs[0] {
+	// If we matched on the root, but we asked for a subcommand, return an error
+	if commandFound.Name() == c.Name() && len(stripFlags(arrs, c)) > 0 && commandFound.Name() != arrs[0] {
 		return nil, a, fmt.Errorf("unknown command %q", a[0])
 	}
 
@@ -396,16 +397,6 @@ func (c *Command) Root() *Command {
 	}
 
 	return findRoot(c)
-}
-
-// execute the command determined by args and the command tree
-func (c *Command) findAndExecute(args []string) (err error) {
-
-	cmd, a, e := c.Find(args)
-	if e != nil {
-		return e
-	}
-	return cmd.execute(a)
 }
 
 func (c *Command) execute(a []string) (err error) {
@@ -494,45 +485,11 @@ func (c *Command) Execute() (err error) {
 			c.Help()
 		}
 	} else {
-		err = c.findAndExecute(args)
-	}
-
-	// Now handle the case where the root is runnable and only flags are provided
-	if err != nil && c.Runnable() {
-		// This is pretty much a custom version of the *Command.execute method
-		// with a few differences because it's the final command (no fall back)
-		e := c.ParseFlags(args)
+		cmd, flags, e := c.Find(args)
 		if e != nil {
-			// Flags parsing had an error.
-			// If an error happens here, we have to report it to the user
-			c.Println(e.Error())
-			// If an error happens search also for subcommand info about that
-			if c.cmdErrorBuf != nil && c.cmdErrorBuf.Len() > 0 {
-				c.Println(c.cmdErrorBuf.String())
-			} else {
-				c.Usage()
-			}
 			err = e
-			return
 		} else {
-			// If help is called, regardless of other flags, we print that
-			if c.helpFlagVal {
-				c.Help()
-				return nil
-			}
-
-			argWoFlags := c.Flags().Args()
-			if len(argWoFlags) > 0 {
-				// If there are arguments (not flags) one of the earlier
-				// cases should have caught it.. It means invalid usage
-				// print the usage
-				c.Usage()
-			} else {
-				// Only flags left... Call root.Run
-				c.preRun()
-				c.Run(c, argWoFlags)
-				err = nil
-			}
+			err = cmd.execute(flags)
 		}
 	}
 
