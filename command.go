@@ -378,7 +378,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 	// if commander returned and the first argument (if it exists) doesn't
 	// match the command name, return nil & error
 	if commandFound.Name() == c.Name() && len(arrs[0]) > 0 && commandFound.Name() != arrs[0] {
-		return nil, a, fmt.Errorf("unknown command %q\nRun 'help' for usage.\n", a[0])
+		return nil, a, fmt.Errorf("unknown command %q", a[0])
 	}
 
 	return commandFound, a, nil
@@ -539,10 +539,10 @@ func (c *Command) Execute() (err error) {
 	if err != nil {
 		if err == flag.ErrHelp {
 			c.Help()
+
 		} else {
 			c.Println("Error:", err.Error())
-			c.Printf("%v: invalid command %#q\n", c.Root().Name(), os.Args[1:])
-			c.Printf("Run '%v help' for usage\n", c.Root().Name())
+			c.Printf("Run '%v help' for usage.\n", c.Root().Name())
 		}
 	}
 

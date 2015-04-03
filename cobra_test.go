@@ -554,6 +554,15 @@ func TestRootNoCommandHelp(t *testing.T) {
 	}
 }
 
+func TestRootUnknownCommand(t *testing.T) {
+	r := noRRSetupTest("bogus")
+	s := "Error: unknown command \"bogus\"\nRun 'cobra-test help' for usage.\n"
+
+	if r.Output != s {
+		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
+	}
+}
+
 func TestFlagsBeforeCommand(t *testing.T) {
 	// short without space
 	x := fullSetupTest("-i10 echo")
