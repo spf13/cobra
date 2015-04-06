@@ -422,19 +422,18 @@ func (c *Command) execute(a []string) (err error) {
 		c.Usage()
 		r.SetOutput(out)
 		return err
-	} else {
-		// If help is called, regardless of other flags, we print that.
-		// Print help also if c.Run is nil.
-		if c.helpFlagVal || !c.Runnable() {
-			c.Help()
-			return nil
-		}
-
-		c.preRun()
-		argWoFlags := c.Flags().Args()
-		c.Run(c, argWoFlags)
+	}
+	// If help is called, regardless of other flags, we print that.
+	// Print help also if c.Run is nil.
+	if c.helpFlagVal || !c.Runnable() {
+		c.Help()
 		return nil
 	}
+
+	c.preRun()
+	argWoFlags := c.Flags().Args()
+	c.Run(c, argWoFlags)
+	return nil
 }
 
 func (c *Command) preRun() {
