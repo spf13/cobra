@@ -23,30 +23,41 @@ const strtwoParentHelp = "help message for parent flag strtwo"
 const strtwoChildHelp = "help message for child flag strtwo"
 
 var cmdPrint = &Command{
-	Use:   "print [string to print]",
-	Short: "Print anything to the screen",
-	Long:  `an absolutely utterly useless command for testing.`,
+	Use:       "print [string to print]",
+	Short:     "Print anything to the screen",
+	Long:      `an absolutely utterly useless command for testing.`,
+	TakesArgs: true,
 	Run: func(cmd *Command, args []string) {
 		tp = args
 	},
 }
 
 var cmdEcho = &Command{
-	Use:     "echo [string to echo]",
-	Aliases: []string{"say"},
-	Short:   "Echo anything to the screen",
-	Long:    `an utterly useless command for testing.`,
+	Use:       "echo [string to echo]",
+	Aliases:   []string{"say"},
+	Short:     "Echo anything to the screen",
+	Long:      `an utterly useless command for testing.`,
+	TakesArgs: true,
 	Run: func(cmd *Command, args []string) {
 		te = args
 	},
 }
 
 var cmdTimes = &Command{
-	Use:   "times [# times] [string to echo]",
-	Short: "Echo anything to the screen more times",
-	Long:  `a slightly useless command for testing.`,
+	Use:       "times [# times] [string to echo]",
+	Short:     "Echo anything to the screen more times",
+	Long:      `a slightly useless command for testing.`,
+	TakesArgs: true,
 	Run: func(cmd *Command, args []string) {
 		tt = args
+	},
+}
+
+var cmdNoArgs = &Command{
+	Use:   "noargs [because they don't work!!]",
+	Short: "Runnable, but won't take non-flag args",
+	Long:  `something in long form, just because.`,
+	Run: func(cmd *Command, args []string) {
 	},
 }
 
@@ -93,6 +104,7 @@ func flagInit() {
 	cmdEcho.ResetFlags()
 	cmdPrint.ResetFlags()
 	cmdTimes.ResetFlags()
+	cmdNoArgs.ResetFlags()
 	cmdRootNoRun.ResetFlags()
 	cmdRootSameName.ResetFlags()
 	cmdRootWithRun.ResetFlags()
@@ -187,7 +199,7 @@ func fullTester(c *Command, input string) resulter {
 	// Testing flag with invalid input
 	c.SetOutput(buf)
 	cmdEcho.AddCommand(cmdTimes)
-	c.AddCommand(cmdPrint, cmdEcho)
+	c.AddCommand(cmdPrint, cmdEcho, cmdNoArgs)
 	c.SetArgs(strings.Split(input, " "))
 
 	err := c.Execute()
@@ -555,6 +567,12 @@ func TestInvalidSubcommandWhenArgsAllowed(t *testing.T) {
 	if te[0] != "invalid-sub" {
 		t.Errorf("Subcommand didn't work...")
 	}
+}
+
+func TestInvalidSubcommandWhenArgsDisallowed(t *testing.T) {
+	x := fullSetupTest("noargs invalid-sub")
+
+	checkResultContains(t, x, "Error: unknown command \"invalid-sub\"\n")
 }
 
 func TestRootFlags(t *testing.T) {

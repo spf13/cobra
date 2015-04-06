@@ -42,6 +42,10 @@ type Command struct {
 	Long string
 	// Examples of how to use the command
 	Example string
+	// Accepts arguments that are not defined in flags. This makes subcommand checking and
+	// error reporting less strict as we can cannot tell if `command [arg]` is an incorrect
+	// subcommand or just an argument this command will process.
+	TakesArgs bool
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
@@ -377,8 +381,8 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	commandFound, a := innerfind(c, arrs)
 
-	// If we matched on the root, but we asked for a subcommand, return an error
-	if commandFound.Name() == c.Name() && len(stripFlags(arrs, c)) > 0 && commandFound.Name() != arrs[0] {
+	// Reject if there are args left and the command doesn't take args
+	if commandFound.TakesArgs == false && len(stripFlags(a, commandFound)) > 0 {
 		return nil, a, fmt.Errorf("unknown command %q", a[0])
 	}
 
@@ -517,7 +521,8 @@ func (c *Command) initHelp() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
     Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			Run: c.HelpFunc(),
+			TakesArgs: true,
+			Run:       c.HelpFunc(),
 		}
 	}
 	c.AddCommand(c.helpCommand)
