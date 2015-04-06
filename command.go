@@ -18,11 +18,13 @@ package cobra
 import (
 	"bytes"
 	"fmt"
+	"github.com/inconshreveable/mousetrap"
+	flag "github.com/spf13/pflag"
 	"io"
 	"os"
+	"runtime"
 	"strings"
-
-	flag "github.com/spf13/pflag"
+	"time"
 )
 
 // Command is just that, a command for your application.
@@ -463,6 +465,14 @@ func (c *Command) Execute() (err error) {
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
 		return c.Root().Execute()
+	}
+
+	if EnableWindowsMouseTrap && runtime.GOOS == "windows" {
+		if mousetrap.StartedByExplorer() {
+			c.Print(MousetrapHelpText)
+			time.Sleep(5 * time.Second)
+			os.Exit(1)
+		}
 	}
 
 	// initialize help as the last point possible to allow for user
