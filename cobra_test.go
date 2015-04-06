@@ -3,11 +3,13 @@ package cobra
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
 
 var _ = fmt.Println
+var _ = os.Stderr
 
 var tp, te, tt, t1 []string
 var flagb1, flagb2, flagb3, flagbr, flagbp bool
@@ -22,7 +24,7 @@ const strtwoChildHelp = "help message for child flag strtwo"
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
 	Short: "Print anything to the screen",
-	Long:  `an utterly useless command for testing.`,
+	Long:  `an absolutely utterly useless command for testing.`,
 	Run: func(cmd *Command, args []string) {
 		tp = args
 	},
@@ -41,7 +43,7 @@ var cmdEcho = &Command{
 var cmdTimes = &Command{
 	Use:   "times [# times] [string to echo]",
 	Short: "Echo anything to the screen more times",
-	Long:  `an slightly useless command for testing.`,
+	Long:  `a slightly useless command for testing.`,
 	Run: func(cmd *Command, args []string) {
 		tt = args
 	},
@@ -417,6 +419,20 @@ func TestTrailingCommandFlags(t *testing.T) {
 	}
 }
 
+func TestInvalidSubCommandFlags(t *testing.T) {
+	cmd := initializeWithRootCmd()
+	cmd.AddCommand(cmdTimes)
+
+	result := simpleTester(cmd, "times --inttwo=2 --badflag=bar")
+
+	checkResultContains(t, result, "unknown flag: --badflag")
+
+	if strings.Contains(result.Output, "unknown flag: --inttwo") {
+		t.Errorf("invalid --badflag flag shouldn't fail on 'unknown' --inttwo flag")
+	}
+
+}
+
 func TestPersistentFlags(t *testing.T) {
 	fullSetupTest("echo -s something -p more here")
 
@@ -470,6 +486,53 @@ func TestRunnableRootCommand(t *testing.T) {
 
 	if rootcalled != true {
 		t.Errorf("Root Function was not called")
+	}
+}
+
+func TestRunnableRootCommandNilInput(t *testing.T) {
+	empty_arg := make([]string, 0)
+	c := initializeWithRootCmd()
+
+	buf := new(bytes.Buffer)
+	// Testing flag with invalid input
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(empty_arg)
+
+	c.Execute()
+
+	if rootcalled != true {
+		t.Errorf("Root Function was not called")
+	}
+}
+
+func TestRunnableRootCommandEmptyInput(t *testing.T) {
+	args := make([]string, 3)
+	args[0] = ""
+	args[1] = "--introot=12"
+	args[2] = ""
+	c := initializeWithRootCmd()
+
+	buf := new(bytes.Buffer)
+	// Testing flag with invalid input
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(args)
+
+	c.Execute()
+
+	if rootcalled != true {
+		t.Errorf("Root Function was not called.\n\nOutput was:\n\n%s\n", buf)
+	}
+}
+
+func TestInvalidSubcommandWhenArgsAllowed(t *testing.T) {
+	fullSetupTest("echo invalid-sub")
+
+	if te[0] != "invalid-sub" {
+		t.Errorf("Subcommand didn't work...")
 	}
 }
 
@@ -531,6 +594,24 @@ func TestFlagAccess(t *testing.T) {
 	if inherited.Lookup("strtwo") != nil {
 		t.Errorf("InheritedFlags shouldn not contain overwritten flag strtwo")
 
+	}
+}
+
+func TestNoNRunnableRootCommandNilInput(t *testing.T) {
+	args := make([]string, 0)
+	c := initialize()
+
+	buf := new(bytes.Buffer)
+	// Testing flag with invalid input
+	c.SetOutput(buf)
+	cmdEcho.AddCommand(cmdTimes)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.SetArgs(args)
+
+	c.Execute()
+
+	if !strings.Contains(buf.String(), cmdRootNoRun.Long) {
+		t.Errorf("Expected to get help output, Got: \n %s", buf)
 	}
 }
 
