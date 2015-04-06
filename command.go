@@ -223,7 +223,7 @@ Aliases:
 
 Examples:
 {{ .Example }}
-{{end}}{{ if .HasSubCommands}}
+{{end}}{{ if .HasRunnableSubCommands}}
 
 Available Commands: {{range .Commands}}{{if .Runnable}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
@@ -231,8 +231,8 @@ Available Commands: {{range .Commands}}{{if .Runnable}}
 {{ if .HasLocalFlags}}Flags:
 {{.LocalFlags.FlagUsages}}{{end}}
 {{ if .HasInheritedFlags}}Global Flags:
-{{.InheritedFlags.FlagUsages}}{{end}}{{if .HasParent}}{{if and (gt .Commands 0) (gt .Parent.Commands 1) }}
-Additional help topics: {{if gt .Commands 0 }}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if gt .Parent.Commands 1 }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}{{end}}
+{{.InheritedFlags.FlagUsages}}{{end}}{{if or (.HasHelpSubCommands) (.HasRunnableSiblings)}}
+Additional help topics: {{if .HasHelpSubCommands}}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
 Use "{{.Root.Name}} help [command]" for more information about a command.
@@ -742,6 +742,37 @@ func (c *Command) Runnable() bool {
 // Determine if the command has children commands
 func (c *Command) HasSubCommands() bool {
 	return len(c.commands) > 0
+}
+
+func (c *Command) HasRunnableSiblings() bool {
+	if !c.HasParent() {
+		return false
+	}
+	for _, sub := range c.parent.commands {
+		if sub.Runnable() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Command) HasHelpSubCommands() bool {
+	for _, sub := range c.commands {
+		if !sub.Runnable() {
+			return true
+		}
+	}
+	return false
+}
+
+// Determine if the command has runnable children commands
+func (c *Command) HasRunnableSubCommands() bool {
+	for _, sub := range c.commands {
+		if sub.Runnable() {
+			return true
+		}
+	}
+	return false
 }
 
 // Determine if the command is a child command
