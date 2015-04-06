@@ -476,20 +476,9 @@ func (c *Command) Execute() (err error) {
 		args = c.args
 	}
 
-	if len(args) == 0 {
-		// Only the executable is called and the root is runnable, run it
-		if c.Runnable() {
-			err = c.execute([]string(nil))
-		} else {
-			c.Help()
-		}
-	} else {
-		cmd, flags, e := c.Find(args)
-		if e != nil {
-			err = e
-		} else {
-			err = cmd.execute(flags)
-		}
+	cmd, flags, err := c.Find(args)
+	if err == nil {
+		err = cmd.execute(flags)
 	}
 
 	if err != nil {
