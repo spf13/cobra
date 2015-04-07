@@ -72,6 +72,12 @@ var cmdRootWithRun = &Command{
 	},
 }
 
+var cmdSubNoRun = &Command{
+	Use:   "subnorun",
+	Short: "A subcommand without a Run function",
+	Long:  "A long output about a subcommand without a Run function",
+}
+
 var cmdVersion1 = &Command{
 	Use:   "version",
 	Short: "Print the version number",
@@ -97,6 +103,7 @@ func flagInit() {
 	cmdRootNoRun.ResetFlags()
 	cmdRootSameName.ResetFlags()
 	cmdRootWithRun.ResetFlags()
+	cmdSubNoRun.ResetFlags()
 	cmdRootNoRun.PersistentFlags().StringVarP(&flags2a, "strtwo", "t", "two", strtwoParentHelp)
 	cmdEcho.Flags().IntVarP(&flagi1, "intone", "i", 123, "help message for flag intone")
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
@@ -119,6 +126,7 @@ func commandInit() {
 	cmdRootNoRun.ResetCommands()
 	cmdRootSameName.ResetCommands()
 	cmdRootWithRun.ResetCommands()
+	cmdSubNoRun.ResetCommands()
 }
 
 func initialize() *Command {
@@ -188,7 +196,7 @@ func fullTester(c *Command, input string) resulter {
 	// Testing flag with invalid input
 	c.SetOutput(buf)
 	cmdEcho.AddCommand(cmdTimes)
-	c.AddCommand(cmdPrint, cmdEcho)
+	c.AddCommand(cmdPrint, cmdEcho, cmdSubNoRun)
 	c.SetArgs(strings.Split(input, " "))
 
 	err := c.Execute()
@@ -500,11 +508,14 @@ func TestPersistentFlags(t *testing.T) {
 }
 
 func TestHelpCommand(t *testing.T) {
-	c := fullSetupTest("help echo")
-	checkResultContains(t, c, cmdEcho.Long)
+	x := fullSetupTest("help")
+	checkResultContains(t, x, cmdRootWithRun.Long)
 
-	r := fullSetupTest("help echo times")
-	checkResultContains(t, r, cmdTimes.Long)
+	x = fullSetupTest("help echo")
+	checkResultContains(t, x, cmdEcho.Long)
+
+	x = fullSetupTest("help echo times")
+	checkResultContains(t, x, cmdTimes.Long)
 }
 
 func TestChildCommandHelp(t *testing.T) {
@@ -512,6 +523,11 @@ func TestChildCommandHelp(t *testing.T) {
 	checkResultContains(t, c, strtwoParentHelp)
 	r := noRRSetupTest("echo times --help")
 	checkResultContains(t, r, strtwoChildHelp)
+}
+
+func TestNonRunChildHelp(t *testing.T) {
+	x := noRRSetupTest("subnorun")
+	checkResultContains(t, x, cmdSubNoRun.Long)
 }
 
 func TestRunnableRootCommand(t *testing.T) {
