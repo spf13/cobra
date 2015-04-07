@@ -199,6 +199,9 @@ func postscript(out *bytes.Buffer, name string) {
 func writeCommands(cmd *Command, out *bytes.Buffer) {
 	fmt.Fprintf(out, "    commands=()\n")
 	for _, c := range cmd.Commands() {
+		if len(c.Deprecated) > 0 {
+			continue
+		}
 		fmt.Fprintf(out, "    commands+=(%q)\n", c.Name())
 	}
 	fmt.Fprintf(out, "\n")
@@ -291,6 +294,9 @@ func writeRequiredNoun(cmd *Command, out *bytes.Buffer) {
 
 func gen(cmd *Command, out *bytes.Buffer) {
 	for _, c := range cmd.Commands() {
+		if len(c.Deprecated) > 0 {
+			continue
+		}
 		gen(c, out)
 	}
 	commandName := cmd.CommandPath()
