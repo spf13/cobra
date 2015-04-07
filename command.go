@@ -371,9 +371,6 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 				// only accept a single prefix match - multiple matches would be ambiguous
 				if len(matches) == 1 {
 					return innerfind(matches[0], argsMinusX(args, argsWOflags[0]))
-				} else if len(matches) == 0 && len(args) > 0 && args[0] == "help" {
-					// special case help command
-					return innerfind(c, argsMinusX(append(args, "--help"), argsWOflags[0]))
 				}
 			}
 		}
