@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -196,15 +197,26 @@ func fullTester(c *Command, input string) resulter {
 	return resulter{err, output, c}
 }
 
+func logErr(t *testing.T, found, expected string) {
+	out := new(bytes.Buffer)
+
+	_, _, line, ok := runtime.Caller(2)
+	if ok {
+		fmt.Fprintf(out, "Line: %d ", line)
+	}
+	fmt.Fprintf(out, "Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
+	t.Errorf(out.String())
+}
+
 func checkResultContains(t *testing.T, x resulter, check string) {
 	if !strings.Contains(x.Output, check) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", check, x.Output)
+		logErr(t, x.Output, check)
 	}
 }
 
 func checkResultOmits(t *testing.T, x resulter, check string) {
 	if strings.Contains(x.Output, check) {
-		t.Errorf("Unexpected response.\nExpecting to omit: \n %q\nGot:\n %q\n", check, x.Output)
+		logErr(t, x.Output, check)
 	}
 }
 
@@ -214,7 +226,7 @@ func checkOutputContains(t *testing.T, c *Command, check string) {
 	c.Execute()
 
 	if !strings.Contains(buf.String(), check) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", check, buf.String())
+		logErr(t, buf.String(), check)
 	}
 }
 
