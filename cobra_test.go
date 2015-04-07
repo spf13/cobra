@@ -37,8 +37,17 @@ var cmdEcho = &Command{
 	Aliases: []string{"say"},
 	Short:   "Echo anything to the screen",
 	Long:    `an utterly useless command for testing.`,
+	Example: "Just run cobra-test echo",
 	Run: func(cmd *Command, args []string) {
 		te = args
+	},
+}
+
+var cmdEchoSub = &Command{
+	Use:   "echosub [string to print]",
+	Short: "second sub command for echo",
+	Long:  `an absolutely utterly useless command for testing gendocs!.`,
+	Run: func(cmd *Command, args []string) {
 	},
 }
 
