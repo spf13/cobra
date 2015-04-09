@@ -2,7 +2,7 @@
 
 A Commander for modern go CLI interactions
 
-[![Build Status](https://travis-ci.org/spf13/cobra.png)](https://travis-ci.org/spf13/cobra)
+[![Build Status](https://travis-ci.org/spf13/cobra.svg)](https://travis-ci.org/spf13/cobra)
 
 ## Overview
 
