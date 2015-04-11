@@ -44,6 +44,10 @@ type Command struct {
 	Long string
 	// Examples of how to use the command
 	Example string
+	// List of all valid non-flag arguments, used for bash completions *TODO* actually validate these
+	ValidArgs []string
+	// Custom functions used by the bash autocompletion generator
+	BashCompletionFunction string
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
