@@ -27,6 +27,14 @@ import (
 	"time"
 )
 
+type UnknownCommandError struct {
+  commandStr string
+}
+
+func (u *UnknownCommandError) Error() string {
+  return fmt.Sprintf("unknown command %q\nRun 'help' for usage.\n", u.commandStr)
+}
+
 // Command is just that, a command for your application.
 // eg.  'go run' ... 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -386,7 +394,7 @@ func (c *Command) Find(arrs []string) (*Command, []string, error) {
 
 	// If we matched on the root, but we asked for a subcommand, return an error
 	if commandFound.Name() == c.Name() && len(stripFlags(arrs, c)) > 0 && commandFound.Name() != arrs[0] {
-		return nil, a, fmt.Errorf("unknown command %q", a[0])
+		return nil, a, &UnknownCommandError{a[0]}
 	}
 
 	return commandFound, a, nil
@@ -500,7 +508,20 @@ func (c *Command) Execute() (err error) {
 			c.Help()
 		}
 	} else {
+<<<<<<< HEAD
 		cmd, flags, e := c.Find(args)
+=======
+		err = c.findAndExecute(args)
+	}
+
+	 _, isNotFound := err.(*UnknownCommandError)
+
+        // Now handle the case where the root is runnable and only flags are provided
+        if err != nil && isNotFound && c.Runnable() {
+		// This is pretty much a custom version of the *Command.execute method
+		// with a few differences because it's the final command (no fall back)
+		e := c.ParseFlags(args)
+>>>>>>> Fix a bug where errors were masked.
 		if e != nil {
 			err = e
 		} else {
