@@ -432,19 +432,18 @@ func (c *Command) execute(a []string) (err error) {
 		c.Usage()
 		r.SetOutput(out)
 		return err
-	} else {
-		// If help is called, regardless of other flags, we print that.
-		// Print help also if c.Run is nil.
-		if c.helpFlagVal || !c.Runnable() {
-			c.Help()
-			return nil
-		}
-
-		c.preRun()
-		argWoFlags := c.Flags().Args()
-		c.Run(c, argWoFlags)
+	}
+	// If help is called, regardless of other flags, we print that.
+	// Print help also if c.Run is nil.
+	if c.helpFlagVal || !c.Runnable() {
+		c.Help()
 		return nil
 	}
+
+	c.preRun()
+	argWoFlags := c.Flags().Args()
+	c.Run(c, argWoFlags)
+	return nil
 }
 
 func (c *Command) preRun() {
@@ -495,20 +494,9 @@ func (c *Command) Execute() (err error) {
 		args = c.args
 	}
 
-	if len(args) == 0 {
-		// Only the executable is called and the root is runnable, run it
-		if c.Runnable() {
-			err = c.execute([]string(nil))
-		} else {
-			c.Help()
-		}
-	} else {
-		cmd, flags, e := c.Find(args)
-		if e != nil {
-			err = e
-		} else {
-			err = cmd.execute(flags)
-		}
+	cmd, flags, err := c.Find(args)
+	if err == nil {
+		err = cmd.execute(flags)
 	}
 
 	if err != nil {
