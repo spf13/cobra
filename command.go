@@ -56,18 +56,22 @@ type Command struct {
 	pflags *flag.FlagSet
 	// Flags that are declared specifically by this command (not inherited).
 	lflags *flag.FlagSet
-	// Run runs the command.
-	// The args are the arguments after the command name.
-	Run func(cmd *Command, args []string)
-	// PreRun runs the command after the flags are parsed and before run.
-	// The args are the arguments after the command name.
-	PreRun func(cmd *Command, args []string)
-	// PostRun runs the command after run.
-	// The args are the arguments after the command name.
-	PostRun func(cmd *Command, args []string)
-	// PreRun which children of this command will inherit.
+	// The *Run functions are executed in the following order:
+	//   * PersistentPreRun()
+	//   * PreRun()
+	//   * Run()
+	//   * PostRun()
+	//   * PersistentPostRun()
+	// All functions get the same args, the arguments after the command name
+	// PersistentPreRun: children of this command will inherit and execute
 	PersistentPreRun func(cmd *Command, args []string)
-	// PostRun which children of this command will inherit.
+	// PreRun: children of this command will not inherit.
+	PreRun func(cmd *Command, args []string)
+	// Run: Typically the actual work function. Most commands will only implement this
+	Run func(cmd *Command, args []string)
+	// PostRun: run after the Run command.
+	PostRun func(cmd *Command, args []string)
+	// PersistentPostRun: children of this command will inherit and execute after PostRun
 	PersistentPostRun func(cmd *Command, args []string)
 	// Commands is the list of commands supported by this program.
 	commands []*Command
