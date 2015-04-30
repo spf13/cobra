@@ -56,9 +56,23 @@ type Command struct {
 	pflags *flag.FlagSet
 	// Flags that are declared specifically by this command (not inherited).
 	lflags *flag.FlagSet
-	// Run runs the command.
-	// The args are the arguments after the command name.
+	// The *Run functions are executed in the following order:
+	//   * PersistentPreRun()
+	//   * PreRun()
+	//   * Run()
+	//   * PostRun()
+	//   * PersistentPostRun()
+	// All functions get the same args, the arguments after the command name
+	// PersistentPreRun: children of this command will inherit and execute
+	PersistentPreRun func(cmd *Command, args []string)
+	// PreRun: children of this command will not inherit.
+	PreRun func(cmd *Command, args []string)
+	// Run: Typically the actual work function. Most commands will only implement this
 	Run func(cmd *Command, args []string)
+	// PostRun: run after the Run command.
+	PostRun func(cmd *Command, args []string)
+	// PersistentPostRun: children of this command will inherit and execute after PostRun
+	PersistentPostRun func(cmd *Command, args []string)
 	// Commands is the list of commands supported by this program.
 	commands []*Command
 	// Parent Command for this command
@@ -448,7 +462,23 @@ func (c *Command) execute(a []string) (err error) {
 
 	c.preRun()
 	argWoFlags := c.Flags().Args()
+
+	if c.PersistentPreRun != nil {
+		c.PersistentPreRun(c, argWoFlags)
+	}
+	if c.PreRun != nil {
+		c.PreRun(c, argWoFlags)
+	}
+
 	c.Run(c, argWoFlags)
+
+	if c.PostRun != nil {
+		c.PostRun(c, argWoFlags)
+	}
+	if c.PersistentPostRun != nil {
+		c.PersistentPostRun(c, argWoFlags)
+	}
+
 	return nil
 }
 
@@ -529,7 +559,9 @@ func (c *Command) initHelp() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
     Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			Run: c.HelpFunc(),
+			Run:               c.HelpFunc(),
+			PersistentPreRun:  func(cmd *Command, args []string) {},
+			PersistentPostRun: func(cmd *Command, args []string) {},
 		}
 	}
 	c.AddCommand(c.helpCommand)
@@ -569,6 +601,14 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			c.commandsMaxNameLen = nameLen
 		}
 		c.commands = append(c.commands, x)
+
+		// Pass on peristent pre/post functions to children
+		if x.PersistentPreRun == nil {
+			x.PersistentPreRun = c.PersistentPreRun
+		}
+		if x.PersistentPostRun == nil {
+			x.PersistentPostRun = c.PersistentPostRun
+		}
 	}
 }
 
@@ -942,7 +982,7 @@ func (c *Command) mergePersistentFlags() {
 		c.PersistentFlags().VisitAll(addtolocal)
 	}
 	rmerge = func(x *Command) {
-		if ! x.HasParent() {
+		if !x.HasParent() {
 			flag.CommandLine.VisitAll(func(f *flag.Flag) {
 				if x.PersistentFlags().Lookup(f.Name) == nil {
 					x.PersistentFlags().AddFlag(f)
