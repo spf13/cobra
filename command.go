@@ -48,6 +48,8 @@ type Command struct {
 	ValidArgs []string
 	// Custom functions used by the bash autocompletion generator
 	BashCompletionFunction string
+	// Is this command deprecated and should print this string when used?
+	Deprecated string
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
@@ -231,7 +233,7 @@ Examples:
 {{ .Example }}
 {{end}}{{ if .HasRunnableSubCommands}}
 
-Available Commands: {{range .Commands}}{{if .Runnable}}
+Available Commands: {{range .Commands}}{{if and (.Runnable) (not .Deprecated)}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
 {{end}}
 {{ if .HasLocalFlags}}Flags:
@@ -239,7 +241,7 @@ Available Commands: {{range .Commands}}{{if .Runnable}}
 {{ if .HasInheritedFlags}}Global Flags:
 {{.InheritedFlags.FlagUsages}}{{end}}{{if or (.HasHelpSubCommands) (.HasRunnableSiblings)}}
 Additional help topics:
-{{if .HasHelpSubCommands}}{{range .Commands}}{{if not .Runnable}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if .Runnable}}{{if not (eq .Name $cmd.Name) }}
+{{if .HasHelpSubCommands}}{{range .Commands}}{{if and (not .Runnable) (not .Deprecated)}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if and (not .Runnable) (not .Deprecated)}}{{if not (eq .Name $cmd.Name) }}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
 Use "{{.Root.Name}} help [command]" for more information about a command.
@@ -412,6 +414,10 @@ func (c *Command) Root() *Command {
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
+	}
+
+	if len(c.Deprecated) > 0 {
+		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
 	err = c.ParseFlags(a)

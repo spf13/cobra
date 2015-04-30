@@ -51,6 +51,15 @@ var cmdEchoSub = &Command{
 	},
 }
 
+var cmdDeprecated = &Command{
+	Use:        "deprecated [can't do anything here]",
+	Short:      "A command which is deprecated",
+	Long:       `an absolutely utterly useless command for testing deprecation!.`,
+	Deprecated: "Please use echo instead",
+	Run: func(cmd *Command, args []string) {
+	},
+}
+
 var cmdTimes = &Command{
 	Use:   "times [# times] [string to echo]",
 	Short: "Echo anything to the screen more times",
@@ -205,7 +214,7 @@ func fullTester(c *Command, input string) resulter {
 	// Testing flag with invalid input
 	c.SetOutput(buf)
 	cmdEcho.AddCommand(cmdTimes)
-	c.AddCommand(cmdPrint, cmdEcho, cmdSubNoRun)
+	c.AddCommand(cmdPrint, cmdEcho, cmdSubNoRun, cmdDeprecated)
 	c.SetArgs(strings.Split(input, " "))
 
 	err := c.Execute()
@@ -811,4 +820,10 @@ func TestReplaceCommandWithRemove(t *testing.T) {
 	if versionUsed != 2 {
 		t.Errorf("Replacing command should have been called but didn't\n")
 	}
+}
+
+func TestDeprecatedSub(t *testing.T) {
+	c := fullSetupTest("deprecated")
+
+	checkResultContains(t, c, cmdDeprecated.Deprecated)
 }
