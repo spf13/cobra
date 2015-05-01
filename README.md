@@ -1,5 +1,7 @@
 # Cobra
 
+[![Join the chat at https://gitter.im/spf13/cobra](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/cobra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 A Commander for modern go CLI interactions
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg)](https://travis-ci.org/spf13/cobra)
