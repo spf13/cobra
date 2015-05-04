@@ -93,6 +93,13 @@ __handle_reply()
     fi
 }
 
+# The arguments should be in the form "ext1|ext2|extn"
+__handle_filename_extension_flag()
+{
+    local ext="$1"
+    _filedir "@(${ext})"
+}
+
 __handle_flag()
 {
     __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
@@ -213,7 +220,7 @@ func writeFlagHandler(name string, annotations map[string][]string, out *bytes.B
 			fmt.Fprintf(out, "    flags_with_completion+=(%q)\n", name)
 
 			ext := strings.Join(value, "|")
-			ext = "_filedir '@(" + ext + ")'"
+			ext = "__handle_filename_extension_flag " + ext
 			fmt.Fprintf(out, "    flags_completion+=(%q)\n", ext)
 		}
 	}
