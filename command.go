@@ -463,8 +463,11 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 	argWoFlags := c.Flags().Args()
 
-	if c.PersistentPreRun != nil {
-		c.PersistentPreRun(c, argWoFlags)
+	for p := c; p != nil; p = p.Parent() {
+		if p.PersistentPreRun != nil {
+			p.PersistentPreRun(c, argWoFlags)
+			break
+		}
 	}
 	if c.PreRun != nil {
 		c.PreRun(c, argWoFlags)
@@ -475,8 +478,11 @@ func (c *Command) execute(a []string) (err error) {
 	if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
 	}
-	if c.PersistentPostRun != nil {
-		c.PersistentPostRun(c, argWoFlags)
+	for p := c; p != nil; p = p.Parent() {
+		if p.PersistentPostRun != nil {
+			p.PersistentPostRun(c, argWoFlags)
+			break
+		}
 	}
 
 	return nil
@@ -601,14 +607,6 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			c.commandsMaxNameLen = nameLen
 		}
 		c.commands = append(c.commands, x)
-
-		// Pass on peristent pre/post functions to children
-		if x.PersistentPreRun == nil {
-			x.PersistentPreRun = c.PersistentPreRun
-		}
-		if x.PersistentPostRun == nil {
-			x.PersistentPostRun = c.PersistentPostRun
-		}
 	}
 }
 

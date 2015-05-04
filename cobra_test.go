@@ -869,3 +869,20 @@ func TestPreRun(t *testing.T) {
 		t.Error("Wrong *Pre functions called!")
 	}
 }
+
+// Check if cmdEchoSub gets PersistentPreRun from rootCmd even if is added last
+func TestPeristentPreRunPropagation(t *testing.T) {
+	rootCmd := initialize()
+
+	// First add the cmdEchoSub to cmdPrint
+	cmdPrint.AddCommand(cmdEchoSub)
+	// Now add cmdPrint to rootCmd
+	rootCmd.AddCommand(cmdPrint)
+
+	rootCmd.SetArgs(strings.Split("print echosub lala", " "))
+	rootCmd.Execute()
+
+	if rootPersPre == nil || len(rootPersPre) == 0 || rootPersPre[0] != "lala" {
+		t.Error("RootCmd PersistentPreRun not called but should have been")
+	}
+}
