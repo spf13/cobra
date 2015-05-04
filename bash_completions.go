@@ -22,7 +22,7 @@ func preamble(out *bytes.Buffer) {
 __debug()
 {
     if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
-        echo "$*" >> ${BASH_COMP_DEBUG_FILE}
+        echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }
 
@@ -173,10 +173,9 @@ __handle_word()
 func postscript(out *bytes.Buffer, name string) {
 	fmt.Fprintf(out, "__start_%s()\n", name)
 	fmt.Fprintf(out, `{
-    local cur prev words cword split
+    local cur prev words cword
     _init_completion -s || return
 
-    local completions_func
     local c=0
     local flags=()
     local two_word_flags=()
