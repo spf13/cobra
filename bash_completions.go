@@ -213,7 +213,7 @@ func writeFlagHandler(name string, annotations map[string][]string, out *bytes.B
 			fmt.Fprintf(out, "    flags_with_completion+=(%q)\n", name)
 
 			ext := strings.Join(value, "|")
-			ext = "_filedir '@(" + ext + ")'"
+			ext = "_filedir " + ext
 			fmt.Fprintf(out, "    flags_completion+=(%q)\n", ext)
 		}
 	}
