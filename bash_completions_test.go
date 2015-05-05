@@ -76,7 +76,7 @@ func TestBashCompletions(t *testing.T) {
 	// check for required nouns
 	check(t, str, `must_have_one_noun+=("pods")`)
 	// check for filename extention flags
-	check(t, str, `flags_completion+=("_filedir '@(json|yaml|yml)'")`)
+	check(t, str, `flags_completion+=("__handle_filename_extension_flag json|yaml|yml")`)
 
 	checkOmit(t, str, cmdDeprecated.Name())
 }
