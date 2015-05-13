@@ -481,7 +481,7 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid input should generate error")
 	}
 
-	if !strings.Contains(r.Output, "invalid argument \"10E\" for -i10E") {
+	if !strings.Contains(r.Output, "invalid argument \"10E\" for i10E") {
 		t.Errorf("Wrong error message displayed, \n %s", r.Output)
 	}
 }
@@ -777,7 +777,7 @@ func TestFlagsBeforeCommand(t *testing.T) {
 
 	// With parsing error properly reported
 	x = fullSetupTest("-i10E echo")
-	if !strings.Contains(x.Output, "invalid argument \"10E\" for -i10E") {
+	if !strings.Contains(x.Output, "invalid argument \"10E\" for i10E") {
 		t.Errorf("Wrong error message displayed, \n %s", x.Output)
 	}
 
