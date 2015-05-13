@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -12,7 +13,7 @@ import (
 var _ = fmt.Println
 var _ = os.Stderr
 
-var tp, te, tt, t1 []string
+var tp, te, tt, t1, tr []string
 var rootPersPre, echoPre, echoPersPre, timesPersPre []string
 var flagb1, flagb2, flagb3, flagbr, flagbp bool
 var flags1, flags2a, flags2b, flags3 string
@@ -99,6 +100,7 @@ var cmdRootWithRun = &Command{
 	Short: "The root can run it's own function",
 	Long:  "The root description for help",
 	Run: func(cmd *Command, args []string) {
+		tr = args
 		rootcalled = true
 	},
 }
@@ -181,7 +183,7 @@ func initializeWithSameName() *Command {
 
 func initializeWithRootCmd() *Command {
 	cmdRootWithRun.ResetCommands()
-	tt, tp, te, rootcalled = nil, nil, nil, false
+	tt, tp, te, tr, rootcalled = nil, nil, nil, nil, false
 	flagInit()
 	cmdRootWithRun.Flags().BoolVarP(&flagbr, "boolroot", "b", false, "help message for flag boolroot")
 	cmdRootWithRun.Flags().IntVarP(&flagir, "introot", "i", 321, "help message for flag introot")
@@ -494,7 +496,7 @@ func TestTrailingCommandFlags(t *testing.T) {
 	}
 }
 
-func TestInvalidSubCommandFlags(t *testing.T) {
+func TestInvalidSubcommandFlags(t *testing.T) {
 	cmd := initializeWithRootCmd()
 	cmd.AddCommand(cmdTimes)
 
@@ -508,7 +510,7 @@ func TestInvalidSubCommandFlags(t *testing.T) {
 
 }
 
-func TestSubCommandArgEvaluation(t *testing.T) {
+func TestSubcommandArgEvaluation(t *testing.T) {
 	cmd := initializeWithRootCmd()
 
 	first := &Command{
@@ -815,6 +817,31 @@ func TestRemoveCommand(t *testing.T) {
 	x := fullTester(c, "version")
 	if x.Error == nil {
 		t.Errorf("Removed command should not have been called\n")
+		return
+	}
+}
+
+func TestCommandWithoutSubcommands(t *testing.T) {
+	c := initializeWithRootCmd()
+
+	x := simpleTester(c, "")
+	if x.Error != nil {
+		t.Errorf("Calling command without subcommands should not have error: %v", x.Error)
+		return
+	}
+}
+
+func TestCommandWithoutSubcommandsWithArg(t *testing.T) {
+	c := initializeWithRootCmd()
+	expectedArgs := []string{"arg"}
+
+	x := simpleTester(c, "arg")
+	if x.Error != nil {
+		t.Errorf("Calling command without subcommands but with arg should not have error: %v", x.Error)
+		return
+	}
+	if !reflect.DeepEqual(expectedArgs, tr) {
+		t.Errorf("Calling command without subcommands but with arg has wrong args: expected: %v, actual: %v", expectedArgs, tr)
 		return
 	}
 }
