@@ -36,7 +36,7 @@ This will write the markdown doc for ONLY "cmd" into the out, buffer.
 
 ## Customize the output
 
-Both `GenMarkdown` and `GenMarkdownTree` has alternate versions with callbacks to get some control of the output:
+Both `GenMarkdown` and `GenMarkdownTree` have alternate versions with callbacks to get some control of the output:
 
 ```go
 func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
