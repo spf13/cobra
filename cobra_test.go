@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 var _ = fmt.Println
@@ -911,5 +913,30 @@ func TestPeristentPreRunPropagation(t *testing.T) {
 
 	if rootPersPre == nil || len(rootPersPre) == 0 || rootPersPre[0] != "lala" {
 		t.Error("RootCmd PersistentPreRun not called but should have been")
+	}
+}
+
+func TestGlobalNormFuncPropagation(t *testing.T) {
+	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(name)
+	}
+
+	rootCmd := initialize()
+	rootCmd.SetGlobalNormalizationFunc(normFunc)
+	if reflect.ValueOf(normFunc) != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()) {
+		t.Error("rootCmd seems to have a wrong normalization function")
+	}
+
+	// First add the cmdEchoSub to cmdPrint
+	cmdPrint.AddCommand(cmdEchoSub)
+	if cmdPrint.GlobalNormalizationFunc() != nil && cmdEchoSub.GlobalNormalizationFunc() != nil {
+		t.Error("cmdPrint and cmdEchoSub should had no normalization functions")
+	}
+
+	// Now add cmdPrint to rootCmd
+	rootCmd.AddCommand(cmdPrint)
+	if reflect.ValueOf(cmdPrint.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() ||
+		reflect.ValueOf(cmdEchoSub.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
+		t.Error("cmdPrint and cmdEchoSub should had the normalization function of rootCmd")
 	}
 }

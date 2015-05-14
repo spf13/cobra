@@ -94,6 +94,8 @@ type Command struct {
 	helpFunc      func(*Command, []string) // Help can be defined by application
 	helpCommand   *Command                 // The help command
 	helpFlagVal   bool
+	// The global normalization function that we can use on every pFlag set and children commands
+	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
 }
 
 // os.Args[1:] by default, if desired, can be overridden
@@ -150,6 +152,19 @@ func (c *Command) SetHelpCommand(cmd *Command) {
 // Can be defined by Application
 func (c *Command) SetHelpTemplate(s string) {
 	c.helpTemplate = s
+}
+
+// SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
+// The user should not have a cyclic dependency on commands.
+func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string) flag.NormalizedName) {
+	c.Flags().SetNormalizeFunc(n)
+	c.PersistentFlags().SetNormalizeFunc(n)
+	c.LocalFlags().SetNormalizeFunc(n)
+	c.globNormFunc = n
+
+	for _, command := range c.commands {
+		command.SetGlobalNormalizationFunc(n)
+	}
 }
 
 func (c *Command) UsageFunc() (f func(*Command) error) {
@@ -610,6 +625,10 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		if nameLen > c.commandsMaxNameLen {
 			c.commandsMaxNameLen = nameLen
 		}
+		// If glabal normalization function exists, update all children
+		if c.globNormFunc != nil {
+			x.SetGlobalNormalizationFunc(c.globNormFunc)
+		}
 		c.commands = append(c.commands, x)
 	}
 }
@@ -832,6 +851,11 @@ func (c *Command) HasRunnableSubCommands() bool {
 // Determine if the command is a child command
 func (c *Command) HasParent() bool {
 	return c.parent != nil
+}
+
+// GlobalNormalizationFunc returns the global normalization function or nil if doesn't exists
+func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) flag.NormalizedName {
+	return c.globNormFunc
 }
 
 // Get the complete FlagSet that applies to this command (local and persistent declared here and by all parents)
