@@ -104,8 +104,9 @@ func GenMarkdownCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string)
 }
 
 func GenMarkdownTree(cmd *Command, dir string) {
-	noOp := func(s string) string { return s }
-	GenMarkdownTreeCustom(cmd, dir, noOp, noOp)
+	identity := func(s string) string { return s }
+	emptyStr := func(s string) string { return "" }
+	GenMarkdownTreeCustom(cmd, dir, emptyStr, identity)
 }
 
 func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
