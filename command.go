@@ -381,49 +381,47 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 		return nil, nil, fmt.Errorf("Called find() on a nil Command")
 	}
 
-	// If there are no arguments, return the root command. If the root has no
-	// subcommands, args reflects arguments that should actually be passed to
-	// the root command, so also return the root command.
-	if len(args) == 0 || !c.Root().HasSubCommands() {
-		return c.Root(), args, nil
-	}
-
 	var innerfind func(*Command, []string) (*Command, []string)
 
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
-		if len(innerArgs) > 0 && c.HasSubCommands() {
-			argsWOflags := stripFlags(innerArgs, c)
-			if len(argsWOflags) > 0 {
-				matches := make([]*Command, 0)
-				for _, cmd := range c.commands {
-					if cmd.Name() == argsWOflags[0] || cmd.HasAlias(argsWOflags[0]) { // exact name or alias match
-						return innerfind(cmd, argsMinusFirstX(innerArgs, argsWOflags[0]))
-					} else if EnablePrefixMatching {
-						if strings.HasPrefix(cmd.Name(), argsWOflags[0]) { // prefix match
-							matches = append(matches, cmd)
-						}
-						for _, x := range cmd.Aliases {
-							if strings.HasPrefix(x, argsWOflags[0]) {
-								matches = append(matches, cmd)
-							}
-						}
+		argsWOflags := stripFlags(innerArgs, c)
+		if len(argsWOflags) == 0 {
+			return c, innerArgs
+		}
+		nextSubCmd := argsWOflags[0]
+		matches := make([]*Command, 0)
+		for _, cmd := range c.commands {
+			if cmd.Name() == nextSubCmd || cmd.HasAlias(nextSubCmd) { // exact name or alias match
+				return innerfind(cmd, argsMinusFirstX(innerArgs, nextSubCmd))
+			}
+			if EnablePrefixMatching {
+				if strings.HasPrefix(cmd.Name(), nextSubCmd) { // prefix match
+					matches = append(matches, cmd)
+				}
+				for _, x := range cmd.Aliases {
+					if strings.HasPrefix(x, nextSubCmd) {
+						matches = append(matches, cmd)
 					}
 				}
-
-				// only accept a single prefix match - multiple matches would be ambiguous
-				if len(matches) == 1 {
-					return innerfind(matches[0], argsMinusFirstX(innerArgs, argsWOflags[0]))
-				}
 			}
+		}
+
+		// only accept a single prefix match - multiple matches would be ambiguous
+		if len(matches) == 1 {
+			return innerfind(matches[0], argsMinusFirstX(innerArgs, argsWOflags[0]))
 		}
 
 		return c, innerArgs
 	}
 
 	commandFound, a := innerfind(c, args)
-
-	// If we matched on the root, but we asked for a subcommand, return an error
 	argsWOflags := stripFlags(a, commandFound)
+
+	// no subcommand, always take args
+	if !commandFound.HasSubCommands() {
+		return commandFound, a, nil
+	}
+	// root command with subcommands, do subcommand checking
 	if commandFound == c && len(argsWOflags) > 0 {
 		return nil, a, fmt.Errorf("unknown command %q", argsWOflags[0])
 	}
