@@ -467,6 +467,38 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
+### Specify if you command takes arguments
+
+There are multiple options for how a command can handle unknown arguments which can be set in `TakesArgs`
+- `Legacy`
+- `None`
+- `Arbitrary`
+- `ValidOnly`
+
+`Legacy` (or default) the rules are as follows:
+- root commands with no subcommands can take arbitrary arguments
+- root commands with subcommands will do subcommand validity checking
+- subcommands will always accept arbitrary arguments and do no subsubcommand validity checking
+
+`None` the command will be rejected if there are any left over arguments after parsing flags.
+
+`Arbitrary` any additional values left after parsing flags will be passed in to your `Run` function.
+
+`ValidOnly` you must define all valid (non-subcommand) arguments to your command. These are defined in a slice name ValidArgs. For example a command which only takes the argument "one" or "two" would be defined as:
+
+```go
+var HugoCmd = &cobra.Command{
+        Use:   "hugo",
+        Short: "Hugo is a very fast static site generator",
+	ValidArgs: []string{"one", "two", "three", "four"}
+	TakesArgs: cobra.ValidOnly
+        Run: func(cmd *cobra.Command, args []string) {
+            // args will only have the values one, two, three, four
+	    // or the cmd.Execute() will fail.
+        },
+    }
+```
+
 ### Bind Flags with Config
 
 You can also bind your flags with [viper](https://github.com/spf13/viper):
