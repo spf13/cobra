@@ -273,7 +273,7 @@ Additional help topics:
 {{if .HasHelpSubCommands}}{{range .Commands}}{{if and (not .Runnable) (not .Deprecated)}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if and (not .Runnable) (not .Deprecated)}}{{if not (eq .Name $cmd.Name) }}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
-Use "{{.Root.Name}} help [command]" for more information about a command.
+Use "{{.CommandPath}} [command] --help" for more information about a command.
 {{end}}`
 	}
 }
@@ -452,19 +452,13 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	err = c.ParseFlags(a)
-	if err == flag.ErrHelp {
-		c.Help()
-		return nil
-	}
 	if err != nil {
-		c.Usage()
 		return err
 	}
-	// If help is called, regardless of other flags, we print that.
-	// Print help also if c.Run is nil.
+	// If help is called, regardless of other flags, return we want help
+	// Also say we need help if c.Run is nil.
 	if c.helpFlagVal || !c.Runnable() {
-		c.Help()
-		return nil
+		return flag.ErrHelp
 	}
 
 	c.preRun()
@@ -544,13 +538,20 @@ func (c *Command) Execute() (err error) {
 	}
 
 	cmd, flags, err := c.Find(args)
-	if err == nil {
-		err = cmd.execute(flags)
-	}
-
 	if err != nil {
 		c.Println("Error:", err.Error())
-		c.Printf("Run '%v help' for usage.\n", c.Root().Name())
+		c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+		return err
+	}
+
+	err = cmd.execute(flags)
+	if err != nil {
+		if err == flag.ErrHelp {
+			cmd.Help()
+			return nil
+		}
+		c.Println(cmd.UsageString())
+		c.Println("Error:", err.Error())
 	}
 
 	return
