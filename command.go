@@ -84,7 +84,6 @@ type Command struct {
 	commandsMaxNameLen        int
 
 	flagErrorBuf *bytes.Buffer
-	cmdErrorBuf  *bytes.Buffer
 
 	args          []string                 // actual args parsed from flags
 	output        *io.Writer               // nil means stderr; use Out() method instead
@@ -458,17 +457,7 @@ func (c *Command) execute(a []string) (err error) {
 		return nil
 	}
 	if err != nil {
-		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
-		r := c.Root()
-		if r.cmdErrorBuf == nil {
-			r.cmdErrorBuf = new(bytes.Buffer)
-		}
-		// for writing the usage to the buffer we need to switch the output temporarily
-		// since Out() returns root output, you also need to revert that on root
-		out := r.Out()
-		r.SetOutput(r.cmdErrorBuf)
 		c.Usage()
-		r.SetOutput(out)
 		return err
 	}
 	// If help is called, regardless of other flags, we print that.
@@ -595,8 +584,6 @@ func (c *Command) initHelp() {
 func (c *Command) ResetCommands() {
 	c.commands = nil
 	c.helpCommand = nil
-	c.cmdErrorBuf = new(bytes.Buffer)
-	c.cmdErrorBuf.Reset()
 }
 
 //Commands returns a slice of child commands.
