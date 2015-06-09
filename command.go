@@ -549,13 +549,8 @@ func (c *Command) Execute() (err error) {
 	}
 
 	if err != nil {
-		if err == flag.ErrHelp {
-			c.Help()
-
-		} else {
-			c.Println("Error:", err.Error())
-			c.Printf("Run '%v help' for usage.\n", c.Root().Name())
-		}
+		c.Println("Error:", err.Error())
+		c.Printf("Run '%v help' for usage.\n", c.Root().Name())
 	}
 
 	return
