@@ -423,8 +423,9 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	commandFound, a := innerfind(c, args)
 
 	// If we matched on the root, but we asked for a subcommand, return an error
-	if commandFound.Name() == c.Name() && len(stripFlags(args, c)) > 0 && commandFound.Name() != args[0] {
-		return nil, a, fmt.Errorf("unknown command %q", stripFlags(args, c)[0])
+	argsWOflags := stripFlags(a, commandFound)
+	if commandFound == c && len(argsWOflags) > 0 {
+		return nil, a, fmt.Errorf("unknown command %q", argsWOflags[0])
 	}
 
 	return commandFound, a, nil
