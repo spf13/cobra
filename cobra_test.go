@@ -755,6 +755,11 @@ func TestRootUnknownCommand(t *testing.T) {
 	if r.Output != s {
 		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
 	}
+
+	r = noRRSetupTest("--strtwo=a bogus")
+	if r.Output != s {
+		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
+	}
 }
 
 func TestFlagsBeforeCommand(t *testing.T) {
