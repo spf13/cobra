@@ -88,6 +88,11 @@ __handle_reply()
     fi
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
+    if [[ ${#completions[@]} -eq 0 ]]; then
+    	__debug "${FUNCNAME}: no known completions, falling back to _filedir"
+    	_filedir
+    fi
+
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
         declare -F __custom_func >/dev/null && __custom_func
     fi
