@@ -378,6 +378,24 @@ func TestChildSameName(t *testing.T) {
 	}
 }
 
+func TestGrandChildSameName(t *testing.T) {
+	c := initializeWithSameName()
+	cmdTimes.AddCommand(cmdPrint)
+	c.AddCommand(cmdTimes)
+	c.SetArgs(strings.Split("times print one two", " "))
+	c.Execute()
+
+	if te != nil || tt != nil {
+		t.Error("Wrong command called")
+	}
+	if tp == nil {
+		t.Error("Wrong command called")
+	}
+	if strings.Join(tp, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
 func TestFlagLong(t *testing.T) {
 	noRRSetupTest("echo --intone=13 something here")
 
