@@ -422,7 +422,7 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	}
 	// root command with subcommands, do subcommand checking
 	if commandFound == c && len(argsWOflags) > 0 {
-		return nil, a, fmt.Errorf("unknown command %q", argsWOflags[0])
+		return commandFound, a, fmt.Errorf("unknown command %q for %q", argsWOflags[0], commandFound.CommandPath())
 	}
 
 	return commandFound, a, nil
@@ -539,6 +539,10 @@ func (c *Command) Execute() (err error) {
 
 	cmd, flags, err := c.Find(args)
 	if err != nil {
+		// If found parse to a subcommand and then failed, talk about the subcommand
+		if cmd != nil {
+			c = cmd
+		}
 		c.Println("Error:", err.Error())
 		c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		return err
