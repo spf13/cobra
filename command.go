@@ -84,7 +84,6 @@ type Command struct {
 	commandsMaxNameLen        int
 
 	flagErrorBuf *bytes.Buffer
-	cmdErrorBuf  *bytes.Buffer
 
 	args          []string                 // actual args parsed from flags
 	output        *io.Writer               // nil means stderr; use Out() method instead
@@ -274,7 +273,7 @@ Additional help topics:
 {{if .HasHelpSubCommands}}{{range .Commands}}{{if and (not .Runnable) (not .Deprecated)}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if and (not .Runnable) (not .Deprecated)}}{{if not (eq .Name $cmd.Name) }}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
 {{end}}{{ if .HasSubCommands }}
-Use "{{.Root.Name}} help [command]" for more information about a command.
+Use "{{.CommandPath}} [command] --help" for more information about a command.
 {{end}}`
 	}
 }
@@ -381,51 +380,49 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 		return nil, nil, fmt.Errorf("Called find() on a nil Command")
 	}
 
-	// If there are no arguments, return the root command. If the root has no
-	// subcommands, args reflects arguments that should actually be passed to
-	// the root command, so also return the root command.
-	if len(args) == 0 || !c.Root().HasSubCommands() {
-		return c.Root(), args, nil
-	}
-
 	var innerfind func(*Command, []string) (*Command, []string)
 
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
-		if len(innerArgs) > 0 && c.HasSubCommands() {
-			argsWOflags := stripFlags(innerArgs, c)
-			if len(argsWOflags) > 0 {
-				matches := make([]*Command, 0)
-				for _, cmd := range c.commands {
-					if cmd.Name() == argsWOflags[0] || cmd.HasAlias(argsWOflags[0]) { // exact name or alias match
-						return innerfind(cmd, argsMinusFirstX(innerArgs, argsWOflags[0]))
-					} else if EnablePrefixMatching {
-						if strings.HasPrefix(cmd.Name(), argsWOflags[0]) { // prefix match
-							matches = append(matches, cmd)
-						}
-						for _, x := range cmd.Aliases {
-							if strings.HasPrefix(x, argsWOflags[0]) {
-								matches = append(matches, cmd)
-							}
-						}
+		argsWOflags := stripFlags(innerArgs, c)
+		if len(argsWOflags) == 0 {
+			return c, innerArgs
+		}
+		nextSubCmd := argsWOflags[0]
+		matches := make([]*Command, 0)
+		for _, cmd := range c.commands {
+			if cmd.Name() == nextSubCmd || cmd.HasAlias(nextSubCmd) { // exact name or alias match
+				return innerfind(cmd, argsMinusFirstX(innerArgs, nextSubCmd))
+			}
+			if EnablePrefixMatching {
+				if strings.HasPrefix(cmd.Name(), nextSubCmd) { // prefix match
+					matches = append(matches, cmd)
+				}
+				for _, x := range cmd.Aliases {
+					if strings.HasPrefix(x, nextSubCmd) {
+						matches = append(matches, cmd)
 					}
 				}
-
-				// only accept a single prefix match - multiple matches would be ambiguous
-				if len(matches) == 1 {
-					return innerfind(matches[0], argsMinusFirstX(innerArgs, argsWOflags[0]))
-				}
 			}
+		}
+
+		// only accept a single prefix match - multiple matches would be ambiguous
+		if len(matches) == 1 {
+			return innerfind(matches[0], argsMinusFirstX(innerArgs, argsWOflags[0]))
 		}
 
 		return c, innerArgs
 	}
 
 	commandFound, a := innerfind(c, args)
-
-	// If we matched on the root, but we asked for a subcommand, return an error
 	argsWOflags := stripFlags(a, commandFound)
+
+	// no subcommand, always take args
+	if !commandFound.HasSubCommands() {
+		return commandFound, a, nil
+	}
+	// root command with subcommands, do subcommand checking
 	if commandFound == c && len(argsWOflags) > 0 {
-		return nil, a, fmt.Errorf("unknown command %q", argsWOflags[0])
+		return commandFound, a, fmt.Errorf("unknown command %q for %q", argsWOflags[0], commandFound.CommandPath())
 	}
 
 	return commandFound, a, nil
@@ -455,29 +452,13 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	err = c.ParseFlags(a)
-	if err == flag.ErrHelp {
-		c.Help()
-		return nil
-	}
 	if err != nil {
-		// We're writing subcommand usage to root command's error buffer to have it displayed to the user
-		r := c.Root()
-		if r.cmdErrorBuf == nil {
-			r.cmdErrorBuf = new(bytes.Buffer)
-		}
-		// for writing the usage to the buffer we need to switch the output temporarily
-		// since Out() returns root output, you also need to revert that on root
-		out := r.Out()
-		r.SetOutput(r.cmdErrorBuf)
-		c.Usage()
-		r.SetOutput(out)
 		return err
 	}
-	// If help is called, regardless of other flags, we print that.
-	// Print help also if c.Run is nil.
+	// If help is called, regardless of other flags, return we want help
+	// Also say we need help if c.Run is nil.
 	if c.helpFlagVal || !c.Runnable() {
-		c.Help()
-		return nil
+		return flag.ErrHelp
 	}
 
 	c.preRun()
@@ -557,18 +538,24 @@ func (c *Command) Execute() (err error) {
 	}
 
 	cmd, flags, err := c.Find(args)
-	if err == nil {
-		err = cmd.execute(flags)
+	if err != nil {
+		// If found parse to a subcommand and then failed, talk about the subcommand
+		if cmd != nil {
+			c = cmd
+		}
+		c.Println("Error:", err.Error())
+		c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+		return err
 	}
 
+	err = cmd.execute(flags)
 	if err != nil {
 		if err == flag.ErrHelp {
-			c.Help()
-
-		} else {
-			c.Println("Error:", err.Error())
-			c.Printf("Run '%v help' for usage.\n", c.Root().Name())
+			cmd.Help()
+			return nil
 		}
+		c.Println(cmd.UsageString())
+		c.Println("Error:", err.Error())
 	}
 
 	return
@@ -597,8 +584,6 @@ func (c *Command) initHelp() {
 func (c *Command) ResetCommands() {
 	c.commands = nil
 	c.helpCommand = nil
-	c.cmdErrorBuf = new(bytes.Buffer)
-	c.cmdErrorBuf.Reset()
 }
 
 //Commands returns a slice of child commands.
