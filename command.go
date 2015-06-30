@@ -259,20 +259,20 @@ Aliases:
 {{end}}{{if .HasExample}}
 
 Examples:
-{{ .Example }}
-{{end}}{{ if .HasRunnableSubCommands}}
+{{ .Example }}{{end}}{{ if .HasNonHelpSubCommands}}
 
-Available Commands: {{range .Commands}}{{if and (.Runnable) (not .Deprecated)}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
-{{end}}
-{{ if .HasLocalFlags}}Flags:
-{{.LocalFlags.FlagUsages}}{{end}}
-{{ if .HasInheritedFlags}}Global Flags:
-{{.InheritedFlags.FlagUsages}}{{end}}{{if or (.HasHelpSubCommands) (.HasRunnableSiblings)}}
-Additional help topics:
-{{if .HasHelpSubCommands}}{{range .Commands}}{{if and (not .Runnable) (not .Deprecated)}} {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasRunnableSiblings }}{{range .Parent.Commands}}{{if and (not .Runnable) (not .Deprecated)}}{{if not (eq .Name $cmd.Name) }}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{end}}
-{{end}}{{ if .HasSubCommands }}
+Available Commands: {{range .Commands}}{{if (not .IsHelpCommand)}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages}}{{end}}{{ if .HasInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics: {{range .Commands}}{{if .IsHelpCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}}{{end}}{{end}}{{ if .HasSubCommands }}
+
 Use "{{.CommandPath}} [command] --help" for more information about a command.
 {{end}}`
 	}
@@ -803,31 +803,39 @@ func (c *Command) HasSubCommands() bool {
 	return len(c.commands) > 0
 }
 
-func (c *Command) HasRunnableSiblings() bool {
-	if !c.HasParent() {
+func (c *Command) IsHelpCommand() bool {
+	if c.Runnable() {
 		return false
 	}
-	for _, sub := range c.parent.commands {
-		if sub.Runnable() {
-			return true
+	for _, sub := range c.commands {
+		if len(sub.Deprecated) != 0 {
+			continue
+		}
+		if !sub.IsHelpCommand() {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (c *Command) HasHelpSubCommands() bool {
 	for _, sub := range c.commands {
-		if !sub.Runnable() {
+		if len(sub.Deprecated) != 0 {
+			continue
+		}
+		if sub.IsHelpCommand() {
 			return true
 		}
 	}
 	return false
 }
 
-// Determine if the command has runnable children commands
-func (c *Command) HasRunnableSubCommands() bool {
+func (c *Command) HasNonHelpSubCommands() bool {
 	for _, sub := range c.commands {
-		if sub.Runnable() {
+		if len(sub.Deprecated) != 0 {
+			continue
+		}
+		if !sub.IsHelpCommand() {
 			return true
 		}
 	}
