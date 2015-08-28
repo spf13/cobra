@@ -67,9 +67,7 @@ func (cmd *Command) GenMan(projectName string, out *bytes.Buffer) {
 }
 
 func manPreamble(out *bytes.Buffer, projectName, name, short, long string) {
-	fmt.Fprintf(out, `%% %s(1) kubernetes User Manuals
-%% Eric Paris
-%% Jan 2015
+	fmt.Fprintf(out, `%% %s(1)
 # NAME
 `, projectName)
 	fmt.Fprintf(out, "%s \\- %s\n\n", name, short)
