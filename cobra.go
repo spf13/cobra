@@ -34,6 +34,15 @@ var EnablePrefixMatching bool = false
 // enables an information splash screen on Windows if the CLI is started from explorer.exe.
 var EnableWindowsMouseTrap bool = true
 
+// HelpFlagShorthand is the character used to for the help flag's shorthand notation. The
+// default value is "h".
+var HelpFlagShorthand string = "h"
+
+// HelpFlagUsageFormatString is the format string used with fmt.Sprintf to produce the
+// usage value for the help flag. The name of a given command is substituted in the
+// formatted result.
+var HelpFlagUsageFormatString string = "help for %s"
+
 var MousetrapHelpText string = `This is a command line tool
 
 You need to open cmd.exe and run it from there.
