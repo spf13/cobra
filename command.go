@@ -561,6 +561,9 @@ func (c *Command) Execute() (err error) {
 }
 
 func (c *Command) initHelp() {
+	if c.Flags().Lookup("help") == nil {
+		c.Flags().BoolVarP(&c.helpFlagVal, "help", "h", false, "help for "+c.Name())
+	}
 	if c.helpCommand == nil {
 		if !c.HasSubCommands() {
 			return
@@ -859,7 +862,6 @@ func (c *Command) Flags() *flag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
-		c.PersistentFlags().BoolVarP(&c.helpFlagVal, "help", "h", false, "help for "+c.Name())
 	}
 	return c.flags
 }
