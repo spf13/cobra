@@ -188,32 +188,21 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 		}
 	}
 }
+
+// HelpFunc returns either the function set by SetHelpFunc for this command
+// or a parent, or it returns a function which calls c.Help()
 func (c *Command) HelpFunc() func(*Command, []string) {
-	if c.helpFunc != nil {
-		return c.helpFunc
+	cmd := c
+	for cmd != nil {
+		if cmd.helpFunc != nil {
+			return cmd.helpFunc
+		}
+		cmd = cmd.parent
 	}
-
-	if c.HasParent() {
-		return c.parent.HelpFunc()
-	} else {
-		return func(c *Command, args []string) {
-			if len(args) == 0 {
-				// Help called without any topic, calling on root
-				c.Root().Help()
-				return
-			}
-
-			cmd, _, e := c.Root().Find(args)
-			if cmd == nil || e != nil {
-				c.Printf("Unknown help topic %#q.", args)
-
-				c.Root().Usage()
-			} else {
-				err := cmd.Help()
-				if err != nil {
-					c.Println(err)
-				}
-			}
+	return func(*Command, []string) {
+		err := c.Help()
+		if err != nil {
+			c.Println(err)
 		}
 	}
 }
@@ -620,9 +609,19 @@ func (c *Command) initHelpCmd() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
     Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			Run:               c.HelpFunc(),
 			PersistentPreRun:  func(cmd *Command, args []string) {},
 			PersistentPostRun: func(cmd *Command, args []string) {},
+
+			Run: func(c *Command, args []string) {
+				cmd, _, e := c.Root().Find(args)
+				if cmd == nil || e != nil {
+					c.Printf("Unknown help topic %#q.", args)
+					c.Root().Usage()
+				} else {
+					helpFunc := cmd.HelpFunc()
+					helpFunc(cmd, args)
+				}
+			},
 		}
 	}
 	c.AddCommand(c.helpCommand)
