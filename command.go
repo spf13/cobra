@@ -92,7 +92,6 @@ type Command struct {
 	helpTemplate  string                   // Can be defined by Application
 	helpFunc      func(*Command, []string) // Help can be defined by application
 	helpCommand   *Command                 // The help command
-	helpFlagVal   bool
 	// The global normalization function that we can use on every pFlag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
 }
@@ -450,13 +449,24 @@ func (c *Command) execute(a []string) (err error) {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
+	// initialize help flag as the last point possible to allow for user
+	// overriding
+	c.initHelpFlag()
+
 	err = c.ParseFlags(a)
 	if err != nil {
 		return err
 	}
 	// If help is called, regardless of other flags, return we want help
 	// Also say we need help if c.Run is nil.
-	if c.helpFlagVal || !c.Runnable() {
+	helpVal, err := c.Flags().GetBool("help")
+	if err != nil {
+		// should be impossible to get here as we always declare a help
+		// flag in initHelpFlag()
+		c.Println("\"help\" flag declared as non-bool. Please correct your code")
+		return err
+	}
+	if helpVal || !c.Runnable() {
 		return flag.ErrHelp
 	}
 
@@ -526,7 +536,7 @@ func (c *Command) Execute() (err error) {
 
 	// initialize help as the last point possible to allow for user
 	// overriding
-	c.initHelp()
+	c.initHelpCmd()
 
 	var args []string
 
@@ -560,10 +570,13 @@ func (c *Command) Execute() (err error) {
 	return
 }
 
-func (c *Command) initHelp() {
+func (c *Command) initHelpFlag() {
 	if c.Flags().Lookup("help") == nil {
-		c.Flags().BoolVarP(&c.helpFlagVal, "help", "h", false, "help for "+c.Name())
+		c.Flags().BoolP("help", "h", false, "help for "+c.Name())
 	}
+}
+
+func (c *Command) initHelpCmd() {
 	if c.helpCommand == nil {
 		if !c.HasSubCommands() {
 			return
