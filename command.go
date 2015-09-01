@@ -582,7 +582,7 @@ func (c *Command) Execute() (err error) {
 	err = cmd.execute(flags)
 	if err != nil {
 		if err == flag.ErrHelp {
-			cmd.Help()
+			cmd.HelpFunc()(cmd, args)
 			return nil
 		}
 		c.Println(cmd.UsageString())
