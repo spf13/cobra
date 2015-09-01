@@ -270,7 +270,7 @@ Global Flags:
 {{.InheritedFlags.FlagUsages}}{{end}}{{if .HasHelpSubCommands}}
 
 Additional help topics: {{range .Commands}}{{if .IsHelpCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}}{{end}}{{end}}{{ if .HasSubCommands }}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasSubCommands }}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.
 {{end}}`
