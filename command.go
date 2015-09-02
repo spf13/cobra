@@ -468,7 +468,7 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 	// If help is called, regardless of other flags, return we want help
-	// Also say we need help if c.Run is nil.
+	// Also say we need help if the command isn't runnable.
 	helpVal, err := c.Flags().GetBool("help")
 	if err != nil {
 		// should be impossible to get here as we always declare a help
@@ -843,7 +843,7 @@ func (c *Command) HasExample() bool {
 
 // Determine if the command is itself runnable
 func (c *Command) Runnable() bool {
-	return c.Run != nil
+	return c.Run != nil || c.RunE != nil
 }
 
 // Determine if the command has children commands
