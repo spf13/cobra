@@ -28,44 +28,37 @@ func TestGenManDoc(t *testing.T) {
 	cmdEcho.GenMan("PROJECT", out)
 	found := out.String()
 
+	// Make sure parent has - in CommandPath() in SEE ALSO:
+	parentPath := cmdEcho.Parent().CommandPath()
+	dashParentPath := strings.Replace(parentPath, " ", "-", -1)
+	expected := translate(dashParentPath)
+	expected = expected + "(1)"
+	checkStringContains(t, found, expected)
+
 	// Our description
-	expected := translate(cmdEcho.Name())
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	expected = translate(cmdEcho.Name())
+	checkStringContains(t, found, expected)
 
 	// Better have our example
 	expected = translate(cmdEcho.Name())
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	checkStringContains(t, found, expected)
 
 	// A local flag
 	expected = "boolone"
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	checkStringContains(t, found, expected)
 
 	// persistent flag on parent
 	expected = "rootflag"
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	checkStringContains(t, found, expected)
 
 	// We better output info about our parent
 	expected = translate(cmdRootWithRun.Name())
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	checkStringContains(t, found, expected)
 
 	// And about subcommands
 	expected = translate(cmdEchoSub.Name())
-	if !strings.Contains(found, expected) {
-		t.Errorf("Unexpected response.\nExpecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
+	checkStringContains(t, found, expected)
 
 	unexpected := translate(cmdDeprecated.Name())
-	if strings.Contains(found, unexpected) {
-		t.Errorf("Unexpected response.\nFound: %v\nBut should not have!!\n", unexpected)
-	}
+	checkStringOmits(t, found, unexpected)
 }

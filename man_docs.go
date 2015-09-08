@@ -145,7 +145,9 @@ func genMarkdown(cmd *Command, projectName string) []byte {
 	if cmd.hasSeeAlso() {
 		fmt.Fprintf(buf, "# SEE ALSO\n")
 		if cmd.HasParent() {
-			fmt.Fprintf(buf, "**%s(1)**, ", cmd.Parent().CommandPath())
+			parentPath := cmd.Parent().CommandPath()
+			dashParentPath := strings.Replace(parentPath, " ", "-", -1)
+			fmt.Fprintf(buf, "**%s(1)**, ", dashParentPath)
 		}
 
 		children := cmd.Commands()

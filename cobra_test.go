@@ -255,16 +255,24 @@ func logErr(t *testing.T, found, expected string) {
 	t.Errorf(out.String())
 }
 
+func checkStringContains(t *testing.T, found, expected string) {
+	if !strings.Contains(found, expected) {
+		logErr(t, found, expected)
+	}
+}
+
 func checkResultContains(t *testing.T, x resulter, check string) {
-	if !strings.Contains(x.Output, check) {
-		logErr(t, x.Output, check)
+	checkStringContains(t, x.Output, check)
+}
+
+func checkStringOmits(t *testing.T, found, expected string) {
+	if strings.Contains(found, expected) {
+		logErr(t, found, expected)
 	}
 }
 
 func checkResultOmits(t *testing.T, x resulter, check string) {
-	if strings.Contains(x.Output, check) {
-		logErr(t, x.Output, check)
-	}
+	checkStringOmits(t, x.Output, check)
 }
 
 func checkOutputContains(t *testing.T, c *Command, check string) {
@@ -976,15 +984,15 @@ func TestFlagOnPflagCommandLine(t *testing.T) {
 func TestAddTemplateFunctions(t *testing.T) {
 	AddTemplateFunc("t", func() bool { return true })
 	AddTemplateFuncs(template.FuncMap{
-		"f": func() bool { return false }, 
-		"h": func() string { return "Hello," }, 
+		"f": func() bool { return false },
+		"h": func() string { return "Hello," },
 		"w": func() string { return "world." }})
 
 	const usage = "Hello, world."
-	
+
 	c := &Command{}
 	c.SetUsageTemplate(`{{if t}}{{h}}{{end}}{{if f}}{{h}}{{end}} {{w}}`)
-	
+
 	if us := c.UsageString(); us != usage {
 		t.Errorf("c.UsageString() != \"%s\", is \"%s\"", usage, us)
 	}
