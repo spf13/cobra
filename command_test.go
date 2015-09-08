@@ -5,82 +5,33 @@ import (
 	"testing"
 )
 
-// test to ensure hidden flags run as intended
+func init() {
+	cmdHiddenFlags.Flags().BoolVarP(&flagbh, "boolh", "", false, "")
+	cmdHiddenFlags.Flags().MarkHidden("boolh")
+
+	cmdHiddenFlags.PersistentFlags().BoolVarP(&flagbph, "boolph", "", false, "")
+	cmdHiddenFlags.PersistentFlags().MarkHidden("boolph")
+}
+
+// test to ensure hidden flags run as intended; if the the hidden flag fails to
+// run, the output will be incorrect
 func TestHiddenFlagExecutes(t *testing.T) {
-	var out string
-	var secretFlag bool
-
-	boringCmd := &Command{
-		Use:   "boring",
-		Short: "Do something boring...",
-		Long:  `Not a flashy command, just does boring stuff`,
-		Run: func(cmd *Command, args []string) {
-			out = "boring output"
-
-			if secretFlag {
-				out = "super secret NOT boring output!"
-			}
-		},
-	}
-
-	//
-	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "makes this command run in super secret mode")
-	boringCmd.Flags().MarkHidden("secret")
-
-	//
-	boringCmd.Execute()
-
-	if out != "boring output" {
-		t.Errorf("Command with hidden flag failed to run!")
-	}
-
-	//
-	boringCmd.execute([]string{"-s"})
-
-	if out != "super secret NOT boring output!" {
+	cmdHiddenFlags.execute([]string{"--boolh"})
+	if outs != "hidden" {
 		t.Errorf("Hidden flag failed to run!")
 	}
 }
 
-// test to ensure hidden flags do not show up in usage/help text
+// test to ensure hidden flags do not show up in usage/help text; if a flag is
+// found by Lookup() it will be visible in usage/help text
 func TestHiddenFlagsAreHidden(t *testing.T) {
-	var out string
-	var secretFlag bool
-	var persistentSecretFlag bool
 
-	boringCmd := &Command{
-		Use:   "boring",
-		Short: "Do something boring...",
-		Long:  `Not a flashy command, just does boring stuff`,
-		Run: func(cmd *Command, args []string) {
-			out = "boring output"
-
-			if secretFlag {
-				out = "super secret NOT boring output!"
-			}
-
-			if persistentSecretFlag {
-				out = "you have no idea what you're getting yourself into!"
-			}
-		},
+	if cmdHiddenFlags.LocalFlags().Lookup("boolh") != nil {
+		t.Errorf("unexpected flag 'boolh'")
 	}
 
-	//
-	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "run this command in super secret mode")
-	boringCmd.Flags().MarkHidden("secret")
-
-	// if a command has local flags, they will appear in usage/help text
-	if boringCmd.HasLocalFlags() {
-		t.Errorf("Hidden flag found!")
-	}
-
-	//
-	boringCmd.PersistentFlags().BoolVarP(&persistentSecretFlag, "Secret", "S", false, "run any sub command in super secret mode")
-	boringCmd.PersistentFlags().MarkHidden("Secret")
-
-	// if a command has inherited flags, they will appear in usage/help text
-	if boringCmd.HasInheritedFlags() {
-		t.Errorf("Hidden flag found!")
+	if cmdHiddenFlags.InheritedFlags().Lookup("boolph") != nil {
+		t.Errorf("unexpected flag 'boolph'")
 	}
 }
 

@@ -18,8 +18,8 @@ var _ = os.Stderr
 
 var tp, te, tt, t1, tr []string
 var rootPersPre, echoPre, echoPersPre, timesPersPre []string
-var flagb1, flagb2, flagb3, flagbr, flagbp bool
-var flags1, flags2a, flags2b, flags3 string
+var flagb1, flagb2, flagb3, flagbr, flagbp, flagbh, flagbph bool
+var flags1, flags2a, flags2b, flags3, outs string
 var flagi1, flagi2, flagi3, flagir int
 var globalFlag1 bool
 var flagEcho, rootcalled bool
@@ -27,6 +27,18 @@ var versionUsed int
 
 const strtwoParentHelp = "help message for parent flag strtwo"
 const strtwoChildHelp = "help message for child flag strtwo"
+
+var cmdHiddenFlags = &Command{
+	Use:   "hidden [string to set]",
+	Short: "set a string value to string var",
+	Long:  `an utterly useless command for testing.`,
+	Run: func(cmd *Command, args []string) {
+		outs = "visible"
+		if flagbh {
+			outs = "hidden"
+		}
+	},
+}
 
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
@@ -976,15 +988,15 @@ func TestFlagOnPflagCommandLine(t *testing.T) {
 func TestAddTemplateFunctions(t *testing.T) {
 	AddTemplateFunc("t", func() bool { return true })
 	AddTemplateFuncs(template.FuncMap{
-		"f": func() bool { return false }, 
-		"h": func() string { return "Hello," }, 
+		"f": func() bool { return false },
+		"h": func() string { return "Hello," },
 		"w": func() string { return "world." }})
 
 	const usage = "Hello, world."
-	
+
 	c := &Command{}
 	c.SetUsageTemplate(`{{if t}}{{h}}{{end}}{{if f}}{{h}}{{end}} {{w}}`)
-	
+
 	if us := c.UsageString(); us != usage {
 		t.Errorf("c.UsageString() != \"%s\", is \"%s\"", usage, us)
 	}
