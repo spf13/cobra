@@ -24,15 +24,19 @@ func TestGenManDoc(t *testing.T) {
 
 	out := new(bytes.Buffer)
 
+	header := &GenManHeader{
+		Title:   "Project",
+		Section: "2",
+	}
 	// We generate on a subcommand so we have both subcommands and parents
-	cmdEcho.GenMan("PROJECT", out)
+	cmdEcho.GenMan(header, out)
 	found := out.String()
 
 	// Make sure parent has - in CommandPath() in SEE ALSO:
 	parentPath := cmdEcho.Parent().CommandPath()
 	dashParentPath := strings.Replace(parentPath, " ", "-", -1)
 	expected := translate(dashParentPath)
-	expected = expected + "(1)"
+	expected = expected + "(" + header.Section + ")"
 	checkStringContains(t, found, expected)
 
 	// Our description
