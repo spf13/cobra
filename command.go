@@ -917,14 +917,14 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 
 	local := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.lflags.VisitAll(func(f *flag.Flag) {
-		if !f.Private {
+		if !f.Hidden {
 			local.AddFlag(f)
 		}
 	})
 	if !c.HasParent() {
 		flag.CommandLine.VisitAll(func(f *flag.Flag) {
 			if local.Lookup(f.Name) == nil {
-				if !f.Private {
+				if !f.Hidden {
 					local.AddFlag(f)
 				}
 			}
@@ -946,7 +946,7 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 		if x.HasPersistentFlags() {
 			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
 				if inherited.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
-					if !f.Private {
+					if !f.Hidden {
 						inherited.AddFlag(f)
 					}
 				}
