@@ -24,7 +24,7 @@ func TestHiddenFlagExecutes(t *testing.T) {
 	}
 
 	//
-	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "makes commands run in super secret mode")
+	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "makes this command run in super secret mode")
 	boringCmd.Flags().MarkHidden("secret")
 
 	//
@@ -76,7 +76,7 @@ func TestHiddenFlagsAreHidden(t *testing.T) {
 
 	//
 	boringCmd.PersistentFlags().BoolVarP(&persistentSecretFlag, "Secret", "S", false, "run any sub command in super secret mode")
-	boringCmd.Flags().MarkHidden("Secret")
+	boringCmd.PersistentFlags().MarkHidden("Secret")
 
 	// if a command has inherited flags, they will appear in usage/help text
 	if boringCmd.HasInheritedFlags() {
