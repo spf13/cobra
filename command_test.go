@@ -5,6 +5,85 @@ import (
 	"testing"
 )
 
+// test to ensure hidden flags run as intended
+func TestHiddenFlagExecutes(t *testing.T) {
+	var out string
+	var secretFlag bool
+
+	boringCmd := &Command{
+		Use:   "boring",
+		Short: "Do something boring...",
+		Long:  `Not a flashy command, just does boring stuff`,
+		Run: func(cmd *Command, args []string) {
+			out = "boring output"
+
+			if secretFlag {
+				out = "super secret NOT boring output!"
+			}
+		},
+	}
+
+	//
+	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "makes commands run in super secret mode")
+	boringCmd.Flags().MarkHidden("secret")
+
+	//
+	boringCmd.Execute()
+
+	if out != "boring output" {
+		t.Errorf("Command with hidden flag failed to run!")
+	}
+
+	//
+	boringCmd.execute([]string{"-s"})
+
+	if out != "super secret NOT boring output!" {
+		t.Errorf("Hidden flag failed to run!")
+	}
+}
+
+// test to ensure hidden flags do not show up in usage/help text
+func TestHiddenFlagsAreHidden(t *testing.T) {
+	var out string
+	var secretFlag bool
+	var persistentSecretFlag bool
+
+	boringCmd := &Command{
+		Use:   "boring",
+		Short: "Do something boring...",
+		Long:  `Not a flashy command, just does boring stuff`,
+		Run: func(cmd *Command, args []string) {
+			out = "boring output"
+
+			if secretFlag {
+				out = "super secret NOT boring output!"
+			}
+
+			if persistentSecretFlag {
+				out = "you have no idea what you're getting yourself into!"
+			}
+		},
+	}
+
+	//
+	boringCmd.Flags().BoolVarP(&secretFlag, "secret", "s", false, "run this command in super secret mode")
+	boringCmd.Flags().MarkHidden("secret")
+
+	// if a command has local flags, they will appear in usage/help text
+	if boringCmd.HasLocalFlags() {
+		t.Errorf("Hidden flag found!")
+	}
+
+	//
+	boringCmd.PersistentFlags().BoolVarP(&persistentSecretFlag, "Secret", "S", false, "run any sub command in super secret mode")
+	boringCmd.Flags().MarkHidden("Secret")
+
+	// if a command has inherited flags, they will appear in usage/help text
+	if boringCmd.HasInheritedFlags() {
+		t.Errorf("Hidden flag found!")
+	}
+}
+
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
