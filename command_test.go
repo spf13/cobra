@@ -5,6 +5,36 @@ import (
 	"testing"
 )
 
+func init() {
+	cmdHiddenFlags.Flags().BoolVarP(&flagbh, "boolh", "", false, "")
+	cmdHiddenFlags.Flags().MarkHidden("boolh")
+
+	cmdHiddenFlags.PersistentFlags().BoolVarP(&flagbph, "boolph", "", false, "")
+	cmdHiddenFlags.PersistentFlags().MarkHidden("boolph")
+}
+
+// test to ensure hidden flags run as intended; if the the hidden flag fails to
+// run, the output will be incorrect
+func TestHiddenFlagExecutes(t *testing.T) {
+	cmdHiddenFlags.execute([]string{"--boolh"})
+	if outs != "hidden" {
+		t.Errorf("Hidden flag failed to run!")
+	}
+}
+
+// test to ensure hidden flags do not show up in usage/help text; if a flag is
+// found by Lookup() it will be visible in usage/help text
+func TestHiddenFlagsAreHidden(t *testing.T) {
+
+	if cmdHiddenFlags.LocalFlags().Lookup("boolh") != nil {
+		t.Errorf("unexpected flag 'boolh'")
+	}
+
+	if cmdHiddenFlags.InheritedFlags().Lookup("boolph") != nil {
+		t.Errorf("unexpected flag 'boolph'")
+	}
+}
+
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
