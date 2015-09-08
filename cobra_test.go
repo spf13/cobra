@@ -265,16 +265,24 @@ func logErr(t *testing.T, found, expected string) {
 	t.Errorf(out.String())
 }
 
+func checkStringContains(t *testing.T, found, expected string) {
+	if !strings.Contains(found, expected) {
+		logErr(t, found, expected)
+	}
+}
+
 func checkResultContains(t *testing.T, x resulter, check string) {
-	if !strings.Contains(x.Output, check) {
-		logErr(t, x.Output, check)
+	checkStringContains(t, x.Output, check)
+}
+
+func checkStringOmits(t *testing.T, found, expected string) {
+	if strings.Contains(found, expected) {
+		logErr(t, found, expected)
 	}
 }
 
 func checkResultOmits(t *testing.T, x resulter, check string) {
-	if strings.Contains(x.Output, check) {
-		logErr(t, x.Output, check)
-	}
+	checkStringOmits(t, x.Output, check)
 }
 
 func checkOutputContains(t *testing.T, c *Command, check string) {
