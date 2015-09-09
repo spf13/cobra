@@ -40,7 +40,7 @@ func (cmd *Command) GenManTree(header *GenManHeader, dir string) {
 		header = &GenManHeader{}
 	}
 	for _, c := range cmd.Commands() {
-		if len(c.Deprecated) != 0 || c == cmd.helpCommand {
+		if !c.IsAvailableCommand() || c == cmd.helpCommand {
 			continue
 		}
 		GenManTree(c, header, dir)
@@ -125,7 +125,7 @@ func manPreamble(out *bytes.Buffer, header *GenManHeader, name, short, long stri
 
 func manPrintFlags(out *bytes.Buffer, flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
-		if len(flag.Deprecated) > 0 {
+		if len(flag.Deprecated) > 0 || flag.Hidden {
 			return
 		}
 		format := ""
@@ -200,7 +200,7 @@ func genMarkdown(cmd *Command, header *GenManHeader) []byte {
 		children := cmd.Commands()
 		sort.Sort(byName(children))
 		for _, c := range children {
-			if len(c.Deprecated) != 0 || c == cmd.helpCommand {
+			if !c.IsAvailableCommand() || c == cmd.helpCommand {
 				continue
 			}
 			fmt.Fprintf(buf, "**%s-%s(%s)**, ", dashCommandName, c.Name(), header.Section)

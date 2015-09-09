@@ -97,7 +97,7 @@ func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string
 		sort.Sort(byName(children))
 
 		for _, child := range children {
-			if len(child.Deprecated) > 0 || child == cmd.helpCommand {
+			if !child.IsAvailableCommand() || child == cmd.helpCommand {
 				continue
 			}
 			cname := name + " " + child.Name()
@@ -127,7 +127,7 @@ func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender func(string) 
 
 func (cmd *Command) GenMarkdownTreeCustom(dir string, filePrepender func(string) string, linkHandler func(string) string) {
 	for _, c := range cmd.Commands() {
-		if len(c.Deprecated) != 0 || c == cmd.helpCommand {
+		if !c.IsAvailableCommand() || c == cmd.helpCommand {
 			continue
 		}
 		c.GenMarkdownTreeCustom(dir, filePrepender, linkHandler)
