@@ -481,8 +481,8 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid flag should generate error")
 	}
 
-	if !strings.Contains(r.Output, "unknown shorthand") {
-		t.Errorf("Wrong error message displayed, \n %s", r.Output)
+	if !strings.Contains(r.Error.Error(), "unknown shorthand") {
+		t.Errorf("Wrong error message displayed, \n %s", r.Error)
 	}
 
 	if flagi2 != 99 {
@@ -500,8 +500,8 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid flag should generate error")
 	}
 
-	if !strings.Contains(r.Output, "unknown shorthand flag") {
-		t.Errorf("Wrong error message displayed, \n %s", r.Output)
+	if !strings.Contains(r.Error.Error(), "unknown shorthand flag") {
+		t.Errorf("Wrong error message displayed, \n %s", r.Error)
 	}
 
 	// Testing with persistent flag overwritten by child
@@ -522,8 +522,8 @@ func TestChildCommandFlags(t *testing.T) {
 		t.Errorf("invalid input should generate error")
 	}
 
-	if !strings.Contains(r.Output, "invalid argument \"10E\" for i10E") {
-		t.Errorf("Wrong error message displayed, \n %s", r.Output)
+	if !strings.Contains(r.Error.Error(), "invalid argument \"10E\" for i10E") {
+		t.Errorf("Wrong error message displayed, \n %s", r.Error)
 	}
 }
 
@@ -540,10 +540,11 @@ func TestInvalidSubcommandFlags(t *testing.T) {
 	cmd.AddCommand(cmdTimes)
 
 	result := simpleTester(cmd, "times --inttwo=2 --badflag=bar")
+	// given that we are not checking here result.Error we check for
+	// stock usage message
+	checkResultContains(t, result, "cobra-test times [# times]")
 
-	checkResultContains(t, result, "unknown flag: --badflag")
-
-	if strings.Contains(result.Output, "unknown flag: --inttwo") {
+	if strings.Contains(result.Error.Error(), "unknown flag: --inttwo") {
 		t.Errorf("invalid --badflag flag shouldn't fail on 'unknown' --inttwo flag")
 	}
 
@@ -787,7 +788,7 @@ func TestRootNoCommandHelp(t *testing.T) {
 
 func TestRootUnknownCommand(t *testing.T) {
 	r := noRRSetupTest("bogus")
-	s := "Error: unknown command \"bogus\" for \"cobra-test\"\nRun 'cobra-test --help' for usage.\n"
+	s := "Run 'cobra-test --help' for usage.\n"
 
 	if r.Output != s {
 		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
@@ -823,8 +824,8 @@ func TestFlagsBeforeCommand(t *testing.T) {
 
 	// With parsing error properly reported
 	x = fullSetupTest("-i10E echo")
-	if !strings.Contains(x.Output, "invalid argument \"10E\" for i10E") {
-		t.Errorf("Wrong error message displayed, \n %s", x.Output)
+	if !strings.Contains(x.Error.Error(), "invalid argument \"10E\" for i10E") {
+		t.Errorf("Wrong error message displayed, \n %s", x.Error)
 	}
 
 	//With quotes

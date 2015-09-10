@@ -576,7 +576,6 @@ func (c *Command) Execute() (err error) {
 		if cmd != nil {
 			c = cmd
 		}
-		c.Println("Error:", err.Error())
 		c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		return err
 	}
@@ -588,7 +587,7 @@ func (c *Command) Execute() (err error) {
 			return nil
 		}
 		c.Println(cmd.UsageString())
-		c.Println("Error:", err.Error())
+		return err
 	}
 
 	return
