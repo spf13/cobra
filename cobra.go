@@ -23,13 +23,15 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 var templateFuncs template.FuncMap = template.FuncMap{
-	"trim": strings.TrimSpace,
-	"rpad": rpad,
-	"gt":   Gt,
-	"eq":   Eq,
+	"trim":           strings.TrimSpace,
+	"trimRightSpace": trimRightSpace,
+	"rpad":           rpad,
+	"gt":             Gt,
+	"eq":             Eq,
 }
 
 var initializers []func()
@@ -111,6 +113,10 @@ func Eq(a interface{}, b interface{}) bool {
 		return av.String() == bv.String()
 	}
 	return false
+}
+
+func trimRightSpace(s string) string {
+	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
 //rpad adds padding to the right of a string
