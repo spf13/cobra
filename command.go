@@ -284,8 +284,9 @@ func (c *Command) HelpTemplate() string {
 	if c.HasParent() {
 		return c.parent.HelpTemplate()
 	} else {
-		return `{{with or .Long .Short }}{{. | trim}}{{end}}
-{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+		return `{{with or .Long .Short }}{{. | trim}}
+
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 	}
 }
 
