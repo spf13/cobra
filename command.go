@@ -248,8 +248,7 @@ func (c *Command) UsageTemplate() string {
 	if c.HasParent() {
 		return c.parent.UsageTemplate()
 	} else {
-		return `{{ $cmd := . }}
-Usage: {{if .Runnable}}
+		return `{{ $cmd := . }}Usage:{{if .Runnable}}
   {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
@@ -260,7 +259,7 @@ Aliases:
 Examples:
 {{ .Example }}{{end}}{{ if .HasAvailableSubCommands}}
 
-Available Commands: {{range .Commands}}{{if .IsAvailableCommand}}
+Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasLocalFlags}}
 
 Flags:
@@ -269,7 +268,7 @@ Flags:
 Global Flags:
 {{.InheritedFlags.FlagUsages}}{{end}}{{if .HasHelpSubCommands}}
 
-Additional help topics: {{range .Commands}}{{if .IsHelpCommand}}
+Additional help topics:{{range .Commands}}{{if .IsHelpCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasSubCommands }}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.
@@ -286,8 +285,7 @@ func (c *Command) HelpTemplate() string {
 		return c.parent.HelpTemplate()
 	} else {
 		return `{{with or .Long .Short }}{{. | trim}}{{end}}
-{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}
-`
+{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 	}
 }
 
