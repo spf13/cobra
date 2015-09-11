@@ -857,6 +857,10 @@ func (c *Command) IsAvailableCommand() bool {
 		return false
 	}
 
+	if c.HasParent() && c.Parent().helpCommand == c {
+		return false
+	}
+
 	if c.Runnable() || c.HasAvailableSubCommands() {
 		return true
 	}
