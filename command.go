@@ -186,6 +186,9 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	} else {
 		return func(c *Command) error {
 			err := tmpl(c.Out(), c.UsageTemplate(), c)
+			if err != nil {
+				fmt.Print(err)
+			}
 			return err
 		}
 	}
@@ -263,10 +266,10 @@ Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasLocalFlags}}
 
 Flags:
-{{.LocalFlags.FlagUsages}}{{end}}{{ if .HasInheritedFlags}}
+{{.LocalFlags.FlagUsages | trimRightSpace}}{{end}}{{ if .HasInheritedFlags}}
 
 Global Flags:
-{{.InheritedFlags.FlagUsages}}{{end}}{{if .HasHelpSubCommands}}
+{{.InheritedFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasHelpSubCommands}}
 
 Additional help topics:{{range .Commands}}{{if .IsHelpCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasSubCommands }}
