@@ -799,6 +799,34 @@ func TestRootUnknownCommand(t *testing.T) {
 	}
 }
 
+func TestRootSuggestions(t *testing.T) {
+	outputWithSuggestions := "Error: unknown command \"%s\" for \"cobra-test\"\n\nDid you mean this?\n\t%s\n\nRun 'cobra-test --help' for usage.\n"
+	outputWithoutSuggestions := "Error: unknown command \"%s\" for \"cobra-test\"\nRun 'cobra-test --help' for usage.\n"
+
+	cmd := initializeWithRootCmd()
+	cmd.AddCommand(cmdTimes)
+
+	tests := map[string]string{
+		"time":  "times",
+		"tiems": "times",
+		"timeS": "times",
+		"rimes": "times",
+	}
+
+	for typo, suggestion := range tests {
+		cmd.DisableSuggestions = false
+		result := simpleTester(cmd, typo)
+		if expected := fmt.Sprintf(outputWithSuggestions, typo, suggestion); result.Output != expected {
+			t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", expected, result.Output)
+		}
+		cmd.DisableSuggestions = true
+		result = simpleTester(cmd, typo)
+		if expected := fmt.Sprintf(outputWithoutSuggestions, typo); result.Output != expected {
+			t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", expected, result.Output)
+		}
+	}
+}
+
 func TestFlagsBeforeCommand(t *testing.T) {
 	// short without space
 	x := fullSetupTest("-i10 echo")
