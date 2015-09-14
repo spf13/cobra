@@ -28,6 +28,15 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+type Args int
+
+const (
+	Legacy Args = iota
+	Arbitrary
+	ValidOnly
+	None
+)
+
 // Command is just that, a command for your application.
 // eg.  'go run' ... 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -47,6 +56,8 @@ type Command struct {
 	Example string
 	// List of all valid non-flag arguments, used for bash completions *TODO* actually validate these
 	ValidArgs []string
+	// Does this command take arbitrary arguments
+	TakesArgs Args
 	// Custom functions used by the bash autocompletion generator
 	BashCompletionFunction string
 	// Is this command deprecated and should print this string when used?
@@ -374,6 +385,15 @@ func argsMinusFirstX(args []string, x string) []string {
 	return args
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 // find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(args []string) (*Command, []string, error) {
@@ -417,15 +437,33 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	commandFound, a := innerfind(c, args)
 	argsWOflags := stripFlags(a, commandFound)
 
-	// no subcommand, always take args
-	if !commandFound.HasSubCommands() {
+	// "Legacy" has some 'odd' characteristics.
+	// - root commands with no subcommands can take arbitrary arguments
+	// - root commands with subcommands will do subcommand validity checking
+	// - subcommands will always accept arbitrary arguments
+	if commandFound.TakesArgs == Legacy {
+		// no subcommand, always take args
+		if !commandFound.HasSubCommands() {
+			return commandFound, a, nil
+		}
+		// root command with subcommands, do subcommand checking
+		if commandFound == c && len(argsWOflags) > 0 {
+			return commandFound, a, fmt.Errorf("unknown command %q for %q", argsWOflags[0], commandFound.CommandPath())
+		}
 		return commandFound, a, nil
 	}
-	// root command with subcommands, do subcommand checking
-	if commandFound == c && len(argsWOflags) > 0 {
+
+	if commandFound.TakesArgs == None && len(argsWOflags) > 0 {
 		return commandFound, a, fmt.Errorf("unknown command %q for %q", argsWOflags[0], commandFound.CommandPath())
 	}
 
+	if commandFound.TakesArgs == ValidOnly && len(commandFound.ValidArgs) > 0 {
+		for _, v := range argsWOflags {
+			if !stringInSlice(v, commandFound.ValidArgs) {
+				return commandFound, a, fmt.Errorf("invalid argument %q for %q", v, commandFound.CommandPath())
+			}
+		}
+	}
 	return commandFound, a, nil
 }
 

@@ -79,6 +79,7 @@ var cmdDeprecated = &Command{
 	Deprecated: "Please use echo instead",
 	Run: func(cmd *Command, args []string) {
 	},
+	TakesArgs: None,
 }
 
 var cmdTimes = &Command{
@@ -91,6 +92,8 @@ var cmdTimes = &Command{
 	Run: func(cmd *Command, args []string) {
 		tt = args
 	},
+	TakesArgs: ValidOnly,
+	ValidArgs: []string{"one", "two", "three", "four"},
 }
 
 var cmdRootNoRun = &Command{
@@ -103,9 +106,20 @@ var cmdRootNoRun = &Command{
 }
 
 var cmdRootSameName = &Command{
-	Use:   "print",
-	Short: "Root with the same name as a subcommand",
-	Long:  "The root description for help",
+	Use:       "print",
+	Short:     "Root with the same name as a subcommand",
+	Long:      "The root description for help",
+	TakesArgs: None,
+}
+
+var cmdRootTakesArgs = &Command{
+	Use:   "root-with-args [random args]",
+	Short: "The root can run it's own function and takes args!",
+	Long:  "The root description for help, and some args",
+	Run: func(cmd *Command, args []string) {
+		tr = args
+	},
+	TakesArgs: Arbitrary,
 }
 
 var cmdRootWithRun = &Command{
@@ -415,6 +429,51 @@ func TestGrandChildSameName(t *testing.T) {
 	}
 }
 
+func TestRootTakesNoArgs(t *testing.T) {
+	c := initializeWithSameName()
+	c.AddCommand(cmdPrint, cmdEcho)
+	result := simpleTester(c, "illegal")
+
+	expectedError := `unknown command "illegal" for "print"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("exptected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
+func TestRootTakesArgs(t *testing.T) {
+	c := cmdRootTakesArgs
+	result := simpleTester(c, "legal")
+
+	if result.Error != nil {
+		t.Errorf("expected no error, but got %v", result.Error)
+	}
+}
+
+func TestSubCmdTakesNoArgs(t *testing.T) {
+	result := fullSetupTest("deprecated illegal")
+
+	expectedError := `unknown command "illegal" for "cobra-test deprecated"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("expected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
+func TestSubCmdTakesArgs(t *testing.T) {
+	noRRSetupTest("echo times one two")
+	if strings.Join(tt, " ") != "one two" {
+		t.Error("Command didn't parse correctly")
+	}
+}
+
+func TestCmdOnlyValidArgs(t *testing.T) {
+	result := noRRSetupTest("echo times one two five")
+
+	expectedError := `invalid argument "five"`
+	if !strings.Contains(result.Error.Error(), expectedError) {
+		t.Errorf("expected %v, got %v", expectedError, result.Error.Error())
+	}
+}
+
 func TestFlagLong(t *testing.T) {
 	noRRSetupTest("echo --intone=13 something here")
 
@@ -590,9 +649,9 @@ func TestPersistentFlags(t *testing.T) {
 	}
 
 	// persistentFlag should act like normal flag on it's own command
-	fullSetupTest("echo times -s again -c -p test here")
+	fullSetupTest("echo times -s again -c -p one two")
 
-	if strings.Join(tt, " ") != "test here" {
+	if strings.Join(tt, " ") != "one two" {
 		t.Errorf("flags didn't leave proper args remaining..%s given", tt)
 	}
 
