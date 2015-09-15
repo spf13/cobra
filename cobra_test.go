@@ -632,10 +632,10 @@ func TestNonRunChildHelp(t *testing.T) {
 }
 
 func TestRunnableRootCommand(t *testing.T) {
-	fullSetupTest("")
+	x := fullSetupTest("")
 
 	if rootcalled != true {
-		t.Errorf("Root Function was not called")
+		t.Errorf("Root Function was not called\n out:%v", x.Error)
 	}
 }
 
@@ -650,7 +650,10 @@ func TestRunnableRootCommandNilInput(t *testing.T) {
 	c.AddCommand(cmdPrint, cmdEcho)
 	c.SetArgs(empty_arg)
 
-	c.Execute()
+	err := c.Execute()
+	if err != nil {
+		t.Errorf("Execute() failed with %v", err)
+	}
 
 	if rootcalled != true {
 		t.Errorf("Root Function was not called")
