@@ -416,8 +416,11 @@ func TestGrandChildSameName(t *testing.T) {
 }
 
 func TestFlagLong(t *testing.T) {
-	noRRSetupTest("echo --intone=13 something here")
+	noRRSetupTest("echo --intone=13 something -- here")
 
+	if cmdEcho.ArgsLenAtDash() != 1 {
+		t.Errorf("expected argsLenAtDash: %d but got %d", 1, cmdRootNoRun.ArgsLenAtDash())
+	}
 	if strings.Join(te, " ") != "something here" {
 		t.Errorf("flags didn't leave proper args remaining..%s given", te)
 	}
@@ -430,8 +433,11 @@ func TestFlagLong(t *testing.T) {
 }
 
 func TestFlagShort(t *testing.T) {
-	noRRSetupTest("echo -i13 something here")
+	noRRSetupTest("echo -i13 -- something here")
 
+	if cmdEcho.ArgsLenAtDash() != 0 {
+		t.Errorf("expected argsLenAtDash: %d but got %d", 0, cmdRootNoRun.ArgsLenAtDash())
+	}
 	if strings.Join(te, " ") != "something here" {
 		t.Errorf("flags didn't leave proper args remaining..%s given", te)
 	}

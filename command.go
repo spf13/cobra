@@ -470,6 +470,10 @@ func (c *Command) Root() *Command {
 	return findRoot(c)
 }
 
+func (c *Command) ArgsLenAtDash() int {
+	return c.Flags().ArgsLenAtDash()
+}
+
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
