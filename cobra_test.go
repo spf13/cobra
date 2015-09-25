@@ -82,9 +82,10 @@ var cmdDeprecated = &Command{
 }
 
 var cmdTimes = &Command{
-	Use:   "times [# times] [string to echo]",
-	Short: "Echo anything to the screen more times",
-	Long:  `a slightly useless command for testing.`,
+	Use:        "times [# times] [string to echo]",
+	SuggestFor: []string{"counts"},
+	Short:      "Echo anything to the screen more times",
+	Long:       `a slightly useless command for testing.`,
 	PersistentPreRun: func(cmd *Command, args []string) {
 		timesPersPre = args
 	},
@@ -827,6 +828,7 @@ func TestRootSuggestions(t *testing.T) {
 		"ri":       "",
 		"timezone": "",
 		"foo":      "",
+		"counts":   "times",
 	}
 
 	for typo, suggestion := range tests {

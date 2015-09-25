@@ -39,6 +39,8 @@ type Command struct {
 	Use string
 	// An array of aliases that can be used instead of the first word in Use.
 	Aliases []string
+	// An array of command names for which this command will be suggested - similar to aliases but only suggests.
+	SuggestFor []string
 	// The short description shown in the 'help' output.
 	Short string
 	// The long message shown in the 'help <this-command>' output.
@@ -447,13 +449,20 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	return commandFound, a, nil
 }
 
-func (c *Command) SuggestionsFor(cmdName string) []string {
+func (c *Command) SuggestionsFor(typedName string) []string {
 	suggestions := []string{}
 	for _, cmd := range c.commands {
 		if cmd.IsAvailableCommand() {
-			levenshtein := ld(cmdName, cmd.Name(), true)
-			if levenshtein <= c.SuggestionsMinimumDistance || strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(cmdName)) {
+			levenshteinDistance := ld(typedName, cmd.Name(), true)
+			suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
+			suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
+			if suggestByLevenshtein || suggestByPrefix {
 				suggestions = append(suggestions, cmd.Name())
+			}
+			for _, explicitSuggestion := range cmd.SuggestFor {
+				if strings.EqualFold(typedName, explicitSuggestion) {
+					suggestions = append(suggestions, cmd.Name())
+				}
 			}
 		}
 	}
