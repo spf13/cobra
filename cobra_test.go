@@ -816,22 +816,32 @@ func TestRootSuggestions(t *testing.T) {
 	cmd.AddCommand(cmdTimes)
 
 	tests := map[string]string{
-		"time":  "times",
-		"tiems": "times",
-		"timeS": "times",
-		"rimes": "times",
+		"time":     "times",
+		"tiems":    "times",
+		"tims":     "times",
+		"timeS":    "times",
+		"rimes":    "times",
+		"ti":       "times",
+		"t":        "times",
+		"timely":   "times",
+		"ri":       "",
+		"timezone": "",
+		"foo":      "",
 	}
 
 	for typo, suggestion := range tests {
-		cmd.DisableSuggestions = false
-		result := simpleTester(cmd, typo)
-		if expected := fmt.Sprintf(outputWithSuggestions, typo, suggestion); result.Output != expected {
-			t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", expected, result.Output)
-		}
-		cmd.DisableSuggestions = true
-		result = simpleTester(cmd, typo)
-		if expected := fmt.Sprintf(outputWithoutSuggestions, typo); result.Output != expected {
-			t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", expected, result.Output)
+		for _, suggestionsDisabled := range []bool{false, true} {
+			cmd.DisableSuggestions = suggestionsDisabled
+			result := simpleTester(cmd, typo)
+			expected := ""
+			if len(suggestion) == 0 || suggestionsDisabled {
+				expected = fmt.Sprintf(outputWithoutSuggestions, typo)
+			} else {
+				expected = fmt.Sprintf(outputWithSuggestions, typo, suggestion)
+			}
+			if result.Output != expected {
+				t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", expected, result.Output)
+			}
 		}
 	}
 }
