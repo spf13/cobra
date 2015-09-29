@@ -442,6 +442,18 @@ or
 
     command.SuggestionsMinimumDistance = 1
 
+You can also explicitly set names for which a given command will be suggested using the `SuggestFor` attribute. This allows suggestions for strings that are not close in terms of string distance, but makes sense in your set of commands and for some which you don't want aliases. Example:
+
+```
+$ hugo delete
+unknown command "delete" for "hugo"
+
+Did you mean this?
+  remove
+
+Run 'hugo --help' for usage.
+```
+
 ## Generating markdown formatted documentation for your command
 
 Cobra can generate a markdown formatted document based on the subcommands, flags, etc. A simple example of how to do this for your command can be found in [Markdown Docs](md_docs.md)
