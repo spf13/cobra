@@ -522,7 +522,7 @@ func (c *Command) execute(a []string) (err error) {
 
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPreRunE != nil {
-			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
+			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
 				return err
 			}
 			break
