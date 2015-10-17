@@ -115,6 +115,16 @@ type Command struct {
 	SuggestionsMinimumDistance int
 }
 
+// LogError can be implemented to toggle error logging when error is returned from RunE.
+type LogError interface {
+	ShouldLogError() bool
+}
+
+// LogUsage can be implemented to toggle usage logging when error is returned from RunE.
+type LogUsage interface {
+	ShouldLogUsage() bool
+}
+
 // os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
@@ -637,8 +647,22 @@ func (c *Command) Execute() (err error) {
 			cmd.HelpFunc()(cmd, args)
 			return nil
 		}
-		c.Println(cmd.UsageString())
-		c.Println("Error:", err.Error())
+
+		logError := true
+		logUsage := true
+
+		if le, ok := err.(LogError); ok {
+			logError = le.ShouldLogError()
+		}
+		if lu, ok := err.(LogUsage); ok {
+			logUsage = lu.ShouldLogUsage()
+		}
+		if logUsage {
+			c.Println(cmd.UsageString())
+		}
+		if logError {
+			c.Println("Error:", err.Error())
+		}
 	}
 
 	return
