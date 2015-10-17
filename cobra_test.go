@@ -2,15 +2,15 @@ package cobra
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/spf13/pflag"
 	"os"
 	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 	"text/template"
-
-	"github.com/spf13/pflag"
 )
 
 var _ = fmt.Println
@@ -24,6 +24,22 @@ var flagi1, flagi2, flagi3, flagir int
 var globalFlag1 bool
 var flagEcho, rootcalled bool
 var versionUsed int
+
+type silentErr int
+
+func (silentErr) Error() string        { return "<nil>" }
+func (silentErr) ShouldLogError() bool { return false }
+func (silentErr) ShouldLogUsage() bool { return false }
+
+type noErrorLogging int
+
+func (noErrorLogging) Error() string        { return "<nil>" }
+func (noErrorLogging) ShouldLogError() bool { return false }
+
+type noUsageLogging int
+
+func (noUsageLogging) Error() string        { return "<nil>" }
+func (noUsageLogging) ShouldLogUsage() bool { return false }
 
 const strtwoParentHelp = "help message for parent flag strtwo"
 const strtwoChildHelp = "help message for child flag strtwo"
@@ -580,6 +596,64 @@ func TestSubcommandArgEvaluation(t *testing.T) {
 	if result.Output != expectedOutput {
 		t.Errorf("exptected %v, got %v", expectedOutput, result.Output)
 	}
+}
+
+func TestSilentError(t *testing.T) {
+	rootCmd := initializeWithRootCmd()
+
+	tests := []struct {
+		cmd      *Command
+		logError bool
+		logUsage bool
+	}{
+		{
+			&Command{
+				Use: "silent",
+				RunE: func(cmd *Command, args []string) error {
+					return silentErr(1)
+				}}, false, false},
+		{
+			&Command{
+				Use: "nousage",
+				RunE: func(cmd *Command, args []string) error {
+					return noUsageLogging(2)
+				}}, true, false},
+		{
+			&Command{
+				Use: "noerror",
+				RunE: func(cmd *Command, args []string) error {
+					return noErrorLogging(3)
+				}}, false, true},
+		{
+			&Command{
+				Use: "regular",
+				RunE: func(cmd *Command, args []string) error {
+					return errors.New("Failed")
+				}}, true, true},
+	}
+
+	for _, tc := range tests {
+		rootCmd.AddCommand(tc.cmd)
+	}
+
+	for i, tc := range tests {
+		result := fullTester(rootCmd, tc.cmd.Use)
+		if result.Error == nil {
+			t.Fatalf("[%d] Err was nil", i)
+		}
+		hasError := strings.Contains(result.Output, "Error:")
+		hasUsage := strings.Contains(result.Output, "Usage:")
+
+		if hasError != tc.logError {
+			t.Errorf("[%d] Error was logged: %s", i, result.Output)
+		}
+
+		if hasUsage != tc.logUsage {
+			t.Errorf("[%d] Usage was logged: %s", i, result.Output)
+		}
+
+	}
+
 }
 
 func TestPersistentFlags(t *testing.T) {
