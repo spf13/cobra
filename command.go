@@ -637,7 +637,8 @@ func (c *Command) Execute() (err error) {
 
 	err = cmd.execute(flags)
 	if err != nil {
-		if !cmd.SilenceErrors {
+		// If root is silenced, all subcommands should have the same
+		if !cmd.SilenceErrors && !c.SilenceErrors {
 			if err == flag.ErrHelp {
 				cmd.HelpFunc()(cmd, args)
 				return nil
