@@ -61,6 +61,8 @@ type Command struct {
 	pflags *flag.FlagSet
 	// Flags that are declared specifically by this command (not inherited).
 	lflags *flag.FlagSet
+	// SilenceErrors is an option to quiet errors down stream
+	SilenceErrors bool
 	// The *Run functions are executed in the following order:
 	//   * PersistentPreRun()
 	//   * PreRun()
@@ -626,21 +628,25 @@ func (c *Command) Execute() (err error) {
 		if cmd != nil {
 			c = cmd
 		}
-		c.Println("Error:", err.Error())
-		c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+		if !c.SilenceErrors {
+			c.Println("Error:", err.Error())
+			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+		}
 		return err
 	}
 
 	err = cmd.execute(flags)
 	if err != nil {
-		if err == flag.ErrHelp {
-			cmd.HelpFunc()(cmd, args)
-			return nil
+		if !cmd.SilenceErrors {
+			if err == flag.ErrHelp {
+				cmd.HelpFunc()(cmd, args)
+				return nil
+			}
+			c.Println(cmd.UsageString())
+			c.Println("Error:", err.Error())
 		}
-		c.Println(cmd.UsageString())
-		c.Println("Error:", err.Error())
+		return err
 	}
-
 	return
 }
 
