@@ -639,10 +639,13 @@ func (c *Command) Execute() (err error) {
 
 	err = cmd.execute(flags)
 	if err != nil {
-		// If root is silenced, all subcommands should have the same
+		// If root command has SilentUsage flagged,
+		// all subcommands should respect it
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
 		}
+		// If root command has SilentErrors flagged,
+		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
 			if err == flag.ErrHelp {
 				cmd.HelpFunc()(cmd, args)
