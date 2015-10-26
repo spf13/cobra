@@ -63,6 +63,8 @@ type Command struct {
 	lflags *flag.FlagSet
 	// SilenceErrors is an option to quiet errors down stream
 	SilenceErrors bool
+	// Silence Usage is an option to silence usage when an error occurs.
+	SilenceUsage bool
 	// The *Run functions are executed in the following order:
 	//   * PersistentPreRun()
 	//   * PreRun()
@@ -638,12 +640,14 @@ func (c *Command) Execute() (err error) {
 	err = cmd.execute(flags)
 	if err != nil {
 		// If root is silenced, all subcommands should have the same
+		if !cmd.SilenceUsage && !c.SilenceUsage {
+			c.Println(cmd.UsageString())
+		}
 		if !cmd.SilenceErrors && !c.SilenceErrors {
 			if err == flag.ErrHelp {
 				cmd.HelpFunc()(cmd, args)
 				return nil
 			}
-			c.Println(cmd.UsageString())
 			c.Println("Error:", err.Error())
 		}
 		return err

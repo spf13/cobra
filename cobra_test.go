@@ -220,6 +220,7 @@ func fullSetupTest(input string) resulter {
 func noRRSetupTestSilenced(input string) resulter {
 	c := initialize()
 	c.SilenceErrors = true
+	c.SilenceUsage = true
 	return fullTester(c, input)
 }
 
