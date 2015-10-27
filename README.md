@@ -85,7 +85,7 @@ A Command has the following structure:
 ### Flags
 
 A Flag is a way to modify the behavior of an command. Cobra supports
-fully posix compliant flags as well as the go flag package. 
+fully posix compliant flags as well as the go flag package.
 A Cobra command can define flags that persist through to children commands
 and flags that are only available to that command.
 
@@ -306,7 +306,7 @@ around it. In fact you can provide your own if you want.
 
 You can provide your own Help command or you own template for the default command to use.
 
-The default help command is 
+The default help command is
 
     func (c *Command) initHelp() {
         if c.helpCommand == nil {
@@ -448,6 +448,48 @@ func main() {
 }
 ```
 
+
+## Alternative Error Handling
+
+Cobra also has functions where the return signature is an error. This allows for errors to bubble up to the top, providing a way to handle the  errors in one location. The current list of functions that return an error is:
+
+* PersistentPreRunE
+* PreRunE
+* RunE
+* PostRunE
+* PersistentPostRunE
+
+**Example Usage using RunE:**
+
+```go
+package main
+
+import (
+	"errors"
+	"log"
+
+	"github.com/spf13/cobra"
+)
+
+func main() {
+	var rootCmd = &cobra.Command{
+		Use:   "hugo",
+		Short: "Hugo is a very fast static site generator",
+		Long: `A Fast and Flexible Static Site Generator built with
+                love by spf13 and friends in Go.
+                Complete documentation is available at http://hugo.spf13.com`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Do Stuff Here
+			return errors.New("some random error")
+		},
+	}
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
 ## Suggestions when "unknown command" happens
 
 Cobra will print automatic suggestions when "unknown command" errors happen. This allows Cobra to behavior similarly to the `git` command when a typo happens. For example:
@@ -468,7 +510,7 @@ If you need to disable suggestions or tweak the string distance in your command,
 
     command.DisableSuggestions = true
 
-or 
+or
 
     command.SuggestionsMinimumDistance = 1
 
@@ -552,4 +594,3 @@ Cobra is released under the Apache 2.0 license. See [LICENSE.txt](https://github
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/spf13/cobra/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
