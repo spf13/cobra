@@ -129,7 +129,6 @@ func guessProjectPath() {
 
 		// if we are in the cmd directory.. back up
 		for _, c := range cmdDirs {
-			fmt.Print(c)
 			if base == c {
 				projectPath = filepath.Dir(x)
 				return
@@ -228,16 +227,13 @@ func dirExists(path string) (bool, error) {
 func writeTemplateToFile(path string, file string, template string, data interface{}) error {
 	filename := filepath.Join(path, file)
 
-	fmt.Println(filename)
 	r, err := templateToReader(template, data)
 
-	fmt.Println("err:", err)
 	if err != nil {
 		return err
 	}
 
 	err = safeWriteToDisk(filename, r)
-	fmt.Println("err:", err)
 
 	if err != nil {
 		return err
