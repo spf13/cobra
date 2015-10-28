@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -175,7 +176,7 @@ func init() {
   // RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)")
 	{{ end }}
 	// Cobra also supports local flags which will only run when this action is called directly
-	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle" )
+	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle" )
 
 }
 
@@ -210,4 +211,9 @@ func initConfig() {
 	if err != nil {
 		er(err)
 	}
+
+	fmt.Println("Yor Cobra application is ready at")
+	fmt.Println(ProjectPath())
+	fmt.Println("Give it a try by going there and running `go run main.go`")
+	fmt.Println("Add commands to it by running `cobra add [cmdname]`")
 }
