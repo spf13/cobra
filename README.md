@@ -11,7 +11,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [OpenShift](https://www.openshift.com/)
 * [Delve](https://github.com/derekparker/delve)
 * [GopherJS](http://www.gopherjs.org/)
-* [CochroachDB](http://www.cockroachlabs.com/)
+* [CockroachDB](http://www.cockroachlabs.com/)
 * [Bleve](http://www.blevesearch.com/)
 * [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
 * [Parse (CLI)](https://parse.com/)
