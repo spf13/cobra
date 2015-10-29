@@ -1,19 +1,47 @@
 # Cobra
 
-A Commander for modern go CLI interactions
+Cobra is both a library for creating powerful modern CLI applications as well as a program to generate applications and command files. 
+
+Many of the most widely used Go projects are built using Cobra including:
+
+* [Kubernetes](http://kubernetes.io/)
+* [Hugo](http://gohugo.io)
+* [Rocket](https://github.com/coreos/rkt)
+* [Docker (distribution)](https://github.com/docker/distribution) 
+* [OpenShift](https://www.openshift.com/)
+* [Delve](https://github.com/derekparker/delve)
+* [GopherJS](http://www.gopherjs.org/)
+* [CochroachDB](http://www.cockroachlabs.com/)
+* [Bleve](http://www.blevesearch.com/)
+* [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
+* [Parse (CLI)](https://parse.com/)
+
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg)](https://travis-ci.org/spf13/cobra)
 
 ## Overview
 
-Cobra is a commander providing a simple interface to create powerful modern CLI
-interfaces similar to git & go tools. In addition to providing an interface, Cobra
-simultaneously provides a controller to organize your application code.
+Cobra is a library providing a simple interface to create powerful modern CLI
+interfaces similar to git & go tools.
 
-Inspired by go, go-Commander, gh and subcommand, Cobra improves on these by
-providing **fully posix compliant flags** (including short & long versions),
-**nesting commands**, and the ability to **define your own help and usage** for any or
-all commands.
+Cobra is also an application that will generate your application scaffolding to rapidly
+develop a Cobra based application.
+
+Cobra provides:
+* Easy sub-command based CLIs: `app server`, `app fetch`, etc.
+* Fully posix compliant flags (including short & long versions)
+* Nested sub commands
+* Global, local and cascading flags
+* Easy generation of applications & commands with `cobra create appname` & `cobra add cmdname`
+* Intelligent suggestions (`app srver`.. did you mean `app server`)
+* Automatic help generation for commands and flags
+* Automatic detailed help for `app help [command]`
+* Automatic help flag recognition of `-h`, `--help`, etc.
+* Automatically generated bash autocomplete for your application
+* Automatically generated man pages for your application
+* Command aliases so you can change things without breaking them
+* The flexibilty to define your own help, usage, etc
+* Optional tight integration with [viper](http://github.com/spf13/viper) for 12 factor apps
 
 Cobra has an exceptionally clean interface and simple design without needless
 constructors or initialization methods.
