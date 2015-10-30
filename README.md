@@ -378,13 +378,13 @@ Like help the function and template are over ridable through public methods.
 
 ## PreRun or PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistendPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherrited by children if they do not declare their own.  These function are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherrited by children if they do not declare their own.  These function are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
 - `Run`
 - `PostRun`
-- `PersistenPostRun`
+- `PersistentPostRun`
 
 And example of two commands which use all of these features is below.  When the subcommand in executed it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`
 
