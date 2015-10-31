@@ -1075,3 +1075,14 @@ func TestAddTemplateFunctions(t *testing.T) {
 		t.Errorf("c.UsageString() != \"%s\", is \"%s\"", usage, us)
 	}
 }
+
+func TestUsageIsNotPrintedTwice(t *testing.T) {
+	var cmd = &Command{Use: "root"}
+	var sub = &Command{Use: "sub"}
+	cmd.AddCommand(sub)
+
+	r := simpleTester(cmd, "")
+	if strings.Count(r.Output, "Usage:") != 1 {
+		t.Error("Usage output is not printed exactly once")
+	}
+}
