@@ -112,8 +112,7 @@ func getSrcPath() string {
 }
 
 func projectName() string {
-	pp := ProjectPath()
-	return filepath.Dir(pp)
+	return filepath.Base(ProjectPath())
 }
 
 func guessProjectPath() {
