@@ -19,6 +19,8 @@ Many of the most widely used Go projects are built using Cobra including:
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg)](https://travis-ci.org/spf13/cobra)
 
+![cobra2](https://cloud.githubusercontent.com/assets/173412/10886433/03662176-8150-11e5-8509-a0e1997183ba.gif)
+
 ## Overview
 
 Cobra is a library providing a simple interface to create powerful modern CLI
