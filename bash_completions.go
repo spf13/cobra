@@ -195,7 +195,7 @@ func postscript(out *bytes.Buffer, name string) {
 	fmt.Fprintf(out, "__start_%s()\n", name)
 	fmt.Fprintf(out, `{
     local cur prev words cword
-    if declare -F _init_completions >/dev/null 2>&1; then
+    if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else
         __my_init_completion || return
