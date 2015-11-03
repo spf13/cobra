@@ -60,7 +60,9 @@ __handle_reply()
     __debug "${FUNCNAME}"
     case $cur in
         -*)
-            compopt -o nospace
+            if builtin compopt > /dev/null 2>&1; then
+              compopt -o nospace
+            fi
             local allflags
             if [ ${#must_have_one_flag[@]} -ne 0 ]; then
                 allflags=("${must_have_one_flag[@]}")
@@ -68,7 +70,9 @@ __handle_reply()
                 allflags=("${flags[*]} ${two_word_flags[*]}")
             fi
             COMPREPLY=( $(compgen -W "${allflags[*]}" -- "$cur") )
-            [[ $COMPREPLY == *= ]] || compopt +o nospace
+            if builtin compopt > /dev/null 2>&1; then
+              [[ $COMPREPLY == *= ]] || compopt +o nospace
+            fi
             return 0;
             ;;
     esac
@@ -216,7 +220,13 @@ func postscript(out *bytes.Buffer, name string) {
 }
 
 `, name)
-	fmt.Fprintf(out, "complete -F __start_%s %s\n", name, name)
+	fmt.Fprintf(out, `
+		if builtin compopt > /dev/null 2>&1; then
+			complete -F __start_%s %s
+		else
+			complete -o nospace -F __start_%s %s
+		fi
+		`, name, name, name, name)
 	fmt.Fprintf(out, "# ex: ts=4 sw=4 et filetype=sh\n")
 }
 
