@@ -51,6 +51,12 @@ func TestBashCompletions(t *testing.T) {
 	c.Flags().StringVar(&flagval, "filename", "", "Enter a filename")
 	c.MarkFlagFilename("filename", "json", "yaml", "yml")
 
+	// persistent filename
+	var flagvalPersistent string
+	c.PersistentFlags().StringVar(&flagvalPersistent, "persistent-filename", "", "Enter a filename")
+	c.MarkPersistentFlagFilename("persistent-filename")
+	c.MarkPersistentFlagRequired("persistent-filename")
+
 	// filename extensions
 	var flagvalExt string
 	c.Flags().StringVar(&flagvalExt, "filename-ext", "", "Enter a filename (extension limited)")
@@ -72,6 +78,7 @@ func TestBashCompletions(t *testing.T) {
 
 	// check for required flags
 	check(t, str, `must_have_one_flag+=("--introot=")`)
+	check(t, str, `must_have_one_flag+=("--persistent-filename=")`)
 	// check for custom completion function
 	check(t, str, `COMPREPLY=( "hello" )`)
 	// check for required nouns
