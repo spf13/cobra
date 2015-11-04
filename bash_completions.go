@@ -305,6 +305,12 @@ func writeFlags(cmd *Command, out *bytes.Buffer) {
 			writeShortFlag(flag, out)
 		}
 	})
+	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+		writeFlag(flag, out)
+		if len(flag.Shorthand) > 0 {
+			writeShortFlag(flag, out)
+		}
+	})
 
 	fmt.Fprintf(out, "\n")
 }
