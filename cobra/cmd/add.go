@@ -15,7 +15,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -117,9 +116,9 @@ func init() {
 	data["parentName"] = parentName()
 	data["cmdName"] = cmdName
 
-	err := writeTemplateToFile(ProjectPath()+string(os.PathSeparator)+guessCmdDir(), cmdName+".go", template, data)
+	err := writeTemplateToFile(filepath.Join(ProjectPath(), guessCmdDir()), cmdName+".go", template, data)
 	if err != nil {
 		er(err)
 	}
-	fmt.Println(cmdName, "created at", filepath.Join(ProjectPath()+string(os.PathSeparator)+guessCmdDir(), cmdName+".go"))
+	fmt.Println(cmdName, "created at", filepath.Join(ProjectPath(), guessCmdDir(), cmdName+".go"))
 }
