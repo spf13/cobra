@@ -35,4 +35,5 @@ func TestProjectPath(t *testing.T) {
 	checkGuess(t, "/bar/foo/cmd", "", "/bar/foo")
 	checkGuess(t, "/bar/foo/command", "", "/bar/foo")
 	checkGuess(t, "/bar/foo/commands", "", "/bar/foo")
+	checkGuess(t, "github.com/spf13/hugo/../hugo", "", "github.com/spf13/hugo")
 }
