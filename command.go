@@ -618,7 +618,7 @@ func (c *Command) Execute() (err error) {
 
 	var args []string
 
-	if len(c.args) == 0 {
+	if len(c.args) == 0 && os.Args[0] == c.Name() {
 		args = os.Args[1:]
 	} else {
 		args = c.args
