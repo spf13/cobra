@@ -65,3 +65,20 @@ func TestGenMdDoc(t *testing.T) {
 		t.Errorf("Unexpected response.\nFound: %v\nBut should not have!!\n", unexpected)
 	}
 }
+
+func TestGenMdNoTag(t *testing.T) {
+	c := initializeWithRootCmd()
+	// Need two commands to run the command alphabetical sort
+	cmdEcho.AddCommand(cmdTimes, cmdEchoSub, cmdDeprecated)
+	c.AddCommand(cmdPrint, cmdEcho)
+	c.DisableAutoGenTag = true
+	cmdRootWithRun.PersistentFlags().StringVarP(&flags2a, "rootflag", "r", "two", strtwoParentHelp)
+	out := new(bytes.Buffer)
+
+	GenMarkdown(c, out)
+	found := out.String()
+
+	unexpected := "Auto generated"
+	checkStringOmits(t, found, unexpected)
+
+}
