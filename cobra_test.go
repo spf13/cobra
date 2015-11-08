@@ -651,6 +651,34 @@ func TestRunnableRootCommand(t *testing.T) {
 	}
 }
 
+func TestVisitParents(t *testing.T) {
+	c := &Command{Use: "app"}
+	sub := &Command{Use: "sub"}
+	dsub := &Command{Use: "dsub"}
+	sub.AddCommand(dsub)
+	c.AddCommand(sub)
+	total := 0
+	add := func(x *Command) {
+		total++
+	}
+	sub.VisitParents(add)
+	if total != 1 {
+		t.Errorf("Should have visited 1 parent but visited %d", total)
+	}
+
+	total = 0
+	dsub.VisitParents(add)
+	if total != 2 {
+		t.Errorf("Should have visited 2 parent but visited %d", total)
+	}
+
+	total = 0
+	c.VisitParents(add)
+	if total != 0 {
+		t.Errorf("Should have not visited any parent but visited %d", total)
+	}
+}
+
 func TestRunnableRootCommandNilInput(t *testing.T) {
 	empty_arg := make([]string, 0)
 	c := initializeWithRootCmd()

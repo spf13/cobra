@@ -65,4 +65,30 @@ func TestGenManDoc(t *testing.T) {
 
 	unexpected := translate(cmdDeprecated.Name())
 	checkStringOmits(t, found, unexpected)
+
+	// auto generated
+	expected = translate("Auto generated")
+	checkStringContains(t, found, expected)
+}
+
+func TestGenManNoGenTag(t *testing.T) {
+
+	c := initializeWithRootCmd()
+	// Need two commands to run the command alphabetical sort
+	cmdEcho.AddCommand(cmdTimes, cmdEchoSub, cmdDeprecated)
+	c.AddCommand(cmdPrint, cmdEcho)
+	cmdRootWithRun.PersistentFlags().StringVarP(&flags2a, "rootflag", "r", "two", strtwoParentHelp)
+	cmdEcho.DisableAutoGenTag = true
+	out := new(bytes.Buffer)
+
+	header := &GenManHeader{
+		Title:   "Project",
+		Section: "2",
+	}
+	// We generate on a subcommand so we have both subcommands and parents
+	cmdEcho.GenMan(header, out)
+	found := out.String()
+
+	unexpected := translate("#HISTORY")
+	checkStringOmits(t, found, unexpected)
 }
