@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -618,7 +619,8 @@ func (c *Command) Execute() (err error) {
 
 	var args []string
 
-	if len(c.args) == 0 && os.Args[0] == c.Name() {
+	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
+	if len(c.args) == 0 && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
 	} else {
 		args = c.args
