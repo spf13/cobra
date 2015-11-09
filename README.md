@@ -580,6 +580,12 @@ out everything Cobra knows about the flags for each command
 * **0.1.0** Sept 3, 2013
   * Implement first draft
 
+## Extensions
+
+Libraries for extending Cobra:
+
+* [cmdns](https://github.com/gosuri/cmdns): Enables name spacing a command's immediate children. It provides an alternative way to structure sub commands, similar to `heroku apps:create` and `ovrclk clusters:launch`.
+
 ## ToDo
 * Launch proper documentation site
 
