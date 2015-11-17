@@ -614,11 +614,16 @@ func (c *Command) errorMsgFromParse() string {
 // Call execute to use the args (os.Args[1:] by default)
 // and run through the command tree finding appropriate matches
 // for commands and then corresponding flags.
-func (c *Command) Execute() (err error) {
+func (c *Command) Execute() error {
+	_, err := c.ExecuteC()
+	return err
+}
+
+func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
-		return c.Root().Execute()
+		return c.Root().ExecuteC()
 	}
 
 	if EnableWindowsMouseTrap && runtime.GOOS == "windows" {
@@ -652,9 +657,8 @@ func (c *Command) Execute() (err error) {
 			c.Println("Error:", err.Error())
 			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
-		return err
+		return c, err
 	}
-
 	err = cmd.execute(flags)
 	if err != nil {
 		// If root command has SilentErrors flagged,
@@ -662,7 +666,7 @@ func (c *Command) Execute() (err error) {
 		if !cmd.SilenceErrors && !c.SilenceErrors {
 			if err == flag.ErrHelp {
 				cmd.HelpFunc()(cmd, args)
-				return nil
+				return cmd, nil
 			}
 			c.Println("Error:", err.Error())
 		}
@@ -672,9 +676,9 @@ func (c *Command) Execute() (err error) {
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
 		}
-		return err
+		return cmd, err
 	}
-	return
+	return cmd, nil
 }
 
 func (c *Command) initHelpFlag() {
