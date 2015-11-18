@@ -248,6 +248,18 @@ func simpleTester(c *Command, input string) resulter {
 	return resulter{err, output, c}
 }
 
+func simpleTesterC(c *Command, input string) resulter {
+	buf := new(bytes.Buffer)
+	// Testing flag with invalid input
+	c.SetOutput(buf)
+	c.SetArgs(strings.Split(input, " "))
+
+	cmd, err := c.ExecuteC()
+	output := buf.String()
+
+	return resulter{err, output, cmd}
+}
+
 func fullTester(c *Command, input string) resulter {
 	buf := new(bytes.Buffer)
 	// Testing flag with invalid input
@@ -559,6 +571,41 @@ func TestInvalidSubcommandFlags(t *testing.T) {
 		t.Errorf("invalid --badflag flag shouldn't fail on 'unknown' --inttwo flag")
 	}
 
+}
+
+func TestSubcommandExecuteC(t *testing.T) {
+	cmd := initializeWithRootCmd()
+	double := &Command{
+		Use: "double message",
+		Run: func(c *Command, args []string) {
+			msg := strings.Join(args, " ")
+			c.Println(msg, msg)
+		},
+	}
+
+	echo := &Command{
+		Use: "echo message",
+		Run: func(c *Command, args []string) {
+			msg := strings.Join(args, " ")
+			c.Println(msg, msg)
+		},
+	}
+
+	cmd.AddCommand(double, echo)
+
+	result := simpleTesterC(cmd, "double hello world")
+	checkResultContains(t, result, "hello world hello world")
+
+	if result.Command.Name() != "double" {
+		t.Errorf("invalid cmd returned from ExecuteC: should be 'double' but got %s", result.Command.Name())
+	}
+
+	result = simpleTesterC(cmd, "echo msg to be echoed")
+	checkResultContains(t, result, "msg to be echoed")
+
+	if result.Command.Name() != "echo" {
+		t.Errorf("invalid cmd returned from ExecuteC: should be 'echo' but got %s", result.Command.Name())
+	}
 }
 
 func TestSubcommandArgEvaluation(t *testing.T) {
