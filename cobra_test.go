@@ -96,7 +96,7 @@ var cmdTimes = &Command{
 
 var cmdRootNoRun = &Command{
 	Use:   "cobra-test",
-	Short: "The root can run it's own function",
+	Short: "The root can run its own function",
 	Long:  "The root description for help",
 	PersistentPreRun: func(cmd *Command, args []string) {
 		rootPersPre = args
@@ -111,7 +111,7 @@ var cmdRootSameName = &Command{
 
 var cmdRootWithRun = &Command{
 	Use:   "cobra-test",
-	Short: "The root can run it's own function",
+	Short: "The root can run its own function",
 	Long:  "The root description for help",
 	Run: func(cmd *Command, args []string) {
 		tr = args
@@ -637,7 +637,7 @@ func TestSubcommandArgEvaluation(t *testing.T) {
 func TestPersistentFlags(t *testing.T) {
 	fullSetupTest("echo -s something -p more here")
 
-	// persistentFlag should act like normal flag on it's own command
+	// persistentFlag should act like normal flag on its own command
 	if strings.Join(te, " ") != "more here" {
 		t.Errorf("flags didn't leave proper args remaining..%s given", te)
 	}
@@ -648,7 +648,7 @@ func TestPersistentFlags(t *testing.T) {
 		t.Errorf("persistent bool flag not parsed correctly. Expected true, had %v", flagbp)
 	}
 
-	// persistentFlag should act like normal flag on it's own command
+	// persistentFlag should act like normal flag on its own command
 	fullSetupTest("echo times -s again -c -p test here")
 
 	if strings.Join(tt, " ") != "test here" {
