@@ -162,7 +162,7 @@ func main() {
 
 ## Using the Cobra Generator
 
-Cobra provides it's own program that will create your application and add any
+Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
 ### cobra init
@@ -326,7 +326,7 @@ var versionCmd = &cobra.Command{
 ### Attach command to its parent 
 
 
-If you notice in the above example we attach the command to it's parent. In
+If you notice in the above example we attach the command to its parent. In
 this case the parent is the rootCmd. In this example we are attaching it to the
 root, but commands can be attached at any level.
 
@@ -853,7 +853,7 @@ Names in no particular order:
 
 * [spf13](https://github.com/spf13), 
 [eparis](https://github.com/eparis), 
-[bep](https://github.com/bep), ...
+[bep](https://github.com/bep), and many more!
 
 ## License
 
