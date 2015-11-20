@@ -33,12 +33,14 @@ var addCmd = &cobra.Command{
 	Use:     "add [command name]",
 	Aliases: []string{"command"},
 	Short:   "Add a command to a Cobra Application",
-	Long: `Add will create a new command, with a license and the appropriate structure
-	for a Cobra based CLI application and register it to it's parent (default RootCmd).
+	Long: `Add (cobra add) will create a new command, with a license and
+the appropriate structure for a Cobra-based CLI application,
+and register it to its parent (default RootCmd).
 
-  If you want your command to be public, pass in the command name with an initial upper case letter.
+If you want your command to be public, pass in the command name
+with an initial uppercase letter.
 
-  Example: cobra add server  -> resulting in a new cmd/server.go
+Example: cobra add server  -> resulting in a new cmd/server.go
   `,
 
 	Run: func(cmd *cobra.Command, args []string) {
@@ -66,12 +68,12 @@ func createCmdFile(cmdName string) {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
-//
 {{ comment .license }}
+
 package cmd
 
 import (
-  "fmt"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -83,25 +85,27 @@ var {{ .cmdName }}Cmd = &cobra.Command{
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
-Cobra is a Cli library for Go that empowers applications. This
-application is a tool to generate the needed files to quickly create a Cobra
-application.` + "`" + `,
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.` + "`" + `,
 	Run: func(cmd *cobra.Command, args []string) {
-    // TODO: Work your own magic here
-    fmt.Println("{{ .cmdName }} called")
-   },
+		// TODO: Work your own magic here
+		fmt.Println("{{ .cmdName }} called")
+	},
 }
 
 func init() {
 	{{ .parentName }}.AddCommand({{ .cmdName }}Cmd)
 
-	// Here you will define your flags and configuration settings
+	// Here you will define your flags and configuration settings.
 
-	// Cobra supports Persistent Flags which will work for this command and all subcommands
-  // {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
 
-	// Cobra supports local flags which will only run when this command is called directly
-	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle" )
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 }
 `

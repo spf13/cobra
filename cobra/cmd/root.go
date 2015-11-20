@@ -28,9 +28,9 @@ var userLicense string
 var RootCmd = &cobra.Command{
 	Use:   "cobra",
 	Short: "A generator for Cobra based Applications",
-	Long: `Cobra is a Cli library for Go that empowers applications. This
-    application is a tool to generate the needed files to quickly create a Cobra
-    application.`,
+	Long: `Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
 }
 
 //Execute adds all child commands to the root command sets flags appropriately.
@@ -44,7 +44,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
-	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory eg. github.com/spf13/")
+	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
 	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
 	RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
 	RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
