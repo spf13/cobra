@@ -301,11 +301,13 @@ func getLicense() License {
 	l := whichLicense()
 	if l != "" {
 		if x, ok := Licenses[l]; ok {
+			fmt.Printf("Info: License matched, using %q\n", x.Identifier)
 			return x
 		}
 	}
 
-	return Licenses["apache"]
+	fmt.Println("Info: License not specified or not found, using \"Apache-2.0\"")
+	return Licenses["Apache-2.0"]
 }
 
 func whichLicense() string {
