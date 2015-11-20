@@ -156,7 +156,10 @@ package main
 import "{pathToYourApp}/cmd"
 
 func main() {
-	RootCmd.Execute()
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
 ```
 
@@ -289,7 +292,10 @@ package main
 import "{pathToYourApp}/cmd"
 
 func main() {
-	RootCmd.Execute()
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
 ```
 
