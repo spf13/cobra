@@ -209,7 +209,7 @@ func initConfig() {
 		er(err)
 	}
 
-	fmt.Println("Yor Cobra application is ready at")
+	fmt.Println("Your Cobra application is ready at")
 	fmt.Println(ProjectPath())
 	fmt.Println("Give it a try by going there and running `go run main.go`")
 	fmt.Println("Add commands to it by running `cobra add [cmdname]`")
