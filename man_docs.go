@@ -95,7 +95,7 @@ func (cmd *Command) GenMan(header *GenManHeader, out *bytes.Buffer) {
 
 func fillHeader(header *GenManHeader, name string) {
 	if header.Title == "" {
-		header.Title = name
+		header.Title = strings.ToUpper(strings.Replace(name, " ", "\\-", -1))
 	}
 	if header.Section == "" {
 		header.Section = "1"
@@ -168,11 +168,12 @@ func manPrintOptions(out *bytes.Buffer, command *Command) {
 }
 
 func genMarkdown(cmd *Command, header *GenManHeader) []byte {
-	fillHeader(header, cmd.Name())
 	// something like `rootcmd subcmd1 subcmd2`
 	commandName := cmd.CommandPath()
 	// something like `rootcmd-subcmd1-subcmd2`
 	dashCommandName := strings.Replace(commandName, " ", "-", -1)
+
+	fillHeader(header, commandName)
 
 	buf := new(bytes.Buffer)
 
