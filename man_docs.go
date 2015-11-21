@@ -200,7 +200,7 @@ func genMarkdown(cmd *Command, header *GenManHeader) []byte {
 		if cmd.HasParent() {
 			parentPath := cmd.Parent().CommandPath()
 			dashParentPath := strings.Replace(parentPath, " ", "-", -1)
-			fmt.Fprintf(buf, "**%s(%s)**, ", dashParentPath, header.Section)
+			fmt.Fprintf(buf, "**%s(%s)**", dashParentPath, header.Section)
 			cmd.VisitParents(func(c *Command) {
 				if c.DisableAutoGenTag {
 					cmd.DisableAutoGenTag = c.DisableAutoGenTag
@@ -209,11 +209,14 @@ func genMarkdown(cmd *Command, header *GenManHeader) []byte {
 		}
 		children := cmd.Commands()
 		sort.Sort(byName(children))
-		for _, c := range children {
+		for i, c := range children {
 			if !c.IsAvailableCommand() || c == cmd.helpCommand {
 				continue
 			}
-			fmt.Fprintf(buf, "**%s-%s(%s)**, ", dashCommandName, c.Name(), header.Section)
+			if cmd.HasParent() || i > 0 {
+				fmt.Fprintf(buf, ", ")
+			}
+			fmt.Fprintf(buf, "**%s-%s(%s)**", dashCommandName, c.Name(), header.Section)
 		}
 		fmt.Fprintf(buf, "\n")
 	}
