@@ -47,7 +47,13 @@ func (cmd *Command) GenManTree(header *GenManHeader, dir string) {
 	}
 	out := new(bytes.Buffer)
 
+	needToResetTitle := header.Title == ""
+
 	cmd.GenMan(header, out)
+
+	if needToResetTitle {
+		header.Title = ""
+	}
 
 	filename := cmd.CommandPath()
 	filename = dir + strings.Replace(filename, " ", "-", -1) + ".1"
