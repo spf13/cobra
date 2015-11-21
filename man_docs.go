@@ -111,12 +111,13 @@ func fillHeader(header *GenManHeader, name string) {
 }
 
 func manPreamble(out *bytes.Buffer, header *GenManHeader, name, short, long string) {
+	dashName := strings.Replace(name, " ", "-", -1)
 	fmt.Fprintf(out, `%% %s(%s)%s
 %% %s
 %% %s
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual)
-	fmt.Fprintf(out, "%s \\- %s\n\n", name, short)
+	fmt.Fprintf(out, "%s \\- %s\n\n", dashName, short)
 	fmt.Fprintf(out, "# SYNOPSIS\n")
 	fmt.Fprintf(out, "**%s** [OPTIONS]\n\n", name)
 	fmt.Fprintf(out, "# DESCRIPTION\n")
