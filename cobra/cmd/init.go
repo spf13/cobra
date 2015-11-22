@@ -16,6 +16,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -87,7 +88,16 @@ func initalizePath(path string) {
 
 func createLicenseFile() {
 	lic := getLicense()
-	err := writeStringToFile(ProjectPath(), "LICENSE", lic.Text)
+
+	template := lic.Text
+
+	var data map[string]interface{}
+	data = make(map[string]interface{})
+
+	// Try to remove the email address, if any
+	data["copyright"] = strings.Split(copyrightLine(), " <")[0]
+
+	err := writeTemplateToFile(ProjectPath(), "LICENSE", template, data)
 	_ = err
 	// if err != nil {
 	// 	er(err)
