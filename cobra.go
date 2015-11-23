@@ -40,14 +40,6 @@ var initializers []func()
 // Set this to true to enable it
 var EnablePrefixMatching bool = false
 
-// enables an information splash screen on Windows if the CLI is started from explorer.exe.
-var EnableWindowsMouseTrap bool = true
-
-var MousetrapHelpText string = `This is a command line tool
-
-You need to open cmd.exe and run it from there.
-`
-
 //AddTemplateFunc adds a template function that's available to Usage and Help
 //template generation.
 func AddTemplateFunc(name string, tmplFunc interface{}) {
