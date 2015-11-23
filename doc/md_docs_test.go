@@ -1,4 +1,4 @@
-package cobra
+package doc
 
 import (
 	"bytes"

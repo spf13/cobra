@@ -11,18 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cobra
+package doc
 
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
-func printOptions(out *bytes.Buffer, cmd *Command, name string) {
+func printOptions(out io.Writer, cmd *cobra.Command, name string) {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(out)
 	if flags.HasFlags() {
@@ -40,25 +43,11 @@ func printOptions(out *bytes.Buffer, cmd *Command, name string) {
 	}
 }
 
-type byName []*Command
-
-func (s byName) Len() int           { return len(s) }
-func (s byName) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s byName) Less(i, j int) bool { return s[i].Name() < s[j].Name() }
-
-func GenMarkdown(cmd *Command, out *bytes.Buffer) {
-	cmd.GenMarkdown(out)
+func GenMarkdown(cmd *cobra.Command, out io.Writer) {
+	GenMarkdownCustom(cmd, out, func(s string) string { return s })
 }
 
-func (cmd *Command) GenMarkdown(out *bytes.Buffer) {
-	cmd.GenMarkdownCustom(out, func(s string) string { return s })
-}
-
-func GenMarkdownCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string) string) {
-	cmd.GenMarkdownCustom(out, linkHandler)
-}
-
-func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string) string) {
+func GenMarkdownCustom(cmd *cobra.Command, out io.Writer, linkHandler func(string) string) {
 	name := cmd.CommandPath()
 
 	short := cmd.Short
@@ -82,7 +71,7 @@ func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string
 	}
 
 	printOptions(out, cmd, name)
-	if cmd.hasSeeAlso() {
+	if hasSeeAlso(cmd) {
 		fmt.Fprintf(out, "### SEE ALSO\n")
 		if cmd.HasParent() {
 			parent := cmd.Parent()
@@ -90,7 +79,7 @@ func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string
 			link := pname + ".md"
 			link = strings.Replace(link, " ", "_", -1)
 			fmt.Fprintf(out, "* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short)
-			cmd.VisitParents(func(c *Command) {
+			cmd.VisitParents(func(c *cobra.Command) {
 				if c.DisableAutoGenTag {
 					cmd.DisableAutoGenTag = c.DisableAutoGenTag
 				}
@@ -101,7 +90,7 @@ func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string
 		sort.Sort(byName(children))
 
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child == cmd.helpCommand {
+			if !child.IsAvailableCommand() || child.IsHelpCommand() {
 				continue
 			}
 			cname := name + " " + child.Name()
@@ -116,30 +105,22 @@ func (cmd *Command) GenMarkdownCustom(out *bytes.Buffer, linkHandler func(string
 	}
 }
 
-func GenMarkdownTree(cmd *Command, dir string) {
-	cmd.GenMarkdownTree(dir)
-}
-
-func (cmd *Command) GenMarkdownTree(dir string) {
+func GenMarkdownTree(cmd *cobra.Command, dir string) {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
-	cmd.GenMarkdownTreeCustom(dir, emptyStr, identity)
+	GenMarkdownTreeCustom(cmd, dir, emptyStr, identity)
 }
 
-func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
-	cmd.GenMarkdownTreeCustom(dir, filePrepender, linkHandler)
-}
-
-func (cmd *Command) GenMarkdownTreeCustom(dir string, filePrepender func(string) string, linkHandler func(string) string) {
+func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c == cmd.helpCommand {
+		if !c.IsAvailableCommand() || c.IsHelpCommand() {
 			continue
 		}
-		c.GenMarkdownTreeCustom(dir, filePrepender, linkHandler)
+		GenMarkdownTreeCustom(c, dir, filePrepender, linkHandler)
 	}
 	out := new(bytes.Buffer)
 
-	cmd.GenMarkdownCustom(out, linkHandler)
+	GenMarkdownCustom(cmd, out, linkHandler)
 
 	filename := cmd.CommandPath()
 	filename = dir + strings.Replace(filename, " ", "_", -1) + ".md"

@@ -12,12 +12,12 @@ import (
 	"os"
 
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/kubectl/cmd"
-	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/cobra"
 )
 
 func main() {
 	kubectl := cmd.NewFactory(nil).NewKubectlCommand(os.Stdin, ioutil.Discard, ioutil.Discard)
-	cobra.GenMarkdownTree(kubectl, "./")
+	doc.GenMarkdownTree(kubectl, "./")
 }
 ```
 
@@ -29,7 +29,7 @@ You may wish to have more control over the output, or only generate for a single
 
 ```go
 	out := new(bytes.Buffer)
-	cobra.GenMarkdown(cmd, out)
+	doc.GenMarkdown(cmd, out)
 ```
 
 This will write the markdown doc for ONLY "cmd" into the out, buffer.
@@ -78,4 +78,4 @@ linkHandler := func(name string) string {
 	return "/commands/" + strings.ToLower(base) + "/"
 }
 ```
- 
+

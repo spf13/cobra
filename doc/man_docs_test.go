@@ -1,4 +1,4 @@
-package cobra
+package doc
 
 import (
 	"bytes"
@@ -29,7 +29,7 @@ func TestGenManDoc(t *testing.T) {
 		Section: "2",
 	}
 	// We generate on a subcommand so we have both subcommands and parents
-	cmdEcho.GenMan(header, out)
+	GenMan(cmdEcho, header, out)
 	found := out.String()
 
 	// Make sure parent has - in CommandPath() in SEE ALSO:
@@ -72,7 +72,6 @@ func TestGenManDoc(t *testing.T) {
 }
 
 func TestGenManNoGenTag(t *testing.T) {
-
 	c := initializeWithRootCmd()
 	// Need two commands to run the command alphabetical sort
 	cmdEcho.AddCommand(cmdTimes, cmdEchoSub, cmdDeprecated)
@@ -86,7 +85,7 @@ func TestGenManNoGenTag(t *testing.T) {
 		Section: "2",
 	}
 	// We generate on a subcommand so we have both subcommands and parents
-	cmdEcho.GenMan(header, out)
+	GenMan(cmdEcho, header, out)
 	found := out.String()
 
 	unexpected := translate("#HISTORY")

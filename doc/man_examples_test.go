@@ -1,10 +1,11 @@
-package cobra_test
+package doc_test
 
 import (
 	"bytes"
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
 func ExampleCommand_GenManTree() {
@@ -12,11 +13,11 @@ func ExampleCommand_GenManTree() {
 		Use:   "test",
 		Short: "my test program",
 	}
-	header := &cobra.GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "MINE",
 		Section: "3",
 	}
-	cmd.GenManTree(header, "/tmp")
+	doc.GenManTree(cmd, header, "/tmp")
 }
 
 func ExampleCommand_GenMan() {
@@ -24,11 +25,11 @@ func ExampleCommand_GenMan() {
 		Use:   "test",
 		Short: "my test program",
 	}
-	header := &cobra.GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "MINE",
 		Section: "3",
 	}
 	out := new(bytes.Buffer)
-	cmd.GenMan(header, out)
+	doc.GenMan(cmd, header, out)
 	fmt.Print(out.String())
 }
