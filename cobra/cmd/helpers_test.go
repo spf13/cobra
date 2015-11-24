@@ -29,11 +29,9 @@ func reset() {
 }
 
 func TestProjectPath(t *testing.T) {
-	wd, _ := os.Getwd()
-
-	checkGuess(t, "", "github.com/spf13/hugo", filepath.Join(wd, "github.com", "spf13", "hugo"))
-	checkGuess(t, "", "spf13/hugo", filepath.Join(wd, "spf13", "hugo"))
-	checkGuess(t, "", "/bar/foo", filepath.Join(wd, "bar", "foo"))
+	checkGuess(t, "", filepath.Join("github.com", "spf13", "hugo"), filepath.Join(getSrcPath(), "github.com", "spf13", "hugo"))
+	checkGuess(t, "", filepath.Join("spf13", "hugo"), filepath.Join(getSrcPath(), "github.com", "spf13", "hugo"))
+	checkGuess(t, "", filepath.Join("/", "bar", "foo"), filepath.Join(getSrcPath(), "bar", "foo"))
 	checkGuess(t, "/bar/foo", "baz", filepath.Join("/", "bar", "foo", "baz"))
 	checkGuess(t, "/bar/foo/cmd", "", filepath.Join("/", "bar", "foo"))
 	checkGuess(t, "/bar/foo/command", "", filepath.Join("/", "bar", "foo"))
