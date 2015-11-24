@@ -143,7 +143,7 @@ func guessProjectPath() {
 	srcPath := getSrcPath()
 	// if provided, inspect for logical locations
 	if strings.ContainsRune(inputPath, os.PathSeparator) {
-		if filepath.IsAbs(inputPath) {
+		if filepath.IsAbs(inputPath) || filepath.HasPrefix(inputPath, string(os.PathSeparator)) {
 			// if Absolute, use it
 			projectPath = filepath.Clean(inputPath)
 			return
