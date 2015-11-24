@@ -104,7 +104,7 @@ func guessImportPath() string {
 		er("Cobra only supports project within $GOPATH")
 	}
 
-	return filepath.Clean(strings.TrimPrefix(projectPath, getSrcPath()))
+	return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, getSrcPath())))
 }
 
 func getSrcPath() string {

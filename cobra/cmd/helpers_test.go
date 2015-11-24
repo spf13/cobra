@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -28,12 +29,14 @@ func reset() {
 }
 
 func TestProjectPath(t *testing.T) {
-	checkGuess(t, "", "github.com/spf13/hugo", getSrcPath()+"github.com/spf13/hugo")
-	checkGuess(t, "", "spf13/hugo", getSrcPath()+"github.com/spf13/hugo")
-	checkGuess(t, "", "/bar/foo", "/bar/foo")
-	checkGuess(t, "/bar/foo", "baz", "/bar/foo/baz")
-	checkGuess(t, "/bar/foo/cmd", "", "/bar/foo")
-	checkGuess(t, "/bar/foo/command", "", "/bar/foo")
-	checkGuess(t, "/bar/foo/commands", "", "/bar/foo")
-	checkGuess(t, "github.com/spf13/hugo/../hugo", "", "github.com/spf13/hugo")
+	wd, _ := os.Getwd()
+
+	checkGuess(t, "", "github.com/spf13/hugo", filepath.Join(wd, "github.com", "spf13", "hugo"))
+	checkGuess(t, "", "spf13/hugo", filepath.Join(wd, "spf13", "hugo"))
+	checkGuess(t, "", "/bar/foo", filepath.Join(wd, "bar", "foo"))
+	checkGuess(t, "/bar/foo", "baz", filepath.Join("/", "bar", "foo", "baz"))
+	checkGuess(t, "/bar/foo/cmd", "", filepath.Join("/", "bar", "foo"))
+	checkGuess(t, "/bar/foo/command", "", filepath.Join("/", "bar", "foo"))
+	checkGuess(t, "/bar/foo/commands", "", filepath.Join("/", "bar", "foo"))
+	checkGuess(t, "github.com/spf13/hugo/../hugo", "", filepath.Join("github.com", "spf13", "hugo"))
 }
