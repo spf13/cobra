@@ -78,7 +78,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// {{.cmdName}}Cmd respresents the {{.cmdName}} command
+// {{.cmdName}}Cmd represents the {{.cmdName}} command
 var {{ .cmdName }}Cmd = &cobra.Command{
 	Use:   "{{ .cmdName }}",
 	Short: "A brief description of your command",
