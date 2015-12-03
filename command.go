@@ -655,13 +655,16 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 	err = cmd.execute(flags)
 	if err != nil {
+		// Always show help if requested, even if SilenceErrors is in
+		// effect
+		if err == flag.ErrHelp {
+			cmd.HelpFunc()(cmd, args)
+			return cmd, nil
+		}
+
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			if err == flag.ErrHelp {
-				cmd.HelpFunc()(cmd, args)
-				return cmd, nil
-			}
 			c.Println("Error:", err.Error())
 		}
 
