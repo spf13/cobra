@@ -126,14 +126,25 @@ __handle_flag()
 
     # if a command required a flag, and we found it, unset must_have_one_flag()
     local flagname=${words[c]}
+    local flagvalue
     # if the word contained an =
     if [[ ${words[c]} == *"="* ]]; then
+        flagvalue=${flagname#*=} # take in as flagvalue after the =
         flagname=${flagname%%=*} # strip everything after the =
         flagname="${flagname}=" # but put the = back
     fi
     __debug "${FUNCNAME}: looking for ${flagname}"
     if __contains_word "${flagname}" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
+    fi
+
+    # keep flag value with flagname as flaghash
+    if [ ${flagvalue} ] ; then
+        flaghash[${flagname}]=${flagvalue}
+    elif [ ${words[ $((c+1)) ]} ] ; then
+        flaghash[${flagname}]=${words[ $((c+1)) ]}
+    else
+        flaghash[${flagname}]="true" # pad "true" for bool flag
     fi
 
     # skip the argument to a two word flag
@@ -145,7 +156,6 @@ __handle_flag()
         fi
     fi
 
-    # skip the flag itself
     c=$((c+1))
 
 }
@@ -202,6 +212,7 @@ func postscript(out *bytes.Buffer, name string) {
 	fmt.Fprintf(out, "__start_%s()\n", name)
 	fmt.Fprintf(out, `{
     local cur prev words cword
+    declare -A flaghash
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else
