@@ -74,7 +74,7 @@ A few good real world examples may better illustrate this point.
 
 In the following example, 'server' is a command, and 'port' is a flag:
 
-    > hugo serve --port=1313
+    > hugo server --port=1313
 
 In this command we are telling Git to clone the url bare.
 
