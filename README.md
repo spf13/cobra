@@ -199,7 +199,7 @@ cobra add config
 cobra add create -p 'configCmd'
 ```
 
-Once you have run these four commands you would have an app structure that would look like:
+Once you have run these three commands you would have an app structure that would look like:
 
 ```
   ▾ app/
