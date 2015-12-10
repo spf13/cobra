@@ -143,6 +143,12 @@ var cmdVersion2 = &Command{
 	},
 }
 
+var cmdColon = &Command{
+	Use: "cmd:colon",
+	Run: func(cmd *Command, args []string) {
+	},
+}
+
 func flagInit() {
 	cmdEcho.ResetFlags()
 	cmdPrint.ResetFlags()

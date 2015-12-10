@@ -103,6 +103,8 @@ __handle_reply()
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
         declare -F __custom_func >/dev/null && __custom_func
     fi
+
+    __ltrim_colon_completions "$cur"
 }
 
 # The arguments should be in the form "ext1|ext2|extn"
@@ -166,9 +168,9 @@ __handle_command()
 
     local next_command
     if [[ -n ${last_command} ]]; then
-        next_command="_${last_command}_${words[c]}"
+        next_command="_${last_command}_${words[c]//:/__}"
     else
-        next_command="_${words[c]}"
+        next_command="_${words[c]//:/__}"
     fi
     c=$((c+1))
     __debug "${FUNCNAME}: looking for ${next_command}"
@@ -196,6 +198,7 @@ __handle_word()
 }
 
 func postscript(out *bytes.Buffer, name string) {
+	name = strings.Replace(name, ":", "__", -1)
 	fmt.Fprintf(out, "__start_%s()\n", name)
 	fmt.Fprintf(out, `{
     local cur prev words cword
@@ -355,6 +358,7 @@ func gen(cmd *Command, out *bytes.Buffer) {
 	}
 	commandName := cmd.CommandPath()
 	commandName = strings.Replace(commandName, " ", "_", -1)
+	commandName = strings.Replace(commandName, ":", "__", -1)
 	fmt.Fprintf(out, "_%s()\n{\n", commandName)
 	fmt.Fprintf(out, "    last_command=%q\n", commandName)
 	writeCommands(cmd, out)
