@@ -747,7 +747,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		if nameLen > c.commandsMaxNameLen {
 			c.commandsMaxNameLen = nameLen
 		}
-		// If glabal normalization function exists, update all children
+		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
 		}
