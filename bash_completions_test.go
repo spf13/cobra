@@ -34,7 +34,7 @@ COMPREPLY=( "hello" )
 func TestBashCompletions(t *testing.T) {
 	c := initializeWithRootCmd()
 	cmdEcho.AddCommand(cmdTimes)
-	c.AddCommand(cmdEcho, cmdPrint, cmdDeprecated)
+	c.AddCommand(cmdEcho, cmdPrint, cmdDeprecated, cmdColon)
 
 	// custom completion function
 	c.BashCompletionFunction = bash_completion_func
@@ -75,6 +75,7 @@ func TestBashCompletions(t *testing.T) {
 	check(t, str, "_cobra-test_echo")
 	check(t, str, "_cobra-test_echo_times")
 	check(t, str, "_cobra-test_print")
+	check(t, str, "_cobra-test_cmd__colon")
 
 	// check for required flags
 	check(t, str, `must_have_one_flag+=("--introot=")`)
