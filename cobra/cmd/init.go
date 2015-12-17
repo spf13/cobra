@@ -29,8 +29,8 @@ func init() {
 // initialize Command
 var initCmd = &cobra.Command{
 	Use:     "init [name]",
-	Aliases: []string{"initialize", "initalise", "create"},
-	Short:   "Initalize a Cobra Application",
+	Aliases: []string{"initialize", "initialise", "create"},
+	Short:   "Initialize a Cobra Application",
 	Long: `Initialize (cobra init) will create a new application, with a license
 and the appropriate structure for a Cobra-based CLI application.
 
@@ -55,11 +55,11 @@ Init will not use an exiting directory with contents.`,
 			er("init doesn't support more than 1 parameter")
 		}
 		guessProjectPath()
-		initalizePath(projectPath)
+		initializePath(projectPath)
 	},
 }
 
-func initalizePath(path string) {
+func initializePath(path string) {
 	b, err := exists(path)
 	if err != nil {
 		er(err)
