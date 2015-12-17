@@ -41,7 +41,7 @@ and the appropriate structure for a Cobra-based CLI application.
   * If an absolute path is provided, it will be created;
   * If the directory already exists but is empty, it will be used.
 
-Init will not use an exiting directory with contents.`,
+Init will not use an existing directory with contents.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		switch len(args) {
