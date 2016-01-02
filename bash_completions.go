@@ -235,9 +235,9 @@ func postscript(out *bytes.Buffer, name string) {
 
 `, name)
 	fmt.Fprintf(out, `if [[ $(type -t compopt) = "builtin" ]]; then
-    complete -F __start_%s %s
+    complete -o default -F __start_%s %s
 else
-    complete -o nospace -F __start_%s %s
+    complete -o default -o nospace -F __start_%s %s
 fi
 
 `, name, name, name, name)
