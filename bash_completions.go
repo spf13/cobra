@@ -1,7 +1,6 @@
 package cobra
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -390,20 +389,13 @@ func (cmd *Command) GenBashCompletion(w io.Writer) {
 }
 
 func (cmd *Command) GenBashCompletionFile(filename string) error {
-	out := new(bytes.Buffer)
-
-	cmd.GenBashCompletion(out)
-
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	_, err = outFile.Write(out.Bytes())
-	if err != nil {
-		return err
-	}
+	cmd.GenBashCompletion(outFile)
 	return nil
 }
 
