@@ -111,7 +111,7 @@ func GenMarkdownTree(cmd *cobra.Command, dir string) {
 	GenMarkdownTreeCustom(cmd, dir, emptyStr, identity)
 }
 
-func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
+func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsHelpCommand() {
 			continue
