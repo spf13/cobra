@@ -32,7 +32,7 @@ import (
 // correctly if your command names have - in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`. And `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
-func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) {
+func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
@@ -40,31 +40,28 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) {
 		if !c.IsAvailableCommand() || c.IsHelpCommand() {
 			continue
 		}
-		GenManTree(c, header, dir)
+		if err := GenManTree(c, header, dir); err != nil {
+			return err
+		}
 	}
-	out := new(bytes.Buffer)
-
 	needToResetTitle := header.Title == ""
 
-	GenMan(cmd, header, out)
+	filename := cmd.CommandPath()
+	filename = dir + strings.Replace(filename, " ", "-", -1) + ".1"
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := GenMan(cmd, header, f); err != nil {
+		return err
+	}
 
 	if needToResetTitle {
 		header.Title = ""
 	}
-
-	filename := cmd.CommandPath()
-	filename = dir + strings.Replace(filename, " ", "-", -1) + ".1"
-	outFile, err := os.Create(filename)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer outFile.Close()
-	_, err = outFile.Write(out.Bytes())
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	return nil
 }
 
 // GenManHeader is a lot like the .TH header at the start of man pages. These
@@ -80,15 +77,16 @@ type GenManHeader struct {
 	Manual  string
 }
 
-// GenMan will generate a man page for the given command in the out buffer.
-// The header argument may be nil, however obviously out may not.
-func GenMan(cmd *cobra.Command, header *GenManHeader, out io.Writer) {
+// GenMan will generate a man page for the given command and write it to
+// w. The header argument may be nil, however obviously w may not.
+func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
-	buf := genMan(cmd, header)
-	final := mangen.Render(buf)
-	out.Write(final)
+	b := genMan(cmd, header)
+	final := mangen.Render(b)
+	_, err := w.Write(final)
+	return err
 }
 
 func fillHeader(header *GenManHeader, name string) {
