@@ -7,6 +7,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [Kubernetes](http://kubernetes.io/)
 * [Hugo](http://gohugo.io)
 * [rkt](https://github.com/coreos/rkt)
+* [etcd](https://github.com/coreos/etcd)
 * [Docker (distribution)](https://github.com/docker/distribution)
 * [OpenShift](https://www.openshift.com/)
 * [Delve](https://github.com/derekparker/delve)
