@@ -39,13 +39,13 @@ This will write the markdown doc for ONLY "cmd" into the out, buffer.
 Both `GenMarkdown` and `GenMarkdownTree` have alternate versions with callbacks to get some control of the output:
 
 ```go
-func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender func(string) string, linkHandler func(string) string) {
+func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender, linkHandler func(string) string) error {
     //...
 }
 ```
 
 ```go
-func GenMarkdownCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string) string) {
+func GenMarkdownCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string) string) error {
     //...
 }
 ```

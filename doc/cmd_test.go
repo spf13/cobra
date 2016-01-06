@@ -11,7 +11,7 @@ import (
 )
 
 var flagb1, flagb2, flagb3, flagbr, flagbp bool
-var flags1, flags2a, flags2b, flags3, outs string
+var flags1, flags2a, flags2b, flags3 string
 var flagi1, flagi2, flagi3, flagir int
 
 const strtwoParentHelp = "help message for parent flag strtwo"

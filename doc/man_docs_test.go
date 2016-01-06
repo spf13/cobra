@@ -29,7 +29,9 @@ func TestGenManDoc(t *testing.T) {
 		Section: "2",
 	}
 	// We generate on a subcommand so we have both subcommands and parents
-	GenMan(cmdEcho, header, out)
+	if err := GenMan(cmdEcho, header, out); err != nil {
+		t.Fatal(err)
+	}
 	found := out.String()
 
 	// Make sure parent has - in CommandPath() in SEE ALSO:
@@ -85,7 +87,9 @@ func TestGenManNoGenTag(t *testing.T) {
 		Section: "2",
 	}
 	// We generate on a subcommand so we have both subcommands and parents
-	GenMan(cmdEcho, header, out)
+	if err := GenMan(cmdEcho, header, out); err != nil {
+		t.Fatal(err)
+	}
 	found := out.String()
 
 	unexpected := translate("#HISTORY")

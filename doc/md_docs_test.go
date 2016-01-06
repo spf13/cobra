@@ -21,7 +21,9 @@ func TestGenMdDoc(t *testing.T) {
 	out := new(bytes.Buffer)
 
 	// We generate on s subcommand so we have both subcommands and parents
-	GenMarkdown(cmdEcho, out)
+	if err := GenMarkdown(cmdEcho, out); err != nil {
+		t.Fatal(err)
+	}
 	found := out.String()
 
 	// Our description
@@ -75,7 +77,9 @@ func TestGenMdNoTag(t *testing.T) {
 	cmdRootWithRun.PersistentFlags().StringVarP(&flags2a, "rootflag", "r", "two", strtwoParentHelp)
 	out := new(bytes.Buffer)
 
-	GenMarkdown(c, out)
+	if err := GenMarkdown(c, out); err != nil {
+		t.Fatal(err)
+	}
 	found := out.String()
 
 	unexpected := "Auto generated"
