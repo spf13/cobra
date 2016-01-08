@@ -64,12 +64,18 @@ type Command struct {
 	// Silence Usage is an option to silence usage when an error occurs.
 	SilenceUsage bool
 	// The *Run functions are executed in the following order:
+	//   * PreRunChain()
 	//   * PersistentPreRun()
 	//   * PreRun()
 	//   * Run()
 	//   * PostRun()
 	//   * PersistentPostRun()
+	//   * PostRunChain()
 	// All functions get the same args, the arguments after the command name
+	// PreRunChain: runs all PreRunChain functions from root to child sequentially
+	PreRunChain func(cmd *Command, args []string)
+	// PreRunChainE: PreRunChain but returns an error
+	PreRunChainE func(cmd *Command, args []string) error
 	// PersistentPreRun: children of this command will inherit and execute
 	PersistentPreRun func(cmd *Command, args []string)
 	// PersistentPreRunE: PersistentPreRun but returns an error
@@ -90,6 +96,10 @@ type Command struct {
 	PersistentPostRun func(cmd *Command, args []string)
 	// PersistentPostRunE: PersistentPostRun but returns an error
 	PersistentPostRunE func(cmd *Command, args []string) error
+	// PostRunChain: runs all PostRunChain functions from child to root sequentially
+	PostRunChain func(cmd *Command, args []string)
+	// PostRunChainE: PostRunChain but returns an error
+	PostRunChainE func(cmd *Command, args []string) error
 	// DisableAutoGenTag remove
 	DisableAutoGenTag bool
 	// Commands is the list of commands supported by this program.
@@ -542,6 +552,10 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 	argWoFlags := c.Flags().Args()
 
+	if err := c.executePreRunChain(c, argWoFlags); err != nil {
+		return err
+	}
+
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
@@ -587,6 +601,10 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
+	if err := c.executePostRunChain(c, argWoFlags); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -594,6 +612,49 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+// executePreRunChain executes all the PreRunChain functions from
+// the root to the child.
+func (c *Command) executePreRunChain(cmd *Command, args []string) error {
+	parent := c.Parent()
+	if parent != nil {
+		if err := parent.executePreRunChain(cmd, args); err != nil {
+			return err
+		}
+	}
+
+	var err error = nil
+	switch {
+	case c.PreRunChainE != nil:
+		err = c.PreRunChainE(cmd, args)
+	case c.PreRunChain != nil:
+		c.PreRunChain(cmd, args)
+	}
+
+	return err
+}
+
+// executePostRunChain executes all the PostRunChain functions from
+// the child to the root.
+func (c *Command) executePostRunChain(cmd *Command, args []string) error {
+	var err error = nil
+	switch {
+	case c.PostRunChainE != nil:
+		err = c.PostRunChainE(cmd, args)
+	case c.PostRunChain != nil:
+		c.PostRunChain(cmd, args)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	parent := c.Parent()
+	if parent != nil {
+		return parent.executePostRunChain(cmd, args)
+	}
+	return nil
 }
 
 func (c *Command) errorMsgFromParse() string {
