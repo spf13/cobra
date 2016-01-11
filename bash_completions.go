@@ -16,9 +16,12 @@ const (
 	BashCompSubdirsInDir    = "cobra_annotation_bash_completion_subdirs_in_dir"
 )
 
-func preamble(out io.Writer) error {
-	_, err := fmt.Fprintf(out, `#!/bin/bash
-
+func preamble(out io.Writer, name string) error {
+	_, err := fmt.Fprintf(out, "# bash completion for %-36s -*- shell-script -*-\n", name)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(out, `
 __debug()
 {
     if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
@@ -465,7 +468,7 @@ func gen(cmd *Command, w io.Writer) error {
 }
 
 func (cmd *Command) GenBashCompletion(w io.Writer) error {
-	if err := preamble(w); err != nil {
+	if err := preamble(w, cmd.Name()); err != nil {
 		return err
 	}
 	if len(cmd.BashCompletionFunction) > 0 {
