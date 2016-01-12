@@ -25,10 +25,10 @@ That will get you completions of subcommands and flags. If you make additional a
 The `BashCompletionFunction` member can be used to define bash functions which generate completion suggestions. Within `BashCompletionFunction` you can define some of the following four bash functions, which should modify `COMPREPLY` as appropriate.
 
 
-| Function | Runs always | Runs when no earlier handler produced completion results |
-| ------- | ----------- | -------------------------------------------------------- |
-| **Runs for Command** | `__custom_unconditional_command_func` | `__custom_command_func` |
-| **Runs for Command & children** | `__custom_func` | `__custom_unconditional_func` | 
+| Function                        | Runs always                           | Runs when no earlier handler produced completion results |
+| ------------------------------- | ------------------------------------- | -------------------------------------------------------- |
+| **Runs for Command**            | `__custom_unconditional_command_func` | `__custom_command_func`                                  |
+| **Runs for Command & children** | `__custom_unconditional_func`         | `__custom_func`                                          | 
 
 Some more actual code that works in kubernetes:
 
