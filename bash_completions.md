@@ -30,6 +30,13 @@ The `BashCompletionFunction` member can be used to define bash functions which g
 | **Runs for Command**            | `__custom_unconditional_command_func` | `__custom_command_func`                                  |
 | **Runs for Command & children** | `__custom_unconditional_func`         | `__custom_func`                                          | 
 
+If you define more than one `__custom*_func`, they will execute in the following order (latest takes precedence). If there is more than one instance of a certain function defined in a command hiearchy during completion, the most specific function will supplant less specific functions (which will *not* execute at all).
+
+* `__custom_unconditional_func`
+* `__custom_unconditional_command_func`
+* `__custom_func`
+* `__custom_command_func`
+
 Some more actual code that works in kubernetes:
 
 ```bash
@@ -82,13 +89,6 @@ Find more information at https://github.com/GoogleCloudPlatform/kubernetes.`,
 ```
 
 In the case of kubernetes a valid command might look something like `kubectl get pod [mypod]`. If you type `kubectl get pod [tab][tab]` the `__customc_func()` will run because the cobra.Command only understood "kubectl" and "get." `__custom_func()` will see that the cobra.Command is "kubectl_get" and will thus call another helper `__kubectl_get_resource()`.  `__kubectl_get_resource` will look at the 'nouns' collected. In our example the only noun will be `pod`.  So it will call `__kubectl_parse_get pod`.  `__kubectl_parse_get` will actually call out to kubernetes and get any pods.  It will then set `COMPREPLY` to valid pods!
-
-If you define more than one `__custom*_func`, they will execute in the following order (latest takes precedence):
-
-* `__custom_unconditional_func`
-* `__custom_unconditional_command_func`
-* `__custom_func`
-* `__custom_command_func`
 
 ## Have the completions code complete your 'nouns'
 
