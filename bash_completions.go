@@ -103,9 +103,17 @@ __handle_reply()
     fi
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
+    declare -F __custom_unconditional_func >/dev/null && __custom_unconditional_func
+    declare -F __custom_unconditional_command_func >/dev/null && __custom_unconditional_command_func
+
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
         declare -F __custom_func >/dev/null && __custom_func
+        declare -F __custom_command_func >/dev/null && __custom_command_func
     fi
+
+     # These are declared as globals within the specific commands' handler functions
+     # We must undefine them here, otherwise they will persist outside of their intended lifetime
+     unset -f __custom_func __custom_unconditional_func
 
     __ltrim_colon_completions "$cur"
 }
@@ -177,6 +185,8 @@ __handle_noun()
 
 __handle_command()
 {
+	# Clear handlers meant to be command-specific
+	unset -f __custom_command_func __custom_unconditional_command_func
     __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
 
     local next_command
@@ -446,6 +456,11 @@ func gen(cmd *Command, w io.Writer) error {
 	if _, err := fmt.Fprintf(w, "_%s()\n{\n", commandName); err != nil {
 		return err
 	}
+	if len(cmd.BashCompletionFunction) > 0 {
+		if _, err := fmt.Fprintf(w, "%s\n", cmd.BashCompletionFunction); err != nil {
+			return err
+		}
+	}
 	if _, err := fmt.Fprintf(w, "    last_command=%q\n", commandName); err != nil {
 		return err
 	}
@@ -470,11 +485,6 @@ func gen(cmd *Command, w io.Writer) error {
 func (cmd *Command) GenBashCompletion(w io.Writer) error {
 	if err := preamble(w, cmd.Name()); err != nil {
 		return err
-	}
-	if len(cmd.BashCompletionFunction) > 0 {
-		if _, err := fmt.Fprintf(w, "%s\n", cmd.BashCompletionFunction); err != nil {
-			return err
-		}
 	}
 	if err := gen(cmd, w); err != nil {
 		return err

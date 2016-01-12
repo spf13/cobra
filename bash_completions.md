@@ -22,6 +22,14 @@ That will get you completions of subcommands and flags. If you make additional a
 
 ## Creating your own custom functions
 
+The `BashCompletionFunction` member can be used to define bash functions which generate completion suggestions. Within `BashCompletionFunction` you can define some of the following four bash functions, which should modify `COMPREPLY` as appropriate.
+
+
+| Function | Runs always | Runs when no earlier handler produced completion results |
+| ------- | ----------- | -------------------------------------------------------- |
+| **Runs for Command** | `__custom_unconditional_command_func` | `__custom_command_func` |
+| **Runs for Command & children** | `__custom_func` | `__custom_unconditional_func` | 
+
 Some more actual code that works in kubernetes:
 
 ```bash
@@ -73,7 +81,14 @@ Find more information at https://github.com/GoogleCloudPlatform/kubernetes.`,
 }
 ```
 
-The `BashCompletionFunction` option is really only valid/useful on the root command. Doing the above will cause `__custom_func()` to be called when the built in processor was unable to find a solution. In the case of kubernetes a valid command might look something like `kubectl get pod [mypod]`. If you type `kubectl get pod [tab][tab]` the `__customc_func()` will run because the cobra.Command only understood "kubectl" and "get." `__custom_func()` will see that the cobra.Command is "kubectl_get" and will thus call another helper `__kubectl_get_resource()`.  `__kubectl_get_resource` will look at the 'nouns' collected. In our example the only noun will be `pod`.  So it will call `__kubectl_parse_get pod`.  `__kubectl_parse_get` will actually call out to kubernetes and get any pods.  It will then set `COMPREPLY` to valid pods!
+In the case of kubernetes a valid command might look something like `kubectl get pod [mypod]`. If you type `kubectl get pod [tab][tab]` the `__customc_func()` will run because the cobra.Command only understood "kubectl" and "get." `__custom_func()` will see that the cobra.Command is "kubectl_get" and will thus call another helper `__kubectl_get_resource()`.  `__kubectl_get_resource` will look at the 'nouns' collected. In our example the only noun will be `pod`.  So it will call `__kubectl_parse_get pod`.  `__kubectl_parse_get` will actually call out to kubernetes and get any pods.  It will then set `COMPREPLY` to valid pods!
+
+If you define more than one `__custom*_func`, they will execute in the following order (latest takes precedence):
+
+* `__custom_unconditional_func`
+* `__custom_unconditional_command_func`
+* `__custom_func`
+* `__custom_command_func`
 
 ## Have the completions code complete your 'nouns'
 
