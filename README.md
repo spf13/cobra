@@ -641,7 +641,7 @@ command.SetUsageTemplate(s string)
 
 ## PreRun or PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherrited by children if they do not declare their own.  These function are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  These function are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
@@ -649,7 +649,35 @@ It is possible to run functions before or after the main `Run` function of your 
 - `PostRun`
 - `PersistentPostRun`
 
-An example of two commands which use all of these features is below.  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`:
+The `Persistent*Run` functions have two modes of operation:
+
+1. ChainedMode Enabled
+   - `PersistentPreRun` will run all the defined (non nil) `PersistentPreRun` functions from root to child (both included).
+   - `PersistentPostRun` will run all the defined (non nil) `PersistPostRun` functions from child to root (both included).
+1. ChainedMode Disabled
+    - `PersistentPreRun` and `PersistentPostRun` will only run the nearest ancestor defined (non nil function) closest to the child. The child is included - meaning, if it defines a Persistent function, only that function is called.
+    
+NOTE: ChainedMode is disabled by default in version 1.0 and will be enabled in version 2.0. In version 3.0 it will cease to exist, and ChainedMode will always be enabled.
+The ChainedMode can be Enabled or Disabled once at import time as follows
+```go
+package main
+import "github.com/spf13/cobra"
+
+func init() {
+    if err := cobra.EnableChainHooks(); err != nil {
+        panic(err)
+    }
+}
+
+// cobra.DisableChainHooks() can be used to disable it
+```
+The `EnableChainHooks` or `DisableChainHooks` can be called only once at import time. Multiple calls will return errors and have no change in functionality.
+
+
+An example of two commands which use all of these features is below.  
+In ChainedMode Disabled:  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`
+
+In ChainedMode Enabled:   When the subcommand is executed, it will run the root command's `PersistentPreRun`, child command's `PersistentPostRun` and root command's `PersistentPostRun`.
 
 ```go
 package main

@@ -26,6 +26,64 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// useChainHooks determines the behaviour of the Persistent*Run functions.
+// if true, then PersistentPreRun will run all defined PersistentPreRun
+// functions from root to child, and PersistentPostRun will
+// run all defined PersistentPostRun functions from child to root.
+// if false, it will only run the nearest ancestor of the child that is defined
+// i.e.if the child has its own Persistent*Run function, only that is executed.
+// TODO cobra v1 by default keeps useChainHooks as false
+// TODO in v2, make useChainHooks true
+// TODO in v3, remove useChainHooks completely and use the logic
+// as if it were true
+// Developers may programmatically Enable / Disable this feature only once
+// at the root level.
+var useChainHooks bool = false
+
+// To prevent multiple calls to it.
+var useChainHooksTouched bool = false
+
+// EnableChainHooks allows Persistent*Run functions to chain.
+// Enable/DisableChainHooks can be called only once at the beginning.
+func EnableChainHooks() error {
+	if useChainHooksTouched {
+		return fmt.Errorf("Toggle useChainHooks can be done only once !")
+	}
+	useChainHooks = true
+	useChainHooksTouched = true
+	return nil
+}
+
+// DisableChainHooks makes Persistent*Run functions to call only nearest
+// ancestor.
+// Enable/DisableChainHooks can be called only once at the beginning.
+func DisableChainHooks() error {
+	if useChainHooksTouched {
+		return fmt.Errorf("Toggle useChainHooks can be done only once !")
+	}
+	useChainHooks = false
+	useChainHooksTouched = true
+	return nil
+}
+
+func init() {
+	useChainHooksTouched = false
+	// assuming this is cobra v1.0, default behaviour of persistent functions
+	// is to call the nearest ancestor i.e. not to use chain hooks
+	DisableChainHooks()
+
+	// TODO in cobra v2.0, the default behaviour of persistent functions
+	// is to chain i.e. use chain hooks
+	// EnableChainHooks()
+
+	// Allow the user to be able to modify this once at root level.
+	useChainHooksTouched = false
+
+	// TODO in cobra v3.0, remove all signs of useChainHooks and
+	// useChainHooksTouched. Persistent functions should behave as if
+	// useChainHooks is true.
+}
+
 // Command is just that, a command for your application.
 // eg.  'go run' ... 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -501,6 +559,43 @@ func (c *Command) Root() *Command {
 	return findRoot(c)
 }
 
+// execPersistentPreRunFuncs executes the PreRun functions from root to child.
+// useChainHooks determines whether to run all the functions from root to child
+// or just the nearest ancestor to the child (included) that has been defined.
+// TODO to allow migration for existing users - This useChainHooks has been provided
+// Remove logic when useChainHooks is false in cobra v3.0
+func (c *Command) execPersistentPreRunFuncs(cmd *Command, argWoFlags []string) error {
+	// TODO remove this once useChainHooks is no longer required
+	if !useChainHooks {
+		for p := cmd; p != nil; p = p.Parent() {
+			if p.PersistentPreRunE != nil {
+				return p.PersistentPreRunE(cmd, argWoFlags)
+			} else if p.PersistentPreRun != nil {
+				p.PersistentPreRun(cmd, argWoFlags)
+				return nil
+			}
+		}
+		return nil
+	}
+
+	// always run from root to child
+	if parent := c.Parent(); parent != nil {
+		if err := parent.execPersistentPreRunFuncs(cmd, argWoFlags); err != nil {
+			return err
+		}
+	}
+	// run the childs PersistentPreRun function
+	var err error = nil
+	switch {
+	case c.PersistentPreRunE != nil:
+		err = c.PersistentPreRunE(cmd, argWoFlags)
+	case c.PersistentPreRun != nil:
+		c.PersistentPreRun(cmd, argWoFlags)
+	}
+
+	return err
+}
+
 // ArgsLenAtDash will return the length of f.Args at the moment when a -- was
 // found during arg parsing. This allows your program to know which args were
 // before the -- and which came after. (Description from
@@ -542,17 +637,10 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 	argWoFlags := c.Flags().Args()
 
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPreRunE != nil {
-			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
-				return err
-			}
-			break
-		} else if p.PersistentPreRun != nil {
-			p.PersistentPreRun(c, argWoFlags)
-			break
-		}
+	if err := c.execPersistentPreRunFuncs(c, argWoFlags); err != nil {
+		return err
 	}
+
 	if c.PreRunE != nil {
 		if err := c.PreRunE(c, argWoFlags); err != nil {
 			return err
@@ -575,16 +663,9 @@ func (c *Command) execute(a []string) (err error) {
 	} else if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
 	}
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPostRunE != nil {
-			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
-				return err
-			}
-			break
-		} else if p.PersistentPostRun != nil {
-			p.PersistentPostRun(c, argWoFlags)
-			break
-		}
+
+	if err := c.execPersistentPostRunFuncs(c, argWoFlags); err != nil {
+		return err
 	}
 
 	return nil
@@ -594,6 +675,45 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+// execPersistentPostRunFuncs executes the PostRun functions from child to root.
+// useChainHooks determines whether to run all the functions from child to root
+// or just the nearest ancestor to the child (included) that has been defined.
+// TODO to allow migration for existing users - This useChainHooks has been provided
+// Remove logic when useChainHooks is false in cobra v3.0
+func (c *Command) execPersistentPostRunFuncs(cmd *Command, argWoFlags []string) error {
+	// TODO remove this once useChainHooks is no longer required
+	if !useChainHooks {
+		for p := cmd; p != nil; p = p.Parent() {
+			if p.PersistentPostRunE != nil {
+				return p.PersistentPostRunE(cmd, argWoFlags)
+			} else if p.PersistentPostRun != nil {
+				p.PersistentPostRun(cmd, argWoFlags)
+				return nil
+			}
+		}
+		return nil
+	}
+
+	// always run from child to root
+	var err error = nil
+	switch {
+	case c.PersistentPostRunE != nil:
+		err = c.PersistentPostRunE(cmd, argWoFlags)
+	case c.PersistentPostRun != nil:
+		c.PersistentPostRun(cmd, argWoFlags)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if parent := c.Parent(); parent != nil {
+		return parent.execPersistentPostRunFuncs(cmd, argWoFlags)
+	}
+
+	return nil
 }
 
 func (c *Command) errorMsgFromParse() string {
