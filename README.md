@@ -641,22 +641,15 @@ command.SetUsageTemplate(s string)
 
 ## PreRun or PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PreRunChain`, `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun`, `PostRun` and `PostRunChain` will be executed after `Run`.  The `Persistent*Run` functions will be inherrited by children if they do not declare their own.  These function are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherrited by children if they do not declare their own.  These function are run in the following order:
 
-- `PreRunChain`
 - `PersistentPreRun`
 - `PreRun`
 - `Run`
 - `PostRun`
 - `PersistentPostRun`
-- `PostRunChain`
 
-
-`PreRunChain` executes all PreRunChain functions from the root to the child. `PostRunChain` executes all PostRunChain functions from the child to the root. These
-are useful in cases such as setting the logger and profiling at the root level in `PreRunChain`, and stopping the profiler once the proram finishes in the `PostRunChain`, while still allowing subcommand `PreRunChain` and `PostRunChain` commands to execute for their children.
-
-An example of two commands which use all of these features is below.  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun` - because the subcommand has overridden the root command's `PersistentPostRun`. However, it will still run the root command's `PreRunChain` and `PostRunChain` in addition to the subcommand's `PreRunChain` and `PostRunChain`, because chains are supposed to execute all defined
-chain functions, and not just the overridden one.
+An example of two commands which use all of these features is below.  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`:
 
 ```go
 package main
@@ -672,9 +665,6 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "root [sub]",
 		Short: "My root command",
-        PreRunChain: func(cmd *cobra.Command, args []string) {
-            fmt.Printf("Inside rootCmd PreRunChain with args: %v\n", args)
-        },
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
 		},
@@ -690,17 +680,11 @@ func main() {
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
 		},
-        PostRunChain: func(cmd *cobra.Command, args []string) {
-            fmt.Printf("Inside rootCmd PostRunChain with args: %v\n", args)
-        },
 	}
 
 	var subCmd = &cobra.Command{
 		Use:   "sub [no options!]",
 		Short: "My subcommand",
-        PreRunChain: func(cmd *cobra.Command, args []string) {
-            fmt.Printf("Inside subCmd PreRunChain with args: %v\n", args)
-        },
 		PreRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Inside subCmd PreRun with args: %v\n", args)
 		},
@@ -713,9 +697,6 @@ func main() {
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Inside subCmd PersistentPostRun with args: %v\n", args)
 		},
-        PostRunChain: func(cmd *cobra.Command, args []string) {
-            fmt.Printf("Inside subCmd PostRunChain with args: %v\n", args)
-        },
 	}
 
 	rootCmd.AddCommand(subCmd)
@@ -733,13 +714,11 @@ func main() {
 
 Cobra also has functions where the return signature is an error. This allows for errors to bubble up to the top, providing a way to handle the errors in one location. The current list of functions that return an error is:
 
-* PreRunChainE
 * PersistentPreRunE
 * PreRunE
 * RunE
 * PostRunE
 * PersistentPostRunE
-* PostRunChainE
 
 **Example Usage using RunE:**
 
