@@ -635,7 +635,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	var args []string
 
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
-	if len(c.args) == 0 && filepath.Base(os.Args[0]) != "cobra.test" {
+	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
 	} else {
 		args = c.args
