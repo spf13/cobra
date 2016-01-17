@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -156,8 +157,8 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 		}
 	}
 
-	filename := cmd.CommandPath()
-	filename = dir + strings.Replace(filename, " ", "_", -1) + ".md"
+	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".md"
+	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
