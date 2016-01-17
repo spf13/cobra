@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -46,8 +47,8 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 	}
 	needToResetTitle := header.Title == ""
 
-	filename := cmd.CommandPath()
-	filename = dir + strings.Replace(filename, " ", "-", -1) + ".1"
+	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".1"
+	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
