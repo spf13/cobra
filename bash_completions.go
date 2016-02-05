@@ -219,7 +219,7 @@ func postscript(w io.Writer, name string) error {
 	}
 	_, err = fmt.Fprintf(w, `{
     local cur prev words cword
-    declare -A flaghash
+    declare -A flaghash 2>/dev/null || :
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else
