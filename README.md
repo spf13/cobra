@@ -535,7 +535,7 @@ around it. In fact, you can provide your own if you want.
 
 ### Defining your own help
 
-You can provide your own Help command or you own template for the default command to use.
+You can provide your own Help command or your own template for the default command to use.
 
 The default help command is
 
