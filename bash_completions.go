@@ -183,7 +183,11 @@ __handle_command()
     if [[ -n ${last_command} ]]; then
         next_command="_${last_command}_${words[c]//:/__}"
     else
-        next_command="_${words[c]//:/__}"
+        if [[ $c -eq 0 ]]; then
+            next_command="_$(basename ${words[c]//:/__})"
+        else
+            next_command="_${words[c]//:/__}"
+        fi
     fi
     c=$((c+1))
     __debug "${FUNCNAME}: looking for ${next_command}"
@@ -200,6 +204,8 @@ __handle_word()
     if [[ "${words[c]}" == -* ]]; then
         __handle_flag
     elif __contains_word "${words[c]}" "${commands[@]}"; then
+        __handle_command
+    elif [[ $c -eq 0 ]] && __contains_word "$(basename ${words[c]})" "${commands[@]}"; then
         __handle_command
     else
         __handle_noun
