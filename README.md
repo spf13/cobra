@@ -16,6 +16,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [Bleve](http://www.blevesearch.com/)
 * [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
 * [Parse (CLI)](https://parse.com/)
+* [GiantSwarm's swarm](https://github.com/giantswarm/cli)
 * [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 
 
