@@ -426,7 +426,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	}
 
 	Licenses["gpl2"] = License{
-		Name:            "GNU General Public License 3.0",
+		Name:            "GNU General Public License 2.0",
 		PossibleMatches: []string{"gpl2", "gnu gpl2"},
 		Header: `{{ .copyright }}
 
