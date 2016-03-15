@@ -263,7 +263,7 @@ func (c *Command) UsageTemplate() string {
 		return c.parent.UsageTemplate()
 	} else {
 		return `Usage:{{if .Runnable}}
-  {{.UseLine}}{{if .HasFlags}} [flags]{{end}}{{end}}{{if .HasSubCommands}}
+  {{if .HasFlags}}{{appendIfNotPresent .UseLine "[flags]"}}{{else}}{{.UseLine}}{{end}}{{end}}{{if .HasSubCommands}}
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
 Aliases:

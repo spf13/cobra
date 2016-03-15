@@ -27,11 +27,12 @@ import (
 )
 
 var templateFuncs template.FuncMap = template.FuncMap{
-	"trim":           strings.TrimSpace,
-	"trimRightSpace": trimRightSpace,
-	"rpad":           rpad,
-	"gt":             Gt,
-	"eq":             Eq,
+	"trim":               strings.TrimSpace,
+	"trimRightSpace":     trimRightSpace,
+	"appendIfNotPresent": appendIfNotPresent,
+	"rpad":               rpad,
+	"gt":                 Gt,
+	"eq":                 Eq,
 }
 
 var initializers []func()
@@ -109,6 +110,14 @@ func Eq(a interface{}, b interface{}) bool {
 
 func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
+}
+
+// appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s
+func appendIfNotPresent(s, stringToAppend string) string {
+	if strings.Contains(s, stringToAppend) {
+		return s
+	}
+	return s + " " + stringToAppend
 }
 
 //rpad adds padding to the right of a string
