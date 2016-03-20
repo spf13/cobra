@@ -62,6 +62,11 @@ func TestBashCompletions(t *testing.T) {
 	c.Flags().StringVar(&flagvalExt, "filename-ext", "", "Enter a filename (extension limited)")
 	c.MarkFlagFilename("filename-ext")
 
+	// filename extensions
+	var flagvalCustom string
+	c.Flags().StringVar(&flagvalCustom, "custom", "", "Enter a filename (extension limited)")
+	c.MarkFlagCustom("custom", "__complete_custom")
+
 	// subdirectories in a given directory
 	var flagvalTheme string
 	c.Flags().StringVar(&flagvalTheme, "theme", "", "theme to use (located in /themes/THEMENAME/)")
@@ -88,6 +93,8 @@ func TestBashCompletions(t *testing.T) {
 	check(t, str, `flags_completion+=("_filedir")`)
 	// check for filename extension flags
 	check(t, str, `flags_completion+=("__handle_filename_extension_flag json|yaml|yml")`)
+	// check for custom flags
+	check(t, str, `flags_completion+=("__complete_custom")`)
 	// check for subdirs_in_dir flags
 	check(t, str, `flags_completion+=("__handle_subdirs_in_dir_flag themes")`)
 

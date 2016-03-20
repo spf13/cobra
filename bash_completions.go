@@ -12,6 +12,7 @@ import (
 
 const (
 	BashCompFilenameExt     = "cobra_annotation_bash_completion_filename_extentions"
+	BashCompCustom          = "cobra_annotation_bash_completion_custom"
 	BashCompOneRequiredFlag = "cobra_annotation_bash_completion_one_required_flag"
 	BashCompSubdirsInDir    = "cobra_annotation_bash_completion_subdirs_in_dir"
 )
@@ -318,6 +319,20 @@ func writeFlagHandler(name string, annotations map[string][]string, w io.Writer)
 			if err != nil {
 				return err
 			}
+		case BashCompCustom:
+			_, err := fmt.Fprintf(w, "    flags_with_completion+=(%q)\n", name)
+			if err != nil {
+				return err
+			}
+			if len(value) > 0 {
+				handlers := strings.Join(value, "; ")
+				_, err = fmt.Fprintf(w, "    flags_completion+=(%q)\n", handlers)
+			} else {
+				_, err = fmt.Fprintf(w, "    flags_completion+=(:)\n")
+			}
+			if err != nil {
+				return err
+			}
 		case BashCompSubdirsInDir:
 			_, err := fmt.Fprintf(w, "    flags_with_completion+=(%q)\n", name)
 
@@ -538,6 +553,12 @@ func (cmd *Command) MarkFlagFilename(name string, extensions ...string) error {
 	return MarkFlagFilename(cmd.Flags(), name, extensions...)
 }
 
+// MarkFlagCustom adds the BashCompCustom annotation to the named flag, if it exists.
+// Generated bash autocompletion will call the bash function f for the flag.
+func (cmd *Command) MarkFlagCustom(name string, f string) error {
+	return MarkFlagCustom(cmd.Flags(), name, f)
+}
+
 // MarkPersistentFlagFilename adds the BashCompFilenameExt annotation to the named persistent flag, if it exists.
 // Generated bash autocompletion will select filenames for the flag, limiting to named extensions if provided.
 func (cmd *Command) MarkPersistentFlagFilename(name string, extensions ...string) error {
@@ -548,4 +569,10 @@ func (cmd *Command) MarkPersistentFlagFilename(name string, extensions ...string
 // Generated bash autocompletion will select filenames for the flag, limiting to named extensions if provided.
 func MarkFlagFilename(flags *pflag.FlagSet, name string, extensions ...string) error {
 	return flags.SetAnnotation(name, BashCompFilenameExt, extensions)
+}
+
+// MarkFlagCustom adds the BashCompCustom annotation to the named flag in the flag set, if it exists.
+// Generated bash autocompletion will call the bash function f for the flag.
+func MarkFlagCustom(flags *pflag.FlagSet, name string, f string) error {
+	return flags.SetAnnotation(name, BashCompCustom, []string{f})
 }
