@@ -34,7 +34,7 @@ __debug()
 __my_init_completion()
 {
     COMPREPLY=()
-    _get_comp_words_by_ref cur prev words cword
+    _get_comp_words_by_ref "$@" cur prev words cword
 }
 
 __index_of_word()
@@ -75,6 +75,25 @@ __handle_reply()
             COMPREPLY=( $(compgen -W "${allflags[*]}" -- "$cur") )
             if [[ $(type -t compopt) = "builtin" ]]; then
                 [[ $COMPREPLY == *= ]] || compopt +o nospace
+            fi
+
+            # complete after --flag=abc
+            if [[ $cur == *=* ]]; then
+                if [[ $(type -t compopt) = "builtin" ]]; then
+                    compopt +o nospace
+                fi
+
+                local index flag
+                flag="${cur%%=*}"
+                __index_of_word "${flag}" "${flags_with_completion[@]}"
+                if [[ ${index} -ge 0 ]]; then
+                    COMPREPLY=() PREFIX="" cur="${cur#*=}"
+                    ${flags_completion[${index}]}
+                    if [ -n "${ZSH_VERSION}" ]; then
+                        # zfs completion needs --flag= prefix
+                        eval COMPREPLY=( "\${COMPREPLY[@]/#/${flag}=}" )
+                    fi
+                fi
             fi
             return 0;
             ;;
@@ -229,7 +248,7 @@ func postscript(w io.Writer, name string) error {
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else
-        __my_init_completion || return
+        __my_init_completion -n "=" || return
     fi
 
     local c=0
