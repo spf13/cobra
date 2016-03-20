@@ -189,6 +189,8 @@ __handle_noun()
 
     if __contains_word "${words[c]}" "${must_have_one_noun[@]}"; then
         must_have_one_noun=()
+    elif __contains_word "${words[c]%s}" "${must_have_one_noun[@]}"; then
+        must_have_one_noun=()
     fi
 
     nouns+=("${words[c]}")
