@@ -12,6 +12,7 @@ import (
 
 const (
 	BashCompFilenameExt     = "cobra_annotation_bash_completion_filename_extentions"
+	BashCompCustom          = "cobra_annotation_bash_completion_custom"
 	BashCompOneRequiredFlag = "cobra_annotation_bash_completion_one_required_flag"
 	BashCompSubdirsInDir    = "cobra_annotation_bash_completion_subdirs_in_dir"
 )
@@ -34,7 +35,7 @@ __debug()
 __my_init_completion()
 {
     COMPREPLY=()
-    _get_comp_words_by_ref cur prev words cword
+    _get_comp_words_by_ref "$@" cur prev words cword
 }
 
 __index_of_word()
@@ -75,6 +76,25 @@ __handle_reply()
             COMPREPLY=( $(compgen -W "${allflags[*]}" -- "$cur") )
             if [[ $(type -t compopt) = "builtin" ]]; then
                 [[ $COMPREPLY == *= ]] || compopt +o nospace
+            fi
+
+            # complete after --flag=abc
+            if [[ $cur == *=* ]]; then
+                if [[ $(type -t compopt) = "builtin" ]]; then
+                    compopt +o nospace
+                fi
+
+                local index flag
+                flag="${cur%%=*}"
+                __index_of_word "${flag}" "${flags_with_completion[@]}"
+                if [[ ${index} -ge 0 ]]; then
+                    COMPREPLY=() PREFIX="" cur="${cur#*=}"
+                    ${flags_completion[${index}]}
+                    if [ -n "${ZSH_VERSION}" ]; then
+                        # zfs completion needs --flag= prefix
+                        eval COMPREPLY=( "\${COMPREPLY[@]/#/${flag}=}" )
+                    fi
+                fi
             fi
             return 0;
             ;;
@@ -169,6 +189,8 @@ __handle_noun()
 
     if __contains_word "${words[c]}" "${must_have_one_noun[@]}"; then
         must_have_one_noun=()
+    elif __contains_word "${words[c]%s}" "${must_have_one_noun[@]}"; then
+        must_have_one_noun=()
     fi
 
     nouns+=("${words[c]}")
@@ -229,7 +251,7 @@ func postscript(w io.Writer, name string) error {
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else
-        __my_init_completion || return
+        __my_init_completion -n "=" || return
     fi
 
     local c=0
@@ -295,6 +317,20 @@ func writeFlagHandler(name string, annotations map[string][]string, w io.Writer)
 			} else {
 				ext := "_filedir"
 				_, err = fmt.Fprintf(w, "    flags_completion+=(%q)\n", ext)
+			}
+			if err != nil {
+				return err
+			}
+		case BashCompCustom:
+			_, err := fmt.Fprintf(w, "    flags_with_completion+=(%q)\n", name)
+			if err != nil {
+				return err
+			}
+			if len(value) > 0 {
+				handlers := strings.Join(value, "; ")
+				_, err = fmt.Fprintf(w, "    flags_completion+=(%q)\n", handlers)
+			} else {
+				_, err = fmt.Fprintf(w, "    flags_completion+=(:)\n")
 			}
 			if err != nil {
 				return err
@@ -519,6 +555,12 @@ func (cmd *Command) MarkFlagFilename(name string, extensions ...string) error {
 	return MarkFlagFilename(cmd.Flags(), name, extensions...)
 }
 
+// MarkFlagCustom adds the BashCompCustom annotation to the named flag, if it exists.
+// Generated bash autocompletion will call the bash function f for the flag.
+func (cmd *Command) MarkFlagCustom(name string, f string) error {
+	return MarkFlagCustom(cmd.Flags(), name, f)
+}
+
 // MarkPersistentFlagFilename adds the BashCompFilenameExt annotation to the named persistent flag, if it exists.
 // Generated bash autocompletion will select filenames for the flag, limiting to named extensions if provided.
 func (cmd *Command) MarkPersistentFlagFilename(name string, extensions ...string) error {
@@ -529,4 +571,10 @@ func (cmd *Command) MarkPersistentFlagFilename(name string, extensions ...string
 // Generated bash autocompletion will select filenames for the flag, limiting to named extensions if provided.
 func MarkFlagFilename(flags *pflag.FlagSet, name string, extensions ...string) error {
 	return flags.SetAnnotation(name, BashCompFilenameExt, extensions)
+}
+
+// MarkFlagCustom adds the BashCompCustom annotation to the named flag in the flag set, if it exists.
+// Generated bash autocompletion will call the bash function f for the flag.
+func MarkFlagCustom(flags *pflag.FlagSet, name string, f string) error {
+	return flags.SetAnnotation(name, BashCompCustom, []string{f})
 }

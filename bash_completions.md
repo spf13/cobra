@@ -147,3 +147,35 @@ hello.yml                     test.json
 ```
 
 So while there are many other files in the CWD it only shows me subdirs and those with valid extensions.
+
+# Specifiy custom flag completion
+
+Similar to the filename completion and filtering usingn cobra.BashCompFilenameExt, you can specifiy
+a custom flag completion function with cobra.BashCompCustom:
+
+```go
+	annotation := make(map[string][]string)
+	annotation[cobra.BashCompFilenameExt] = []string{"__kubectl_get_namespaces"}
+
+	flag := &pflag.Flag{
+		Name:        "namespace",
+		Usage:       usage,
+		Annotations: annotation,
+	}
+	cmd.Flags().AddFlag(flag)
+```
+
+In addition add the `__handle_namespace_flag` implementation in the `BashCompletionFunction`
+value, e.g.:
+
+```bash
+__kubectl_get_namespaces()
+{
+    local template
+    template="{{ range .items  }}{{ .metadata.name }} {{ end }}"
+    local kubectl_out
+    if kubectl_out=$(kubectl get -o template --template="${template}" namespace 2>/dev/null); then
+        COMPREPLY=( $( compgen -W "${kubectl_out}[*]" -- "$cur" ) )
+    fi
+}
+```
