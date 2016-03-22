@@ -22,7 +22,7 @@ func preamble(out io.Writer, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(out, `
+	_, err = fmt.Fprint(out, `
 __debug()
 {
     if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
