@@ -196,7 +196,7 @@ func isEmpty(path string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		list, err := f.Readdir(-1)
+		list, _ := f.Readdir(-1)
 		// f.Close() - see bug fix above
 		return len(list) == 0, nil
 	}

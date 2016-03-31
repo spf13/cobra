@@ -454,10 +454,10 @@ func TestGrandChildSameName(t *testing.T) {
 
 func TestUsage(t *testing.T) {
 	x := fullSetupTest("help")
-	checkResultContains(t, x, cmdRootWithRun.Use + " [flags]")
+	checkResultContains(t, x, cmdRootWithRun.Use+" [flags]")
 	x = fullSetupTest("help customflags")
 	checkResultContains(t, x, cmdCustomFlags.Use)
-	checkResultOmits(t, x, cmdCustomFlags.Use + " [flags]")
+	checkResultOmits(t, x, cmdCustomFlags.Use+" [flags]")
 }
 
 func TestFlagLong(t *testing.T) {
@@ -752,7 +752,7 @@ func TestVisitParents(t *testing.T) {
 }
 
 func TestRunnableRootCommandNilInput(t *testing.T) {
-	empty_arg := make([]string, 0)
+	var emptyArg []string
 	c := initializeWithRootCmd()
 
 	buf := new(bytes.Buffer)
@@ -760,7 +760,7 @@ func TestRunnableRootCommandNilInput(t *testing.T) {
 	c.SetOutput(buf)
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdPrint, cmdEcho)
-	c.SetArgs(empty_arg)
+	c.SetArgs(emptyArg)
 
 	err := c.Execute()
 	if err != nil {
@@ -863,7 +863,7 @@ func TestFlagAccess(t *testing.T) {
 }
 
 func TestNoNRunnableRootCommandNilInput(t *testing.T) {
-	args := make([]string, 0)
+	var args []string
 	c := initialize()
 
 	buf := new(bytes.Buffer)

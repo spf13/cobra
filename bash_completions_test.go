@@ -25,7 +25,7 @@ func check(t *testing.T, found, expected string) {
 
 // World worst custom function, just keep telling you to enter hello!
 const (
-	bash_completion_func = `__custom_func() {
+	bashCompletionFunc = `__custom_func() {
 COMPREPLY=( "hello" )
 }
 `
@@ -37,7 +37,7 @@ func TestBashCompletions(t *testing.T) {
 	c.AddCommand(cmdEcho, cmdPrint, cmdDeprecated, cmdColon)
 
 	// custom completion function
-	c.BashCompletionFunction = bash_completion_func
+	c.BashCompletionFunction = bashCompletionFunc
 
 	// required flag
 	c.MarkFlagRequired("introot")
