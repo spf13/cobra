@@ -2,4 +2,4 @@
 
 package cobra
 
-var preExecHookFn func(*Command) = nil
+var preExecHookFn func(*Command)

@@ -149,9 +149,8 @@ func AssertNextLineEquals(scanner *bufio.Scanner, expectedLine string) error {
 		line := scanner.Text()
 		if line == expectedLine {
 			return nil
-		} else {
-			return fmt.Errorf("AssertNextLineEquals: got %#v, not %#v", line, expectedLine)
 		}
+		return fmt.Errorf("AssertNextLineEquals: got %#v, not %#v", line, expectedLine)
 	}
 
 	if err := scanner.Err(); err != nil {
