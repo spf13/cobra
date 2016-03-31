@@ -46,25 +46,13 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
 	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
-	RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
+	RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `license` in config)")
 	RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
 	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
 	viper.BindPFlag("projectbase", RootCmd.PersistentFlags().Lookup("projectbase"))
 	viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
-	viper.SetDefault("licenseText", `
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-`)
 }
 
 // Read in config file and ENV variables if set.
