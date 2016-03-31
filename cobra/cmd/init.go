@@ -88,20 +88,23 @@ func initializePath(path string) {
 }
 
 func createLicenseFile() {
-	data := make(map[string]interface{})
-
-	// Try to remove the email address, if any
-	data["copyright"] = strings.Split(copyrightLine(), " <")[0]
-
-	data["appName"] = projectName()
-
-	// Get license and generate the template from text and data.
 	lic := getLicense()
-	r, _ := templateToReader(lic.Text, data)
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
-	if template := buf.String(); template != "" {
-		err := writeTemplateToFile(ProjectPath(), "LICENSE", template, data)
+
+	// Don't bother writing a LICENSE file if there is no text.
+	if lic.Text != "" {
+		data := make(map[string]interface{})
+
+		// Try to remove the email address, if any
+		data["copyright"] = strings.Split(copyrightLine(), " <")[0]
+
+		data["appName"] = projectName()
+
+		// Generate license template from text and data.
+		r, _ := templateToReader(lic.Text, data)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r)
+
+		err := writeTemplateToFile(ProjectPath(), "LICENSE", buf.String(), data)
 		_ = err
 		// if err != nil {
 		// 	er(err)
