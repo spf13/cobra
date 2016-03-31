@@ -319,6 +319,15 @@ func whichLicense() string {
 
 	// default to viper's setting
 
+	if viper.IsSet("license.header") || viper.IsSet("license.text") {
+		if custom, ok := Licenses["custom"]; ok {
+			custom.Header = viper.GetString("license.header")
+			custom.Text = viper.GetString("license.text")
+			Licenses["custom"] = custom
+			return "custom"
+		}
+	}
+
 	return matchLicense(viper.GetString("license"))
 }
 

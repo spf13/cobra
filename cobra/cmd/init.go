@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -87,29 +88,33 @@ func initializePath(path string) {
 }
 
 func createLicenseFile() {
-	lic := getLicense()
-
-	template := lic.Text
-
-	var data map[string]interface{}
-	data = make(map[string]interface{})
+	data := make(map[string]interface{})
 
 	// Try to remove the email address, if any
 	data["copyright"] = strings.Split(copyrightLine(), " <")[0]
 
-	err := writeTemplateToFile(ProjectPath(), "LICENSE", template, data)
-	_ = err
-	// if err != nil {
-	// 	er(err)
-	// }
+	data["appName"] = projectName()
+
+	// Get license and generate the template from text and data.
+	lic := getLicense()
+	r, _ := templateToReader(lic.Text, data)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	if template := buf.String(); template != "" {
+		err := writeTemplateToFile(ProjectPath(), "LICENSE", template, data)
+		_ = err
+		// if err != nil {
+		// 	er(err)
+		// }
+	}
 }
 
 func createMainFile() {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
-{{ comment .license }}
-
+{{if .license}}{{ comment .license }}
+{{end}}
 package main
 
 import "{{ .importpath }}"
@@ -118,11 +123,17 @@ func main() {
 	cmd.Execute()
 }
 `
-	var data map[string]interface{}
-	data = make(map[string]interface{})
+	data := make(map[string]interface{})
 
 	data["copyright"] = copyrightLine()
-	data["license"] = lic.Header
+	data["appName"] = projectName()
+
+	// Generate license template from header and data.
+	r, _ := templateToReader(lic.Header, data)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	data["license"] = buf.String()
+
 	data["importpath"] = guessImportPath() + "/" + guessCmdDir()
 
 	err := writeTemplateToFile(ProjectPath(), "main.go", template, data)
@@ -136,8 +147,8 @@ func createRootCmdFile() {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
-{{ comment .license }}
-
+{{if .license}}{{ comment .license }}
+{{end}}
 package cmd
 
 import (
@@ -206,12 +217,17 @@ func initConfig() {
 }
 {{ end }}`
 
-	var data map[string]interface{}
-	data = make(map[string]interface{})
+	data := make(map[string]interface{})
 
 	data["copyright"] = copyrightLine()
-	data["license"] = lic.Header
 	data["appName"] = projectName()
+
+	// Generate license template from header and data.
+	r, _ := templateToReader(lic.Header, data)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	data["license"] = buf.String()
+
 	data["viper"] = viper.GetBool("useViper")
 
 	err := writeTemplateToFile(ProjectPath()+string(os.PathSeparator)+guessCmdDir(), "root.go", template, data)
