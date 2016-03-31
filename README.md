@@ -240,7 +240,7 @@ a custom license:
 license:
   header: This file is part of {{ .appName }}.
   text: |
-    {{ .Copyright }}
+    {{ .copyright }}
 
     This is my license. There are many like it, but this one is mine.
     My license is my best friend. It is my life. I must master it as I must
