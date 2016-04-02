@@ -150,7 +150,7 @@ import (
 {{if .viper}}
 var cfgFile string
 {{ end }}
-// This represents the base command when called without any subcommands
+// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "{{ .appName }}",
 	Short: "A brief description of your application",
