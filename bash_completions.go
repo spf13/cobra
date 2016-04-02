@@ -123,6 +123,10 @@ __handle_reply()
     fi
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
+    if [[ ${#COMPREPLY[@]} -eq 0 && ${#noun_aliases[@]} -gt 0 && ${#must_have_one_noun[@]} -ne 0 ]]; then
+        COMPREPLY=( $(compgen -W "${noun_aliases[*]}" -- "$cur") )
+    fi
+
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
         declare -F __custom_func >/dev/null && __custom_func
     fi
@@ -189,7 +193,7 @@ __handle_noun()
 
     if __contains_word "${words[c]}" "${must_have_one_noun[@]}"; then
         must_have_one_noun=()
-    elif __contains_word "${words[c]%s}" "${must_have_one_noun[@]}"; then
+    elif __contains_word "${words[c]}" "${noun_aliases[@]}"; then
         must_have_one_noun=()
     fi
 
@@ -460,13 +464,26 @@ func writeRequiredFlag(cmd *Command, w io.Writer) error {
 	return visitErr
 }
 
-func writeRequiredNoun(cmd *Command, w io.Writer) error {
+func writeRequiredNouns(cmd *Command, w io.Writer) error {
 	if _, err := fmt.Fprintf(w, "    must_have_one_noun=()\n"); err != nil {
 		return err
 	}
 	sort.Sort(sort.StringSlice(cmd.ValidArgs))
 	for _, value := range cmd.ValidArgs {
 		if _, err := fmt.Fprintf(w, "    must_have_one_noun+=(%q)\n", value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeArgAliases(cmd *Command, w io.Writer) error {
+	if _, err := fmt.Fprintf(w, "    noun_aliases=()\n"); err != nil {
+		return err
+	}
+	sort.Sort(sort.StringSlice(cmd.ArgAliases))
+	for _, value := range cmd.ArgAliases {
+		if _, err := fmt.Fprintf(w, "    noun_aliases+=(%q)\n", value); err != nil {
 			return err
 		}
 	}
@@ -500,7 +517,10 @@ func gen(cmd *Command, w io.Writer) error {
 	if err := writeRequiredFlag(cmd, w); err != nil {
 		return err
 	}
-	if err := writeRequiredNoun(cmd, w); err != nil {
+	if err := writeRequiredNouns(cmd, w); err != nil {
+		return err
+	}
+	if err := writeArgAliases(cmd, w); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(w, "}\n\n"); err != nil {

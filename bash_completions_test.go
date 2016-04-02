@@ -43,8 +43,12 @@ func TestBashCompletions(t *testing.T) {
 	c.MarkFlagRequired("introot")
 
 	// valid nouns
-	validArgs := []string{"pods", "nodes", "services", "replicationControllers"}
+	validArgs := []string{"pod", "node", "service", "replicationcontroller"}
 	c.ValidArgs = validArgs
+
+	// noun aliases
+	argAliases := []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"}
+	c.ArgAliases = argAliases
 
 	// filename
 	var flagval string
@@ -88,7 +92,11 @@ func TestBashCompletions(t *testing.T) {
 	// check for custom completion function
 	check(t, str, `COMPREPLY=( "hello" )`)
 	// check for required nouns
-	check(t, str, `must_have_one_noun+=("pods")`)
+	check(t, str, `must_have_one_noun+=("pod")`)
+	// check for noun aliases
+	check(t, str, `noun_aliases+=("pods")`)
+	check(t, str, `noun_aliases+=("rc")`)
+	checkOmit(t, str, `must_have_one_noun+=("pods")`)
 	// check for filename extension flags
 	check(t, str, `flags_completion+=("_filedir")`)
 	// check for filename extension flags

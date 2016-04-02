@@ -45,8 +45,11 @@ type Command struct {
 	Long string
 	// Examples of how to use the command
 	Example string
-	// List of all valid non-flag arguments, used for bash completions *TODO* actually validate these
+	// List of all valid non-flag arguments that are accepted in bash completions
 	ValidArgs []string
+	// List of aliases for ValidArgs. These are not suggested to the user in the bash
+	// completion, but accepted if entered manually.
+	ArgAliases []string
 	// Custom functions used by the bash autocompletion generator
 	BashCompletionFunction string
 	// Is this command deprecated and should print this string when used?
