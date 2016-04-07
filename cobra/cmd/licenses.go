@@ -1,4 +1,5 @@
 // Copyright © 2015 Steve Francia <spf@spf13.com>.
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +26,8 @@ var Licenses map[string]License
 // the header to be used with each file on the file's creating, and the text
 // of the license
 type License struct {
-	Name            string   // The type of license in use
+	Identifier      string   // SPDX License Identifier
+	Name            string   // The long name of the license in use
 	PossibleMatches []string // Similar names to guess
 	Text            string   // License text data
 	Header          string   // License header for source files
@@ -46,9 +48,10 @@ func matchLicense(in string) string {
 func init() {
 	Licenses = make(map[string]License)
 
-	Licenses["apache"] = License{
-		Name:            "Apache 2.0",
-		PossibleMatches: []string{"apache", "apache20", "apache 2.0", "apache2.0", "apache-2.0"},
+	Licenses["Apache-2.0"] = License{
+		Identifier:      "Apache-2.0",
+		Name:            "Apache License 2.0",
+		PossibleMatches: []string{"Apache-2.0", "Apache", "Apache-2", "apache20", "Apache 2.0", "Apache2.0"},
 		Header: `
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -266,9 +269,10 @@ func init() {
 `,
 	}
 
-	Licenses["mit"] = License{
-		Name:            "Mit",
-		PossibleMatches: []string{"mit"},
+	Licenses["MIT"] = License{
+		Identifier:      "MIT",
+		Name:            "MIT License",
+		PossibleMatches: []string{"MIT", "Expat"},
 		Header: `
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -311,9 +315,10 @@ THE SOFTWARE.
 `,
 	}
 
-	Licenses["bsd"] = License{
-		Name:            "NewBSD",
-		PossibleMatches: []string{"bsd", "newbsd", "3 clause bsd"},
+	Licenses["BSD-3-Clause"] = License{
+		Identifier:      "BSD-3-Clause",
+		Name:            `BSD 3-clause "New" or "Revised" License`,
+		PossibleMatches: []string{"BSD-3-Clause", "bsd", "newbsd", "3 clause bsd"},
 		Header: `
 All rights reserved.
 
@@ -372,9 +377,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `,
 	}
 
-	Licenses["freebsd"] = License{
-		Name:            "Simplified BSD License",
-		PossibleMatches: []string{"freebsd", "simpbsd", "simple bsd", "2 clause bsd"},
+	Licenses["BSD-2-Clause"] = License{
+		Identifier:      "BSD-2-Clause",
+		Name:            `BSD 2-clause "Simplified" License`,
+		PossibleMatches: []string{"BSD-2-Clause", "freebsd", "simpbsd", "simple bsd", "2 clause bsd"},
 		Header: `
 All rights reserved.
 

@@ -108,6 +108,7 @@ func createMainFile() {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
+// SPDX-License-Identifier: {{ .licensename }}
 {{ comment .license }}
 
 package main
@@ -123,6 +124,7 @@ func main() {
 
 	data["copyright"] = copyrightLine()
 	data["license"] = lic.Header
+	data["licensename"] = lic.Identifier
 	data["importpath"] = guessImportPath() + "/" + guessCmdDir()
 
 	err := writeTemplateToFile(ProjectPath(), "main.go", template, data)
@@ -136,6 +138,7 @@ func createRootCmdFile() {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
+// SPDX-License-Identifier: {{ .licensename }}
 {{ comment .license }}
 
 package cmd

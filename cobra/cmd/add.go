@@ -68,6 +68,7 @@ func createCmdFile(cmdName string) {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
+// SPDX-License-Identifier: {{ .licensename }}
 {{ comment .license }}
 
 package cmd
