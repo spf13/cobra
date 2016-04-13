@@ -261,7 +261,7 @@ func (c *Command) UsageTemplate() string {
 		return c.parent.UsageTemplate()
 	}
 	return `Usage:{{if .Runnable}}
-  {{if .HasFlags}}{{appendIfNotPresent .UseLine "[flags]"}}{{else}}{{.UseLine}}{{end}}{{end}}{{if .HasSubCommands}}
+  {{if .HasAvailableFlags}}{{appendIfNotPresent .UseLine "[flags]"}}{{else}}{{.UseLine}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
 Aliases:
@@ -272,16 +272,16 @@ Examples:
 {{ .Example }}{{end}}{{ if .HasAvailableSubCommands}}
 
 Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasLocalFlags}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasAvailableLocalFlags}}
 
 Flags:
-{{.LocalFlags.FlagUsages | trimRightSpace}}{{end}}{{ if .HasInheritedFlags}}
+{{.LocalFlags.FlagUsages | trimRightSpace}}{{end}}{{ if .HasAvailableInheritedFlags}}
 
 Global Flags:
 {{.InheritedFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasHelpSubCommands}}
 
 Additional help topics:{{range .Commands}}{{if .IsHelpCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasSubCommands }}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasAvailableSubCommands }}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
 `
@@ -1114,8 +1114,32 @@ func (c *Command) HasLocalFlags() bool {
 	return c.LocalFlags().HasFlags()
 }
 
+// Does the command have flags inherited from its parent command
 func (c *Command) HasInheritedFlags() bool {
 	return c.InheritedFlags().HasFlags()
+}
+
+// Does the command contain any flags (local plus persistent from the entire
+// structure) which are not hidden or deprecated
+func (c *Command) HasAvailableFlags() bool {
+	return c.Flags().HasAvailableFlags()
+}
+
+// Does the command contain persistent flags which are not hidden or deprecated
+func (c *Command) HasAvailablePersistentFlags() bool {
+	return c.PersistentFlags().HasAvailableFlags()
+}
+
+// Does the command has flags specifically declared locally which are not hidden
+// or deprecated
+func (c *Command) HasAvailableLocalFlags() bool {
+	return c.LocalFlags().HasAvailableFlags()
+}
+
+// Does the command have flags inherited from its parent command which are
+// not hidden or deprecated
+func (c *Command) HasAvailableInheritedFlags() bool {
+	return c.InheritedFlags().HasAvailableFlags()
 }
 
 // Flag climbs up the command tree looking for matching flag
