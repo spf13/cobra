@@ -226,11 +226,25 @@ The cobra generator will be easier to use if you provide a simple configuration
 file which will help you eliminate providing a bunch of repeated information in
 flags over and over.
 
-an example ~/.cobra.yaml file:
+An example ~/.cobra.yaml file:
 
 ```yaml
 author: Steve Francia <spf@spf13.com>
 license: MIT
+```
+
+You can specify no license by setting `license` to `none` or you can specify
+a custom license:
+
+```yaml
+license:
+  header: This file is part of {{ .appName }}.
+  text: |
+    {{ .copyright }}
+
+    This is my license. There are many like it, but this one is mine.
+    My license is my best friend. It is my life. I must master it as I must
+    master my life.  
 ```
 
 ## Manually implementing Cobra

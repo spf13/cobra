@@ -46,6 +46,12 @@ func matchLicense(in string) string {
 func init() {
 	Licenses = make(map[string]License)
 
+	// Allows a user to not use a license.
+	Licenses["none"] = License{"None", []string{"none", "false"}, "", ""}
+
+	// Allows a user to use config for a custom license.
+	Licenses["custom"] = License{"Custom", []string{}, "", ""}
+
 	Licenses["apache"] = License{
 		Name:            "Apache 2.0",
 		PossibleMatches: []string{"apache", "apache20", "apache 2.0", "apache2.0", "apache-2.0"},
@@ -727,22 +733,21 @@ POSSIBILITY OF SUCH DAMAGES.
 	Licenses["gpl3"] = License{
 		Name:            "GNU General Public License 3.0",
 		PossibleMatches: []string{"gpl3", "gpl", "gnu gpl3", "gnu gpl"},
-		Header: `{{ .copyright }}
+		Header: `
+This file is part of {{ .appName }}.
 
- This file is part of {{ .appName }}.
+{{ .appName }} is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
- {{ .appName }} is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+{{ .appName }} is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
 
- {{ .appName }} is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Lesser General Public License for more details.
-
- You should have received a copy of the GNU Lesser General Public License
- along with {{ .appName }}. If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Lesser General Public License
+along with {{ .appName }}. If not, see <http://www.gnu.org/licenses/>.
 	   `,
 		Text: `                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
