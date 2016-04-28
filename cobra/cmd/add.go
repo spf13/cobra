@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"path"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -48,7 +49,25 @@ Example: cobra add server  -> resulting in a new cmd/server.go
 			er("add needs a name for the command")
 		}
 		guessProjectPath()
-		createCmdFile(args[0])
+
+		// Iterate over command parts delimited by "/".
+		currentPath := ""
+		cmdParts := strings.Split(args[0], "/")
+		for n, cmd := range cmdParts {
+			//
+			if n > 0 {
+				// Set parent name to previous command's name.
+				pName = cmdParts[n-1]
+
+				//
+				currentPath += pName + "/"
+			}
+
+			// TODO Create command file if it does not already exist.
+			createCmdFile(cmd, currentPath)
+		}
+
+
 	},
 }
 
@@ -64,13 +83,13 @@ func parentName() string {
 	return pName
 }
 
-func createCmdFile(cmdName string) {
+func createCmdFile(cmdName, cmdPath string) {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
 {{ comment .license }}
 
-package cmd
+package {{ .packageName }}
 
 import (
 	"fmt"
@@ -78,8 +97,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// {{.cmdName}}Cmd represents the {{.cmdName}} command
-var {{ .cmdName }}Cmd = &cobra.Command{
+// {{ .cmdName | title }}Cmd represents the {{ .cmdName }} command
+{{ .cmdName | title }}Cmd := &cobra.Command{
 	Use:   "{{ .cmdName }}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
@@ -95,7 +114,7 @@ to quickly create a Cobra application.` + "`" + `,
 }
 
 func init() {
-	{{ .parentName }}.AddCommand({{ .cmdName }}Cmd)
+	{{ .parentName | title }}.AddCommand({{ .cmdName | title }}Cmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -110,8 +129,14 @@ func init() {
 }
 `
 
-	var data map[string]interface{}
-	data = make(map[string]interface{})
+	data := make(map[string]interface{})
+
+	data["packageName"] = "cmd"
+
+	//
+	if cmdPath != "" {
+		data["packageName"] = path.Base(cmdPath)
+	}
 
 	data["copyright"] = copyrightLine()
 	data["license"] = lic.Header
@@ -120,9 +145,10 @@ func init() {
 	data["parentName"] = parentName()
 	data["cmdName"] = cmdName
 
-	err := writeTemplateToFile(filepath.Join(ProjectPath(), guessCmdDir()), cmdName+".go", template, data)
-	if err != nil {
+	file := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath, cmdName+".go")
+
+	if err := writeTemplateToFile(file, template, data); err != nil {
 		er(err)
 	}
-	fmt.Println(cmdName, "created at", filepath.Join(ProjectPath(), guessCmdDir(), cmdName+".go"))
+	fmt.Println(cmdName, "created at", file)
 }
