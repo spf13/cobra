@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"os"
 	"path"
 	"fmt"
 	"path/filepath"
@@ -63,8 +64,7 @@ Example: cobra add server  -> resulting in a new cmd/server.go
 				currentPath += pName + "/"
 			}
 
-			// TODO Create command file if it does not already exist.
-			createCmdFile(cmd, currentPath)
+		  createCmdFile(cmd, currentPath)
 		}
 
 
@@ -98,7 +98,7 @@ import (
 )
 
 // {{ .cmdName | title }}Cmd represents the {{ .cmdName }} command
-{{ .cmdName | title }}Cmd := &cobra.Command{
+var {{ .cmdName | title }}Cmd = &cobra.Command{
 	Use:   "{{ .cmdName }}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
@@ -147,8 +147,13 @@ func init() {
 
 	file := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath, cmdName+".go")
 
-	if err := writeTemplateToFile(file, template, data); err != nil {
-		er(err)
+	// Check if the file exists before trying to create it.
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		if err := writeTemplateToFile(file, template, data); err != nil {
+			er(err)
+		}
+		fmt.Println(cmdName, "created at", file)
+	} else {
+		fmt.Println(cmdName, "already exists at", file)
 	}
-	fmt.Println(cmdName, "created at", file)
 }
