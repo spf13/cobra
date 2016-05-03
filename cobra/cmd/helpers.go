@@ -248,7 +248,10 @@ func writeStringToFile(path, file, text string) error {
 }
 
 func templateToReader(tpl string, data interface{}) (io.Reader, error) {
-	tmpl := template.New("").Funcs(template.FuncMap{"title": strings.Title})
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"title": strings.Title,
+		"eq": func(a, b interface{}) bool { return a == b },
+	})
 	tmpl.Funcs(funcMap)
 	tmpl, err := tmpl.Parse(tpl)
 
@@ -347,4 +350,26 @@ func commentifyString(in string) string {
 		}
 	}
 	return strings.Join(newlines, "\n")
+}
+
+func buildPath(parts []string, end int) string {
+	if end > -1 {
+		return filepath.Join(buildPath(parts, end - 1), parts[end])
+	}
+	return ""
+}
+
+func getChildNames(path, name string) []string {
+	childNames := []string{}
+	fileNames := []string{}
+	if file, err := os.Open(filepath.Join(path, name)); err == nil {
+		fileNames, err = file.Readdirnames(0)
+	}
+	for _, name := range fileNames {
+		// Only consider files with the .go extension to be child commands.
+		if ext := filepath.Ext(name); ext == ".go" {
+			childNames = append(childNames, strings.TrimSuffix(name, ext))
+		}
+	}
+	return childNames
 }

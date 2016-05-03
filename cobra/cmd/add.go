@@ -14,7 +14,6 @@
 package cmd
 
 import (
-	"os"
 	"path"
 	"fmt"
 	"path/filepath"
@@ -52,22 +51,13 @@ Example: cobra add server  -> resulting in a new cmd/server.go
 		guessProjectPath()
 
 		// Iterate over command parts delimited by "/".
-		currentPath := ""
 		cmdParts := strings.Split(args[0], "/")
-		for n, cmd := range cmdParts {
-			//
-			if n > 0 {
-				// Set parent name to previous command's name.
-				pName = cmdParts[n-1]
-
-				//
-				currentPath += pName + "/"
+		for i := len(cmdParts) - 1; i >= 0; i-- {
+			if i > 0 {
+				pName = cmdParts[i-1]
 			}
-
-		  createCmdFile(cmd, currentPath)
+			createCmdFile(cmdParts[i], buildPath(cmdParts, i - 1))
 		}
-
-
 	},
 }
 
@@ -93,7 +83,8 @@ package {{ .packageName }}
 
 import (
 	"fmt"
-
+	{{ if .importpath }}
+	"{{ .importpath }}"{{ end }}
 	"github.com/spf13/cobra"
 )
 
@@ -114,18 +105,19 @@ to quickly create a Cobra application.` + "`" + `,
 }
 
 func init() {
-	{{ .parentName | title }}.AddCommand({{ .cmdName | title }}Cmd)
+	{{ if eq .parentName "RootCmd" }}{{ .parentName }}.AddCommand({{ .cmdName | title }}Cmd){{ end }}
+	{{ $cmdName := .cmdName }}{{ range $child := .children }}
+	{{ $cmdName | title }}Cmd.AddCommand({{ $cmdName }}.{{ $child | title }}Cmd){{ end }}
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
+	// {{ .cmdName | title }}Cmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	// {{ .cmdName | title }}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 `
 
@@ -148,12 +140,28 @@ func init() {
 	path := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath)
 	filename := cmdName + ".go"
 
+	children := getChildNames(path, cmdName)
+	if len(children) > 0 {
+		data["importpath"] = filepath.Join(
+			guessImportPath(),
+			guessCmdDir(),
+			cmdPath,
+			cmdName,
+		)
+	}
+	data["children"] = children
+
 	// Check if the file exists before trying to create it.
-	if _, err := os.Stat(filepath.Join(path, filename)); os.IsNotExist(err) {
+	if doesExist, err := exists(filepath.Join(path, filename)); !doesExist {
 		if err = writeTemplateToFile(path, filename, template, data); err != nil {
 			er(err)
 		}
 		fmt.Println(cmdName, "created at", path)
+	} else if len(children) > 0 {
+		if err = writeTemplateToFile(path, filename, template, data); err != nil {
+			er(err)
+		}
+		fmt.Println(cmdName, "updated at", path)
 	} else {
 		fmt.Println(cmdName, "already exists at", path)
 	}
