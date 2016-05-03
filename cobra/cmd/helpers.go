@@ -224,13 +224,15 @@ func dirExists(path string) (bool, error) {
 	return false, err
 }
 
-func writeTemplateToFile(file string, template string, data interface{}) error {
+func writeTemplateToFile(path, file, template string, data interface{}) error {
+	filename := filepath.Join(path, file)
+
 	r, err := templateToReader(template, data)
 	if err != nil {
 		return err
 	}
 
-	return safeWriteToDisk(file, r)
+	return safeWriteToDisk(filename, r)
 }
 
 func writeStringToFile(path, file, text string) error {

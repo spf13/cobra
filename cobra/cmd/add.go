@@ -145,15 +145,16 @@ func init() {
 	data["parentName"] = parentName()
 	data["cmdName"] = cmdName
 
-	file := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath, cmdName+".go")
+	path := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath)
+	filename := cmdName + ".go"
 
 	// Check if the file exists before trying to create it.
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		if err := writeTemplateToFile(file, template, data); err != nil {
+	if _, err := os.Stat(filepath.Join(path, filename)); os.IsNotExist(err) {
+		if err = writeTemplateToFile(path, filename, template, data); err != nil {
 			er(err)
 		}
-		fmt.Println(cmdName, "created at", file)
+		fmt.Println(cmdName, "created at", path)
 	} else {
-		fmt.Println(cmdName, "already exists at", file)
+		fmt.Println(cmdName, "already exists at", path)
 	}
 }

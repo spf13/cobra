@@ -104,7 +104,7 @@ func createLicenseFile() {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(r)
 
-		err := writeTemplateToFile(ProjectPath()+"LICENSE", buf.String(), data)
+		err := writeTemplateToFile(ProjectPath(), "LICENSE", buf.String(), data)
 		_ = err
 		// if err != nil {
 		// 	er(err)
@@ -139,7 +139,7 @@ func main() {
 
 	data["importpath"] = guessImportPath() + "/" + guessCmdDir()
 
-	err := writeTemplateToFile(ProjectPath()+"main.go", template, data)
+	err := writeTemplateToFile(ProjectPath(), "main.go", template, data)
 	_ = err
 	// if err != nil {
 	// 	er(err)
@@ -233,8 +233,8 @@ func initConfig() {
 
 	data["viper"] = viper.GetBool("useViper")
 
-	err := writeTemplateToFile(ProjectPath()+string(os.PathSeparator)+guessCmdDir()+"root.go", template, data)
-	if err != nil {
+	path := ProjectPath() + string(os.PathSeparator) + guessCmdDir()
+	if err := writeTemplateToFile(path, "root.go", template, data); err != nil {
 		er(err)
 	}
 
