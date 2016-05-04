@@ -352,9 +352,9 @@ func commentifyString(in string) string {
 	return strings.Join(newlines, "\n")
 }
 
-func buildPath(parts []string, end int) string {
-	if end > -1 {
-		return filepath.Join(buildPath(parts, end - 1), parts[end])
+func buildPath(parts []string, endIndex int) string {
+	if endIndex > -1 {
+		return filepath.Join(buildPath(parts, endIndex - 1), parts[endIndex])
 	}
 	return ""
 }
