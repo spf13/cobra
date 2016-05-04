@@ -55,6 +55,8 @@ Example: cobra add server  -> resulting in a new cmd/server.go
 		for i := len(cmdParts) - 1; i >= 0; i-- {
 			if i > 0 {
 				pName = cmdParts[i-1]
+			} else {
+				pName = "RootCmd"
 			}
 			createCmdFile(cmdParts[i], buildPath(cmdParts, i - 1))
 		}
@@ -84,7 +86,8 @@ package {{ .packageName }}
 import (
 	"fmt"
 	{{ if .importpath }}
-	"{{ .importpath }}"{{ end }}
+	"{{ .importpath }}"
+	{{ end -}}
 	"github.com/spf13/cobra"
 )
 
@@ -105,10 +108,14 @@ to quickly create a Cobra application.` + "`" + `,
 }
 
 func init() {
-	{{ if eq .parentName "RootCmd" }}{{ .parentName }}.AddCommand({{ .cmdName | title }}Cmd){{ end }}
-	{{ $cmdName := .cmdName }}{{ range $child := .children }}
-	{{ $cmdName | title }}Cmd.AddCommand({{ $cmdName }}.{{ $child | title }}Cmd){{ end }}
+	{{ if eq .parentName "RootCmd" -}}
+	{{ .parentName }}.AddCommand({{ .cmdName | title }}Cmd)
+	{{ end -}}
+	{{ $cmdName := .cmdName -}}
+	{{ range $child := .children -}}
+	{{ $cmdName | title }}Cmd.AddCommand({{ $cmdName }}.{{ $child | title }}Cmd)
 
+	{{ end -}}
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -125,7 +132,7 @@ func init() {
 
 	data["packageName"] = "cmd"
 
-	//
+	// Determine the package name based on the command file path.
 	if cmdPath != "" {
 		data["packageName"] = path.Base(cmdPath)
 	}
@@ -157,11 +164,6 @@ func init() {
 			er(err)
 		}
 		fmt.Println(cmdName, "created at", path)
-	} else if len(children) > 0 {
-		if err = writeTemplateToFile(path, filename, template, data); err != nil {
-			er(err)
-		}
-		fmt.Println(cmdName, "updated at", path)
 	} else {
 		fmt.Println(cmdName, "already exists at", path)
 	}
