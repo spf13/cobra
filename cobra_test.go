@@ -36,6 +36,7 @@ var cmdHidden = &Command{
 
 var cmdPrint = &Command{
 	Use:   "print [string to print]",
+	Args:  MinimumNArgs(1),
 	Short: "Print anything to the screen",
 	Long:  `an absolutely utterly useless command for testing.`,
 	Run: func(cmd *Command, args []string) {
@@ -75,7 +76,7 @@ var cmdDeprecated = &Command{
 	Deprecated: "Please use echo instead",
 	Run: func(cmd *Command, args []string) {
 	},
-	TakesArgs: None,
+	Args: NoArgs,
 }
 
 var cmdTimes = &Command{
@@ -89,7 +90,7 @@ var cmdTimes = &Command{
 	Run: func(cmd *Command, args []string) {
 		tt = args
 	},
-	TakesArgs: ValidOnly,
+	Args:      OnlyValidArgs,
 	ValidArgs: []string{"one", "two", "three", "four"},
 }
 
@@ -103,10 +104,9 @@ var cmdRootNoRun = &Command{
 }
 
 var cmdRootSameName = &Command{
-	Use:       "print",
-	Short:     "Root with the same name as a subcommand",
-	Long:      "The root description for help",
-	TakesArgs: None,
+	Use:   "print",
+	Short: "Root with the same name as a subcommand",
+	Long:  "The root description for help",
 }
 
 var cmdRootTakesArgs = &Command{
@@ -116,7 +116,7 @@ var cmdRootTakesArgs = &Command{
 	Run: func(cmd *Command, args []string) {
 		tr = args
 	},
-	TakesArgs: Arbitrary,
+	Args: ArbitraryArgs,
 }
 
 var cmdRootWithRun = &Command{
@@ -477,6 +477,10 @@ func TestRootTakesNoArgs(t *testing.T) {
 	c.AddCommand(cmdPrint, cmdEcho)
 	result := simpleTester(c, "illegal")
 
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
+
 	expectedError := `unknown command "illegal" for "print"`
 	if !strings.Contains(result.Error.Error(), expectedError) {
 		t.Errorf("exptected %v, got %v", expectedError, result.Error.Error())
@@ -493,7 +497,11 @@ func TestRootTakesArgs(t *testing.T) {
 }
 
 func TestSubCmdTakesNoArgs(t *testing.T) {
-	result := fullSetupTest("deprecated illegal")
+	result := fullSetupTest("deprecated", "illegal")
+
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
 
 	expectedError := `unknown command "illegal" for "cobra-test deprecated"`
 	if !strings.Contains(result.Error.Error(), expectedError) {
@@ -502,14 +510,18 @@ func TestSubCmdTakesNoArgs(t *testing.T) {
 }
 
 func TestSubCmdTakesArgs(t *testing.T) {
-	noRRSetupTest("echo times one two")
+	noRRSetupTest("echo", "times", "one", "two")
 	if strings.Join(tt, " ") != "one two" {
 		t.Error("Command didn't parse correctly")
 	}
 }
 
 func TestCmdOnlyValidArgs(t *testing.T) {
-	result := noRRSetupTest("echo times one two five")
+	result := noRRSetupTest("echo", "times", "one", "two", "five")
+
+	if result.Error == nil {
+		t.Fatal("Expected an error")
+	}
 
 	expectedError := `invalid argument "five"`
 	if !strings.Contains(result.Error.Error(), expectedError) {

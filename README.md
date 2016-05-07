@@ -467,36 +467,34 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
-### Specify if you command takes arguments
+## Positional and Custom Arguments
 
-There are multiple options for how a command can handle unknown arguments which can be set in `TakesArgs`
-- `Legacy`
-- `None`
-- `Arbitrary`
-- `ValidOnly`
+Validation of positional arguments can be specified using the `Args` field.
 
-`Legacy` (or default) the rules are as follows:
-- root commands with no subcommands can take arbitrary arguments
-- root commands with subcommands will do subcommand validity checking
-- subcommands will always accept arbitrary arguments and do no subsubcommand validity checking
+The follow validators are built in:
 
-`None` the command will be rejected if there are any left over arguments after parsing flags.
+- `NoArgs` - the command will report an error if there are any positional args.
+- `ArbitraryArgs` - the command will accept any args.
+- `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the ValidArgs list.
+- `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
+- `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
+- `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
+- `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
 
-`Arbitrary` any additional values left after parsing flags will be passed in to your `Run` function.
-
-`ValidOnly` you must define all valid (non-subcommand) arguments to your command. These are defined in a slice name ValidArgs. For example a command which only takes the argument "one" or "two" would be defined as:
+A custom validator can be provided like this:
 
 ```go
-var HugoCmd = &cobra.Command{
-        Use:   "hugo",
-        Short: "Hugo is a very fast static site generator",
-	ValidArgs: []string{"one", "two", "three", "four"}
-	TakesArgs: cobra.ValidOnly
-        Run: func(cmd *cobra.Command, args []string) {
-            // args will only have the values one, two, three, four
-	    // or the cmd.Execute() will fail.
-        },
-    }
+
+Args: func validColorArgs(cmd *cobra.Command, args []string) error {
+  if err := cli.RequiresMinArgs(1)(cmd, args); err != nil {
+    return err
+  }
+  if myapp.IsValidColor(args[0]) {
+     return nil
+  }
+  return fmt.Errorf("Invalid color specified: %s", args[0])
+}
+
 ```
 
 ### Bind Flags with Config
@@ -516,6 +514,7 @@ In this example the persistent flag `author` is bound with `viper`.
 when the `--author` flag is not provided by user.
 
 More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
+
 
 ## Example
 
