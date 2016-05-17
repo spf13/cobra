@@ -747,7 +747,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 	}
 }
 
-// AddCommand removes one or more commands from a parent command.
+// RemoveCommand removes one or more commands from a parent command.
 func (c *Command) RemoveCommand(cmds ...*Command) {
 	commands := []*Command{}
 main:
