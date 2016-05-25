@@ -1,6 +1,8 @@
 package cobra
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -173,4 +175,28 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	}
 
 	EnableCommandSorting = true
+}
+
+func TestFlagErrorFunc(t *testing.T) {
+
+	cmd := &Command{
+		Use: "print",
+		RunE: func(cmd *Command, args []string) error {
+			return nil
+		},
+	}
+	expectedFmt := "This is expected: %s"
+
+	cmd.SetFlagErrorFunc(func(c *Command, err error) error {
+		return fmt.Errorf(expectedFmt, err)
+	})
+	cmd.SetArgs([]string{"--bogus-flag"})
+	cmd.SetOutput(new(bytes.Buffer))
+
+	err := cmd.Execute()
+
+	expected := fmt.Sprintf(expectedFmt, "unknown flag: --bogus-flag")
+	if err.Error() != expected {
+		t.Errorf("expected %v, got %v", expected, err.Error())
+	}
 }
