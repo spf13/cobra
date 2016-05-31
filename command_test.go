@@ -134,6 +134,21 @@ func Test_DisableFlagParsing(t *testing.T) {
 	}
 }
 
+func TestInitHelpFlagMergesFlags(t *testing.T) {
+	usage := "custom flag"
+	baseCmd := Command{Use: "testcmd"}
+	baseCmd.PersistentFlags().Bool("help", false, usage)
+	cmd := Command{Use: "do"}
+	baseCmd.AddCommand(&cmd)
+
+	cmd.initHelpFlag()
+	actual := cmd.Flags().Lookup("help").Usage
+	if actual != usage {
+		t.Fatalf("Expected the help flag from the base command with usage '%s', " +
+		         "but got the default with usage '%s'", usage, actual)
+	}
+}
+
 func TestCommandsAreSorted(t *testing.T) {
 	EnableCommandSorting = true
 
