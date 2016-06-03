@@ -97,6 +97,16 @@ func TestBashCompletions(t *testing.T) {
 	c.Flags().StringVar(&flagvalTheme, "theme", "", "theme to use (located in /themes/THEMENAME/)")
 	c.Flags().SetAnnotation("theme", BashCompSubdirsInDir, []string{"themes"})
 
+	// command-substitute flag
+	var flagvalCommand string
+	c.Flags().StringVar(&flagvalCommand, "commandflag", "", "This is a command")
+	c.MarkFlagCommandSubstitute("commandflag")
+
+	// persistent command-substitute flag
+	var flagvalPersistentCommand string
+	c.PersistentFlags().StringVar(&flagvalPersistentCommand, "persistent-commandflag", "", "This is a command")
+	c.MarkPersistentFlagCommandSubstitute("persistent-commandflag")
+
 	out := new(bytes.Buffer)
 	c.GenBashCompletion(out)
 	str := out.String()
@@ -110,6 +120,9 @@ func TestBashCompletions(t *testing.T) {
 	// check for required flags
 	check(t, str, `must_have_one_flag+=("--introot=")`)
 	check(t, str, `must_have_one_flag+=("--persistent-filename=")`)
+	// check for command-substitute flags
+	check(t, str, `flag_command_substitutes+=("--commandflag=")`)
+	check(t, str, `flag_command_substitutes+=("--persistent-commandflag=")`)
 	// check for custom completion function
 	check(t, str, `COMPREPLY=( "hello" )`)
 	// check for required nouns
