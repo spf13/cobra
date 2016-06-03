@@ -116,12 +116,12 @@ __handle_reply()
     fi
 
     local completions
-    if [[ ${#must_have_one_flag[@]} -ne 0 ]]; then
-        completions=("${must_have_one_flag[@]}")
-    elif [[ ${#must_have_one_noun[@]} -ne 0 ]]; then
+    completions=("${commands[@]}")
+    if [[ ${#must_have_one_noun[@]} -ne 0 ]]; then
         completions=("${must_have_one_noun[@]}")
-    else
-        completions=("${commands[@]}")
+    fi
+    if [[ ${#must_have_one_flag[@]} -ne 0 ]]; then
+        completions+=("${must_have_one_flag[@]}")
     fi
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
