@@ -1,6 +1,7 @@
 package cobra
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -110,5 +111,25 @@ func TestStripFlags(t *testing.T) {
 		if !reflect.DeepEqual(test.output, output) {
 			t.Errorf("expected: %v, got: %v", test.output, output)
 		}
+	}
+}
+
+func Test_DisableFlagParsing(t *testing.T) {
+	as := []string{"-v", "-race", "-file", "foo.go"}
+	targs := []string{}
+	cmdPrint := &Command{
+		DisableFlagParsing: true,
+		Run: func(cmd *Command, args []string) {
+			targs = args
+		},
+	}
+	osargs := []string{"cmd"}
+	os.Args = append(osargs, as...)
+	err := cmdPrint.Execute()
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(as, targs) {
+		t.Errorf("expected: %v, got: %v", as, targs)
 	}
 }
