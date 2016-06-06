@@ -14,6 +14,7 @@ const (
 	BashCompFilenameExt     = "cobra_annotation_bash_completion_filename_extentions"
 	BashCompCustom          = "cobra_annotation_bash_completion_custom"
 	BashCompOneRequiredFlag = "cobra_annotation_bash_completion_one_required_flag"
+	BashCompFlagIsCommand   = "cobra_annocation_bash_completion_flag_is_command"
 	BashCompSubdirsInDir    = "cobra_annotation_bash_completion_subdirs_in_dir"
 )
 
@@ -122,6 +123,7 @@ __handle_reply()
         completions=("${must_have_one_noun[@]}")
     else
         completions=("${commands[@]}")
+        completions+=("${flag_command_substitutes[@]}")
     fi
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
@@ -165,6 +167,12 @@ __handle_flag()
     __debug "${FUNCNAME[0]}: looking for ${flagname}"
     if __contains_word "${flagname}" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
+    fi
+
+    # if the flag is a substitute for a command, unset commands() and flag_command_substitutes()
+    if __contains_word "${flagname}" "${flag_command_substitutes[@]}"; then
+        commands=()
+        flag_command_substitutes=()
     fi
 
     # keep flag value with flagname as flaghash
@@ -466,6 +474,39 @@ func writeRequiredFlag(cmd *Command, w io.Writer) error {
 	return visitErr
 }
 
+func writeFlagCommandSubstitutes(cmd *Command, w io.Writer) error {
+	if _, err := fmt.Fprintf(w, "    flag_command_substitutes=()\n"); err != nil {
+		return err
+	}
+	flags := cmd.NonInheritedFlags()
+	var visitErr error
+	flags.VisitAll(func(flag *pflag.Flag) {
+		for key := range flag.Annotations {
+			switch key {
+			case BashCompFlagIsCommand:
+				format := "    flag_command_substitutes+=(\"--%s"
+				b := (flag.Value.Type() == "bool")
+				if !b {
+					format += "="
+				}
+				format += "\")\n"
+				if _, err := fmt.Fprintf(w, format, flag.Name); err != nil {
+					visitErr = err
+					return
+				}
+
+				if len(flag.Shorthand) > 0 {
+					if _, err := fmt.Fprintf(w, "    flag_command_substitutes+=(\"-%s\")\n", flag.Shorthand); err != nil {
+						visitErr = err
+						return
+					}
+				}
+			}
+		}
+	})
+	return visitErr
+}
+
 func writeRequiredNouns(cmd *Command, w io.Writer) error {
 	if _, err := fmt.Fprintf(w, "    must_have_one_noun=()\n"); err != nil {
 		return err
@@ -519,6 +560,9 @@ func gen(cmd *Command, w io.Writer) error {
 	if err := writeRequiredFlag(cmd, w); err != nil {
 		return err
 	}
+	if err := writeFlagCommandSubstitutes(cmd, w); err != nil {
+		return err
+	}
 	if err := writeRequiredNouns(cmd, w); err != nil {
 		return err
 	}
@@ -569,6 +613,21 @@ func (cmd *Command) MarkPersistentFlagRequired(name string) error {
 // MarkFlagRequired adds the BashCompOneRequiredFlag annotation to the named flag in the flag set, if it exists.
 func MarkFlagRequired(flags *pflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompOneRequiredFlag, []string{"true"})
+}
+
+// MarkFlagCommandSubstitute adds the BashCompFlagIsCommand annotation to the named flag, if it exists.
+func (cmd *Command) MarkFlagCommandSubstitute(name string) error {
+	return MarkFlagCommandSubstitute(cmd.Flags(), name)
+}
+
+// MarkPersistentFlagCommandSubstitute adds the BashCompFlagIsCommand annotation to the named flag, if it exists.
+func (cmd *Command) MarkPersistentFlagCommandSubstitute(name string) error {
+	return MarkFlagCommandSubstitute(cmd.PersistentFlags(), name)
+}
+
+// MarkFlagCommandSubstitute adds the BashCompFlagIsCommand annotation to the named flag in the flag set, if it exists.
+func MarkFlagCommandSubstitute(flags *pflag.FlagSet, name string) error {
+	return flags.SetAnnotation(name, BashCompFlagIsCommand, []string{"true"})
 }
 
 // MarkFlagFilename adds the BashCompFilenameExt annotation to the named flag, if it exists.

@@ -143,6 +143,21 @@ and you'll get something like
 -c            --container=  -p            --pod=  
 ```
 
+## Mark flags as substitutes for subcommands
+
+A flag may be sufficient input to a command that would normally require subcommands. Most commonly, this is the case when the flag specifies a file containing operations to run. In this case, we mark the flag as a command substitute:
+
+```go
+cmd.MarkFlagCommandSubstitute("filename")
+```
+
+This will result in something like:
+
+```bash
+# kubectl create [tab][tab]
+--filename=   -f            secret        user
+```
+
 # Specify valid filename extensions for flags that take a filename
 
 In this example we use --filename= and expect to get a json or yaml file as the argument. To make this easier we annotate the --filename flag with valid filename extensions.
