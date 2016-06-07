@@ -1032,6 +1032,19 @@ func (c *Command) Flags() *flag.FlagSet {
 	return c.flags
 }
 
+// LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands
+func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
+	persistentFlags := c.PersistentFlags()
+
+	out := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	c.LocalFlags().VisitAll(func(f *flag.Flag) {
+		if persistentFlags.Lookup(f.Name) == nil {
+			out.AddFlag(f)
+		}
+	})
+	return out
+}
+
 // Get the local FlagSet specifically set in the current command
 func (c *Command) LocalFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
