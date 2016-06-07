@@ -28,7 +28,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// GenManTree will generate a man page for this command and all decendants
+// GenManTree will generate a man page for this command and all descendants
 // in the directory given. The header may be nil. This function may not work
 // correctly if your command names have - in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`. And `sub` has a subcommand called `third`
