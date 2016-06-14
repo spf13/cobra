@@ -133,3 +133,44 @@ func Test_DisableFlagParsing(t *testing.T) {
 		t.Errorf("expected: %v, got: %v", as, targs)
 	}
 }
+
+func TestCommandsAreSorted(t *testing.T) {
+	EnableCommandSorting = true
+
+	originalNames := []string{"middle", "zlast", "afirst"}
+	expectedNames := []string{"afirst", "middle", "zlast"}
+
+	var tmpCommand = &Command{Use: "tmp"}
+
+	for _, name := range(originalNames) {
+		tmpCommand.AddCommand(&Command{Use: name})
+	}
+
+	for i, c := range(tmpCommand.Commands()) {
+		if expectedNames[i] != c.Name() {
+			t.Errorf("expected: %s, got: %s", expectedNames[i], c.Name())
+		}
+	}
+
+	EnableCommandSorting = true
+}
+
+func TestEnableCommandSortingIsDisabled(t *testing.T) {
+	EnableCommandSorting = false
+
+	originalNames := []string{"middle", "zlast", "afirst"}
+
+	var tmpCommand = &Command{Use: "tmp"}
+
+	for _, name := range(originalNames) {
+		tmpCommand.AddCommand(&Command{Use: name})
+	}
+
+	for i, c := range(tmpCommand.Commands()) {
+		if originalNames[i] != c.Name() {
+			t.Errorf("expected: %s, got: %s", originalNames[i], c.Name())
+		}
+	}
+
+	EnableCommandSorting = true
+}
