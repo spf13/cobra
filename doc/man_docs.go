@@ -131,10 +131,10 @@ func manPrintFlags(out io.Writer, flags *pflag.FlagSet) {
 			return
 		}
 		format := ""
-		if len(flag.Shorthand) > 0 {
-			format = "**-%s**, **--%s**"
+		if len(flag.Shorthand) > 0 && len(flag.ShorthandDeprecated) == 0 {
+			format = fmt.Sprintf("**-%s**, **--%s**", flag.Shorthand, flag.Name)
 		} else {
-			format = "%s**--%s**"
+			format = fmt.Sprintf("**--%s**", flag.Name)
 		}
 		if len(flag.NoOptDefVal) > 0 {
 			format = format + "["
@@ -149,7 +149,7 @@ func manPrintFlags(out io.Writer, flags *pflag.FlagSet) {
 			format = format + "]"
 		}
 		format = format + "\n\t%s\n\n"
-		fmt.Fprintf(out, format, flag.Shorthand, flag.Name, flag.DefValue, flag.Usage)
+		fmt.Fprintf(out, format, flag.DefValue, flag.Usage)
 	})
 }
 

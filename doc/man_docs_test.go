@@ -129,6 +129,21 @@ func TestGenManSeeAlso(t *testing.T) {
 	}
 }
 
+func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
+	cmd := &cobra.Command{}
+	flags := cmd.Flags()
+	flags.StringP("foo", "f", "default", "Foo flag")
+	flags.MarkShorthandDeprecated("foo", "don't use it no more")
+
+	out := new(bytes.Buffer)
+	manPrintFlags(out, flags)
+
+	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
+	if out.String() != expected {
+		t.Fatalf("Expected %s, but got %s", expected, out.String())
+	}
+}
+
 func AssertLineFound(scanner *bufio.Scanner, expectedLine string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
