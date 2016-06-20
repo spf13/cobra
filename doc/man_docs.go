@@ -107,18 +107,22 @@ func fillHeader(header *GenManHeader, name string) {
 	}
 }
 
-func manPreamble(out io.Writer, header *GenManHeader, name, short, long string) {
-	dashName := strings.Replace(name, " ", "-", -1)
+func manPreamble(out io.Writer, header *GenManHeader, cmd *cobra.Command, dashedName string) {
+	description := cmd.Long
+	if len(description) == 0 {
+		description = cmd.Short
+	}
+
 	fmt.Fprintf(out, `%% %s(%s)%s
 %% %s
 %% %s
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual)
-	fmt.Fprintf(out, "%s \\- %s\n\n", dashName, short)
+	fmt.Fprintf(out, "%s \\- %s\n\n", dashedName, cmd.Short)
 	fmt.Fprintf(out, "# SYNOPSIS\n")
-	fmt.Fprintf(out, "**%s** [OPTIONS]\n\n", name)
+	fmt.Fprintf(out, "**%s**\n\n", cmd.UseLine())
 	fmt.Fprintf(out, "# DESCRIPTION\n")
-	fmt.Fprintf(out, "%s\n\n", long)
+	fmt.Fprintf(out, "%s\n\n", description)
 }
 
 func manPrintFlags(out io.Writer, flags *pflag.FlagSet) {
@@ -174,13 +178,7 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 
 	buf := new(bytes.Buffer)
 
-	short := cmd.Short
-	long := cmd.Long
-	if len(long) == 0 {
-		long = short
-	}
-
-	manPreamble(buf, header, commandName, short, long)
+	manPreamble(buf, header, cmd, dashCommandName)
 	manPrintOptions(buf, cmd)
 	if len(cmd.Example) > 0 {
 		fmt.Fprintf(buf, "# EXAMPLE\n")
