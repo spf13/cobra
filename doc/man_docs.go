@@ -34,6 +34,17 @@ import (
 // subcmds, `sub` and `sub-third`. And `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
 func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
+	return GenManTreeFromOpts(cmd, GenManTreeOptions{
+		Header:           header,
+		Path:             dir,
+		CommandSeparator: "_",
+	})
+}
+
+// GenManTreeFromOpts generates a man page for the command and all descendants.
+// The pages are written to the opts.Path directory.
+func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
+	header := opts.Header
 	if header == nil {
 		header = &GenManHeader{}
 	}
@@ -41,7 +52,7 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 		if !c.IsAvailableCommand() || c.IsHelpCommand() {
 			continue
 		}
-		if err := GenManTree(c, header, dir); err != nil {
+		if err := GenManTreeFromOpts(c, opts); err != nil {
 			return err
 		}
 	}
@@ -50,8 +61,12 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 		section = header.Section
 	}
 
-	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + "." + section
-	filename := filepath.Join(dir, basename)
+	separator := "_"
+	if opts.CommandSeparator != "" {
+		separator = opts.CommandSeparator
+	}
+	basename := strings.Replace(cmd.CommandPath(), " ", separator, -1)
+	filename := filepath.Join(opts.Path, basename + "." + section)
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -60,6 +75,12 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 
 	headerCopy := *header
 	return GenMan(cmd, &headerCopy, f)
+}
+
+type GenManTreeOptions struct {
+	Header           *GenManHeader
+	Path             string
+	CommandSeparator string
 }
 
 // GenManHeader is a lot like the .TH header at the start of man pages. These
@@ -167,10 +188,8 @@ func manPrintOptions(out io.Writer, command *cobra.Command) {
 }
 
 func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
-	// something like `rootcmd subcmd1 subcmd2`
-	commandName := cmd.CommandPath()
 	// something like `rootcmd-subcmd1-subcmd2`
-	dashCommandName := strings.Replace(commandName, " ", "-", -1)
+	dashCommandName := strings.Replace(cmd.CommandPath(), " ", "-", -1)
 
 	buf := new(bytes.Buffer)
 
