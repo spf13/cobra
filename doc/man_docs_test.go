@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -126,6 +128,45 @@ func TestGenManSeeAlso(t *testing.T) {
 
 	if err := AssertNextLineEquals(scanner, `\fBtop\-bbb(1)\fP, \fBtop\-ccc(1)\fP`); err != nil {
 		t.Fatal(fmt.Errorf("Second line after SEE ALSO wasn't correct: %s", err.Error()))
+	}
+}
+
+func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
+	cmd := &cobra.Command{}
+	flags := cmd.Flags()
+	flags.StringP("foo", "f", "default", "Foo flag")
+	flags.MarkShorthandDeprecated("foo", "don't use it no more")
+
+	out := new(bytes.Buffer)
+	manPrintFlags(out, flags)
+
+	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
+	if out.String() != expected {
+		t.Fatalf("Expected %s, but got %s", expected, out.String())
+	}
+}
+
+func TestGenManTree(t *testing.T) {
+	cmd := &cobra.Command{
+		Use: "do [OPTIONS] arg1 arg2",
+	}
+	header := &GenManHeader{Section: "2"}
+	tmpdir, err := ioutil.TempDir("", "test-gen-man-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tempdir: %s", err.Error())
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenManTree(cmd, header, tmpdir); err != nil {
+		t.Fatalf("GenManTree failed: %s", err.Error())
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "do.2")); err != nil {
+		t.Fatalf("Expected file 'do.2' to exist")
+	}
+
+	if header.Title != "" {
+		t.Fatalf("Expected header.Title to be unmodified")
 	}
 }
 
