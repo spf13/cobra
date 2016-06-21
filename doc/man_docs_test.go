@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -141,6 +143,30 @@ func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
 	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
 	if out.String() != expected {
 		t.Fatalf("Expected %s, but got %s", expected, out.String())
+	}
+}
+
+func TestGenManTree(t *testing.T) {
+	cmd := &cobra.Command{
+		Use: "do [OPTIONS] arg1 arg2",
+	}
+	header := &GenManHeader{Section: "2"}
+	tmpdir, err := ioutil.TempDir("", "test-gen-man-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tempdir: %s", err.Error())
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenManTree(cmd, header, tmpdir); err != nil {
+		t.Fatalf("GenManTree failed: %s", err.Error())
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "do.2")); err != nil {
+		t.Fatalf("Expected file 'do.2' to exist")
+	}
+
+	if header.Title != "" {
+		t.Fatalf("Expected header.Title to be unmodified")
 	}
 }
 

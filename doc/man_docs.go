@@ -45,9 +45,12 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 			return err
 		}
 	}
-	needToResetTitle := header.Title == ""
+	section := "1"
+	if header.Section != "" {
+		section = header.Section
+	}
 
-	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".1"
+	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + "." + section
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -55,14 +58,8 @@ func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 	}
 	defer f.Close()
 
-	if err := GenMan(cmd, header, f); err != nil {
-		return err
-	}
-
-	if needToResetTitle {
-		header.Title = ""
-	}
-	return nil
+	headerCopy := *header
+	return GenMan(cmd, &headerCopy, f)
 }
 
 // GenManHeader is a lot like the .TH header at the start of man pages. These
@@ -84,9 +81,10 @@ func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
+	fillHeader(header, cmd.CommandPath())
+
 	b := genMan(cmd, header)
-	final := mangen.Render(b)
-	_, err := w.Write(final)
+	_, err := w.Write(mangen.Render(b))
 	return err
 }
 
@@ -173,8 +171,6 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 	commandName := cmd.CommandPath()
 	// something like `rootcmd-subcmd1-subcmd2`
 	dashCommandName := strings.Replace(commandName, " ", "-", -1)
-
-	fillHeader(header, commandName)
 
 	buf := new(bytes.Buffer)
 
