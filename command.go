@@ -109,13 +109,14 @@ type Command struct {
 
 	flagErrorBuf *bytes.Buffer
 
-	args          []string                 // actual args parsed from flags
-	output        *io.Writer               // nil means stderr; use Out() method instead
-	usageFunc     func(*Command) error     // Usage can be defined by application
-	usageTemplate string                   // Can be defined by Application
-	helpTemplate  string                   // Can be defined by Application
-	helpFunc      func(*Command, []string) // Help can be defined by application
-	helpCommand   *Command                 // The help command
+	args             []string                 // actual args parsed from flags
+	output           *io.Writer               // nil means stderr; use Out() method instead
+	deprecatedWriter *io.Writer               // Stream for writing deprecation messages
+	usageFunc        func(*Command) error     // Usage can be defined by application
+	usageTemplate    string                   // Can be defined by Application
+	helpTemplate     string                   // Can be defined by Application
+	helpFunc         func(*Command, []string) // Help can be defined by application
+	helpCommand      *Command                 // The help command
 	// The global normalization function that we can use on every pFlag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
 
@@ -157,6 +158,11 @@ func (c *Command) getOutOrStdout() io.Writer {
 // If output is nil, os.Stderr is used.
 func (c *Command) SetOutput(output io.Writer) {
 	c.output = &output
+}
+
+// SetDeprecatedWriter sets a writer to use for deprecation messages.
+func (c *Command) SetDeprecatedWriter(output io.Writer) {
+	c.deprecatedWriter = &output
 }
 
 // Usage can be defined by application
@@ -517,7 +523,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		c.printDeprecated()
 	}
 
 	// initialize help flag as the last point possible to allow for user
@@ -734,7 +740,7 @@ func (c commandSorterByName) Less(i, j int) bool { return c[i].Name() < c[j].Nam
 // Commands returns a sorted slice of child commands.
 func (c *Command) Commands() []*Command {
 	// do not sort commands if it already sorted or sorting was disabled
-	if EnableCommandSorting && !c.commandsAreSorted{
+	if EnableCommandSorting && !c.commandsAreSorted {
 		sort.Sort(commandSorterByName(c.commands))
 		c.commandsAreSorted = true
 	}
@@ -819,6 +825,16 @@ func (c *Command) Println(i ...interface{}) {
 func (c *Command) Printf(format string, i ...interface{}) {
 	str := fmt.Sprintf(format, i...)
 	c.Print(str)
+}
+
+func (c *Command) printDeprecated() {
+	var out io.Writer
+	if c.deprecatedWriter != nil {
+		out = *c.deprecatedWriter
+	} else {
+		out = c.Out()
+	}
+	fmt.Fprintf(out, "Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 }
 
 // Output the usage for the command
