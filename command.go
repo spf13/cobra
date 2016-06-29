@@ -125,8 +125,8 @@ type Command struct {
 	// Must be > 0.
 	SuggestionsMinimumDistance int
 
-	// TraverseChildCommands parses flags on all parents before the child command
-	TraverseChildCommands bool
+	// TraverseChildren parses flags on all parents before executing child command
+	TraverseChildren bool
 
 	// name is the command name, usually the executable's name.
 	name string
@@ -758,7 +758,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 
 	var flags []string
-	if c.TraverseChildCommands {
+	if c.TraverseChildren {
 		cmd, flags, err = c.Traverse(args)
 	} else {
 		cmd, flags, err = c.Find(args)
