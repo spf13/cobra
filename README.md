@@ -172,6 +172,12 @@ func main() {
 Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
+In order to use the cobra command, compile it using the following command:
+
+    > go install github.com/spf13/cobra/cobra
+
+This will create the cobra executable under your go path bin directory!
+
 ### cobra init
 
 The `cobra init [yourApp]` command will create your initial application code
