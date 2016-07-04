@@ -436,7 +436,7 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	}
 
 	// root command with subcommands, do subcommand checking
-	if commandFound == c && len(argsWOflags) > 0 {
+	if commandFound == c && !c.Runnable() && len(argsWOflags) > 0 {
 		suggestionsString := ""
 		if !c.DisableSuggestions {
 			if c.SuggestionsMinimumDistance <= 0 {
@@ -734,7 +734,7 @@ func (c commandSorterByName) Less(i, j int) bool { return c[i].Name() < c[j].Nam
 // Commands returns a sorted slice of child commands.
 func (c *Command) Commands() []*Command {
 	// do not sort commands if it already sorted or sorting was disabled
-	if EnableCommandSorting && !c.commandsAreSorted{
+	if EnableCommandSorting && !c.commandsAreSorted {
 		sort.Sort(commandSorterByName(c.commands))
 		c.commandsAreSorted = true
 	}
