@@ -134,25 +134,6 @@ func (c *Command) SetArgs(a []string) {
 	c.args = a
 }
 
-func (c *Command) getOut(def io.Writer) io.Writer {
-	if c.output != nil {
-		return *c.output
-	}
-
-	if c.HasParent() {
-		return c.parent.Out()
-	}
-	return def
-}
-
-func (c *Command) Out() io.Writer {
-	return c.getOut(os.Stderr)
-}
-
-func (c *Command) getOutOrStdout() io.Writer {
-	return c.getOut(os.Stdout)
-}
-
 // SetOutput sets the destination for usage and error messages.
 // If output is nil, os.Stderr is used.
 func (c *Command) SetOutput(output io.Writer) {
@@ -195,6 +176,26 @@ func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string
 	}
 }
 
+func (c *Command) getOutOrStdout() io.Writer {
+	return c.getOut(os.Stdout)
+}
+
+func (c *Command) getOutOrStderr() io.Writer {
+	return c.getOut(os.Stderr)
+}
+
+func (c *Command) getOut(def io.Writer) io.Writer {
+	if c.output != nil {
+		return *c.output
+	}
+	if c.HasParent() {
+		return c.parent.getOut(def)
+	}
+	return def
+}
+
+// UsageFunc returns either the function set by SetUsageFunc for this command
+// or a parent, or it returns a default usage function
 func (c *Command) UsageFunc() (f func(*Command) error) {
 	if c.usageFunc != nil {
 		return c.usageFunc
@@ -204,9 +205,9 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 		return c.parent.UsageFunc()
 	}
 	return func(c *Command) error {
-		err := tmpl(c.Out(), c.UsageTemplate(), c)
+		err := c.Usage()
 		if err != nil {
-			fmt.Print(err)
+			c.Println(err)
 		}
 		return err
 	}
@@ -228,6 +229,33 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 			c.Println(err)
 		}
 	}
+}
+
+// Output the usage for the command
+// Used when a user provides invalid input
+// Can be defined by user by overriding UsageFunc
+func (c *Command) Usage() error {
+	c.mergePersistentFlags()
+	err := tmpl(c.getOutOrStderr(), c.UsageTemplate(), c)
+	return err
+}
+
+// Output the help for the command
+// Used when a user calls help [command]
+// by the default HelpFunc in the commander
+func (c *Command) Help() error {
+	c.mergePersistentFlags()
+	err := tmpl(c.getOutOrStdout(), c.HelpTemplate(), c)
+	return err
+}
+
+func (c *Command) UsageString() string {
+	tmpOutput := c.output
+	bb := new(bytes.Buffer)
+	c.SetOutput(bb)
+	c.Usage()
+	c.output = tmpOutput
+	return bb.String()
 }
 
 var minUsagePadding = 25
@@ -537,6 +565,7 @@ func (c *Command) execute(a []string) (err error) {
 		c.Println("\"help\" flag declared as non-bool. Please correct your code")
 		return err
 	}
+
 	if helpVal || !c.Runnable() {
 		return flag.ErrHelp
 	}
@@ -734,7 +763,7 @@ func (c commandSorterByName) Less(i, j int) bool { return c[i].Name() < c[j].Nam
 // Commands returns a sorted slice of child commands.
 func (c *Command) Commands() []*Command {
 	// do not sort commands if it already sorted or sorting was disabled
-	if EnableCommandSorting && !c.commandsAreSorted{
+	if EnableCommandSorting && !c.commandsAreSorted {
 		sort.Sort(commandSorterByName(c.commands))
 		c.commandsAreSorted = true
 	}
@@ -806,7 +835,7 @@ main:
 
 // Print is a convenience method to Print to the defined output
 func (c *Command) Print(i ...interface{}) {
-	fmt.Fprint(c.Out(), i...)
+	fmt.Fprint(c.getOutOrStderr(), i...)
 }
 
 // Println is a convenience method to Println to the defined output
@@ -819,33 +848,6 @@ func (c *Command) Println(i ...interface{}) {
 func (c *Command) Printf(format string, i ...interface{}) {
 	str := fmt.Sprintf(format, i...)
 	c.Print(str)
-}
-
-// Output the usage for the command
-// Used when a user provides invalid input
-// Can be defined by user by overriding UsageFunc
-func (c *Command) Usage() error {
-	c.mergePersistentFlags()
-	err := c.UsageFunc()(c)
-	return err
-}
-
-// Output the help for the command
-// Used when a user calls help [command]
-// by the default HelpFunc in the commander
-func (c *Command) Help() error {
-	c.mergePersistentFlags()
-	err := tmpl(c.getOutOrStdout(), c.HelpTemplate(), c)
-	return err
-}
-
-func (c *Command) UsageString() string {
-	tmpOutput := c.output
-	bb := new(bytes.Buffer)
-	c.SetOutput(bb)
-	c.Usage()
-	c.output = tmpOutput
-	return bb.String()
 }
 
 // CommandPath returns the full path to this command.
