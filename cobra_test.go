@@ -646,7 +646,7 @@ func TestSubcommandArgEvaluation(t *testing.T) {
 	second := &Command{
 		Use: "second",
 		Run: func(cmd *Command, args []string) {
-			fmt.Fprintf(cmd.getOutOrStdout(), "%v", args)
+			fmt.Fprintf(cmd.OutOrStdout(), "%v", args)
 		},
 	}
 	first.AddCommand(second)
