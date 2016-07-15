@@ -205,7 +205,8 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 		return c.parent.UsageFunc()
 	}
 	return func(c *Command) error {
-		err := c.Usage()
+		c.mergePersistentFlags()
+		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
@@ -214,7 +215,7 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 }
 
 // HelpFunc returns either the function set by SetHelpFunc for this command
-// or a parent, or it returns a function which calls c.Help()
+// or a parent, or it returns a function with default help behavior
 func (c *Command) HelpFunc() func(*Command, []string) {
 	cmd := c
 	for cmd != nil {
@@ -224,36 +225,19 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		cmd = cmd.parent
 	}
 	return func(*Command, []string) {
-		err := c.Help()
+		c.mergePersistentFlags()
+		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
 	}
 }
 
-// Output the usage for the command
-// Used when a user provides invalid input
-// Can be defined by user by overriding UsageFunc
-func (c *Command) Usage() error {
-	c.mergePersistentFlags()
-	err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
-	return err
-}
-
-// Output the help for the command
-// Used when a user calls help [command]
-// by the default HelpFunc in the commander
-func (c *Command) Help() error {
-	c.mergePersistentFlags()
-	err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
-	return err
-}
-
 func (c *Command) UsageString() string {
 	tmpOutput := c.output
 	bb := new(bytes.Buffer)
 	c.SetOutput(bb)
-	c.Usage()
+	c.UsageFunc()(c)
 	c.output = tmpOutput
 	return bb.String()
 }
@@ -736,10 +720,9 @@ func (c *Command) initHelpCmd() {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q.", args)
-					c.Root().Usage()
+					c.Root().UsageFunc()(cmd)
 				} else {
-					helpFunc := cmd.HelpFunc()
-					helpFunc(cmd, args)
+					cmd.HelpFunc()(cmd, args)
 				}
 			},
 		}
