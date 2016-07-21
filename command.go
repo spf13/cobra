@@ -214,6 +214,13 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	}
 }
 
+// Output the usage for the command
+// Used when a user provides invalid input
+// Can be defined by user by overriding UsageFunc
+func (c *Command) Usage() error {
+	return c.UsageFunc()(c)
+}
+
 // HelpFunc returns either the function set by SetHelpFunc for this command
 // or a parent, or it returns a function with default help behavior
 func (c *Command) HelpFunc() func(*Command, []string) {
@@ -233,11 +240,19 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 }
 
+// Output the help for the command
+// Used when a user calls help [command]
+// Can be defined by user by overriding HelpFunc
+func (c *Command) Help() error {
+	c.HelpFunc()(c, []string{})
+	return nil
+}
+
 func (c *Command) UsageString() string {
 	tmpOutput := c.output
 	bb := new(bytes.Buffer)
 	c.SetOutput(bb)
-	c.UsageFunc()(c)
+	c.Usage()
 	c.output = tmpOutput
 	return bb.String()
 }
@@ -720,9 +735,9 @@ func (c *Command) initHelpCmd() {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q.", args)
-					c.Root().UsageFunc()(cmd)
+					c.Root().Usage()
 				} else {
-					cmd.HelpFunc()(cmd, args)
+					cmd.Help()
 				}
 			},
 		}
