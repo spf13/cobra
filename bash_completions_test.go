@@ -138,3 +138,43 @@ func TestBashCompletions(t *testing.T) {
 		t.Fatalf("shellcheck failed: %v", err)
 	}
 }
+
+func TestBashCompletionHiddenFlag(t *testing.T) {
+	var cmdTrue = &Command{
+		Use: "does nothing",
+		Run: func(cmd *Command, args []string) {},
+	}
+
+	const flagName = "hidden-foo-bar-baz"
+
+	var flagValue bool
+	cmdTrue.Flags().BoolVar(&flagValue, flagName, false, "hidden flag")
+	cmdTrue.Flags().MarkHidden(flagName)
+
+	out := new(bytes.Buffer)
+	cmdTrue.GenBashCompletion(out)
+	bashCompletion := out.String()
+	if strings.Contains(bashCompletion, flagName) {
+		t.Error("expected completion to not include %q flag: Got %v", flagName, bashCompletion)
+	}
+}
+
+func TestBashCompletionDeprecatedFlag(t *testing.T) {
+	var cmdTrue = &Command{
+		Use: "does nothing",
+		Run: func(cmd *Command, args []string) {},
+	}
+
+	const flagName = "deprecated-foo-bar-baz"
+
+	var flagValue bool
+	cmdTrue.Flags().BoolVar(&flagValue, flagName, false, "hidden flag")
+	cmdTrue.Flags().MarkDeprecated(flagName, "use --does-not-exist instead")
+
+	out := new(bytes.Buffer)
+	cmdTrue.GenBashCompletion(out)
+	bashCompletion := out.String()
+	if strings.Contains(bashCompletion, flagName) {
+		t.Errorf("expected completion to not include %q flag: Got %v", flagName, bashCompletion)
+	}
+}
