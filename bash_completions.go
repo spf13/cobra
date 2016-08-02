@@ -421,7 +421,7 @@ func writeFlags(cmd *Command, w io.Writer) error {
 	localNonPersistentFlags := cmd.LocalNonPersistentFlags()
 	var visitErr error
 	cmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
+		if nonCompletableFlag(flag) {
 			return
 		}
 		if err := writeFlag(flag, w); err != nil {
@@ -445,7 +445,7 @@ func writeFlags(cmd *Command, w io.Writer) error {
 		return visitErr
 	}
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
+		if nonCompletableFlag(flag) {
 			return
 		}
 		if err := writeFlag(flag, w); err != nil {
@@ -474,7 +474,7 @@ func writeRequiredFlag(cmd *Command, w io.Writer) error {
 	flags := cmd.NonInheritedFlags()
 	var visitErr error
 	flags.VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
+		if nonCompletableFlag(flag) {
 			return
 		}
 		for key := range flag.Annotations {
@@ -581,6 +581,10 @@ func (cmd *Command) GenBashCompletion(w io.Writer) error {
 		return err
 	}
 	return postscript(w, cmd.Name())
+}
+
+func nonCompletableFlag(flag *pflag.Flag) bool {
+	return flag.Hidden || len(flag.Deprecated) > 0
 }
 
 func (cmd *Command) GenBashCompletionFile(filename string) error {
