@@ -479,8 +479,8 @@ func argsMinusFirstX(args []string, x string) []string {
 }
 
 func isFlagArg(arg string) bool {
-	return ((len(arg) >= 3 && arg[0] == '-') ||
-	        (len(arg) >= 2 && arg[1] == '-' && arg[1] != '-'))
+	return ((len(arg) >= 3 && arg[1] == '-') ||
+		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-'))
 }
 
 // Find the target command given the args and command tree
@@ -551,19 +551,23 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 	for i, arg := range args {
 		switch {
+		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
 			inFlag = !hasNoOptDefVal(arg[2:], c.Flags())
 			flags = append(flags, arg)
 			continue
+		// A short flag with a space separated value
 		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
+		// The value for a flag
 		case inFlag:
 			inFlag = false
 			flags = append(flags, arg)
 			continue
+		// A flag without a value, or with an `=` separated value
 		case isFlagArg(arg):
 			flags = append(flags, arg)
 			continue

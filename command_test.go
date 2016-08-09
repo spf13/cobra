@@ -350,16 +350,17 @@ func TestSetHelpCommand(t *testing.T) {
 
 func TestTraverseWithParentFlags(t *testing.T) {
 	cmd := &Command{
-		Use: "do",
+		Use:              "do",
 		TraverseChildren: true,
 	}
 	cmd.Flags().String("foo", "", "foo things")
+	cmd.Flags().BoolP("goo", "g", false, "foo things")
 
 	sub := &Command{Use: "next"}
 	sub.Flags().String("add", "", "add things")
 	cmd.AddCommand(sub)
 
-	c, args, err := cmd.Traverse([]string{"--foo", "ok", "next", "--add"})
+	c, args, err := cmd.Traverse([]string{"-g", "--foo", "ok", "next", "--add"})
 	if err != nil {
 		t.Fatalf("Expected no error: %s", err)
 	}
@@ -373,7 +374,7 @@ func TestTraverseWithParentFlags(t *testing.T) {
 
 func TestTraverseNoParentFlags(t *testing.T) {
 	cmd := &Command{
-		Use: "do",
+		Use:              "do",
 		TraverseChildren: true,
 	}
 	cmd.Flags().String("foo", "", "foo things")
@@ -396,7 +397,7 @@ func TestTraverseNoParentFlags(t *testing.T) {
 
 func TestTraverseWithBadParentFlags(t *testing.T) {
 	cmd := &Command{
-		Use: "do",
+		Use:              "do",
 		TraverseChildren: true,
 	}
 	sub := &Command{Use: "next"}
@@ -416,7 +417,7 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 
 func TestTraverseWithBadChildFlag(t *testing.T) {
 	cmd := &Command{
-		Use: "do",
+		Use:              "do",
 		TraverseChildren: true,
 	}
 	cmd.Flags().String("foo", "", "foo things")
