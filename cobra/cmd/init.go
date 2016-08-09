@@ -72,7 +72,7 @@ func initializePath(path string) {
 			er(err)
 		}
 	} else { // If path exists and is not empty don't use it
-		empty, err := exists(path)
+		empty, err := isEmpty(path)
 		if err != nil {
 			er(err)
 		}
