@@ -96,6 +96,8 @@ type Command struct {
 	PersistentPostRunE func(cmd *Command, args []string) error
 	// DisableAutoGenTag remove
 	DisableAutoGenTag bool
+	// Contains the 'calledName' rather than the alias that matched
+	calledName string
 	// Commands is the list of commands supported by this program.
 	commands []*Command
 	// Parent Command for this command
@@ -431,7 +433,11 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 		nextSubCmd := argsWOflags[0]
 		matches := make([]*Command, 0)
 		for _, cmd := range c.commands {
-			if cmd.Name() == nextSubCmd || cmd.HasAlias(nextSubCmd) { // exact name or alias match
+			if cmd.Name() == nextSubCmd { // exact name
+				return innerfind(cmd, argsMinusFirstX(innerArgs, nextSubCmd))
+			}
+			if cmd.HasAlias(nextSubCmd) { // alias match
+				cmd.calledName = nextSubCmd
 				return innerfind(cmd, argsMinusFirstX(innerArgs, nextSubCmd))
 			}
 			if EnablePrefixMatching {
@@ -924,6 +930,14 @@ func (c *Command) Name() string {
 		name = name[:i]
 	}
 	return name
+}
+
+// CalledName returns how this command was called as (rather than its name)
+func (c *Command) CalledName() string {
+	if "" == c.calledName {
+		return c.Name()
+	}
+	return c.calledName
 }
 
 // HasAlias determines if a given string is an alias of the command.
