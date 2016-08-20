@@ -155,7 +155,7 @@ func TestBashCompletionHiddenFlag(t *testing.T) {
 	cmdTrue.GenBashCompletion(out)
 	bashCompletion := out.String()
 	if strings.Contains(bashCompletion, flagName) {
-		t.Error("expected completion to not include %q flag: Got %v", flagName, bashCompletion)
+		t.Errorf("expected completion to not include %q flag: Got %v", flagName, bashCompletion)
 	}
 }
 

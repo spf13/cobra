@@ -142,11 +142,11 @@ func TestCommandsAreSorted(t *testing.T) {
 
 	var tmpCommand = &Command{Use: "tmp"}
 
-	for _, name := range(originalNames) {
+	for _, name := range originalNames {
 		tmpCommand.AddCommand(&Command{Use: name})
 	}
 
-	for i, c := range(tmpCommand.Commands()) {
+	for i, c := range tmpCommand.Commands() {
 		if expectedNames[i] != c.Name() {
 			t.Errorf("expected: %s, got: %s", expectedNames[i], c.Name())
 		}
@@ -162,11 +162,11 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 
 	var tmpCommand = &Command{Use: "tmp"}
 
-	for _, name := range(originalNames) {
+	for _, name := range originalNames {
 		tmpCommand.AddCommand(&Command{Use: name})
 	}
 
-	for i, c := range(tmpCommand.Commands()) {
+	for i, c := range tmpCommand.Commands() {
 		if originalNames[i] != c.Name() {
 			t.Errorf("expected: %s, got: %s", originalNames[i], c.Name())
 		}
