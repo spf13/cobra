@@ -919,12 +919,12 @@ func TestRootUnknownCommandSilenced(t *testing.T) {
 	s := "Run 'cobra-test --help' for usage.\n"
 
 	if r.Output != "" {
-		t.Errorf("Unexpected response.\nExpecting to be: \n\"\"\n Got:\n %q\n", s, r.Output)
+		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
 	}
 
 	r = noRRSetupTestSilenced("--strtwo=a bogus")
 	if r.Output != "" {
-		t.Errorf("Unexpected response.\nExpecting to be:\n\"\"\nGot:\n %q\n", s, r.Output)
+		t.Errorf("Unexpected response.\nExpecting to be:\n %q\nGot:\n %q\n", s, r.Output)
 	}
 }
 
