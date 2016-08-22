@@ -956,7 +956,7 @@ func TestSubcommandChecksErrorsWhenSubcommandNotFound(t *testing.T) {
 		t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expectedOutput, result.Output)
 	}
 
-	result = simpleTester(rootCmd, cmdSubNoRun.Name() + " " + nonExistentCommand)
+	result = simpleTester(rootCmd, cmdSubNoRun.Name()+" "+nonExistentCommand)
 	if result.Error == nil {
 		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
 	}
@@ -979,7 +979,7 @@ func TestSubcommandChecksNoErrorsWhenRunDefined(t *testing.T) {
 		t.Errorf("Unexpected response.\nExpected output:\n %q\nGot:\n %q\n", []string{nonExistentCommand}, tr)
 	}
 
-	result = simpleTester(rootCmd, cmdEcho.Name() + " " + nonExistentCommand)
+	result = simpleTester(rootCmd, cmdEcho.Name()+" "+nonExistentCommand)
 	if result.Error != nil {
 		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
 	}
