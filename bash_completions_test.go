@@ -53,7 +53,7 @@ COMPREPLY=( "hello" )
 )
 
 func TestBashCompletions(t *testing.T) {
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 	cmdEcho.AddCommand(cmdTimes)
 	c.AddCommand(cmdEcho, cmdPrint, cmdDeprecated, cmdColon)
 
