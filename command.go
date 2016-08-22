@@ -993,7 +993,7 @@ func (c *Command) IsHelpCommand() bool {
 	return true
 }
 
-// HasHelpSubCommands determines if a command has any avilable 'help' sub commands
+// HasHelpSubCommands determines if a command has any available 'help' sub commands
 // that need to be shown in the usage/help default template under 'additional help
 // topics'
 func (c *Command) HasHelpSubCommands() bool {
