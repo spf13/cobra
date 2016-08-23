@@ -8,8 +8,6 @@ matrix:
     - go: 1.6.3
     - go: 1.7
     - go: tip
-
-matrix:
   allow_failures:
     - go: tip
 
