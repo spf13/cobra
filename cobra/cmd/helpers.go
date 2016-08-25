@@ -100,11 +100,24 @@ func guessCmdDir() string {
 func guessImportPath() string {
 	guessProjectPath()
 
-	if !strings.HasPrefix(projectPath, getSrcPath()) {
+	if !inPath(getSrcPath(), projectPath) {
 		er("Cobra only supports project within $GOPATH")
 	}
 
 	return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, getSrcPath())))
+}
+
+func inPath(srcPath, projectPath string) bool {
+	relPath, err := filepath.Rel(srcPath, projectPath)
+	if err != nil {
+		return false
+	}
+	for _, d := range filepath.SplitList(relPath) {
+		if d == ".." || d == "." {
+			return false
+		}
+	}
+	return true
 }
 
 func getSrcPath() string {
