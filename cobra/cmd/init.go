@@ -210,7 +210,7 @@ func initConfig() {
 	}
 
 	viper.SetConfigName(".{{ .appName }}") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")  // adding home directory as first search path
+	viper.AddConfigPath(os.Getenv("HOME"))  // adding home directory as first search path
 	viper.AutomaticEnv()          // read in environment variables that match
 
 	// If a config file is found, read it in.
