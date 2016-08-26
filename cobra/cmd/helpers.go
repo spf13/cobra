@@ -112,11 +112,12 @@ func inPath(srcPath, projectPath string) bool {
 	if err != nil {
 		return false
 	}
-	for _, d := range filepath.SplitList(relPath) {
-		if d == ".." || d == "." {
-			return false
-		}
+
+	splitRelPath := filepath.SplitList(relPath)
+	if splitRelPath[0] == ".." || splitRelPath[0] == "." {
+		return false
 	}
+
 	return true
 }
 

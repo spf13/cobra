@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -39,26 +40,40 @@ func TestProjectPath(t *testing.T) {
 	checkGuess(t, "github.com/spf13/hugo/../hugo", "", filepath.Join("github.com", "spf13", "hugo"))
 }
 
+type inPathTestCase struct {
+	Src    string
+	Prj    string
+	InPath bool
+}
+
 func TestInPath(t *testing.T) {
-	cases := []struct {
-		Src    string
-		Prj    string
-		InPath bool
-	}{
+	cases := []inPathTestCase{
 		{"/bar/foo", "/bar/foo", false},
 		{"/bar/foo", "/bar/foo/baz", true},
 		{"/bar/foo/baz", "/bar/foo", false},
-		{"C:/bar/foo", "c:/bar/foo/baz", true},
+		{"/bar/foo", "/bar/foo/.wierd..dirname/", true},
 		{"c:\\bar\\foo", "C:\\bar\\foo", false},
 		{"c:\\bar\\..\\bar\\foo", "C:\\bar\\foo\\baz", true},
 	}
+	if runtime.GOOS == "windows" {
+		cases = append(
+			cases,
+			inPathTestCase{"C:/Bar/foo", "c:/bar/foo/baz", true},
+		)
+	} else {
+		cases = append(
+			cases,
+			inPathTestCase{"C:/Bar/foo", "c:/bar/foo/baz", false},
+		)
+	}
+
 	for _, tc := range cases {
 		ip := inPath(tc.Src, tc.Prj)
 		if tc.InPath != ip {
 			if tc.InPath {
 				t.Errorf("Unexpected %s determined as inside %s", tc.Prj, tc.Src)
 			} else {
-				t.Errorf("Unexpected %s not determined as inside %s", tc.Prj, tc.Src)
+				t.Errorf("Unexpected %s determined as not inside %s", tc.Prj, tc.Src)
 			}
 		}
 	}
