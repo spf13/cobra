@@ -401,10 +401,8 @@ func writeLocalNonPersistentFlag(flag *pflag.Flag, w io.Writer) error {
 		format += "="
 	}
 	format += "\")\n"
-	if _, err := fmt.Fprintf(w, format, name); err != nil {
-		return err
-	}
-	return nil
+	_, err := fmt.Fprintf(w, format, name)
+	return err
 }
 
 func writeFlags(cmd *Command, w io.Writer) error {
