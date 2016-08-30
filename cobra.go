@@ -61,9 +61,7 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 
 //OnInitialize takes a series of func() arguments and appends them to a slice of func().
 func OnInitialize(y ...func()) {
-	for _, x := range y {
-		initializers = append(initializers, x)
-	}
+	initializers = append(initializers, y...)
 }
 
 //Gt takes two types and checks whether the first type is greater than the second. In case of types Arrays, Chans,
