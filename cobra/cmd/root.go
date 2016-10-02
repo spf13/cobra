@@ -33,7 +33,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 }
 
-//Execute adds all child commands to the root command sets flags appropriately.
+// Execute adds all child commands to the root command sets flags appropriately.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
