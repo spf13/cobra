@@ -57,6 +57,9 @@ type Command struct {
 	Deprecated string
 	// Is this command hidden and should NOT show up in the list of available commands?
 	Hidden bool
+	// Annotations are key/value pairs that can be used by applications to identify or
+	// group commands
+	Annotations map[string]string
 	// Full set of flags
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
@@ -455,7 +458,7 @@ func argsMinusFirstX(args []string, x string) []string {
 	return args
 }
 
-// Find finds the target command given the args and command tree
+// Find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(args []string) (*Command, []string, error) {
 	if c == nil {
