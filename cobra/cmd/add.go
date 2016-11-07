@@ -78,8 +78,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// {{.cmdName}}Cmd represents the {{.cmdName}} command
-var {{ .cmdName }}Cmd = &cobra.Command{
+// {{.cmdName|camelcase}}Cmd represents the {{.cmdName}} command
+var {{ .cmdName|camelcase }}Cmd = &cobra.Command{
 	Use:   "{{ .cmdName }}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
@@ -95,7 +95,7 @@ to quickly create a Cobra application.` + "`" + `,
 }
 
 func init() {
-	{{ .parentName }}.AddCommand({{ .cmdName }}Cmd)
+	{{ .parentName }}.AddCommand({{ .cmdName|camelcase }}Cmd)
 
 	// Here you will define your flags and configuration settings.
 
