@@ -612,7 +612,7 @@ func TestSubcommandExecuteC(t *testing.T) {
 		Use: "echo message",
 		Run: func(c *Command, args []string) {
 			msg := strings.Join(args, " ")
-			c.Println(msg, msg)
+			c.Println(msg)
 		},
 	}
 
