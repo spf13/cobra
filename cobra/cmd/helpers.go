@@ -22,6 +22,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"regexp"
 
 	"github.com/spf13/viper"
 )
@@ -43,6 +44,7 @@ var cmdDirs = []string{"cmd", "cmds", "command", "commands"}
 func init() {
 	funcMap = template.FuncMap{
 		"comment": commentifyString,
+		"camelcase": camelCaseString,
 	}
 }
 
@@ -353,4 +355,15 @@ func commentifyString(in string) string {
 		}
 	}
 	return strings.Join(newlines, "\n")
+}
+
+func camelCaseString(in string) string {
+	r := regexp.MustCompile("[A-Za-z0-9_]+")
+	parts := r.FindAll([]byte(in), -1)
+	for i, v := range parts {
+		if i > 0 {
+			parts[i] = bytes.Title(v)
+		}
+	}
+	return string(bytes.Join(parts, nil))
 }
