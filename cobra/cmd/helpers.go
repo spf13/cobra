@@ -19,10 +19,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
-	"regexp"
 
 	"github.com/spf13/viper"
 )
@@ -43,7 +43,7 @@ var cmdDirs = []string{"cmd", "cmds", "command", "commands"}
 
 func init() {
 	funcMap = template.FuncMap{
-		"comment": commentifyString,
+		"comment":   commentifyString,
 		"camelcase": camelCaseString,
 	}
 }
