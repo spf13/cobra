@@ -127,6 +127,9 @@ type Command struct {
 
 	// Disable the flag parsing. If this is true all flags will be passed to the command as arguments.
 	DisableFlagParsing bool
+
+	// If set, it will be called if the command requested can not be found
+	UnknownCommandFunc func([]string) (*Command, []string, error)
 }
 
 // os.Args[1:] by default, if desired, can be overridden
@@ -508,6 +511,9 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 					suggestionsString += fmt.Sprintf("\t%v\n", s)
 				}
 			}
+		}
+		if c.UnknownCommandFunc != nil {
+			return c.UnknownCommandFunc(args)
 		}
 		return commandFound, a, fmt.Errorf("unknown command %q for %q%s", argsWOflags[0], commandFound.CommandPath(), suggestionsString)
 	}
