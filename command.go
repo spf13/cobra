@@ -54,6 +54,9 @@ type Command struct {
 	// ValidArgs is list of all valid non-flag arguments that are accepted in bash completions
 	ValidArgs []string
 
+	// Dynamic
+	Dynamic func(name string) (bool, error)
+
 	// Expected arguments
 	Args PositionalArgs
 
@@ -191,7 +194,6 @@ type Command struct {
 	versionTemplate string
 }
 
-// SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
 	c.args = a
@@ -518,23 +520,29 @@ func isFlagArg(arg string) bool {
 // Find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
 func (c *Command) Find(args []string) (*Command, []string, error) {
-	var innerfind func(*Command, []string) (*Command, []string)
+	var innerfind func(*Command, []string) (*Command, []string, error)
 
-	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
+	innerfind = func(c *Command, innerArgs []string) (*Command, []string, error) {
 		argsWOflags := stripFlags(innerArgs, c)
 		if len(argsWOflags) == 0 {
-			return c, innerArgs
+			return c, innerArgs, nil
 		}
 		nextSubCmd := argsWOflags[0]
 
-		cmd := c.findNext(nextSubCmd)
+		cmd, err := c.findNext(nextSubCmd)
+		if err != nil {
+			return nil, nil, err
+		}
 		if cmd != nil {
 			return innerfind(cmd, argsMinusFirstX(innerArgs, nextSubCmd))
 		}
-		return c, innerArgs
+		return c, innerArgs, nil
 	}
 
-	commandFound, a := innerfind(c, args)
+	commandFound, a, err := innerfind(c, args)
+	if err != nil {
+		return nil, nil, err
+	}
 	if commandFound.Args == nil {
 		return commandFound, a, legacyArgs(commandFound, stripFlags(a, commandFound))
 	}
@@ -558,23 +566,33 @@ func (c *Command) findSuggestions(arg string) string {
 	return suggestionsString
 }
 
-func (c *Command) findNext(next string) *Command {
+func (c *Command) findNext(next string) (*Command, error) {
 	matches := make([]*Command, 0)
 	for _, cmd := range c.commands {
 		if cmd.Name() == next || cmd.HasAlias(next) {
 			cmd.commandCalledAs.name = next
-			return cmd
+			return cmd, nil
 		}
 		if EnablePrefixMatching && cmd.hasNameOrAliasPrefix(next) {
 			matches = append(matches, cmd)
 		}
+		if cmd.Dynamic != nil {
+			valid, err := cmd.Dynamic(next)
+			if err != nil {
+				return nil, err
+			}
+			if valid {
+				matches = append(matches, cmd)
+				cmd.Use = next
+			}
+		}
 	}
 
 	if len(matches) == 1 {
-		return matches[0]
+		return matches[0], nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Traverse the command tree to find the command, and parse args for
@@ -607,7 +625,10 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			continue
 		}
 
-		cmd := c.findNext(arg)
+		cmd, err := c.findNext(arg)
+		if err != nil {
+			return nil, nil, err
+		}
 		if cmd == nil {
 			return c, args, nil
 		}
