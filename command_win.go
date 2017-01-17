@@ -18,9 +18,11 @@ You need to open cmd.exe and run it from there.
 `
 
 func preExecHook(c *Command) {
-	if mousetrap.StartedByExplorer() {
-		c.Print(MousetrapHelpText)
-		time.Sleep(5 * time.Second)
-		os.Exit(1)
+	if EnableWindowsMouseTrap {
+		if mousetrap.StartedByExplorer() {
+			c.Print(MousetrapHelpText)
+			time.Sleep(5 * time.Second)
+			os.Exit(1)
+		}
 	}
 }
