@@ -678,17 +678,31 @@ func (c *Command) errorMsgFromParse() string {
 // and run through the command tree finding appropriate matches
 // for commands and then corresponding flags.
 func (c *Command) Execute() error {
+	if c.HasParent() {
+		_, err := c.Root().ExecuteC()
+		return err
+	}
 	_, err := c.ExecuteC()
 	return err
 }
 
-func (c *Command) ExecuteC() (cmd *Command, err error) {
+func (c *Command) ExecuteSolo() error {
+	_, err := c.executeC()
+	return err
+}
 
+func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
-		return c.Root().ExecuteC()
-	}
+                return c.Root().ExecuteC()
+        }
 
+	cmd, err = c.executeC()
+	return cmd, err
+}
+
+
+func (c *Command) executeC() (cmd *Command, err error) {
 	// windows hook
 	if preExecHookFn != nil {
 		preExecHookFn(c)
