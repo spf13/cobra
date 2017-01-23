@@ -448,7 +448,7 @@ func argsMinusFirstX(args []string, x string) []string {
 		if x == y {
 			ret := []string{}
 			ret = append(ret, args[:i]...)
-			ret = append(ret, args[i + 1:]...)
+			ret = append(ret, args[i+1:]...)
 			return ret
 		}
 	}
