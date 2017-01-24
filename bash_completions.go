@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Annotations for Bash completion.
 const (
 	BashCompFilenameExt     = "cobra_annotation_bash_completion_filename_extensions"
 	BashCompCustom          = "cobra_annotation_bash_completion_custom"
@@ -566,6 +567,7 @@ func gen(cmd *Command, w io.Writer) error {
 	return nil
 }
 
+// GenBashCompletion generates bash completion file and writes to the passed writer.
 func (cmd *Command) GenBashCompletion(w io.Writer) error {
 	if err := preamble(w, cmd.Name()); err != nil {
 		return err
@@ -585,6 +587,7 @@ func nonCompletableFlag(flag *pflag.Flag) bool {
 	return flag.Hidden || len(flag.Deprecated) > 0
 }
 
+// GenBashCompletionFile generates bash completion file.
 func (cmd *Command) GenBashCompletionFile(filename string) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
