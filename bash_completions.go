@@ -23,7 +23,7 @@ func preamble(out io.Writer, name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprint(out, `
+	preamStr := `
 __debug()
 {
     if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
@@ -247,7 +247,8 @@ __handle_word()
     __handle_word
 }
 
-`)
+`
+	_, err = fmt.Fprint(out, preamStr)
 	return err
 }
 
