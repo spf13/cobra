@@ -972,7 +972,8 @@ func (c *Command) Name() string {
 	if i >= 0 {
 		name = name[:i]
 	}
-	return name
+	c.name = name
+	return c.name
 }
 
 // HasAlias determines if a given string is an alias of the command.
