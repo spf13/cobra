@@ -698,7 +698,6 @@ func (c *Command) Execute() error {
 
 // ExecuteC executes the command.
 func (c *Command) ExecuteC() (cmd *Command, err error) {
-
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
 		return c.Root().ExecuteC()
@@ -783,7 +782,7 @@ func (c *Command) initHelpCmd() {
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q.", args)
+					c.Printf("Unknown help topic %#q\n", args)
 					c.Root().Usage()
 				} else {
 					cmd.Help()
