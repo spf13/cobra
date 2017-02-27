@@ -155,12 +155,12 @@ func (c *Command) SetUsageTemplate(s string) {
 }
 
 // SetFlagErrorFunc sets a function to generate an error when flag parsing
-// fails
+// fails.
 func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
 	c.flagErrorFunc = f
 }
 
-// SetHelpFunc sets help function. Can be defined by Application
+// SetHelpFunc sets help function. Can be defined by Application.
 func (c *Command) SetHelpFunc(f func(*Command, []string)) {
 	c.helpFunc = f
 }
@@ -187,7 +187,7 @@ func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string
 	}
 }
 
-// OutOrStdout returns output to stdout
+// OutOrStdout returns output to stdout.
 func (c *Command) OutOrStdout() io.Writer {
 	return c.getOut(os.Stdout)
 }
