@@ -356,7 +356,7 @@ Flags:
 Global Flags:
 {{.InheritedFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasHelpSubCommands}}
 
-Additional help topics:{{range .Commands}}{{if .IsHelpCommand}}
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
@@ -1021,11 +1021,12 @@ func (c *Command) IsAvailableCommand() bool {
 	return false
 }
 
-// IsHelpCommand determines if a command is a 'help' command; a help command is
-// determined by the fact that it is NOT runnable/hidden/deprecated, and has no
-// sub commands that are runnable/hidden/deprecated.
-func (c *Command) IsHelpCommand() bool {
-
+// IsAdditionalHelpTopicCommand determines if a command is an additional
+// help topic command; additional help topic command is determined by the
+// fact that it is NOT runnable/hidden/deprecated, and has no sub commands that
+// are runnable/hidden/deprecated.
+// Concrete example: https://github.com/spf13/cobra/issues/393#issuecomment-282741924.
+func (c *Command) IsAdditionalHelpTopicCommand() bool {
 	// if a command is runnable, deprecated, or hidden it is not a 'help' command
 	if c.Runnable() || len(c.Deprecated) != 0 || c.Hidden {
 		return false
@@ -1033,7 +1034,7 @@ func (c *Command) IsHelpCommand() bool {
 
 	// if any non-help sub commands are found, the command is not a 'help' command
 	for _, sub := range c.commands {
-		if !sub.IsHelpCommand() {
+		if !sub.IsAdditionalHelpTopicCommand() {
 			return false
 		}
 	}
@@ -1046,10 +1047,9 @@ func (c *Command) IsHelpCommand() bool {
 // that need to be shown in the usage/help default template under 'additional help
 // topics'.
 func (c *Command) HasHelpSubCommands() bool {
-
 	// return true on the first found available 'help' sub command
 	for _, sub := range c.commands {
-		if sub.IsHelpCommand() {
+		if sub.IsAdditionalHelpTopicCommand() {
 			return true
 		}
 	}
@@ -1061,7 +1061,6 @@ func (c *Command) HasHelpSubCommands() bool {
 // HasAvailableSubCommands determines if a command has available sub commands that
 // need to be shown in the usage/help default template under 'available commands'.
 func (c *Command) HasAvailableSubCommands() bool {
-
 	// return true on the first found available (non deprecated/help/hidden)
 	// sub command
 	for _, sub := range c.commands {
