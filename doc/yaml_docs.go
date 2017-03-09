@@ -57,7 +57,7 @@ func GenYamlTree(cmd *cobra.Command, dir string) error {
 // GenYamlTreeCustom creates yaml structured ref files
 func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsHelpCommand() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
 		if err := GenYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
@@ -117,7 +117,7 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		children := cmd.Commands()
 		sort.Sort(byName(children))
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child.IsHelpCommand() {
+			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
 			result = append(result, child.Name()+" - "+child.Short)
