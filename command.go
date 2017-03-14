@@ -788,6 +788,7 @@ func (c *Command) initHelpCmd() {
 			},
 		}
 	}
+	c.RemoveCommand(c.helpCommand)
 	c.AddCommand(c.helpCommand)
 }
 
