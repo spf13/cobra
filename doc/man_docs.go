@@ -30,8 +30,8 @@ import (
 
 // GenManTree will generate a man page for this command and all descendants
 // in the directory given. The header may be nil. This function may not work
-// correctly if your command names have - in them. If you have `cmd` with two
-// subcmds, `sub` and `sub-third`. And `sub` has a subcommand called `third`
+// correctly if your command names have `-` in them. If you have `cmd` with two
+// subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
 func GenManTree(cmd *cobra.Command, header *GenManHeader, dir string) error {
 	return GenManTreeFromOpts(cmd, GenManTreeOptions{
