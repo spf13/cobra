@@ -113,7 +113,7 @@ type Command struct {
 	flagErrorBuf *bytes.Buffer
 
 	args          []string             // actual args parsed from flags
-	output        *io.Writer           // out writer if set in SetOutput(w)
+	output        io.Writer            // out writer if set in SetOutput(w)
 	usageFunc     func(*Command) error // Usage can be defined by application
 	usageTemplate string               // Can be defined by Application
 	flagErrorFunc func(*Command, error) error
@@ -141,7 +141,7 @@ func (c *Command) SetArgs(a []string) {
 // SetOutput sets the destination for usage and error messages.
 // If output is nil, os.Stderr is used.
 func (c *Command) SetOutput(output io.Writer) {
-	c.output = &output
+	c.output = output
 }
 
 // SetUsageFunc sets usage function. Usage can be defined by application.
@@ -199,7 +199,7 @@ func (c *Command) OutOrStderr() io.Writer {
 
 func (c *Command) getOut(def io.Writer) io.Writer {
 	if c.output != nil {
-		return *c.output
+		return c.output
 	}
 	if c.HasParent() {
 		return c.parent.getOut(def)
