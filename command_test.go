@@ -191,6 +191,14 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = true
 }
 
+func TestSetOutput(t *testing.T) {
+	cmd := &Command{}
+	cmd.SetOutput(nil)
+	if out := cmd.OutOrStdout(); out != os.Stdout {
+		t.Fatalf("expected setting output to nil to revert back to stdout, got %v", out)
+	}
+}
+
 func TestFlagErrorFunc(t *testing.T) {
 
 	cmd := &Command{
