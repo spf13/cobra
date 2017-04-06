@@ -675,7 +675,7 @@ func TestPersistentFlags(t *testing.T) {
 	fullSetupTest("echo times -s again -c -p test here")
 
 	if strings.Join(tt, " ") != "test here" {
-		t.Errorf("flags didn't leave proper args remaining..%s given", tt)
+		t.Errorf("flags didn't leave proper args remaining. %s given", tt)
 	}
 
 	if flags1 != "again" {
