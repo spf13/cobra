@@ -341,8 +341,7 @@ func (c *Command) UsageTemplate() string {
   {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
 
 Aliases:
-  {{.NameAndAliases}}
-{{end}}{{if .HasExample}}
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
 {{ .Example }}{{end}}{{if .HasAvailableSubCommands}}
