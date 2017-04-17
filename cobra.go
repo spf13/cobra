@@ -52,7 +52,7 @@ func AddTemplateFunc(name string, tmplFunc interface{}) {
 	templateFuncs[name] = tmplFunc
 }
 
-// AddTemplateFuncs adds multiple template functions availalble to Usage and
+// AddTemplateFuncs adds multiple template functions that are available to Usage and
 // Help template generation.
 func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 	for k, v := range tmplFuncs {
