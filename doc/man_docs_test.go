@@ -13,9 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var _ = fmt.Println
-var _ = os.Stderr
-
 func translate(in string) string {
 	return strings.Replace(in, "-", "\\-", -1)
 }
@@ -153,7 +150,7 @@ func TestGenManTree(t *testing.T) {
 	header := &GenManHeader{Section: "2"}
 	tmpdir, err := ioutil.TempDir("", "test-gen-man-tree")
 	if err != nil {
-		t.Fatalf("Failed to create tempdir: %s", err.Error())
+		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
 	defer os.RemoveAll(tmpdir)
 

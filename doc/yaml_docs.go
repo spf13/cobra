@@ -45,8 +45,8 @@ type cmdDoc struct {
 
 // GenYamlTree creates yaml structured ref files for this command and all descendants
 // in the directory given. This function may not work
-// correctly if your command names have - in them. If you have `cmd` with two
-// subcmds, `sub` and `sub-third`. And `sub` has a subcommand called `third`
+// correctly if your command names have `-` in them. If you have `cmd` with two
+// subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
 func GenYamlTree(cmd *cobra.Command, dir string) error {
 	identity := func(s string) string { return s }
@@ -54,7 +54,7 @@ func GenYamlTree(cmd *cobra.Command, dir string) error {
 	return GenYamlTreeCustom(cmd, dir, emptyStr, identity)
 }
 
-// GenYamlTreeCustom creates yaml structured ref files
+// GenYamlTreeCustom creates yaml structured ref files.
 func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
@@ -82,12 +82,12 @@ func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandle
 	return nil
 }
 
-// GenYaml creates yaml output
+// GenYaml creates yaml output.
 func GenYaml(cmd *cobra.Command, w io.Writer) error {
 	return GenYamlCustom(cmd, w, func(s string) string { return s })
 }
 
-// GenYamlCustom creates custom yaml output
+// GenYamlCustom creates custom yaml output.
 func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
 	yamlDoc := cmdDoc{}
 	yamlDoc.Name = cmd.CommandPath()
