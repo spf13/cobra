@@ -6,6 +6,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 // test to ensure hidden commands run as intended
@@ -200,7 +202,6 @@ func TestSetOutput(t *testing.T) {
 }
 
 func TestFlagErrorFunc(t *testing.T) {
-
 	cmd := &Command{
 		Use: "print",
 		RunE: func(cmd *Command, args []string) error {
@@ -221,4 +222,39 @@ func TestFlagErrorFunc(t *testing.T) {
 	if err.Error() != expected {
 		t.Errorf("expected %v, got %v", expected, err.Error())
 	}
+}
+
+// TestSortedFlags checks,
+// if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
+// https://github.com/spf13/cobra/issues/404
+func TestSortedFlags(t *testing.T) {
+	cmd := &Command{}
+	cmd.Flags().SortFlags = false
+	names := []string{"C", "B", "A", "D"}
+	for _, name := range names {
+		cmd.Flags().Bool(name, false, "")
+	}
+
+	i := 0
+	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if i == len(names) {
+			return
+		}
+		if contains(f.Name, names) {
+			if names[i] != f.Name {
+				t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
+			}
+			i++
+		}
+	})
+}
+
+// contains checks, if s is in ss.
+func contains(s string, ss []string) bool {
+	for _, v := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
