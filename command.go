@@ -1228,13 +1228,7 @@ func (c *Command) Parent() *Command {
 // mergePersistentFlags merges c.PersistentFlags() to c.Flags()
 // and adds missing persistent flags of all parents.
 func (c *Command) mergePersistentFlags() {
-	if c.HasPersistentFlags() {
-		c.PersistentFlags().VisitAll(func(f *flag.Flag) {
-			if c.Flags().Lookup(f.Name) == nil {
-				c.Flags().AddFlag(f)
-			}
-		})
-	}
+	c.Flags().AddFlagSet(c.PersistentFlags())
 
 	added := c.updateParentsPflags()
 	if len(added) > 0 {
