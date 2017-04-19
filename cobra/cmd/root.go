@@ -63,6 +63,7 @@ func initConfig() {
 
 	viper.SetConfigName(".cobra") // name of config file (without extension)
 	viper.AddConfigPath("$HOME")  // adding home directory as first search path
+	viper.AddConfigPath(".")      // optionally look for config in working directory
 	viper.AutomaticEnv()          // read in environment variables that match
 
 	// If a config file is found, read it in.
