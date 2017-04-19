@@ -1147,6 +1147,14 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	}
 }
 
+func TestFlagOnPflagCommandLine(t *testing.T) {
+	flagName := "flagOnCommandLine"
+	pflag.CommandLine.String(flagName, "", "about my flag")
+	r := fullSetupTest("--help")
+
+	checkResultContains(t, r, flagName)
+}
+
 func TestAddTemplateFunctions(t *testing.T) {
 	AddTemplateFunc("t", func() bool { return true })
 	AddTemplateFuncs(template.FuncMap{
