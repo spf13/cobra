@@ -1258,6 +1258,8 @@ func (c *Command) updateParentsPflags() (added []*flag.Flag) {
 		c.parentsPflags.SortFlags = false
 	}
 
+	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
+
 	c.VisitParents(func(x *Command) {
 		if x.HasPersistentFlags() {
 			x.PersistentFlags().VisitAll(func(f *flag.Flag) {
