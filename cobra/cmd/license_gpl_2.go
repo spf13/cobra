@@ -18,7 +18,7 @@ package cmd
 func initGpl2() {
 	Licenses["gpl2"] = License{
 		Name:            "GNU General Public License 2.0",
-		PossibleMatches: []string{"gpl2", "gnu gpl2"},
+		PossibleMatches: []string{"gpl2", "gnu gpl2", "gplv2"},
 		Header: `{{ .copyright }}
 
  {{ .appName }} is free software; you can redistribute it and/or
