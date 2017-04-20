@@ -52,6 +52,7 @@ func init() {
 	initGpl2()
 	initGpl3()
 	initLgpl()
+	initAgpl()
 
 	// Licenses["apache20"] = License{
 	// 	Name:            "Apache 2.0",
