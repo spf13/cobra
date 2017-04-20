@@ -21,9 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"time"
-
-	"github.com/spf13/viper"
 )
 
 // var BaseDir = ""
@@ -295,47 +292,6 @@ func safeWriteToDisk(inpath string, r io.Reader) (err error) {
 
 	_, err = io.Copy(file, r)
 	return
-}
-
-func getLicense() License {
-	l := whichLicense()
-	if l != "" {
-		if x, ok := Licenses[l]; ok {
-			return x
-		}
-	}
-
-	return Licenses["apache"]
-}
-
-func whichLicense() string {
-	// if explicitly flagged, use that
-	if userLicense != "" {
-		return matchLicense(userLicense)
-	}
-
-	// if already present in the project, use that
-	// TODO: Inspect project for existing license
-
-	// default to viper's setting
-
-	if viper.IsSet("license.header") || viper.IsSet("license.text") {
-		if custom, ok := Licenses["custom"]; ok {
-			custom.Header = viper.GetString("license.header")
-			custom.Text = viper.GetString("license.text")
-			Licenses["custom"] = custom
-			return "custom"
-		}
-	}
-
-	return matchLicense(viper.GetString("license"))
-}
-
-func copyrightLine() string {
-	author := viper.GetString("author")
-	year := time.Now().Format("2006")
-
-	return "Copyright © " + year + " " + author
 }
 
 func commentifyString(in string) string {
