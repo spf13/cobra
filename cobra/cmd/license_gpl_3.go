@@ -18,7 +18,7 @@ package cmd
 func initGpl3() {
 	Licenses["gpl3"] = License{
 		Name:            "GNU General Public License 3.0",
-		PossibleMatches: []string{"gpl3", "gpl", "gnu gpl3", "gnu gpl"},
+		PossibleMatches: []string{"gpl3", "gplv3", "gpl", "gnu gpl3", "gnu gpl"},
 		Header: `
 This file is part of {{ .appName }}.
 
