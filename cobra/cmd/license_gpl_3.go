@@ -33,8 +33,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with {{ .appName }}. If not, see <http://www.gnu.org/licenses/>.
-	   `,
+along with {{ .appName }}. If not, see <http://www.gnu.org/licenses/>.`,
 		Text: `                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
