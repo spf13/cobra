@@ -15,7 +15,12 @@
 
 package cmd
 
-import "strings"
+import (
+	"strings"
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 //Licenses contains all possible licenses a user can chose from
 var Licenses map[string]License
@@ -29,18 +34,6 @@ type License struct {
 	PossibleMatches []string // Similar names to guess
 	Text            string   // License text data
 	Header          string   // License header for source files
-}
-
-// given a license name (in), try to match the license indicated
-func matchLicense(in string) string {
-	for key, lic := range Licenses {
-		for _, match := range lic.PossibleMatches {
-			if strings.EqualFold(in, match) {
-				return key
-			}
-		}
-	}
-	return ""
 }
 
 func init() {
@@ -72,4 +65,57 @@ func init() {
 	// 	Text: `
 	//   `,
 	// }
+}
+
+func getLicense() License {
+	l := whichLicense()
+	if l != "" {
+		if x, ok := Licenses[l]; ok {
+			return x
+		}
+	}
+
+	return Licenses["apache"]
+}
+
+func whichLicense() string {
+	// if explicitly flagged, use that
+	if userLicense != "" {
+		return matchLicense(userLicense)
+	}
+
+	// if already present in the project, use that
+	// TODO: Inspect project for existing license
+
+	// default to viper's setting
+
+	if viper.IsSet("license.header") || viper.IsSet("license.text") {
+		if custom, ok := Licenses["custom"]; ok {
+			custom.Header = viper.GetString("license.header")
+			custom.Text = viper.GetString("license.text")
+			Licenses["custom"] = custom
+			return "custom"
+		}
+	}
+
+	return matchLicense(viper.GetString("license"))
+}
+
+func copyrightLine() string {
+	author := viper.GetString("author")
+	year := time.Now().Format("2006")
+
+	return "Copyright © " + year + " " + author
+}
+
+// given a license name (in), try to match the license indicated
+func matchLicense(in string) string {
+	for key, lic := range Licenses {
+		for _, match := range lic.PossibleMatches {
+			if strings.EqualFold(in, match) {
+				return key
+			}
+		}
+	}
+	return ""
 }
