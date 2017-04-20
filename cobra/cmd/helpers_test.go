@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 )
-
-var _ = fmt.Println
-var _ = os.Stderr
 
 func checkGuess(t *testing.T, wd, input, expected string) {
 	testWd = wd

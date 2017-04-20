@@ -46,15 +46,10 @@ func init() {
 	Licenses["custom"] = License{"Custom", []string{}, "", ""}
 
 	initApache2()
-
 	initMit()
-
 	initBsdClause3()
-
 	initBsdClause2()
-
 	initGpl2()
-
 	initGpl3()
 
 	// Licenses["apache20"] = License{
