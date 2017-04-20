@@ -735,7 +735,13 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 func (c *Command) initHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
-		c.Flags().BoolP("help", "h", false, "help for "+c.Name())
+		usage := "help for "
+		if c.Name() == "" {
+			usage += "this command"
+		} else {
+			usage += c.Name()
+		}
+		c.Flags().BoolP("help", "h", false, usage)
 	}
 }
 
@@ -759,6 +765,7 @@ func (c *Command) initHelpCmd() {
 					c.Printf("Unknown help topic %#q\n", args)
 					c.Root().Usage()
 				} else {
+					cmd.initHelpFlag() // make possible 'help' flag to be shown
 					cmd.Help()
 				}
 			},
