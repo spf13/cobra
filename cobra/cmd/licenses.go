@@ -51,6 +51,7 @@ func init() {
 	initBsdClause2()
 	initGpl2()
 	initGpl3()
+	initLgpl()
 
 	// Licenses["apache20"] = License{
 	// 	Name:            "Apache 2.0",
