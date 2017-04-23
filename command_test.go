@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/pflag"
@@ -118,7 +119,7 @@ func TestStripFlags(t *testing.T) {
 	}
 }
 
-func Test_DisableFlagParsing(t *testing.T) {
+func TestDisableFlagParsing(t *testing.T) {
 	as := []string{"-v", "-race", "-file", "foo.go"}
 	targs := []string{}
 	cmdPrint := &Command{
@@ -226,7 +227,8 @@ func TestFlagErrorFunc(t *testing.T) {
 
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
-// https://github.com/spf13/cobra/issues/404
+//
+// Source: https://github.com/spf13/cobra/issues/404
 func TestSortedFlags(t *testing.T) {
 	cmd := &Command{}
 	cmd.Flags().SortFlags = false
@@ -240,7 +242,7 @@ func TestSortedFlags(t *testing.T) {
 		if i == len(names) {
 			return
 		}
-		if contains(f.Name, names) {
+		if isStringInStringSlice(f.Name, names) {
 			if names[i] != f.Name {
 				t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
 			}
@@ -250,11 +252,35 @@ func TestSortedFlags(t *testing.T) {
 }
 
 // contains checks, if s is in ss.
-func contains(s string, ss []string) bool {
+func isStringInStringSlice(s string, ss []string) bool {
 	for _, v := range ss {
 		if v == s {
 			return true
 		}
 	}
 	return false
+}
+
+// TestHelpFlagInHelp checks,
+// if '--help' flag is shown in help for child (executing `parent help child`),
+// that has no other flags.
+//
+// Source: https://github.com/spf13/cobra/issues/302
+func TestHelpFlagInHelp(t *testing.T) {
+	output := new(bytes.Buffer)
+	parent := &Command{Use: "parent", Long: "long", Run: func(*Command, []string) { return }}
+	parent.SetOutput(output)
+
+	child := &Command{Use: "child", Long: "long", Run: func(*Command, []string) { return }}
+	parent.AddCommand(child)
+
+	parent.SetArgs([]string{"help", "child"})
+	err := parent.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(output.String(), "[flags]") {
+		t.Fatalf("\nExpecting to contain: %v\nGot: %v", "[flags]", output.String())
+	}
 }

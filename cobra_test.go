@@ -3,6 +3,7 @@ package cobra
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -1153,6 +1154,9 @@ func TestFlagOnPflagCommandLine(t *testing.T) {
 	r := fullSetupTest("--help")
 
 	checkResultContains(t, r, flagName)
+
+	// reset CommandLine flagset
+	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 }
 
 func TestAddTemplateFunctions(t *testing.T) {
