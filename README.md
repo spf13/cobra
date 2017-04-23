@@ -19,6 +19,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [Parse (CLI)](https://parse.com/)
 * [GiantSwarm's swarm](https://github.com/giantswarm/cli)
 * [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
+* [rclone](http://rclone.org/)
 
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg "Travis CI status")](https://travis-ci.org/spf13/cobra)
