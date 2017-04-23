@@ -392,40 +392,48 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 }
 
 func stripFlags(args []string, c *Command) []string {
-	if len(args) < 1 {
+	if len(args) == 0 {
 		return args
 	}
 	c.mergePersistentFlags()
 
 	commands := []string{}
-
 	inQuote := false
-	inFlag := false
-	for _, y := range args {
+
+Loop:
+	for len(args) > 0 {
+		s := args[0]
 		if !inQuote {
 			switch {
-			case strings.HasPrefix(y, "\""):
+			case strings.HasPrefix(s, "\"") || strings.Contains(s, "=\""):
 				inQuote = true
-			case strings.Contains(y, "=\""):
-				inQuote = true
-			case strings.HasPrefix(y, "--") && !strings.Contains(y, "="):
-				// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
-				inFlag = !hasNoOptDefVal(y[2:], c.Flags())
-			case strings.HasPrefix(y, "-") && !strings.Contains(y, "=") && len(y) == 2 && !shortHasNoOptDefVal(y[1:], c.Flags()):
-				inFlag = true
-			case inFlag:
-				inFlag = false
-			case y == "":
-			// strip empty commands, as the go tests expect this to be ok....
-			case !strings.HasPrefix(y, "-"):
-				commands = append(commands, y)
-				inFlag = false
+			case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], c.Flags()):
+				// If '--flag arg' then
+				// delete two items from args.
+				fallthrough // Do the same as below.
+			case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], c.Flags()):
+				// If '-f arg' then
+				// delete two items from args.
+
+				// If there are only two elements in args or less,
+				// break loop, ...
+				if len(args) <= 2 {
+					break Loop
+				} else {
+					// ... else delete first two items.
+					args = args[2:]
+					continue
+				}
+			case s != "" && !strings.HasPrefix(s, "-"):
+				commands = append(commands, s)
 			}
 		}
 
-		if strings.HasSuffix(y, "\"") && !strings.HasSuffix(y, "\\\"") {
+		if strings.HasSuffix(s, "\"") && !strings.HasSuffix(s, "\\\"") {
 			inQuote = false
 		}
+
+		args = args[1:]
 	}
 
 	return commands
