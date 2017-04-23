@@ -330,23 +330,23 @@ func (c *Command) UsageTemplate() string {
 		return c.parent.UsageTemplate()
 	}
 	return `Usage:{{if .Runnable}}
-  {{if .HasAvailableFlags}}{{appendIfNotPresent .UseLine "[flags]"}}{{else}}{{.UseLine}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
-  {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
 Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
-{{ .Example }}{{end}}{{if .HasAvailableSubCommands}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
 Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
-{{.LocalFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasAvailableInheritedFlags}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
 Global Flags:
-{{.InheritedFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasHelpSubCommands}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
 
 Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
@@ -364,7 +364,7 @@ func (c *Command) HelpTemplate() string {
 	if c.HasParent() {
 		return c.parent.HelpTemplate()
 	}
-	return `{{with or .Long .Short }}{{. | trim}}
+	return `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
@@ -863,34 +863,34 @@ func (c *Command) Print(i ...interface{}) {
 
 // Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
 func (c *Command) Println(i ...interface{}) {
-	str := fmt.Sprintln(i...)
-	c.Print(str)
+	c.Print(fmt.Sprintln(i...))
 }
 
 // Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
 func (c *Command) Printf(format string, i ...interface{}) {
-	str := fmt.Sprintf(format, i...)
-	c.Print(str)
+	c.Print(fmt.Sprintf(format, i...))
 }
 
 // CommandPath returns the full path to this command.
 func (c *Command) CommandPath() string {
-	str := c.Name()
-	x := c
-	for x.HasParent() {
-		str = x.parent.Name() + " " + str
-		x = x.parent
+	if c.HasParent() {
+		return c.Parent().CommandPath() + " " + c.Name()
 	}
-	return str
+	return c.Name()
 }
 
 // UseLine puts out the full usage for a given command (including parents).
 func (c *Command) UseLine() string {
-	str := ""
+	var useline string
 	if c.HasParent() {
-		str = c.parent.CommandPath() + " "
+		useline = c.parent.CommandPath() + " " + c.Use
+	} else {
+		useline = c.Use
 	}
-	return str + c.Use
+	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
+		useline += " [flags]"
+	}
+	return useline
 }
 
 // DebugFlags used to determine which flags have been assigned to which commands
@@ -936,15 +936,14 @@ func (c *Command) DebugFlags() {
 
 // Name returns the command's name: the first word in the use line.
 func (c *Command) Name() string {
-	if c.name != "" {
-		return c.name
+	if c.name == "" {
+		name := c.Use
+		i := strings.Index(name, " ")
+		if i >= 0 {
+			name = name[:i]
+		}
+		c.name = name
 	}
-	name := c.Use
-	i := strings.Index(name, " ")
-	if i >= 0 {
-		name = name[:i]
-	}
-	c.name = name
 	return c.name
 }
 

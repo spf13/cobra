@@ -19,20 +19,14 @@ package cobra
 import (
 	"fmt"
 	"io"
-	"reflect"
-	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
 )
 
 var templateFuncs = template.FuncMap{
-	"trim":               strings.TrimSpace,
-	"trimRightSpace":     trimRightSpace,
-	"appendIfNotPresent": appendIfNotPresent,
-	"rpad":               rpad,
-	"gt":                 Gt,
-	"eq":                 Eq,
+	"trimTrailingWhitespaces": trimTrailingWhitespaces,
+	"rpad": rpad,
 }
 
 var initializers []func()
@@ -65,62 +59,8 @@ func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
 }
 
-// Gt takes two types and checks whether the first type is greater than the second. In case of types Arrays, Chans,
-// Maps and Slices, Gt will compare their lengths. Ints are compared directly while strings are first parsed as
-// ints and then compared.
-func Gt(a interface{}, b interface{}) bool {
-	var left, right int64
-	av := reflect.ValueOf(a)
-
-	switch av.Kind() {
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
-		left = int64(av.Len())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		left = av.Int()
-	case reflect.String:
-		left, _ = strconv.ParseInt(av.String(), 10, 64)
-	}
-
-	bv := reflect.ValueOf(b)
-
-	switch bv.Kind() {
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
-		right = int64(bv.Len())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		right = bv.Int()
-	case reflect.String:
-		right, _ = strconv.ParseInt(bv.String(), 10, 64)
-	}
-
-	return left > right
-}
-
-// Eq takes two types and checks whether they are equal. Supported types are int and string. Unsupported types will panic.
-func Eq(a interface{}, b interface{}) bool {
-	av := reflect.ValueOf(a)
-	bv := reflect.ValueOf(b)
-
-	switch av.Kind() {
-	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
-		panic("Eq called on unsupported type")
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return av.Int() == bv.Int()
-	case reflect.String:
-		return av.String() == bv.String()
-	}
-	return false
-}
-
-func trimRightSpace(s string) string {
+func trimTrailingWhitespaces(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
-}
-
-// appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s.
-func appendIfNotPresent(s, stringToAppend string) string {
-	if strings.Contains(s, stringToAppend) {
-		return s
-	}
-	return s + " " + stringToAppend
 }
 
 // rpad adds padding to the right of a string.
@@ -131,10 +71,8 @@ func rpad(s string, padding int) string {
 
 // tmpl executes the given template text on data, writing the result to w.
 func tmpl(w io.Writer, text string, data interface{}) error {
-	t := template.New("top")
-	t.Funcs(templateFuncs)
-	template.Must(t.Parse(text))
-	return t.Execute(w, data)
+	t := template.New("top").Funcs(templateFuncs)
+	return template.Must(t.Parse(text)).Execute(w, data)
 }
 
 // ld compares two strings and returns the levenshtein distance between them.
