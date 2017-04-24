@@ -105,3 +105,20 @@ func TestGenMdTree(t *testing.T) {
 		t.Fatalf("Expected file 'do.md' to exist")
 	}
 }
+
+func BenchmarkGenMarkdownToFile(b *testing.B) {
+	c := initializeWithRootCmd()
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := GenMarkdown(c, file); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
