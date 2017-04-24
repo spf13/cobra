@@ -366,26 +366,20 @@ func (c *Command) HelpTemplate() string {
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
 
-// Really only used when casting a command to a commander.
-func (c *Command) resetChildrensParents() {
-	for _, x := range c.commands {
-		x.parent = c
-	}
-}
-
 func hasNoOptDefVal(name string, f *flag.FlagSet) bool {
 	flag := f.Lookup(name)
 	if flag == nil {
 		return false
 	}
-	return len(flag.NoOptDefVal) > 0
+	return flag.NoOptDefVal != ""
 }
 
 func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	result := false
 	fs.VisitAll(func(flag *flag.Flag) {
-		if flag.Shorthand == name && len(flag.NoOptDefVal) > 0 {
+		if flag.Shorthand == name && flag.NoOptDefVal != "" {
 			result = true
+			return
 		}
 	})
 	return result
@@ -399,29 +393,27 @@ func stripFlags(args []string, c *Command) []string {
 
 	commands := []string{}
 	inQuote := false
+	flags := c.Flags()
 
 Loop:
 	for len(args) > 0 {
 		s := args[0]
+		args = args[1:]
 		if !inQuote {
 			switch {
 			case strings.HasPrefix(s, "\"") || strings.Contains(s, "=\""):
 				inQuote = true
-			case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], c.Flags()):
+			case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
 				// If '--flag arg' then
-				// delete two items from args.
-				fallthrough // Do the same as below.
-			case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], c.Flags()):
+				// delete arg from args.
+				fallthrough // (do the same as below)
+			case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
 				// If '-f arg' then
-				// delete two items from args.
-
-				// If there are only two elements in args or less,
-				// break loop, ...
-				if len(args) <= 2 {
+				// delete 'arg' from args or break the loop if len(args) <= 1.
+				if len(args) <= 1 {
 					break Loop
 				} else {
-					// ... else delete first two items.
-					args = args[2:]
+					args = args[1:]
 					continue
 				}
 			case s != "" && !strings.HasPrefix(s, "-"):
@@ -432,8 +424,6 @@ Loop:
 		if strings.HasSuffix(s, "\"") && !strings.HasSuffix(s, "\\\"") {
 			inQuote = false
 		}
-
-		args = args[1:]
 	}
 
 	return commands
