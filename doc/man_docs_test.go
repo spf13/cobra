@@ -197,3 +197,20 @@ func AssertNextLineEquals(scanner *bufio.Scanner, expectedLine string) error {
 
 	return fmt.Errorf("AssertNextLineEquals: hit EOF before finding %#v", expectedLine)
 }
+
+func BenchmarkGenManToFile(b *testing.B) {
+	c := initializeWithRootCmd()
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := GenMan(c, nil, file); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
