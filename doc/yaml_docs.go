@@ -130,7 +130,8 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	if _, err := fmt.Fprintf(w, string(final)); err != nil {
+
+	if _, err := w.Write(final); err != nil {
 		return err
 	}
 	return nil

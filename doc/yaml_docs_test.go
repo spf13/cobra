@@ -106,3 +106,20 @@ func TestGenYamlTree(t *testing.T) {
 		t.Fatalf("Expected file 'do.yaml' to exist")
 	}
 }
+
+func BenchmarkGenYamlToFile(b *testing.B) {
+	c := initializeWithRootCmd()
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := GenYaml(c, file); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
