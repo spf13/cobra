@@ -17,8 +17,9 @@ package cmd
 
 func initBsdClause2() {
 	Licenses["freebsd"] = License{
-		Name:            "Simplified BSD License",
-		PossibleMatches: []string{"freebsd", "simpbsd", "simple bsd", "2 clause bsd"},
+		Name: "Simplified BSD License",
+		PossibleMatches: []string{"freebsd", "simpbsd", "simple bsd", "2-clause bsd",
+			"2 clause bsd", "simplified bsd license"},
 		Header: `
 All rights reserved.
 

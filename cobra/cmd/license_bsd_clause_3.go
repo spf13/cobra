@@ -18,7 +18,7 @@ package cmd
 func initBsdClause3() {
 	Licenses["bsd"] = License{
 		Name:            "NewBSD",
-		PossibleMatches: []string{"bsd", "newbsd", "3 clause bsd"},
+		PossibleMatches: []string{"bsd", "newbsd", "3 clause bsd", "3-clause bsd"},
 		Header: `
 All rights reserved.
 
