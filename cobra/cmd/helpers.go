@@ -97,15 +97,25 @@ func guessCmdDir() string {
 func guessImportPath() string {
 	guessProjectPath()
 
-	if !strings.HasPrefix(projectPath, getSrcPath()) {
-		er("Cobra only supports project within $GOPATH")
+	for _, path := range getSrcPaths() {
+		if strings.HasPrefix(projectPath, path) {
+			return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, path)))
+		}
 	}
 
-	return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, getSrcPath())))
+	er("Cobra only supports project within $GOPATH")
+
+	// not reached
+	return ""
 }
 
-func getSrcPath() string {
-	return filepath.Join(os.Getenv("GOPATH"), "src") + string(os.PathSeparator)
+func getSrcPaths() []string {
+	paths := strings.Split(os.Getenv("GOPATH"), ":")
+	for i, path := range paths {
+		paths[i] = filepath.Join(path, "src") + string(os.PathSeparator)
+	}
+
+	return paths
 }
 
 func projectName() string {
@@ -137,7 +147,7 @@ func guessProjectPath() {
 		}
 	}
 
-	srcPath := getSrcPath()
+	srcPaths := getSrcPaths()
 	// if provided, inspect for logical locations
 	if strings.ContainsRune(inputPath, os.PathSeparator) {
 		if filepath.IsAbs(inputPath) || filepath.HasPrefix(inputPath, string(os.PathSeparator)) {
@@ -145,6 +155,11 @@ func guessProjectPath() {
 			projectPath = filepath.Clean(inputPath)
 			return
 		}
+
+		if len(srcPaths) > 1 {
+			er("Cobra can't guess project path because $GOPATH contains multiple paths")
+		}
+
 		// If not absolute but contains slashes,
 		// assuming it means create it from $GOPATH
 		count := strings.Count(inputPath, string(os.PathSeparator))
@@ -152,10 +167,10 @@ func guessProjectPath() {
 		switch count {
 		// If only one directory deep, assume "github.com"
 		case 1:
-			projectPath = filepath.Join(srcPath, "github.com", inputPath)
+			projectPath = filepath.Join(srcPaths[0], "github.com", inputPath)
 			return
 		case 2:
-			projectPath = filepath.Join(srcPath, inputPath)
+			projectPath = filepath.Join(srcPaths[0], inputPath)
 			return
 		default:
 			er("Unknown directory")
@@ -170,7 +185,11 @@ func guessProjectPath() {
 			}
 			er(err)
 		} else {
-			projectPath = filepath.Join(srcPath, projectBase, inputPath)
+			if len(srcPaths) > 1 {
+				er("Cobra can't guess project path because $GOPATH contains multiple paths")
+			}
+
+			projectPath = filepath.Join(srcPaths[0], projectBase, inputPath)
 			return
 		}
 	}
