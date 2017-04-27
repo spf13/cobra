@@ -146,7 +146,7 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 	cmd := Command{Use: "do"}
 	baseCmd.AddCommand(&cmd)
 
-	cmd.initHelpFlag()
+	cmd.InitDefaultHelpFlag()
 	actual := cmd.Flags().Lookup("help").Usage
 	if actual != usage {
 		t.Fatalf("Expected the help flag from the base command with usage '%s', but got the default with usage '%s'", usage, actual)

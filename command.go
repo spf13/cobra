@@ -571,18 +571,19 @@ func (c *Command) execute(a []string) (err error) {
 
 	// initialize help flag as the last point possible to allow for user
 	// overriding
-	c.initHelpFlag()
+	c.InitDefaultHelpFlag()
 
 	err = c.ParseFlags(a)
 	if err != nil {
 		return c.FlagErrorFunc()(c, err)
 	}
-	// If help is called, regardless of other flags, return we want help
+
+	// If help is called, regardless of other flags, return we want help.
 	// Also say we need help if the command isn't runnable.
 	helpVal, err := c.Flags().GetBool("help")
 	if err != nil {
 		// should be impossible to get here as we always declare a help
-		// flag in initHelpFlag()
+		// flag in InitDefaultHelpFlag()
 		c.Println("\"help\" flag declared as non-bool. Please correct your code")
 		return err
 	}
@@ -722,7 +723,9 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	return cmd, nil
 }
 
-func (c *Command) initHelpFlag() {
+// InitDefaultHelpFlag adds default help flag to c.
+// It is called automatically by executing the c or by calling help and usage.
+func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
 		usage := "help for "
@@ -755,7 +758,7 @@ func (c *Command) initHelpCmd() {
 					c.Printf("Unknown help topic %#q\n", args)
 					c.Root().Usage()
 				} else {
-					cmd.initHelpFlag() // make possible 'help' flag to be shown
+					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
 					cmd.Help()
 				}
 			},
