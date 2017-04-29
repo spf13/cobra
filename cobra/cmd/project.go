@@ -85,7 +85,7 @@ func NewProjectFromPath(absPath string) *Project {
 	return p
 }
 
-// trimSrcPath trims at the end of absPaththe srcPath.
+// trimSrcPath trims at the beginning of absPath the srcPath.
 func trimSrcPath(absPath, srcPath string) string {
 	relPath, err := filepath.Rel(srcPath, absPath)
 	if err != nil {
