@@ -14,10 +14,10 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"strings"
+	"path"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,79 +45,60 @@ and the appropriate structure for a Cobra-based CLI application.
 Init will not use an existing directory with contents.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		switch len(args) {
-		case 0:
-			inputPath = ""
-
-		case 1:
-			inputPath = args[0]
-
-		default:
-			er("init doesn't support more than 1 parameter")
+		var project *Project
+		if len(args) == 0 {
+			wd, err := os.Getwd()
+			if err != nil {
+				er(err)
+			}
+			project = NewProjectFromPath(wd)
+		} else if len(args) == 1 {
+			project = NewProject(args[0])
+		} else {
+			er("please enter the name")
 		}
-		guessProjectPath()
-		initializePath(projectPath)
+
+		initializePath(project)
 	},
 }
 
-func initializePath(path string) {
-	b, err := exists(path)
+func initializePath(project *Project) {
+	if !exists(project.AbsPath()) { // If path doesn't yet exist, create it
+		err := os.MkdirAll(project.AbsPath(), os.ModePerm)
+		if err != nil {
+			er(err)
+		}
+	} else if !isEmpty(project.AbsPath()) { // If path exists and is not empty don't use it
+		er("Cobra will not create a new project in a non empty directory")
+	}
+
+	// We have a directory and it's empty.. Time to initialize it.
+	createLicenseFile(project)
+	createMainFile(project)
+	createRootCmdFile(project)
+}
+
+func createLicenseFile(project *Project) {
+	data := make(map[string]interface{})
+	data["copyright"] = copyrightLine()
+
+	// Generate license template from text and data.
+	text, err := executeTemplate(project.License().Text, data)
 	if err != nil {
 		er(err)
 	}
 
-	if !b { // If path doesn't yet exist, create it
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			er(err)
-		}
-	} else { // If path exists and is not empty don't use it
-		empty, err := exists(path)
-		if err != nil {
-			er(err)
-		}
-		if !empty {
-			er("Cobra will not create a new project in a non empty directory")
-		}
-	}
-	// We have a directory and it's empty.. Time to initialize it.
-
-	createLicenseFile()
-	createMainFile()
-	createRootCmdFile()
-}
-
-func createLicenseFile() {
-	lic := getLicense()
-
-	// Don't bother writing a LICENSE file if there is no text.
-	if lic.Text != "" {
-		data := make(map[string]interface{})
-
-		// Try to remove the email address, if any
-		data["copyright"] = strings.Split(copyrightLine(), " <")[0]
-
-		data["appName"] = projectName()
-
-		// Generate license template from text and data.
-		r, _ := templateToReader(lic.Text, data)
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r)
-
-		err := writeTemplateToFile(ProjectPath(), "LICENSE", buf.String(), data)
-		_ = err
-		// if err != nil {
-		// 	er(err)
-		// }
+	// Write license text to LICENSE file.
+	err = writeStringToFile(filepath.Join(project.AbsPath(), "LICENSE"), text)
+	if err != nil {
+		er(err)
 	}
 }
 
-func createMainFile() {
-	lic := getLicense()
+func createMainFile(project *Project) {
+	mainTemplate := `{{ comment .copyright }}
+{{if .license}}{{ comment .license }}{{end}}
 
-	template := `{{ comment .copyright }}
-{{if .license}}{{ comment .license }}
-{{end}}
 package main
 
 import "{{ .importpath }}"
@@ -127,31 +108,25 @@ func main() {
 }
 `
 	data := make(map[string]interface{})
-
 	data["copyright"] = copyrightLine()
-	data["appName"] = projectName()
+	data["license"] = project.License().Header
+	data["importpath"] = path.Join(project.Name(), project.CmdDir())
 
-	// Generate license template from header and data.
-	r, _ := templateToReader(lic.Header, data)
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
-	data["license"] = buf.String()
+	mainScript, err := executeTemplate(mainTemplate, data)
+	if err != nil {
+		er(err)
+	}
 
-	data["importpath"] = guessImportPath() + "/" + guessCmdDir()
-
-	err := writeTemplateToFile(ProjectPath(), "main.go", template, data)
-	_ = err
-	// if err != nil {
-	// 	er(err)
-	// }
+	err = writeStringToFile(filepath.Join(project.AbsPath(), "main.go"), mainScript)
+	if err != nil {
+		er(err)
+	}
 }
 
-func createRootCmdFile() {
-	lic := getLicense()
+func createRootCmdFile(project *Project) {
+	template := `{{comment .copyright}}
+{{if .license}}{{comment .license}}{{end}}
 
-	template := `{{ comment .copyright }}
-{{if .license}}{{ comment .license }}
-{{end}}
 package cmd
 
 import (
@@ -159,14 +134,14 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-{{ if .viper }}	"github.com/spf13/viper"
-{{ end }})
-{{if .viper}}
-var cfgFile string
-{{ end }}
+{{if .viper}}	"github.com/spf13/viper"{{end}}
+)
+
+{{if .viper}}var cfgFile string{{end}}
+
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "{{ .appName }}",
+	Use:   "{{.appName}}",
 	Short: "A brief description of your application",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -174,9 +149,9 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.` + "`" + `,
-// Uncomment the following line if your bare application
-// has an action associated with it:
-//	Run: func(cmd *cobra.Command, args []string) { },
+	// Uncomment the following line if your bare application
+	// has an action associated with it:
+	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -189,57 +164,54 @@ func Execute() {
 }
 
 func init() {
-{{ if .viper }}	cobra.OnInitialize(initConfig)
+{{if .viper}}	cobra.OnInitialize(initConfig){{end}}
 
-{{ end }}	// Here you will define your flags and configuration settings.
+	// Here you will define your flags and configuration settings.
 	// Cobra supports Persistent Flags, which, if defined here,
-	// will be global for your application.
-{{ if .viper }}
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)")
-{{ else }}
-	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)")
-{{ end }}	// Cobra also supports local flags, which will only run
+	// will be global for your application.{{ if .viper }}
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)"){{ else }}
+	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)"){{ end }}
+
+	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-{{ if .viper }}
+}{{ if .viper }}
+
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.SetConfigName(".{{ .appName }}") // name of config file (without extension)
+		viper.AddConfigPath(os.Getenv("HOME")) // adding home directory as first search path
 	}
 
-	viper.SetConfigName(".{{ .appName }}") // name of config file (without extension)
-	viper.AddConfigPath(os.Getenv("HOME")) // adding home directory as first search path
 	viper.AutomaticEnv()                   // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
-}
-{{ end }}`
+}{{ end }}
+`
 
 	data := make(map[string]interface{})
-
 	data["copyright"] = copyrightLine()
-	data["appName"] = projectName()
-
-	// Generate license template from header and data.
-	r, _ := templateToReader(lic.Header, data)
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
-	data["license"] = buf.String()
-
 	data["viper"] = viper.GetBool("useViper")
+	data["license"] = project.License().Header
 
-	err := writeTemplateToFile(ProjectPath()+string(os.PathSeparator)+guessCmdDir(), "root.go", template, data)
+	rootCmdScript, err := executeTemplate(template, data)
+	if err != nil {
+		er(err)
+	}
+
+	err = writeStringToFile(filepath.Join(project.AbsPath(), project.CmdDir(), "root.go"), rootCmdScript)
 	if err != nil {
 		er(err)
 	}
 
 	fmt.Println("Your Cobra application is ready at")
-	fmt.Println(ProjectPath())
-	fmt.Println("Give it a try by going there and running `go run main.go`")
+	fmt.Println(project.AbsPath() + "\n")
+	fmt.Println("Give it a try by going there and running `go run main.go`.")
 	fmt.Println("Add commands to it by running `cobra add [cmdname]`")
 }

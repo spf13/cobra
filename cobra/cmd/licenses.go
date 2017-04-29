@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,9 +43,6 @@ func init() {
 	// Allows a user to not use a license.
 	Licenses["none"] = License{"None", []string{"none", "false"}, "", ""}
 
-	// Allows a user to use config for a custom license.
-	Licenses["custom"] = License{"Custom", []string{}, "", ""}
-
 	initApache2()
 	initMit()
 	initBsdClause3()
@@ -53,49 +51,29 @@ func init() {
 	initGpl3()
 	initLgpl()
 	initAgpl()
-
-	// Licenses["apache20"] = License{
-	// 	Name:            "Apache 2.0",
-	// 	PossibleMatches: []string{"apache", "apache20", ""},
-	//   Header: `
-	//   `,
-	// 	Text: `
-	//   `,
-	// }
 }
 
+// TODO: Inspect project for existing license
 func getLicense() License {
-	l := whichLicense()
-	if l != "" {
-		if x, ok := Licenses[l]; ok {
-			return x
-		}
-	}
-
-	return Licenses["apache"]
-}
-
-func whichLicense() string {
-	// if explicitly flagged, use that
+	// If explicitly flagged, use that.
 	if userLicense != "" {
-		return matchLicense(userLicense)
+		return findLicense(userLicense)
 	}
 
-	// if already present in the project, use that
-	// TODO: Inspect project for existing license
-
-	// default to viper's setting
-
+	// If user wants to have custom license, use that.
 	if viper.IsSet("license.header") || viper.IsSet("license.text") {
-		if custom, ok := Licenses["custom"]; ok {
-			custom.Header = viper.GetString("license.header")
-			custom.Text = viper.GetString("license.text")
-			Licenses["custom"] = custom
-			return "custom"
-		}
+		return License{Header: viper.GetString("license.header"),
+			Text: "license.text"}
 	}
 
-	return matchLicense(viper.GetString("license"))
+	// If user wants to have built-in license, use that.
+	if viper.IsSet("license") {
+		return findLicense(viper.GetString("license"))
+	}
+
+	// If user didn't set any license, use Apache 2.0 by default.
+	fmt.Println("apache")
+	return Licenses["apache"]
 }
 
 func copyrightLine() string {
@@ -105,14 +83,27 @@ func copyrightLine() string {
 	return "Copyright © " + year + " " + author
 }
 
-// given a license name (in), try to match the license indicated
-func matchLicense(in string) string {
+func findLicense(name string) License {
+	found := matchLicense(name)
+	if found == "" {
+		er(fmt.Errorf("unknown license %q", name))
+	}
+	return Licenses[found]
+}
+
+// given a license name, try to match the license indicated
+func matchLicense(name string) string {
+	if name == "" {
+		return ""
+	}
+
 	for key, lic := range Licenses {
 		for _, match := range lic.PossibleMatches {
-			if strings.EqualFold(in, match) {
+			if strings.EqualFold(name, match) {
 				return key
 			}
 		}
 	}
+
 	return ""
 }
