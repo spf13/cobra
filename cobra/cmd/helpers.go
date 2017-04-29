@@ -23,10 +23,6 @@ import (
 	"text/template"
 )
 
-var funcMap = template.FuncMap{
-	"comment": commentifyString,
-}
-
 var projectPath string
 
 var cmdDirs = [...]string{"cmd", "cmds", "command", "commands"}
@@ -87,8 +83,11 @@ func exists(path string) bool {
 	return false
 }
 
+var tmpl = template.New("").Funcs(template.FuncMap{"comment": commentifyString})
+
 func executeTemplate(tmplStr string, data interface{}) (string, error) {
-	tmpl, err := template.New("").Funcs(funcMap).Parse(tmplStr)
+	var err error
+	tmpl, err = tmpl.Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}
