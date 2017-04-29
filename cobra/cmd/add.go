@@ -107,7 +107,7 @@ func init() {
 	data["parentName"] = parentName
 	data["cmdName"] = cmdName
 
-	filePath := filepath.Join(project.AbsPath(), project.CmdDir(), cmdName+".go")
+	filePath := filepath.Join(project.CmdPath(), cmdName+".go")
 
 	cmdScript, err := executeTemplate(template, data)
 	if err != nil {

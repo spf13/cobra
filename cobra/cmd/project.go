@@ -6,14 +6,17 @@ import (
 	"strings"
 )
 
+// Project contains name, license and paths to projects.
 type Project struct {
 	absPath string
-	cmdDir  string
+	cmdPath string
 	srcPath string
 	license License
 	name    string
 }
 
+// NewProject returns Project with specified project name.
+// If projectName is blank string, it returns nil.
 func NewProject(projectName string) *Project {
 	if projectName == "" {
 		return nil
@@ -25,8 +28,8 @@ func NewProject(projectName string) *Project {
 	// 1. Find already created protect.
 	p.absPath = findPackage(projectName)
 
-	// 2. If there are no created project with this path and user in GOPATH,
-	// then use GOPATH+projectName.
+	// 2. If there are no created project with this path, and user is in GOPATH,
+	// then use GOPATH/src+projectName.
 	if p.absPath == "" {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -34,7 +37,7 @@ func NewProject(projectName string) *Project {
 		}
 		for _, goPath := range goPaths {
 			if filepath.HasPrefix(wd, goPath) {
-				p.absPath = filepath.Join(goPath, projectName)
+				p.absPath = filepath.Join(goPath, "src", projectName)
 				break
 			}
 		}
@@ -48,14 +51,9 @@ func NewProject(projectName string) *Project {
 	return p
 }
 
-// findPackage returns full path to go package. It supports multiple GOPATHs.
+// findPackage returns full path to existing go package in GOPATHs.
 // findPackage returns "", if it can't find path.
-// If packageName is "", findPackage returns "" too.
-//
-// For example, package "github.com/spf13/hugo"
-// is located in /home/user/go/src/github.com/spf13/hugo,
-// then `findPackage("github.com/spf13/hugo")`
-// will return "/home/user/go/src/github.com/spf13/hugo"
+// If packageName is "", findPackage returns "".
 func findPackage(packageName string) string {
 	if packageName == "" {
 		return ""
@@ -71,6 +69,10 @@ func findPackage(packageName string) string {
 	return ""
 }
 
+// NewProjectFromPath returns Project with specified absolute path to
+// package.
+// If absPath is blank string or if absPath is not actually absolute,
+// it returns nil.
 func NewProjectFromPath(absPath string) *Project {
 	if absPath == "" || !filepath.IsAbs(absPath) {
 		return nil
@@ -78,51 +80,68 @@ func NewProjectFromPath(absPath string) *Project {
 
 	p := new(Project)
 	p.absPath = absPath
-	p.absPath = strings.TrimSuffix(p.absPath, p.CmdDir())
+	p.absPath = strings.TrimSuffix(p.absPath, findCmdDir(p.absPath))
 	p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
 	return p
 }
 
+// trimSrcPath trims at the end of absPaththe srcPath.
 func trimSrcPath(absPath, srcPath string) string {
 	relPath, err := filepath.Rel(srcPath, absPath)
 	if err != nil {
-		er("Cobra only supports project within $GOPATH")
+		er("Cobra supports project only within $GOPATH")
 	}
 	return relPath
 }
 
+// License returns the License object of project.
 func (p *Project) License() License {
-	if p.license.Text == "" { // check if license is not blank
+	if p.license.Text == "" && p.license.Name != "None" {
 		p.license = getLicense()
 	}
 
 	return p.license
 }
 
+// Name returns the name of project, e.g. "github.com/spf13/cobra"
 func (p Project) Name() string {
 	return p.name
 }
 
-func (p *Project) CmdDir() string {
+// CmdPath returns absolute path to directory, where all commands are located.
+//
+// CmdPath returns blank string, only if p.AbsPath() is a blank string.
+func (p *Project) CmdPath() string {
 	if p.absPath == "" {
 		return ""
 	}
-	if p.cmdDir == "" {
-		p.cmdDir = findCmdDir(p.absPath)
+	if p.cmdPath == "" {
+		p.cmdPath = filepath.Join(p.absPath, findCmdDir(p.absPath))
 	}
-	return p.cmdDir
+	return p.cmdPath
 }
 
+// findCmdDir checks if base of absPath is cmd dir and returns it or
+// looks for existing cmd dir in absPath.
+// If the cmd dir doesn't exist, empty, or cannot be found,
+// it returns "cmd".
 func findCmdDir(absPath string) string {
 	if !exists(absPath) || isEmpty(absPath) {
 		return "cmd"
 	}
 
+	base := filepath.Base(absPath)
+	for _, cmdDir := range cmdDirs {
+		if base == cmdDir {
+			return cmdDir
+		}
+	}
+
 	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
-	for _, f := range files {
-		for _, c := range cmdDirs {
-			if f == c {
-				return c
+	for _, file := range files {
+		for _, cmdDir := range cmdDirs {
+			if file == cmdDir {
+				return cmdDir
 			}
 		}
 	}
@@ -130,10 +149,12 @@ func findCmdDir(absPath string) string {
 	return "cmd"
 }
 
+// AbsPath returns absolute path of project.
 func (p Project) AbsPath() string {
 	return p.absPath
 }
 
+// SrcPath returns absolute path to $GOPATH/src where project is located.
 func (p *Project) SrcPath() string {
 	if p.srcPath != "" {
 		return p.srcPath
