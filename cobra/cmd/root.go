@@ -23,7 +23,6 @@ import (
 
 var cfgFile, projectBase, userLicense string // are used for flags
 
-// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "cobra",
 	Short: "A generator for Cobra based Applications",
@@ -32,7 +31,6 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 }
 
-//Execute adds all child commands to the root command sets flags appropriately.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)

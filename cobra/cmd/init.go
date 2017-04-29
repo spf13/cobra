@@ -27,7 +27,6 @@ func init() {
 	RootCmd.AddCommand(initCmd)
 }
 
-// initialize Command
 var initCmd = &cobra.Command{
 	Use:     "init [name]",
 	Aliases: []string{"initialize", "initialise", "create"},
@@ -69,27 +68,27 @@ func initializePath(project *Project) {
 			er(err)
 		}
 	} else if !isEmpty(project.AbsPath()) { // If path exists and is not empty don't use it
-		er("Cobra will not create a new project in a non empty directory")
+		er("Cobra will not create a new project in a non empty directory: " + project.AbsPath())
 	}
 
-	// We have a directory and it's empty.. Time to initialize it.
-	createLicenseFile(project)
+	// We have a directory and it's empty. Time to initialize it.
+	createLicenseFile(project.License(), project.AbsPath())
 	createMainFile(project)
 	createRootCmdFile(project)
 }
 
-func createLicenseFile(project *Project) {
+func createLicenseFile(license License, path string) {
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
 
 	// Generate license template from text and data.
-	text, err := executeTemplate(project.License().Text, data)
+	text, err := executeTemplate(license.Text, data)
 	if err != nil {
 		er(err)
 	}
 
 	// Write license text to LICENSE file.
-	err = writeStringToFile(filepath.Join(project.AbsPath(), "LICENSE"), text)
+	err = writeStringToFile(filepath.Join(path, "LICENSE"), text)
 	if err != nil {
 		er(err)
 	}
@@ -110,7 +109,7 @@ func main() {
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
 	data["license"] = project.License().Header
-	data["importpath"] = path.Join(project.Name(), project.CmdDir())
+	data["importpath"] = path.Join(project.Name(), filepath.Base(project.CmdPath()))
 
 	mainScript, err := executeTemplate(mainTemplate, data)
 	if err != nil {
@@ -199,19 +198,21 @@ func initConfig() {
 	data["copyright"] = copyrightLine()
 	data["viper"] = viper.GetBool("useViper")
 	data["license"] = project.License().Header
+	data["appName"] = path.Base(project.Name())
 
 	rootCmdScript, err := executeTemplate(template, data)
 	if err != nil {
 		er(err)
 	}
 
-	err = writeStringToFile(filepath.Join(project.AbsPath(), project.CmdDir(), "root.go"), rootCmdScript)
+	err = writeStringToFile(filepath.Join(project.CmdPath(), "root.go"), rootCmdScript)
 	if err != nil {
 		er(err)
 	}
 
-	fmt.Println("Your Cobra application is ready at")
-	fmt.Println(project.AbsPath() + "\n")
-	fmt.Println("Give it a try by going there and running `go run main.go`.")
-	fmt.Println("Add commands to it by running `cobra add [cmdname]`")
+	fmt.Println(`Your Cobra application is ready at
+` + project.AbsPath() + `.
+
+Give it a try by going there and running ` + "`go run main.go`." + `
+Add commands to it by running ` + "`cobra add [cmdname]`.")
 }

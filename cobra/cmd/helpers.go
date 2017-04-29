@@ -99,38 +99,36 @@ func executeTemplate(tmplStr string, data interface{}) (string, error) {
 }
 
 func writeStringToFile(path string, s string) error {
-	return safeWriteToDisk(path, strings.NewReader(s))
+	return writeToFile(path, strings.NewReader(s))
 }
 
-// safeWriteToDisk as WriteToDisk but checks to see if file/directory already exists.
-func safeWriteToDisk(inpath string, r io.Reader) (err error) {
-	dir := filepath.Dir(inpath)
-	ospath := filepath.FromSlash(dir)
+// writeToFile writes r to file with path only
+// if file/directory on given path doesn't exist.
+// If file/directory exists on given path, then
+// it terminates app and prints an appropriate error.
+func writeToFile(path string, r io.Reader) error {
+	if exists(path) {
+		return fmt.Errorf("%v already exists", path)
+	}
 
-	if ospath != "" {
-		err = os.MkdirAll(ospath, 0777)
-		if err != nil {
-			return
+	dir := filepath.Dir(path)
+	if dir != "" {
+		if err := os.MkdirAll(dir, 0777); err != nil {
+			return err
 		}
 	}
 
-	if exists(inpath) {
-		return fmt.Errorf("%v already exists", inpath)
-	}
-	if _, err := os.Stat(inpath); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	file, err := os.Create(inpath)
+	file, err := os.Create(path)
 	if err != nil {
-		return
+		return err
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, r)
-	return
+	return err
 }
 
+// commentfyString comments every line of in.
 func commentifyString(in string) string {
 	var newlines []string
 	lines := strings.Split(in, "\n")
