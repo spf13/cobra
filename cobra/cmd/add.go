@@ -15,8 +15,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,9 +26,8 @@ func init() {
 	RootCmd.AddCommand(addCmd)
 }
 
-var pName string
+var parentName string
 
-// initialize Command
 var addCmd = &cobra.Command{
 	Use:     "add [command name]",
 	Aliases: []string{"command"},
@@ -40,35 +39,28 @@ and register it to its parent (default RootCmd).
 If you want your command to be public, pass in the command name
 with an initial uppercase letter.
 
-Example: cobra add server  -> resulting in a new cmd/server.go
-  `,
+Example: cobra add server -> resulting in a new cmd/server.go`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
+		if len(args) < 1 {
 			er("add needs a name for the command")
 		}
-		guessProjectPath()
-		createCmdFile(args[0])
+		wd, err := os.Getwd()
+		if err != nil {
+			er(err)
+		}
+		project := NewProjectFromPath(wd)
+		createCmdFile(project, args[0])
 	},
 }
 
 func init() {
-	addCmd.Flags().StringVarP(&pName, "parent", "p", "RootCmd", "name of parent command for this command")
+	addCmd.Flags().StringVarP(&parentName, "parent", "p", "RootCmd", "name of parent command for this command")
 }
 
-func parentName() string {
-	if !strings.HasSuffix(strings.ToLower(pName), "cmd") {
-		return pName + "Cmd"
-	}
-
-	return pName
-}
-
-func createCmdFile(cmdName string) {
-	lic := getLicense()
-
-	template := `{{ comment .copyright }}
-{{ comment .license }}
+func createCmdFile(project *Project, cmdName string) {
+	template := `{{comment .copyright}}
+{{comment .license}}
 
 package cmd
 
@@ -79,8 +71,8 @@ import (
 )
 
 // {{.cmdName}}Cmd represents the {{.cmdName}} command
-var {{ .cmdName }}Cmd = &cobra.Command{
-	Use:   "{{ .cmdName }}",
+var {{.cmdName}}Cmd = &cobra.Command{
+	Use:   "{{.cmdName}}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -89,13 +81,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.` + "`" + `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("{{ .cmdName }} called")
+		fmt.Println("{{.cmdName}} called")
 	},
 }
 
 func init() {
-	{{ .parentName }}.AddCommand({{ .cmdName }}Cmd)
+	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -106,23 +97,26 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 }
 `
 
-	var data map[string]interface{}
-	data = make(map[string]interface{})
-
+	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
-	data["license"] = lic.Header
-	data["appName"] = projectName()
+	data["license"] = project.License().Header
 	data["viper"] = viper.GetBool("useViper")
-	data["parentName"] = parentName()
+	data["parentName"] = parentName
 	data["cmdName"] = cmdName
 
-	err := writeTemplateToFile(filepath.Join(ProjectPath(), guessCmdDir()), cmdName+".go", template, data)
+	filePath := filepath.Join(project.AbsPath(), project.CmdDir(), cmdName+".go")
+
+	cmdScript, err := executeTemplate(template, data)
 	if err != nil {
 		er(err)
 	}
-	fmt.Println(cmdName, "created at", filepath.Join(ProjectPath(), guessCmdDir(), cmdName+".go"))
+	err = writeStringToFile(filePath, cmdScript)
+	if err != nil {
+		er(err)
+	}
+
+	fmt.Println(cmdName, "created at", filePath)
 }

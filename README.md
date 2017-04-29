@@ -79,11 +79,11 @@ A few good real world examples may better illustrate this point.
 
 In the following example, 'server' is a command, and 'port' is a flag:
 
-    > hugo server --port=1313
+    hugo server --port=1313
 
 In this command we are telling Git to clone the url bare.
 
-    > git clone URL --bare
+    git clone URL --bare
 
 ## Commands
 
@@ -130,7 +130,7 @@ Using Cobra is easy. First, use `go get` to install the latest version
 of the library. This command will install the `cobra` generator executible
 along with the library:
 
-    > go get -v github.com/spf13/cobra/cobra
+    go get -v github.com/spf13/cobra/cobra
 
 Next, include Cobra in your application:
 
@@ -180,7 +180,7 @@ commands you want. It's the easiest way to incorporate Cobra into your applicati
 
 In order to use the cobra command, compile it using the following command:
 
-    > go get github.com/spf13/cobra/cobra
+    go get github.com/spf13/cobra/cobra
 
 This will create the cobra executable under your `$GOPATH/bin` directory.
 

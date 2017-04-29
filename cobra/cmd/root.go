@@ -21,8 +21,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var userLicense string
+var cfgFile, projectBase, userLicense string // are used for flags
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -42,7 +41,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	initViper()
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
 	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
@@ -55,17 +54,16 @@ func init() {
 	viper.SetDefault("license", "apache")
 }
 
-// Read in config file and ENV variables if set.
-func initConfig() {
+func initViper() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.AddConfigPath(os.Getenv("HOME"))
+		viper.SetConfigName(".cobra")
 	}
 
-	viper.SetConfigName(".cobra")          // name of config file (without extension)
-	viper.AddConfigPath(os.Getenv("HOME")) // adding home directory as first search path
-	viper.AutomaticEnv()                   // read in environment variables that match
+	viper.AutomaticEnv()
 
-	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
