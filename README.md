@@ -48,7 +48,7 @@ Cobra provides:
 * Automatically generated bash autocomplete for your application
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
-* The flexibilty to define your own help, usage, etc.
+* The flexibility to define your own help, usage, etc.
 * Optional tight integration with [viper](http://github.com/spf13/viper) for 12-factor apps
 
 Cobra has an exceptionally clean interface and simple design without needless
