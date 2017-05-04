@@ -25,7 +25,6 @@ import (
 
 func init() {
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "RootCmd", "name of parent command for this command")
-	RootCmd.AddCommand(addCmd)
 }
 
 var parentName string

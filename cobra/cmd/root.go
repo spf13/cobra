@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,12 +35,13 @@ to quickly create a Cobra application.`,
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 }
 
 func init() {
 	initViper()
+
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
 	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
@@ -50,13 +52,26 @@ func init() {
 	viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
+
+	RootCmd.AddCommand(initCmd)
+	RootCmd.AddCommand(addCmd)
+
 }
 
 func initViper() {
-	if cfgFile != "" { // enable ability to specify config file via flag
+	if cfgFile != "" {
+		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		viper.AddConfigPath(os.Getenv("HOME"))
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(home)
+			os.Exit(1)
+		}
+
+		// Search config in home directory with name ".cobra" (without extension).
+		viper.AddConfigPath(home)
 		viper.SetConfigName(".cobra")
 	}
 
