@@ -221,21 +221,15 @@ func dirExists(path string) (bool, error) {
 	return false, err
 }
 
-func writeTemplateToFile(path string, file string, template string, data interface{}) error {
+func writeTemplateToFile(path, file, template string, data interface{}) error {
 	filename := filepath.Join(path, file)
 
 	r, err := templateToReader(template, data)
-
 	if err != nil {
 		return err
 	}
 
-	err = safeWriteToDisk(filename, r)
-
-	if err != nil {
-		return err
-	}
-	return nil
+	return safeWriteToDisk(filename, r)
 }
 
 func writeStringToFile(path, file, text string) error {
@@ -251,7 +245,10 @@ func writeStringToFile(path, file, text string) error {
 }
 
 func templateToReader(tpl string, data interface{}) (io.Reader, error) {
-	tmpl := template.New("")
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"title": strings.Title,
+		"eq": func(a, b interface{}) bool { return a == b },
+	})
 	tmpl.Funcs(funcMap)
 	tmpl, err := tmpl.Parse(tpl)
 
@@ -309,4 +306,26 @@ func commentifyString(in string) string {
 		}
 	}
 	return strings.Join(newlines, "\n")
+}
+
+func buildPath(parts []string, endIndex int) string {
+	if endIndex > -1 {
+		return filepath.Join(buildPath(parts, endIndex - 1), parts[endIndex])
+	}
+	return ""
+}
+
+func getChildNames(path, name string) []string {
+	childNames := []string{}
+	fileNames := []string{}
+	if file, err := os.Open(filepath.Join(path, name)); err == nil {
+		fileNames, err = file.Readdirnames(0)
+	}
+	for _, name := range fileNames {
+		// Only consider files with the .go extension to be child commands.
+		if ext := filepath.Ext(name); ext == ".go" {
+			childNames = append(childNames, strings.TrimSuffix(name, ext))
+		}
+	}
+	return childNames
 }

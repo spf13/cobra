@@ -233,8 +233,8 @@ func initConfig() {
 
 	data["viper"] = viper.GetBool("useViper")
 
-	err := writeTemplateToFile(ProjectPath()+string(os.PathSeparator)+guessCmdDir(), "root.go", template, data)
-	if err != nil {
+	path := ProjectPath() + string(os.PathSeparator) + guessCmdDir()
+	if err := writeTemplateToFile(path, "root.go", template, data); err != nil {
 		er(err)
 	}
 

@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"path"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -48,7 +49,17 @@ Example: cobra add server  -> resulting in a new cmd/server.go
 			er("add needs a name for the command")
 		}
 		guessProjectPath()
-		createCmdFile(args[0])
+
+		// Iterate over command parts delimited by "/".
+		cmdParts := strings.Split(args[0], "/")
+		for i := len(cmdParts) - 1; i >= 0; i-- {
+			if i > 0 {
+				pName = cmdParts[i-1]
+			} else {
+				pName = "RootCmd"
+			}
+			createCmdFile(cmdParts[i], buildPath(cmdParts, i - 1))
+		}
 	},
 }
 
@@ -64,22 +75,24 @@ func parentName() string {
 	return pName
 }
 
-func createCmdFile(cmdName string) {
+func createCmdFile(cmdName, cmdPath string) {
 	lic := getLicense()
 
 	template := `{{ comment .copyright }}
 {{ comment .license }}
 
-package cmd
+package {{ .packageName }}
 
 import (
 	"fmt"
-
+	{{ if .importpath }}
+	"{{ .importpath }}"
+	{{ end -}}
 	"github.com/spf13/cobra"
 )
 
-// {{.cmdName}}Cmd represents the {{.cmdName}} command
-var {{ .cmdName }}Cmd = &cobra.Command{
+// {{ .cmdName | title }}Cmd represents the {{ .cmdName }} command
+var {{ .cmdName | title }}Cmd = &cobra.Command{
 	Use:   "{{ .cmdName }}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
@@ -95,23 +108,34 @@ to quickly create a Cobra application.` + "`" + `,
 }
 
 func init() {
-	{{ .parentName }}.AddCommand({{ .cmdName }}Cmd)
+	{{ if eq .parentName "RootCmd" -}}
+	{{ .parentName }}.AddCommand({{ .cmdName | title }}Cmd)
+	{{ end -}}
+	{{ $cmdName := .cmdName -}}
+	{{ range $child := .children -}}
+	{{ $cmdName | title }}Cmd.AddCommand({{ $cmdName }}.{{ $child | title }}Cmd)
 
+	{{ end -}}
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
+	// {{ .cmdName | title }}Cmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	// {{ .cmdName | title }}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 `
 
-	var data map[string]interface{}
-	data = make(map[string]interface{})
+	data := make(map[string]interface{})
+
+	data["packageName"] = "cmd"
+
+	// Determine the package name based on the command file path.
+	if cmdPath != "" {
+		data["packageName"] = path.Base(cmdPath)
+	}
 
 	data["copyright"] = copyrightLine()
 	data["license"] = lic.Header
@@ -120,9 +144,27 @@ func init() {
 	data["parentName"] = parentName()
 	data["cmdName"] = cmdName
 
-	err := writeTemplateToFile(filepath.Join(ProjectPath(), guessCmdDir()), cmdName+".go", template, data)
-	if err != nil {
-		er(err)
+	path := filepath.Join(ProjectPath(), guessCmdDir(), cmdPath)
+	filename := cmdName + ".go"
+
+	children := getChildNames(path, cmdName)
+	if len(children) > 0 {
+		data["importpath"] = filepath.Join(
+			guessImportPath(),
+			guessCmdDir(),
+			cmdPath,
+			cmdName,
+		)
 	}
-	fmt.Println(cmdName, "created at", filepath.Join(ProjectPath(), guessCmdDir(), cmdName+".go"))
+	data["children"] = children
+
+	// Check if the file exists before trying to create it.
+	if doesExist, err := exists(filepath.Join(path, filename)); !doesExist {
+		if err = writeTemplateToFile(path, filename, template, data); err != nil {
+			er(err)
+		}
+		fmt.Println(cmdName, "created at", path)
+	} else {
+		fmt.Println(cmdName, "already exists at", path)
+	}
 }
