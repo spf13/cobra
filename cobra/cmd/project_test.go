@@ -11,7 +11,7 @@ func TestFindExistingPackage(t *testing.T) {
 		t.Fatal("findPackage didn't find the existing package")
 	}
 	if !hasGoPathPrefix(path) {
-		t.Fatal("%q is not in GOPATH, but must be", path)
+		t.Fatalf("%q is not in GOPATH, but must be", path)
 	}
 }
 
