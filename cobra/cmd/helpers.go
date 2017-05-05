@@ -138,42 +138,31 @@ func guessProjectPath() {
 	}
 
 	srcPath := getSrcPath()
-	// if provided, inspect for logical locations
-	if strings.ContainsRune(inputPath, os.PathSeparator) {
-		if filepath.IsAbs(inputPath) || filepath.HasPrefix(inputPath, string(os.PathSeparator)) {
-			// if Absolute, use it
-			projectPath = filepath.Clean(inputPath)
-			return
-		}
-		// If not absolute but contains slashes,
-		// assuming it means create it from $GOPATH
-		count := strings.Count(inputPath, string(os.PathSeparator))
 
-		switch count {
-		// If only one directory deep, assume "github.com"
-		case 1:
-			projectPath = filepath.Join(srcPath, "github.com", inputPath)
-			return
-		case 2:
-			projectPath = filepath.Join(srcPath, inputPath)
-			return
-		default:
-			er("Unknown directory")
+	var base string
+	// if provided, inspect for logical locations
+	if filepath.IsAbs(inputPath) || filepath.HasPrefix(inputPath, string(os.PathSeparator)) {
+		// if Absolute, use it.
+	} else if projectBase != "" {
+		// if projectBase specified any relative path starts with it
+		base = filepath.Join(srcPath, projectBase)
+	} else if inputPath == "." || strings.HasPrefix(inputPath, "./") || strings.HasPrefix(inputPath, "../") {
+		// relative to cwd like 'go test ./'
+		var err error
+		base, err = getWd()
+		if err != nil {
+			er(err)
 		}
 	} else {
-		// hardest case.. just a word.
-		if projectBase == "" {
-			x, err := getWd()
-			if err == nil {
-				projectPath = filepath.Join(x, inputPath)
-				return
-			}
-			er(err)
+		// relative, but not to cwd, so to $GOPATH/src
+		if dir, _ := filepath.Split(inputPath); dir == "" {
+			// If only one directory deep, assume "github.com"
+			base = filepath.Join(srcPath, "github.com")
 		} else {
-			projectPath = filepath.Join(srcPath, projectBase, inputPath)
-			return
+			base = srcPath
 		}
 	}
+	projectPath = filepath.Join(base, inputPath)
 }
 
 // isEmpty checks if a given path is empty.
