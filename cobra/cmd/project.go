@@ -29,21 +29,22 @@ func NewProject(projectName string) *Project {
 	p.absPath = findPackage(projectName)
 
 	// 2. If there are no created project with this path, and user is in GOPATH,
-	// then use GOPATH/src+projectName.
+	// then use GOPATH/src/projectName.
 	if p.absPath == "" {
 		wd, err := os.Getwd()
 		if err != nil {
 			er(err)
 		}
-		for _, goPath := range goPaths {
+		for _, srcPath := range srcPaths {
+			goPath := filepath.Dir(srcPath)
 			if filepath.HasPrefix(wd, goPath) {
-				p.absPath = filepath.Join(goPath, "src", projectName)
+				p.absPath = filepath.Join(srcPath, projectName)
 				break
 			}
 		}
 	}
 
-	// 3. If user is not in GOPATH, then use (first GOPATH)+projectName.
+	// 3. If user is not in GOPATH, then use (first GOPATH)/src/projectName.
 	if p.absPath == "" {
 		p.absPath = filepath.Join(srcPaths[0], projectName)
 	}
@@ -130,23 +131,29 @@ func findCmdDir(absPath string) string {
 		return "cmd"
 	}
 
-	base := filepath.Base(absPath)
-	for _, cmdDir := range cmdDirs {
-		if base == cmdDir {
-			return cmdDir
-		}
+	if isCmdDir(absPath) {
+		return filepath.Base(absPath)
 	}
 
 	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
 	for _, file := range files {
-		for _, cmdDir := range cmdDirs {
-			if file == cmdDir {
-				return cmdDir
-			}
+		if isCmdDir(file) {
+			return file
 		}
 	}
 
 	return "cmd"
+}
+
+// isCmdDir checks if base of name is one of cmdDir.
+func isCmdDir(name string) bool {
+	name = filepath.Base(name)
+	for _, cmdDir := range cmdDirs {
+		if name == cmdDir {
+			return true
+		}
+	}
+	return false
 }
 
 // AbsPath returns absolute path of project.

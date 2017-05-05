@@ -26,7 +26,7 @@ import (
 var projectPath string
 
 var cmdDirs = [...]string{"cmd", "cmds", "command", "commands"}
-var goPaths, srcPaths []string
+var srcPaths []string
 
 func init() {
 	// Initialize goPaths and srcPaths
@@ -35,7 +35,7 @@ func init() {
 		er("$GOPATH is not set")
 	}
 
-	goPaths = filepath.SplitList(envGoPath)
+	goPaths := filepath.SplitList(envGoPath)
 	srcPaths = make([]string, 0, len(goPaths))
 	for _, goPath := range goPaths {
 		srcPaths = append(srcPaths, filepath.Join(goPath, "src"))
