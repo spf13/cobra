@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.
-//In addition to providing an interface, Cobra simultaneously provides a controller to organize your application code.
+// Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.
+// In addition to providing an interface, Cobra simultaneously provides a controller to organize your application code.
 package cobra
 
 import (
@@ -369,8 +369,8 @@ func (c *Command) HelpTemplate() string {
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
 
-func hasNoOptDefVal(name string, f *flag.FlagSet) bool {
-	flag := f.Lookup(name)
+func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
+	flag := fs.Lookup(name)
 	if flag == nil {
 		return false
 	}
@@ -378,14 +378,15 @@ func hasNoOptDefVal(name string, f *flag.FlagSet) bool {
 }
 
 func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	result := false
-	fs.VisitAll(func(flag *flag.Flag) {
-		if flag.Shorthand == name && flag.NoOptDefVal != "" {
-			result = true
-			return
-		}
-	})
-	return result
+	if len(name) == 0 {
+		return false
+	}
+
+	flag := fs.ShorthandLookup(name[:1])
+	if flag == nil {
+		return false
+	}
+	return flag.NoOptDefVal != ""
 }
 
 func stripFlags(args []string, c *Command) []string {
