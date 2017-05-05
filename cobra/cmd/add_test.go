@@ -87,6 +87,8 @@ func TestValidateCmdName(t *testing.T) {
 		{"cmd------Name", "cmdName"},
 		{"cmd______name", "cmdName"},
 		{"cmd------name", "cmdName"},
+		{"cmdName-----", "cmdName"},
+		{"cmdname-", "cmdname"},
 	}
 
 	for _, testCase := range testCases {
