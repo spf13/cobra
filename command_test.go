@@ -227,8 +227,7 @@ func TestFlagErrorFunc(t *testing.T) {
 
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
-//
-// Source: https://github.com/spf13/cobra/issues/404
+// https://github.com/spf13/cobra/issues/404
 func TestSortedFlags(t *testing.T) {
 	cmd := &Command{}
 	cmd.Flags().SortFlags = false
@@ -264,8 +263,7 @@ func isStringInStringSlice(s string, ss []string) bool {
 // TestHelpFlagInHelp checks,
 // if '--help' flag is shown in help for child (executing `parent help child`),
 // that has no other flags.
-//
-// Source: https://github.com/spf13/cobra/issues/302
+// https://github.com/spf13/cobra/issues/302
 func TestHelpFlagInHelp(t *testing.T) {
 	output := new(bytes.Buffer)
 	parent := &Command{Use: "parent", Long: "long", Run: func(*Command, []string) { return }}

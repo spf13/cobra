@@ -51,14 +51,19 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 			er(err)
 		}
 		project := NewProjectFromPath(wd)
+
 		cmdName := validateCmdName(args[0])
-		createCmdFile(project, cmdName)
+		cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
+		createCmdFile(project.License(), cmdPath, cmdName)
+
+		fmt.Fprintln(cmd.OutOrStdout(), cmdName, "created at", cmdPath)
 	},
 }
 
 // validateCmdName returns source without any dashes and underscore.
 // If there will be dash or underscore, next letter will be uppered.
 // It supports only ASCII (1-byte character) strings.
+// https://github.com/spf13/cobra/issues/269
 func validateCmdName(source string) string {
 	i := 0
 	l := len(source)
@@ -102,7 +107,7 @@ func validateCmdName(source string) string {
 	return output
 }
 
-func createCmdFile(project *Project, cmdName string) {
+func createCmdFile(license License, path, cmdName string) {
 	template := `{{comment .copyright}}
 {{comment .license}}
 
@@ -146,21 +151,17 @@ func init() {
 
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
-	data["license"] = project.License().Header
+	data["license"] = license.Header
 	data["viper"] = viper.GetBool("useViper")
 	data["parentName"] = parentName
 	data["cmdName"] = cmdName
-
-	filePath := filepath.Join(project.CmdPath(), cmdName+".go")
 
 	cmdScript, err := executeTemplate(template, data)
 	if err != nil {
 		er(err)
 	}
-	err = writeStringToFile(filePath, cmdScript)
+	err = writeStringToFile(path, cmdScript)
 	if err != nil {
 		er(err)
 	}
-
-	fmt.Println(cmdName, "created at", filePath)
 }

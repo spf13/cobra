@@ -48,16 +48,27 @@ Init will not use an existing directory with contents.`,
 			}
 			project = NewProjectFromPath(wd)
 		} else if len(args) == 1 {
-			project = NewProject(args[0])
+			arg := args[0]
+			if filepath.IsAbs(arg) {
+				project = NewProjectFromPath(arg)
+			} else {
+				project = NewProject(arg)
+			}
 		} else {
 			er("please enter the name")
 		}
 
-		initializePath(project)
+		initializeProject(project)
+
+		fmt.Fprintln(cmd.OutOrStdout(), `Your Cobra application is ready at
+`+project.AbsPath()+`.
+
+Give it a try by going there and running `+"`go run main.go`."+`
+Add commands to it by running `+"`cobra add [cmdname]`.")
 	},
 }
 
-func initializePath(project *Project) {
+func initializeProject(project *Project) {
 	if !exists(project.AbsPath()) { // If path doesn't yet exist, create it
 		err := os.MkdirAll(project.AbsPath(), os.ModePerm)
 		if err != nil {
@@ -216,9 +227,4 @@ func initConfig() {
 		er(err)
 	}
 
-	fmt.Println(`Your Cobra application is ready at
-` + project.AbsPath() + `.
-
-Give it a try by going there and running ` + "`go run main.go`." + `
-Add commands to it by running ` + "`cobra add [cmdname]`.")
 }
