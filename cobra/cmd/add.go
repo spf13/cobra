@@ -77,6 +77,12 @@ func validateCmdName(source string) string {
 				output = source[:i]
 			}
 
+			// If it's last rune and it's dash or underscore,
+			// don't add it output and break the loop.
+			if i == l-1 {
+				break
+			}
+
 			// If next character is dash or underscore,
 			// just skip the current character.
 			if source[i+1] == '-' || source[i+1] == '_' {
