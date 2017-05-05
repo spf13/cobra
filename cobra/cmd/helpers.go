@@ -23,10 +23,6 @@ import (
 	"text/template"
 )
 
-// var BaseDir = ""
-// var AppName = ""
-// var CommandDir = ""
-
 var funcMap template.FuncMap
 var projectPath = ""
 var inputPath = ""
@@ -96,16 +92,24 @@ func guessCmdDir() string {
 
 func guessImportPath() string {
 	guessProjectPath()
-
-	if !strings.HasPrefix(projectPath, getSrcPath()) {
-		er("Cobra only supports project within $GOPATH")
+	srcPaths := getSrcPaths()
+	for _, srcPath := range srcPaths {
+		if strings.HasPrefix(projectPath, srcPath) {
+			return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, srcPath)))
+		}
 	}
 
-	return filepath.ToSlash(filepath.Clean(strings.TrimPrefix(projectPath, getSrcPath())))
+	er("Cobra only supports project within $GOPATH")
+	return ""
 }
 
-func getSrcPath() string {
-	return filepath.Join(os.Getenv("GOPATH"), "src") + string(os.PathSeparator)
+func getSrcPaths() []string {
+	paths := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
+	for i, gopath := range paths {
+		srcPath := filepath.Join(gopath, "src") + string(os.PathSeparator)
+		paths[i] = srcPath
+	}
+	return paths
 }
 
 func projectName() string {
@@ -137,7 +141,7 @@ func guessProjectPath() {
 		}
 	}
 
-	srcPath := getSrcPath()
+	srcPaths := getSrcPaths()
 	// if provided, inspect for logical locations
 	if strings.ContainsRune(inputPath, os.PathSeparator) {
 		if filepath.IsAbs(inputPath) || filepath.HasPrefix(inputPath, string(os.PathSeparator)) {
@@ -152,10 +156,24 @@ func guessProjectPath() {
 		switch count {
 		// If only one directory deep, assume "github.com"
 		case 1:
-			projectPath = filepath.Join(srcPath, "github.com", inputPath)
+			for _, srcPath := range srcPaths {
+				fpath := filepath.Join(srcPath, "github.com", inputPath)
+				if b, _ := exists(fpath); b {
+					projectPath = fpath
+					return
+				}
+			}
+			projectPath = filepath.Join(srcPaths[0], "github.com", inputPath)
 			return
 		case 2:
-			projectPath = filepath.Join(srcPath, inputPath)
+			for _, srcPath := range srcPaths {
+				fpath := filepath.Join(srcPath, inputPath)
+				if b, _ := exists(fpath); b {
+					projectPath = fpath
+					return
+				}
+			}
+			projectPath = filepath.Join(srcPaths[0], inputPath)
 			return
 		default:
 			er("Unknown directory")
@@ -164,13 +182,20 @@ func guessProjectPath() {
 		// hardest case.. just a word.
 		if projectBase == "" {
 			x, err := getWd()
-			if err == nil {
-				projectPath = filepath.Join(x, inputPath)
-				return
+			if err != nil {
+				er(err)
 			}
-			er(err)
+			projectPath = filepath.Join(x, inputPath)
+			return
 		} else {
-			projectPath = filepath.Join(srcPath, projectBase, inputPath)
+			for _, srcPath := range srcPaths {
+				fpath := filepath.Join(srcPath, projectBase, inputPath)
+				if b, _ := exists(fpath); b {
+					projectPath = fpath
+					return
+				}
+			}
+			projectPath = filepath.Join(srcPaths[0], projectBase, inputPath)
 			return
 		}
 	}
