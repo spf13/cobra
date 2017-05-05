@@ -138,7 +138,7 @@ func findCmdDir(absPath string) string {
 	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
 	for _, file := range files {
 		if isCmdDir(file) {
-			return file
+			return filepath.Base(file)
 		}
 	}
 
