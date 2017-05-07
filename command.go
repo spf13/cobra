@@ -725,6 +725,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 // InitDefaultHelpFlag adds default help flag to c.
 // It is called automatically by executing the c or by calling help and usage.
+// If c already has help flag, it will do nothing.
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
