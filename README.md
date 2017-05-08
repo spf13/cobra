@@ -40,7 +40,7 @@ Cobra provides:
 * Fully POSIX-compliant flags (including short & long versions)
 * Nested subcommands
 * Global, local and cascading flags
-* Easy generation of applications & commands with `cobra create appname` & `cobra add cmdname`
+* Easy generation of applications & commands with `cobra init appname` & `cobra add cmdname`
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic detailed help for `app help [command]`
