@@ -83,11 +83,8 @@ func exists(path string) bool {
 	return false
 }
 
-var tmpl = template.New("").Funcs(template.FuncMap{"comment": commentifyString})
-
 func executeTemplate(tmplStr string, data interface{}) (string, error) {
-	var err error
-	tmpl, err = tmpl.Parse(tmplStr)
+	tmpl, err := template.New("").Funcs(template.FuncMap{"comment": commentifyString}).Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}
