@@ -18,7 +18,7 @@ func TestGoldenInitCmd(t *testing.T) {
 	defer os.RemoveAll(project.AbsPath())
 
 	os.Args = []string{"cobra", "init", projectName}
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		t.Fatal("Error by execution:", err)
 	}
 
