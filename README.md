@@ -276,7 +276,6 @@ You will optionally provide additional commands as you see fit.
 
 The root command represents your binary itself.
 
-
 #### Manually create rootCmd
 
 Cobra doesn't require any special constructors. Simply create your commands.
@@ -298,9 +297,18 @@ var RootCmd = &cobra.Command{
 
 You will additionally define flags and handle configuration in your init() function.
 
-for example cmd/root.go:
+For example cmd/root.go:
 
 ```go
+import (
+	"fmt"
+	"os"
+
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
@@ -313,6 +321,30 @@ func init() {
 	viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
+}
+
+func main() {
+  // Don't forget to read config either from cfgFile or from home directory!
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(home)
+			os.Exit(1)
+		}
+
+		// Search config in home directory with name ".cobra" (without extension).
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".cobra")
+	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Can't read config:", err)
+    os.Exit(1)
+	}
 }
 ```
 
@@ -340,7 +372,6 @@ func main() {
 	}
 }
 ```
-
 
 ### Create additional commands
 
@@ -431,6 +462,23 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
+### Bind Flags with Config
+
+You can also bind your flags with [viper](https://github.com/spf13/viper):
+```go
+var author string
+
+func init() {
+	RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
+	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
+}
+```
+
+In this example the persistent flag `author` is bound with `viper`.
+**Note**, that the variable `author` will not be set to the value from config,
+when the `--author` flag is not provided by user.
+
+More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
 
 ## Example
 
