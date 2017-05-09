@@ -24,7 +24,7 @@ import (
 
 var cfgFile, projectBase, userLicense string // are used for flags
 
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use:   "cobra",
 	Short: "A generator for Cobra based Applications",
 	Long: `Cobra is a CLI library for Go that empowers applications.
@@ -32,8 +32,9 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 }
 
+// Execute executes the root command.
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -42,19 +43,19 @@ func Execute() {
 func init() {
 	initViper()
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
-	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
-	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
-	RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `license` in config)")
-	RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
-	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
-	viper.BindPFlag("projectbase", RootCmd.PersistentFlags().Lookup("projectbase"))
-	viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory, e.g. github.com/spf13/")
+	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
+	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `license` in config)")
+	rootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
+	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
+	viper.BindPFlag("projectbase", rootCmd.PersistentFlags().Lookup("projectbase"))
+	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
 
-	RootCmd.AddCommand(initCmd)
-	RootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(addCmd)
 
 }
 
