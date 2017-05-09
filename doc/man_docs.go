@@ -77,6 +77,8 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	return GenMan(cmd, &headerCopy, f)
 }
 
+// GenManTreeOptions is the options for generating the man pages.
+// Used only in GenManTreeFromOpts.
 type GenManTreeOptions struct {
 	Header           *GenManHeader
 	Path             string
