@@ -860,38 +860,11 @@ out everything Cobra knows about the flags for each command.
 command.DebugFlags()
 ```
 
-## Release Notes
-* **0.9.0** June 17, 2014
-  * flags can appears anywhere in the args (provided they are unambiguous)
-  * --help prints usage screen for app or command
-  * Prefix matching for commands
-  * Cleaner looking help and usage output
-  * Extensive test suite
-* **0.8.0** Nov 5, 2013
-  * Reworked interface to remove commander completely
-  * Command now primary structure
-  * No initialization needed
-  * Usage & Help templates & functions definable at any level
-  * Updated Readme
-* **0.7.0** Sept 24, 2013
-  * Needs more eyes
-  * Test suite
-  * Support for automatic error messages
-  * Support for help command
-  * Support for printing to any io.Writer instead of os.Stderr
-  * Support for persistent flags which cascade down tree
-  * Ready for integration into Hugo
-* **0.1.0** Sept 3, 2013
-  * Implement first draft
-
 ## Extensions
 
 Libraries for extending Cobra:
 
 * [cmdns](https://github.com/gosuri/cmdns): Enables name spacing a command's immediate children. It provides an alternative way to structure subcommands, similar to `heroku apps:create` and `ovrclk clusters:launch`.
-
-## ToDo
-* Launch proper documentation site
 
 ## Contributing
 
@@ -912,6 +885,3 @@ Names in no particular order:
 ## License
 
 Cobra is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/spf13/cobra/blob/master/LICENSE.txt)
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/spf13/cobra/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
