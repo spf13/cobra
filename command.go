@@ -55,23 +55,13 @@ type Command struct {
 	ArgAliases []string
 	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
 	BashCompletionFunction string
-	// Deprecated defines, if this command deprecated and should print this string when used.
+	// Deprecated defines, if this command is deprecated and should print this string when used.
 	Deprecated string
-	// Hidden defines, if this command hidden and should NOT show up in the list of available commands.
+	// Hidden defines, if this command is hidden and should NOT show up in the list of available commands.
 	Hidden bool
 	// Annotations are key/value pairs that can be used by applications to identify or
 	// group commands.
 	Annotations map[string]string
-	// flags is full set of flags.
-	flags *flag.FlagSet
-	// pflags contains persistent flags.
-	pflags *flag.FlagSet
-	// lflags contains local flags.
-	lflags *flag.FlagSet
-	// iflags contains inherited flags.
-	iflags *flag.FlagSet
-	// parentsPflags is all persistent flags of cmd's parents.
-	parentsPflags *flag.FlagSet
 	// SilenceErrors is an option to quiet errors down stream.
 	SilenceErrors bool
 	// Silence Usage is an option to silence usage when an error occurs.
@@ -125,12 +115,27 @@ type Command struct {
 	commandsMaxUseLen         int
 	commandsMaxCommandPathLen int
 	commandsMaxNameLen        int
-	// commandsAreSorted defines, if commands slice are sorted or not.
+	// commandsAreSorted defines, if command slice are sorted or not.
 	commandsAreSorted bool
-	// flagErrorBuf contains all error messages from pflag.
-	flagErrorBuf *bytes.Buffer
+
 	// args is actual args parsed from flags.
 	args []string
+	// flagErrorBuf contains all error messages from pflag.
+	flagErrorBuf *bytes.Buffer
+	// flags is full set of flags.
+	flags *flag.FlagSet
+	// pflags contains persistent flags.
+	pflags *flag.FlagSet
+	// lflags contains local flags.
+	lflags *flag.FlagSet
+	// iflags contains inherited flags.
+	iflags *flag.FlagSet
+	// parentsPflags is all persistent flags of cmd's parents.
+	parentsPflags *flag.FlagSet
+	// globNormFunc is the global normalization function
+	// that we can use on every pflag set and children commands
+	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
+
 	// output is an output writer defined by user.
 	output io.Writer
 	// usageFunc is usage func defined by user.
@@ -144,12 +149,9 @@ type Command struct {
 	helpTemplate string
 	// helpFunc is help func defined by user.
 	helpFunc func(*Command, []string)
-	// helpCommand is command with usage 'help'. If it not defined by user,
+	// helpCommand is command with usage 'help'. If it's not defined by user,
 	// cobra uses default help command.
 	helpCommand *Command
-	// globNormFunc is the global normalization function
-	// that we can use on every pflag set and children commands
-	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
