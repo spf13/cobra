@@ -28,49 +28,51 @@ import (
 )
 
 // Command is just that, a command for your application.
-// eg.  'go run' ... 'run' is the command. Cobra requires
+// E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
 // definition to ensure usability.
 type Command struct {
-	// Name is the command name, usually the executable's name.
+	// name is the command name, usually the executable's name.
 	name string
-	// The one-line usage message.
+	// Use is the one-line usage message.
 	Use string
-	// An array of aliases that can be used instead of the first word in Use.
+	// Aliases is an array of aliases that can be used instead of the first word in Use.
 	Aliases []string
-	// An array of command names for which this command will be suggested - similar to aliases but only suggests.
+	// SuggestFor is an array of command names for which this command will be suggested -
+	// similar to aliases but only suggests.
 	SuggestFor []string
-	// The short description shown in the 'help' output.
+	// Short is the short description shown in the 'help' output.
 	Short string
-	// The long message shown in the 'help <this-command>' output.
+	// Long is the long message shown in the 'help <this-command>' output.
 	Long string
-	// Examples of how to use the command
+	// Example is examples of how to use the command.
 	Example string
-	// List of all valid non-flag arguments that are accepted in bash completions
+	// ValidArgs is list of all valid non-flag arguments that are accepted in bash completions
 	ValidArgs []string
-	// List of aliases for ValidArgs. These are not suggested to the user in the bash
-	// completion, but accepted if entered manually.
+	// ArgAliases is List of aliases for ValidArgs.
+	// These are not suggested to the user in the bash completion,
+	// but accepted if entered manually.
 	ArgAliases []string
-	// Custom functions used by the bash autocompletion generator
+	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
 	BashCompletionFunction string
-	// Is this command deprecated and should print this string when used?
+	// Deprecated defines, if this command deprecated and should print this string when used.
 	Deprecated string
-	// Is this command hidden and should NOT show up in the list of available commands?
+	// Hidden defines, if this command hidden and should NOT show up in the list of available commands.
 	Hidden bool
 	// Annotations are key/value pairs that can be used by applications to identify or
-	// group commands
+	// group commands.
 	Annotations map[string]string
-	// Full set of flags
+	// flags is full set of flags.
 	flags *flag.FlagSet
-	// Set of flags childrens of this command will inherit
+	// pflags contains persistent flags.
 	pflags *flag.FlagSet
-	// Flags that are declared specifically by this command (not inherited).
+	// lflags contains local flags.
 	lflags *flag.FlagSet
-	// Inherited flags.
+	// iflags contains inherited flags.
 	iflags *flag.FlagSet
-	// All persistent flags of cmd's parents.
+	// parentsPflags is all persistent flags of cmd's parents.
 	parentsPflags *flag.FlagSet
-	// SilenceErrors is an option to quiet errors down stream
+	// SilenceErrors is an option to quiet errors down stream.
 	SilenceErrors bool
 	// Silence Usage is an option to silence usage when an error occurs.
 	SilenceUsage bool
@@ -80,61 +82,74 @@ type Command struct {
 	//   * Run()
 	//   * PostRun()
 	//   * PersistentPostRun()
-	// All functions get the same args, the arguments after the command name
-	// PersistentPreRun: children of this command will inherit and execute
+	// All functions get the same args, the arguments after the command name.
+	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
-	// PersistentPreRunE: PersistentPreRun but returns an error
+	// PersistentPreRunE: PersistentPreRun but returns an error.
 	PersistentPreRunE func(cmd *Command, args []string) error
 	// PreRun: children of this command will not inherit.
 	PreRun func(cmd *Command, args []string)
-	// PreRunE: PreRun but returns an error
+	// PreRunE: PreRun but returns an error.
 	PreRunE func(cmd *Command, args []string) error
-	// Run: Typically the actual work function. Most commands will only implement this
+	// Run: Typically the actual work function. Most commands will only implement this.
 	Run func(cmd *Command, args []string)
-	// RunE: Run but returns an error
+	// RunE: Run but returns an error.
 	RunE func(cmd *Command, args []string) error
 	// PostRun: run after the Run command.
 	PostRun func(cmd *Command, args []string)
-	// PostRunE: PostRun but returns an error
+	// PostRunE: PostRun but returns an error.
 	PostRunE func(cmd *Command, args []string) error
-	// PersistentPostRun: children of this command will inherit and execute after PostRun
+	// PersistentPostRun: children of this command will inherit and execute after PostRun.
 	PersistentPostRun func(cmd *Command, args []string)
-	// PersistentPostRunE: PersistentPostRun but returns an error
+	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
-	// DisableAutoGenTag remove
+	// DisableFlagParsing disables the flag parsing.
+	// If this is true all flags will be passed to the command as arguments.
+	DisableFlagParsing bool
+	// DisableAutoGenTag defines, if gen tag ("Auto generated by spf13/cobra...")
+	// will be printed by generating docs for this command.
 	DisableAutoGenTag bool
-	// Commands is the list of commands supported by this program.
+
+	// DisableSuggestions disables the suggestions based on Levenshtein distance
+	// that go along with 'unknown command' messages.
+	DisableSuggestions bool
+	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
+	// Must be > 0.
+	SuggestionsMinimumDistance int
+
+	// commands is the list of commands supported by this program.
 	commands []*Command
-	// Parent Command for this command
+	// parent is a parent command for this command.
 	parent *Command
-	// max lengths of commands' string lengths for use in padding
+	// max lengths of commands' string lengths for use in padding.
 	commandsMaxUseLen         int
 	commandsMaxCommandPathLen int
 	commandsMaxNameLen        int
-	// is commands slice are sorted or not
+	// commandsAreSorted defines, if commands slice are sorted or not.
 	commandsAreSorted bool
-
 	// flagErrorBuf contains all error messages from pflag.
 	flagErrorBuf *bytes.Buffer
-
-	args          []string             // actual args parsed from flags
-	output        io.Writer            // out writer if set in SetOutput(w)
-	usageFunc     func(*Command) error // Usage can be defined by application
-	usageTemplate string               // Can be defined by Application
+	// args is actual args parsed from flags.
+	args []string
+	// output is an output writer defined by user.
+	output io.Writer
+	// usageFunc is usage func defined by user.
+	usageFunc func(*Command) error
+	// usageTemplate is usage template defined by user.
+	usageTemplate string
+	// flagErrorFunc is func defined by user and it's called when the parsing of
+	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
-	helpTemplate  string                   // Can be defined by Application
-	helpFunc      func(*Command, []string) // Help can be defined by application
-	helpCommand   *Command                 // The help command
-	// The global normalization function that we can use on every pFlag set and children commands
+	// helpTemplate is help template defined by user.
+	helpTemplate string
+	// helpFunc is help func defined by user.
+	helpFunc func(*Command, []string)
+	// helpCommand is command with usage 'help'. If it not defined by user,
+	// cobra uses default help command.
+	helpCommand *Command
+	// globNormFunc is the global normalization function
+	// that we can use on every pflag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
-
-	// Disable the suggestions based on Levenshtein distance that go along with 'unknown command' messages
-	DisableSuggestions bool
-	// If displaying suggestions, allows to set the minimum levenshtein distance to display, must be > 0
-	SuggestionsMinimumDistance int
-
-	// Disable the flag parsing. If this is true all flags will be passed to the command as arguments.
-	DisableFlagParsing bool
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
