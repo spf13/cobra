@@ -15,7 +15,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -35,8 +34,7 @@ to quickly create a Cobra application.`,
 // Execute executes the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		er(err)
 	}
 }
 
@@ -67,8 +65,7 @@ func initViper() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(home)
-			os.Exit(1)
+			er(err)
 		}
 
 		// Search config in home directory with name ".cobra" (without extension).
