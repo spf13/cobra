@@ -23,8 +23,6 @@ import (
 	"text/template"
 )
 
-var projectPath string
-
 var cmdDirs = [...]string{"cmd", "cmds", "command", "commands"}
 var srcPaths []string
 

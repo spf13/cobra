@@ -37,7 +37,7 @@ func NewProject(projectName string) *Project {
 		}
 		for _, srcPath := range srcPaths {
 			goPath := filepath.Dir(srcPath)
-			if filepath.HasPrefix(wd, goPath) {
+			if strings.HasPrefix(wd, goPath) {
 				p.absPath = filepath.Join(srcPath, projectName)
 				break
 			}
