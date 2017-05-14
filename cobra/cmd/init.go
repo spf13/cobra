@@ -197,13 +197,13 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(home)
+			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".cobra" (without extension).
+		// Search config in home directory with name ".{{ .appName }}" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".cobra")
+		viper.SetConfigName(".{{ .appName }}")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
