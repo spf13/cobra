@@ -24,6 +24,7 @@ var versionUsed int
 
 const strtwoParentHelp = "help message for parent flag strtwo"
 const strtwoChildHelp = "help message for child flag strtwo"
+const nonExistentCommand = "non_existent_command"
 
 var cmdHidden = &Command{
 	Use:   "hide [secret string to print]",
@@ -211,7 +212,7 @@ func initializeWithSameName() *Command {
 	return c
 }
 
-func initializeWithRootCmd() *Command {
+func initializeWithRootCmdWithRun() *Command {
 	cmdRootWithRun.ResetCommands()
 	tt, tp, te, tr, rootcalled = nil, nil, nil, nil, false
 	flagInit()
@@ -228,16 +229,28 @@ type resulter struct {
 }
 
 func fullSetupTest(input string) resulter {
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 
 	return fullTester(c, input)
 }
 
 func noRRSetupTestSilenced(input string) resulter {
 	c := initialize()
+
+	silenceErrors := c.SilenceErrors
+	silenceUsage := c.SilenceUsage
+
 	c.SilenceErrors = true
 	c.SilenceUsage = true
-	return fullTester(c, input)
+
+	res := fullTester(c, input)
+
+	// Restore previous values of silencing errors and usage.
+	// This is a workaround for these values not being reset properly between tests.
+	c.SilenceErrors = silenceErrors
+	c.SilenceUsage = silenceUsage
+
+	return res
 }
 
 func noRRSetupTest(input string) resulter {
@@ -247,7 +260,7 @@ func noRRSetupTest(input string) resulter {
 }
 
 func rootOnlySetupTest(input string) resulter {
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 
 	return simpleTester(c, input)
 }
@@ -584,7 +597,7 @@ func TestTrailingCommandFlags(t *testing.T) {
 }
 
 func TestInvalidSubcommandFlags(t *testing.T) {
-	cmd := initializeWithRootCmd()
+	cmd := initializeWithRootCmdWithRun()
 	cmd.AddCommand(cmdTimes)
 
 	result := simpleTester(cmd, "times --inttwo=2 --badflag=bar")
@@ -598,7 +611,7 @@ func TestInvalidSubcommandFlags(t *testing.T) {
 }
 
 func TestSubcommandExecuteC(t *testing.T) {
-	cmd := initializeWithRootCmd()
+	cmd := initializeWithRootCmdWithRun()
 	double := &Command{
 		Use: "double message",
 		Run: func(c *Command, args []string) {
@@ -633,7 +646,7 @@ func TestSubcommandExecuteC(t *testing.T) {
 }
 
 func TestSubcommandArgEvaluation(t *testing.T) {
-	cmd := initializeWithRootCmd()
+	cmd := initializeWithRootCmdWithRun()
 
 	first := &Command{
 		Use: "first",
@@ -752,7 +765,7 @@ func TestVisitParents(t *testing.T) {
 
 func TestRunnableRootCommandNilInput(t *testing.T) {
 	var emptyArg []string
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 
 	buf := new(bytes.Buffer)
 	// Testing flag with invalid input
@@ -776,7 +789,7 @@ func TestRunnableRootCommandEmptyInput(t *testing.T) {
 	args[0] = ""
 	args[1] = "--introot=12"
 	args[2] = ""
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 
 	buf := new(bytes.Buffer)
 	// Testing flag with invalid input
@@ -925,11 +938,59 @@ func TestRootUnknownCommandSilenced(t *testing.T) {
 	}
 }
 
-func TestRootSuggestions(t *testing.T) {
-	outputWithSuggestions := "Error: unknown command \"%s\" for \"cobra-test\"\n\nDid you mean this?\n\t%s\n\nRun 'cobra-test --help' for usage.\n"
-	outputWithoutSuggestions := "Error: unknown command \"%s\" for \"cobra-test\"\nRun 'cobra-test --help' for usage.\n"
+func TestSubcommandChecksErrorsWhenSubcommandNotFound(t *testing.T) {
+	rootCmd := initialize()
+	rootCmd.AddCommand(cmdSubNoRun)
+	// Current semantics is that commands with no subcommands and no run print out the description.
+	cmdSubNoRun.AddCommand(cmdEcho)
 
-	cmd := initializeWithRootCmd()
+	result := simpleTester(rootCmd, nonExistentCommand)
+	if result.Error == nil {
+		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
+	}
+	cmdName := rootCmd.Name()
+	expectedOutput := fmt.Sprintf("Error: unknown command %q for %q\nRun '%s --help' for usage.\n", nonExistentCommand, rootCmd.Name(), rootCmd.Name())
+	if result.Output != expectedOutput {
+		t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expectedOutput, result.Output)
+	}
+
+	result = simpleTester(rootCmd, cmdSubNoRun.Name()+" "+nonExistentCommand)
+	if result.Error == nil {
+		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
+	}
+	cmdName = rootCmd.Name() + " " + cmdSubNoRun.Name()
+	expectedOutput = fmt.Sprintf("Error: unknown command %q for %q\nRun '%s --help' for usage.\n", nonExistentCommand, cmdName, cmdName)
+	if result.Output != expectedOutput {
+		t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expectedOutput, result.Output)
+	}
+}
+
+func TestSubcommandChecksNoErrorsWhenRunDefined(t *testing.T) {
+	rootCmd := initializeWithRootCmdWithRun()
+	rootCmd.AddCommand(cmdEcho)
+
+	result := simpleTester(rootCmd, nonExistentCommand)
+	if result.Error != nil {
+		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
+	}
+	if !reflect.DeepEqual([]string{nonExistentCommand}, tr) {
+		t.Errorf("Unexpected response.\nExpected output:\n %q\nGot:\n %q\n", []string{nonExistentCommand}, tr)
+	}
+
+	result = simpleTester(rootCmd, cmdEcho.Name()+" "+nonExistentCommand)
+	if result.Error != nil {
+		t.Errorf("Unexpected response.\nExpected error, got success with output:\n %q\n", result.Output)
+	}
+	if !reflect.DeepEqual([]string{nonExistentCommand}, te) {
+		t.Errorf("Unexpected response.\nExpected output:\n %q\nGot:\n %q\n", []string{nonExistentCommand}, te)
+	}
+}
+
+func TestSubcommandSuggestions(t *testing.T) {
+	outputWithSuggestions := "Error: unknown command %q for \"cobra-test\"\n\nDid you mean this?\n\t%s\n\nRun 'cobra-test --help' for usage.\n"
+	outputWithoutSuggestions := "Error: unknown command %q for \"cobra-test\"\nRun 'cobra-test --help' for usage.\n"
+
+	cmd := initialize()
 	cmd.AddCommand(cmdTimes)
 
 	tests := map[string]string{
@@ -1020,7 +1081,7 @@ func TestFlagsBeforeCommand(t *testing.T) {
 
 func TestRemoveCommand(t *testing.T) {
 	versionUsed = 0
-	c := initializeWithRootCmd()
+	c := initialize()
 	c.AddCommand(cmdVersion1)
 	c.RemoveCommand(cmdVersion1)
 	x := fullTester(c, "version")
@@ -1031,7 +1092,7 @@ func TestRemoveCommand(t *testing.T) {
 }
 
 func TestCommandWithoutSubcommands(t *testing.T) {
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 
 	x := simpleTester(c, "")
 	if x.Error != nil {
@@ -1041,7 +1102,7 @@ func TestCommandWithoutSubcommands(t *testing.T) {
 }
 
 func TestCommandWithoutSubcommandsWithArg(t *testing.T) {
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 	expectedArgs := []string{"arg"}
 
 	x := simpleTester(c, "arg")
@@ -1057,7 +1118,7 @@ func TestCommandWithoutSubcommandsWithArg(t *testing.T) {
 
 func TestReplaceCommandWithRemove(t *testing.T) {
 	versionUsed = 0
-	c := initializeWithRootCmd()
+	c := initializeWithRootCmdWithRun()
 	c.AddCommand(cmdVersion1)
 	c.RemoveCommand(cmdVersion1)
 	c.AddCommand(cmdVersion2)
