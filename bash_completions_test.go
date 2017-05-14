@@ -2,15 +2,11 @@ package cobra
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 )
-
-var _ = fmt.Println
-var _ = os.Stderr
 
 func checkOmit(t *testing.T, found, unexpected string) {
 	if strings.Contains(found, unexpected) {
