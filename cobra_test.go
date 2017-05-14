@@ -13,13 +13,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var tp, te, tt, t1, tr []string
+var tp, te, tt, tr []string
 var rootPersPre, echoPre, echoPersPre, timesPersPre []string
 var flagb1, flagb2, flagb3, flagbr, flagbp bool
 var flags1, flags2a, flags2b, flags3, outs string
 var flagi1, flagi2, flagi3, flagi4, flagir int
-var globalFlag1 bool
-var flagEcho, rootcalled bool
+var rootcalled bool
 var versionUsed int
 
 const strtwoParentHelp = "help message for parent flag strtwo"
@@ -717,7 +716,7 @@ func TestNonRunChildHelp(t *testing.T) {
 func TestRunnableRootCommand(t *testing.T) {
 	x := fullSetupTest("")
 
-	if rootcalled != true {
+	if !rootcalled {
 		t.Errorf("Root Function was not called\n out:%v", x.Error)
 	}
 }
@@ -765,7 +764,7 @@ func TestRunnableRootCommandNilInput(t *testing.T) {
 		t.Errorf("Execute() failed with %v", err)
 	}
 
-	if rootcalled != true {
+	if !rootcalled {
 		t.Errorf("Root Function was not called")
 	}
 }
@@ -783,8 +782,8 @@ func TestRunnableRootCommandEmptyInput(t *testing.T) {
 
 	c.Execute()
 
-	if rootcalled != true {
-		t.Errorf("Root Function was not called.\n\nOutput was:\n\n%s\n", buf)
+	if !rootcalled {
+		t.Errorf("Root Function was not called.\nOutput was:\n%s\n", buf)
 	}
 }
 
@@ -799,7 +798,7 @@ func TestInvalidSubcommandWhenArgsAllowed(t *testing.T) {
 func TestRootFlags(t *testing.T) {
 	fullSetupTest("-i", "17", "-b")
 
-	if flagbr != true {
+	if !flagbr {
 		t.Errorf("flag value should be true, %v given", flagbr)
 	}
 
@@ -1084,7 +1083,7 @@ func TestPeristentPreRunPropagation(t *testing.T) {
 	rootCmd.SetArgs([]string{"print", "echosub", "lala"})
 	rootCmd.Execute()
 
-	if rootPersPre == nil || len(rootPersPre) == 0 || rootPersPre[0] != "lala" {
+	if len(rootPersPre) == 0 || rootPersPre[0] != "lala" {
 		t.Error("RootCmd PersistentPreRun not called but should have been")
 	}
 }
