@@ -27,13 +27,12 @@ var cmdDirs = [...]string{"cmd", "cmds", "command", "commands"}
 var srcPaths []string
 
 func init() {
-	// Initialize goPaths and srcPaths
+	// Initialize srcPaths.
 	envGoPath := os.Getenv("GOPATH")
-	if envGoPath == "" {
+	goPaths := filepath.SplitList(envGoPath)
+	if len(goPaths) == 0 {
 		er("$GOPATH is not set")
 	}
-
-	goPaths := filepath.SplitList(envGoPath)
 	srcPaths = make([]string, 0, len(goPaths))
 	for _, goPath := range goPaths {
 		srcPaths = append(srcPaths, filepath.Join(goPath, "src"))
