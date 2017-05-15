@@ -90,7 +90,7 @@ func NewProjectFromPath(absPath string) *Project {
 func trimSrcPath(absPath, srcPath string) string {
 	relPath, err := filepath.Rel(srcPath, absPath)
 	if err != nil {
-		er("Cobra supports project only within $GOPATH")
+		er("Cobra supports project only within $GOPATH: " + err.Error())
 	}
 	return relPath
 }
