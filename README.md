@@ -127,10 +127,10 @@ tree is assigned to the commander which is finally executed.
 
 # Installing
 Using Cobra is easy. First, use `go get` to install the latest version
-of the library. This command will install the `cobra` generator executible
-along with the library:
+of the library. This command will install the `cobra` generator executable
+along with the library and its dependencies:
 
-    go get -v github.com/spf13/cobra/cobra
+    go get -u github.com/spf13/cobra/cobra
 
 Next, include Cobra in your application:
 
