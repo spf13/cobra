@@ -431,6 +431,31 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
+### Reading Flags From a Config File
+
+If `cobra init [project]` was used to start a  project then it comes with builtin support 
+for reading flag values from a configuration file. It uses another project named
+[viper](https://github.com/spf13/viper) to handle the parsing of the configuration file. 
+
+```go
+func init() {
+	cobra.OnInitialize(initConfig)
+
+	// Here you will define your flags and configuration settings.
+	// Cobra supports Persistent Flags, which, if defined here,
+	// will be global for your application.
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.project.yaml)")
+	RootCmd.PersistentFlags().StringVar(&foo, "foo", "", "loaded from config")
+
+	viper.BindPFlag("foo", RootCmd.PersistentFlags().Lookup("foo"))
+}
+```
+
+In this example there is a flag value that is read from the configuration file, given
+that the file and value were present. In this case, all later references to the flag
+value should be in the form of `viper.GetString("foo")`. The variable which received the
+value of the foo flag (`&foo`) will not be changed by viper. Read more about viper in 
+the [documentation](https://github.com/spf13/viper#what-is-viper).
 
 ## Example
 
