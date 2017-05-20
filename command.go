@@ -700,7 +700,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// initialize help as the last point possible to allow for user
 	// overriding
-	c.initHelpCmd()
+	c.InitDefaultHelpCmd()
 
 	var args []string
 
@@ -764,31 +764,32 @@ func (c *Command) InitDefaultHelpFlag() {
 	}
 }
 
-func (c *Command) initHelpCmd() {
-	if c.helpCommand == nil {
-		if !c.HasSubCommands() {
-			return
-		}
+// InitDefaultHelpCmd adds default help command to c.
+// It is called automatically by executing the c or by calling help and usage.
+// If c already has help command or c has no subcommands, it will do nothing.
+func (c *Command) InitDefaultHelpCmd() {
+	if c.helpCommand != nil || !c.HasSubCommands() {
+		return
+	}
 
-		c.helpCommand = &Command{
-			Use:   "help [command]",
-			Short: "Help about any command",
-			Long: `Help provides help for any command in the application.
+	c.helpCommand = &Command{
+		Use:   "help [command]",
+		Short: "Help about any command",
+		Long: `Help provides help for any command in the application.
     Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			PersistentPreRun:  func(cmd *Command, args []string) {},
-			PersistentPostRun: func(cmd *Command, args []string) {},
+		PersistentPreRun:  func(cmd *Command, args []string) {},
+		PersistentPostRun: func(cmd *Command, args []string) {},
 
-			Run: func(c *Command, args []string) {
-				cmd, _, e := c.Root().Find(args)
-				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q\n", args)
-					c.Root().Usage()
-				} else {
-					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-					cmd.Help()
-				}
-			},
-		}
+		Run: func(c *Command, args []string) {
+			cmd, _, e := c.Root().Find(args)
+			if cmd == nil || e != nil {
+				c.Printf("Unknown help topic %#q\n", args)
+				c.Root().Usage()
+			} else {
+				cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
+				cmd.Help()
+			}
+		},
 	}
 	c.RemoveCommand(c.helpCommand)
 	c.AddCommand(c.helpCommand)
