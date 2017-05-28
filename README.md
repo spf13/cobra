@@ -230,12 +230,12 @@ Once you have run these three commands you would have an app structure that woul
       main.go
 ```
 
-at this point you can run `go run main.go` and it would run your app. `go run
+At this point you can run `go run main.go` and it would run your app. `go run
 main.go serve`, `go run main.go config`, `go run main.go config create` along
 with `go run main.go help serve`, etc would all work.
 
 Obviously you haven't added your own code to these yet, the commands are ready
-for you to give them their tasks. Have fun.
+for you to give them their tasks. Have fun!
 
 ### Configuring the cobra generator
 

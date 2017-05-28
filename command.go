@@ -678,7 +678,7 @@ func (c *Command) preRun() {
 	}
 }
 
-// Execute Call execute to use the args (os.Args[1:] by default)
+// Execute uses the args (os.Args[1:] by default)
 // and run through the command tree finding appropriate matches
 // for commands and then corresponding flags.
 func (c *Command) Execute() error {
@@ -743,9 +743,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
 		}
-		return cmd, err
 	}
-	return cmd, nil
+	return cmd, err
 }
 
 // InitDefaultHelpFlag adds default help flag to c.
