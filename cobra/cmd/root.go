@@ -36,9 +36,7 @@ to quickly create a Cobra application.`,
 
 // Execute executes the root command.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		er(err)
-	}
+	rootCmd.Execute()
 }
 
 func init() {
