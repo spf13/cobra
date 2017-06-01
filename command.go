@@ -521,13 +521,13 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	}
 
 	// root command with subcommands, do subcommand checking
-	if commandFound == c && len(argsWOflags) > 0 {
+	if commandFound != nil && len(argsWOflags) > 0 {
 		suggestionsString := ""
-		if !c.DisableSuggestions {
-			if c.SuggestionsMinimumDistance <= 0 {
-				c.SuggestionsMinimumDistance = 2
+		if !commandFound.DisableSuggestions {
+			if commandFound.SuggestionsMinimumDistance <= 0 {
+				commandFound.SuggestionsMinimumDistance = 2
 			}
-			if suggestions := c.SuggestionsFor(argsWOflags[0]); len(suggestions) > 0 {
+			if suggestions := commandFound.SuggestionsFor(argsWOflags[0]); len(suggestions) > 0 {
 				suggestionsString += "\n\nDid you mean this?\n"
 				for _, s := range suggestions {
 					suggestionsString += fmt.Sprintf("\t%v\n", s)
