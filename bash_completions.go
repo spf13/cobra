@@ -133,7 +133,7 @@ __handle_reply()
     fi
 
     # available in bash-completion >= 2, not always present on macOS
-    if command -v __ltrim_colon_completions >/dev/null; then
+    if declare -F __ltrim_colon_completions >/dev/null; then
         __ltrim_colon_completions "$cur"
     fi
 }
