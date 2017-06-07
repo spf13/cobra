@@ -521,7 +521,7 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	}
 
 	// root command with subcommands, do subcommand checking
-	if commandFound == c && len(argsWOflags) > 0 {
+	if commandFound == c && !c.Runnable() && len(argsWOflags) > 0 {
 		suggestionsString := ""
 		if !c.DisableSuggestions {
 			if c.SuggestionsMinimumDistance <= 0 {

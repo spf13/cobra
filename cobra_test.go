@@ -925,6 +925,11 @@ func TestRootSuggestions(t *testing.T) {
 
 	cmd := initializeWithRootCmd()
 	cmd.AddCommand(cmdTimes)
+	origCmdRun := cmd.Run
+	defer func() {
+		cmd.Run = origCmdRun
+	}()
+	cmd.Run = nil
 
 	tests := map[string]string{
 		"time":     "times",
@@ -986,6 +991,12 @@ func TestFlagsBeforeCommand(t *testing.T) {
 func TestRemoveCommand(t *testing.T) {
 	versionUsed = 0
 	c := initializeWithRootCmd()
+	origCmdRun := c.Run
+	defer func() {
+		c.Run = origCmdRun
+	}()
+	c.Run = nil
+
 	c.AddCommand(cmdVersion1)
 	c.RemoveCommand(cmdVersion1)
 	x := fullTester(c, "version")
