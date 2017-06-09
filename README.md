@@ -323,6 +323,10 @@ func init() {
 	viper.SetDefault("license", "apache")
 }
 
+func Execute() {
+	rootCmd.Execute()
+}
+
 func main() {
   // Don't forget to read config either from cfgFile or from home directory!
 	if cfgFile != "" {
@@ -343,7 +347,7 @@ func main() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Can't read config:", err)
-    os.Exit(1)
+		os.Exit(1)
 	}
 }
 ```
