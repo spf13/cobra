@@ -142,10 +142,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-
-	"github.com/spf13/cobra"{{if .viper}}
-	"github.com/spf13/viper"
+{{if .viper}}
 	homedir "github.com/mitchellh/go-homedir"{{end}}
+	"github.com/spf13/cobra"{{if .viper}}
+	"github.com/spf13/viper"{{end}}
 ){{if .viper}}
 
 var cfgFile string{{end}}
@@ -176,7 +176,7 @@ func Execute() {
 
 func init() { {{if .viper}}
 	cobra.OnInitialize(initConfig)
-	{{end}}
+{{end}}
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.{{ if .viper }}
