@@ -298,3 +298,23 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 	// Reset pflag.CommandLine flagset.
 	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 }
+
+// TestUseDeprecatedFlags checks,
+// if cobra.Execute() prints a message, if a deprecated flag is used.
+// Related to https://github.com/spf13/cobra/issues/463.
+func TestUseDeprecatedFlags(t *testing.T) {
+	c := &Command{Use: "c", Run: func(*Command, []string) {}}
+	output := new(bytes.Buffer)
+	c.SetOutput(output)
+	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
+	c.Flags().MarkDeprecated("deprecated", "This flag is deprecated")
+
+	c.SetArgs([]string{"c", "-d"})
+	if err := c.Execute(); err != nil {
+		t.Error("Unexpected error:", err)
+	}
+	if !strings.Contains(output.String(), "This flag is deprecated") {
+		t.Errorf("Expected to contain deprecated message, but got %q", output.String())
+	}
+
+}
