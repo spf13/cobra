@@ -216,7 +216,7 @@ cobra add create -p 'configCmd'
 ```
 
 *Note: Use camelCase (not snake_case/snake-case) for command names.
-Otherwise, you will become unexpected errors.
+Otherwise, you will encounter errors.
 For example, `cobra add add-user` is incorrect, but `cobra add addUser` is valid.*
 
 Once you have run these three commands you would have an app structure that would look like:
