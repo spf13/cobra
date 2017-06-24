@@ -325,7 +325,7 @@ func init() {
 }
 
 func Execute() {
-	rootCmd.Execute()
+	RootCmd.Execute()
 }
 
 func main() {
