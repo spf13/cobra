@@ -337,7 +337,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(home)
+			fmt.Println(err)
 			os.Exit(1)
 		}
 
