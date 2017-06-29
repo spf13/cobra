@@ -120,7 +120,6 @@ func TestStripFlags(t *testing.T) {
 }
 
 func TestDisableFlagParsing(t *testing.T) {
-	as := []string{"-v", "-race", "-file", "foo.go"}
 	targs := []string{}
 	cmdPrint := &Command{
 		DisableFlagParsing: true,
@@ -128,14 +127,14 @@ func TestDisableFlagParsing(t *testing.T) {
 			targs = args
 		},
 	}
-	osargs := []string{"cmd"}
-	os.Args = append(osargs, as...)
+	args := []string{"cmd", "-v", "-race", "-file", "foo.go"}
+	cmdPrint.SetArgs(args)
 	err := cmdPrint.Execute()
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(as, targs) {
-		t.Errorf("expected: %v, got: %v", as, targs)
+	if !reflect.DeepEqual(args, targs) {
+		t.Errorf("expected: %v, got: %v", args, targs)
 	}
 }
 
@@ -316,5 +315,35 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	if !strings.Contains(output.String(), "This flag is deprecated") {
 		t.Errorf("Expected to contain deprecated message, but got %q", output.String())
 	}
+}
 
+// TestSetHelpCommand checks, if SetHelpCommand works correctly.
+func TestSetHelpCommand(t *testing.T) {
+	c := &Command{Use: "c", Run: func(*Command, []string) {}}
+	output := new(bytes.Buffer)
+	c.SetOutput(output)
+	c.SetArgs([]string{"help"})
+
+	// Help will not be shown, if c has no subcommands.
+	c.AddCommand(&Command{
+		Use: "empty",
+		Run: func(cmd *Command, args []string) {},
+	})
+
+	correctMessage := "WORKS"
+	c.SetHelpCommand(&Command{
+		Use:   "help [command]",
+		Short: "Help about any command",
+		Long: `Help provides help for any command in the application.
+	Simply type ` + c.Name() + ` help [path to command] for full details.`,
+		Run: func(c *Command, args []string) { c.Print(correctMessage) },
+	})
+
+	if err := c.Execute(); err != nil {
+		t.Error("Unexpected error:", err)
+	}
+
+	if output.String() != correctMessage {
+		t.Errorf("Expected to contain %q message, but got %q", correctMessage, output.String())
+	}
 }
