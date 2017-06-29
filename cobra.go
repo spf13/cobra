@@ -47,6 +47,9 @@ var EnablePrefixMatching = false
 // To disable sorting, set it to false.
 var EnableCommandSorting = true
 
+// EnableWindowsMouseTrap enables an information splash screen on Windows if the CLI is started from explorer.exe.
+var EnableWindowsMouseTrap = true
+
 // AddTemplateFunc adds a template function that's available to Usage and Help
 // template generation.
 func AddTemplateFunc(name string, tmplFunc interface{}) {
