@@ -844,6 +844,13 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		}
 		c.commands = append(c.commands, x)
 		c.commandsAreSorted = false
+		if cmds[i].parentsPflags == nil {
+			cmds[i].parentsPflags = flag.NewFlagSet(cmds[i].Name(), flag.ContinueOnError)
+			cmds[i].parentsPflags.SetOutput(c.flagErrorBuf)
+			cmds[i].parentsPflags.SortFlags = false
+		}
+		cmds[i].parentsPflags.AddFlagSet(c.PersistentFlags())
+		cmds[i].Flags().AddFlagSet(cmds[i].parentsPflags)
 	}
 }
 
