@@ -142,17 +142,27 @@ package cmd
 import (
 	"fmt"
 	"os"
-{{if .viper}}
-	homedir "github.com/mitchellh/go-homedir"{{end}}
+
+	"github.com/Fjolnir-Dvorak/environ"{{if .viper}}
 	"github.com/spf13/cobra"{{if .viper}}
-	"github.com/spf13/viper"{{end}}
+	"github.com/spf13/viper"
+	"path/filepath"{{end}}
 ){{if .viper}}
 
-var cfgFile string{{end}}
+const (
+	VendorName      = ""
+	ApplicationName = "{{.appName}}"
+	DefaultConfType = "yaml"
+)
+{{end}}
+var ({{if .viper}}
+	cfgFile string{{end}}
+	Environ environ.Environ
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "{{.appName}}",
+	Use:   ApplicationName,
 	Short: "A brief description of your application",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -174,14 +184,20 @@ func Execute() {
 	}
 }
 
-func init() { {{if .viper}}
+func init() {
+	Environ = environ.New(VendorName, ApplicationName)
+ {{if .viper}}
 	cobra.OnInitialize(initConfig)
 {{end}}
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.{{ if .viper }}
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)"){{ else }}
-	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{ .appName }}.yaml)"){{ end }}
+	configFile := filepath.Join(Environ.VarConfigLocal(), ApplicationName + "." + DefaultConfType)
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
+		"config file (default is " + configFile + ")"){{ else }}
+	// configFile := filepath.Join(Environ.VarConfigLocal(), ApplicationName + "." + DefaultConfType)
+	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
+	//	"config file (default is " + configFile + ")"){{ end }}
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -194,16 +210,10 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
-		// Search config in home directory with name ".{{ .appName }}" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".{{ .appName }}")
+		// Search config in Environ.ConfigLocal() directory with name "ApplicationName" (without extension).
+		viper.AddConfigPath(Environ.ConfigLocal())
+		viper.SetConfigName(ApplicationName)
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
