@@ -776,7 +776,7 @@ func (c *Command) InitDefaultHelpCmd() {
 			Use:   "help [command]",
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
-    Simply type ` + c.Name() + ` help [path to command] for full details.`,
+Simply type ` + c.Name() + ` help [path to command] for full details.`,
 
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
