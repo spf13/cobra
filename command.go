@@ -1073,6 +1073,18 @@ func (c *Command) HasAvailableSubCommands() bool {
 	return false
 }
 
+// AvailableSubCommands returns available sub commands.
+func (c *Command) AvailableSubCommands() []*Command {
+	subCmds := []*Command{}
+
+	for _, sub := range c.commands {
+		if sub.IsAvailableCommand() {
+			subCmds = append(subCmds, sub)
+		}
+	}
+	return subCmds
+}
+
 // HasParent determines if the command is a child command.
 func (c *Command) HasParent() bool {
 	return c.parent != nil
