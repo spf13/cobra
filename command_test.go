@@ -347,3 +347,22 @@ func TestSetHelpCommand(t *testing.T) {
 		t.Errorf("Expected to contain %q message, but got %q", correctMessage, output.String())
 	}
 }
+
+// TestAvailableSubCommands checks, if AvailableSubCommands works correctly
+func TestAvailableSubCommands(t *testing.T) {
+	doNothing := func(*Command, []string) {}
+
+	rootCmd := &Command{Run: doNothing}
+
+	helpSubCmd := &Command{Use: "H", Run: doNothing}
+	deprecatedSubCmd := &Command{Use: "D", Deprecated: "no reason", Run: doNothing}
+	availableSubCmd := &Command{Use: "A", Run: doNothing}
+
+	rootCmd.AddCommand(helpSubCmd, deprecatedSubCmd, availableSubCmd)
+	rootCmd.SetHelpCommand(helpSubCmd)
+
+	res, expect := rootCmd.AvailableSubCommands(), []*Command{availableSubCmd}
+	if !reflect.DeepEqual(res, expect) {
+		t.Errorf("Expected %v, but got %v", expect, res)
+	}
+}
