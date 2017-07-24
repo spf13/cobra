@@ -467,6 +467,24 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
+### Bind Flags with Config
+
+You can also bind your flags with [viper](https://github.com/spf13/viper):
+```go
+var author string
+
+func init() {
+	RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
+	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
+}
+```
+
+In this example the persistent flag `author` is bound with `viper`.
+**Note**, that the variable `author` will not be set to the value from config,
+when the `--author` flag is not provided by user.
+
+More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field.
@@ -496,25 +514,6 @@ Args: func validColorArgs(cmd *cobra.Command, args []string) error {
 }
 
 ```
-
-### Bind Flags with Config
-
-You can also bind your flags with [viper](https://github.com/spf13/viper):
-```go
-var author string
-
-func init() {
-	RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
-}
-```
-
-In this example the persistent flag `author` is bound with `viper`.
-**Note**, that the variable `author` will not be set to the value from config,
-when the `--author` flag is not provided by user.
-
-More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
-
 
 ## Example
 
