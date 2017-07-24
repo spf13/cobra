@@ -1166,7 +1166,7 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 
 	rootCmd := initialize()
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
-	if reflect.ValueOf(normFunc) != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()) {
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
 		t.Error("rootCmd seems to have a wrong normalization function")
 	}
 
