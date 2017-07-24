@@ -1,9 +1,9 @@
 package cobra
 
 import (
-	"testing"
 	"bytes"
 	"strings"
+	"testing"
 )
 
 func TestZshCompletion(t *testing.T) {

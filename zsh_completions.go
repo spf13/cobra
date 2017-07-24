@@ -2,8 +2,8 @@ package cobra
 
 import (
 	"bytes"
-	"io"
 	"fmt"
+	"io"
 	"strings"
 )
 
