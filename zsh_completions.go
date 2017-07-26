@@ -7,31 +7,21 @@ import (
 	"strings"
 )
 
-type fWriter struct {
-	io.Writer
-}
-
-func (fw *fWriter) fWriteLn(format string, a ...interface{}) (int, error) {
-	return io.WriteString(fw, fmt.Sprintf(format+"\n", a...))
-}
-
 // GenZshCompletion generates a zsh completion file and writes to the passed writer.
 func (cmd *Command) GenZshCompletion(w io.Writer) error {
 	buf := new(bytes.Buffer)
-	fw := &fWriter{buf}
 
-	writeHeader(fw, cmd)
+	writeHeader(buf, cmd)
 	maxDepth := maxDepth(cmd)
-	writeLevelMapping(fw, maxDepth)
-	writeLevelCases(fw, maxDepth, cmd)
+	writeLevelMapping(buf, maxDepth)
+	writeLevelCases(buf, maxDepth, cmd)
 
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func writeHeader(fw *fWriter, cmd *Command) {
-	fw.fWriteLn("#compdef %s", cmd.Name())
-	fw.fWriteLn("")
+func writeHeader(w io.Writer, cmd *Command) {
+	fmt.Fprintf(w, "#compdef %s\n\n", cmd.Name())
 }
 
 func maxDepth(c *Command) int {
@@ -48,45 +38,46 @@ func maxDepth(c *Command) int {
 	return 1 + maxDepthSub
 }
 
-func writeLevelMapping(fw *fWriter, numLevels int) {
-	fw.fWriteLn(`_arguments \`)
+func writeLevelMapping(w io.Writer, numLevels int) {
+	fmt.Fprintln(w, `_arguments \`)
 	for i := 1; i <= numLevels; i++ {
-		fw.fWriteLn(`  '%d: :->level%d' \`, i, i)
+		fmt.Fprintf(w, `  '%d: :->level%d' \`, i, i)
+		fmt.Fprintln(w)
 	}
-	fw.fWriteLn(`  '%d: :%s'`, numLevels+1, "_files")
-	fw.fWriteLn("")
+	fmt.Fprintf(w, `  '%d: :%s'`, numLevels+1, "_files")
+	fmt.Fprintln(w)
 }
 
-func writeLevelCases(fw *fWriter, maxDepth int, root *Command) {
-	fw.fWriteLn("case $state in")
-	defer fw.fWriteLn("esac")
+func writeLevelCases(w io.Writer, maxDepth int, root *Command) {
+	fmt.Fprintln(w, "case $state in")
+	defer fmt.Fprintln(w, "esac")
 
 	for i := 1; i <= maxDepth; i++ {
-		fw.fWriteLn("  level%d)", i)
-		writeLevel(fw, root, i)
-		fw.fWriteLn("  ;;")
+		fmt.Fprintf(w, "  level%d)\n", i)
+		writeLevel(w, root, i)
+		fmt.Fprintln(w, "  ;;")
 	}
-	fw.fWriteLn("  *)")
-	fw.fWriteLn("    _arguments '*: :_files'")
-	fw.fWriteLn("  ;;")
+	fmt.Fprintln(w, "  *)")
+	fmt.Fprintln(w, "    _arguments '*: :_files'")
+	fmt.Fprintln(w, "  ;;")
 }
 
-func writeLevel(fw *fWriter, root *Command, i int) {
-	fw.fWriteLn(fmt.Sprintf("    case $words[%d] in", i))
-	defer fw.fWriteLn("    esac")
+func writeLevel(w io.Writer, root *Command, i int) {
+	fmt.Fprintf(w, "    case $words[%d] in\n", i)
+	defer fmt.Fprintln(w, "    esac")
 
 	commands := filterByLevel(root, i)
 	byParent := groupByParent(commands)
 
 	for p, c := range byParent {
 		names := names(c)
-		fw.fWriteLn(fmt.Sprintf("      %s)", p))
-		fw.fWriteLn(fmt.Sprintf("        _arguments '%d: :(%s)'", i, strings.Join(names, " ")))
-		fw.fWriteLn(fmt.Sprintf("      ;;"))
+		fmt.Fprintf(w, "      %s)\n", p)
+		fmt.Fprintf(w, "        _arguments '%d: :(%s)'\n", i, strings.Join(names, " "))
+		fmt.Fprintln(w, "      ;;")
 	}
-	fw.fWriteLn("      *)")
-	fw.fWriteLn("        _arguments '*: :_files'")
-	fw.fWriteLn("      ;;")
+	fmt.Fprintln(w, "      *)")
+	fmt.Fprintln(w, "        _arguments '*: :_files'")
+	fmt.Fprintln(w, "      ;;")
 
 }
 
