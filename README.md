@@ -151,17 +151,17 @@ In a Cobra app, typically the main.go file is very bare. It serves one purpose: 
 package main
 
 import (
-	"fmt"
-	"os"
+  "fmt"
+  "os"
 
-	"{pathToYourApp}/cmd"
+  "{pathToYourApp}/cmd"
 )
 
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+  if err := cmd.RootCmd.Execute(); err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  }
 }
 ```
 
@@ -277,14 +277,14 @@ Ideally you place this in app/cmd/root.go:
 
 ```go
 var RootCmd = &cobra.Command{
-	Use:   "hugo",
-	Short: "Hugo is a very fast static site generator",
-	Long: `A Fast and Flexible Static Site Generator built with
+  Use:   "hugo",
+  Short: "Hugo is a very fast static site generator",
+  Long: `A Fast and Flexible Static Site Generator built with
                 love by spf13 and friends in Go.
                 Complete documentation is available at http://hugo.spf13.com`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
-	},
+  Run: func(cmd *cobra.Command, args []string) {
+    // Do Stuff Here
+  },
 }
 ```
 
@@ -294,54 +294,54 @@ For example cmd/root.go:
 
 ```go
 import (
-	"fmt"
-	"os"
+  "fmt"
+  "os"
 
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+  homedir "github.com/mitchellh/go-homedir"
+  "github.com/spf13/cobra"
+  "github.com/spf13/viper"
 )
 
 func init() {
-	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
-	RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory eg. github.com/spf13/")
-	RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
-	RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
-	RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
-	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
-	viper.BindPFlag("projectbase", RootCmd.PersistentFlags().Lookup("projectbase"))
-	viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
-	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
-	viper.SetDefault("license", "apache")
+  cobra.OnInitialize(initConfig)
+  RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+  RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory eg. github.com/spf13/")
+  RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
+  RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
+  RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
+  viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
+  viper.BindPFlag("projectbase", RootCmd.PersistentFlags().Lookup("projectbase"))
+  viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
+  viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
+  viper.SetDefault("license", "apache")
 }
 
 func Execute() {
-	RootCmd.Execute()
+  RootCmd.Execute()
 }
 
 func initConfig() {
   // Don't forget to read config either from cfgFile or from home directory!
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+  if cfgFile != "" {
+    // Use config file from the flag.
+    viper.SetConfigFile(cfgFile)
+  } else {
+    // Find home directory.
+    home, err := homedir.Dir()
+    if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+    }
 
-		// Search config in home directory with name ".cobra" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".cobra")
-	}
+    // Search config in home directory with name ".cobra" (without extension).
+    viper.AddConfigPath(home)
+    viper.SetConfigName(".cobra")
+  }
 
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Can't read config:", err)
-		os.Exit(1)
-	}
+  if err := viper.ReadInConfig(); err != nil {
+    fmt.Println("Can't read config:", err)
+    os.Exit(1)
+  }
 }
 ```
 
@@ -356,17 +356,17 @@ In a Cobra app, typically the main.go file is very bare. It serves, one purpose,
 package main
 
 import (
-	"fmt"
-	"os"
+  "fmt"
+  "os"
 
-	"{pathToYourApp}/cmd"
+  "{pathToYourApp}/cmd"
 )
 
 func main() {
-	if err := cmd.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+  if err := cmd.RootCmd.Execute(); err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  }
 }
 ```
 
@@ -382,21 +382,21 @@ populate it with the following:
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"fmt"
+  "github.com/spf13/cobra"
+  "fmt"
 )
 
 func init() {
-	RootCmd.AddCommand(versionCmd)
+  RootCmd.AddCommand(versionCmd)
 }
 
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of Hugo",
-	Long:  `All software has versions. This is Hugo's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
-	},
+  Use:   "version",
+  Short: "Print the version number of Hugo",
+  Long:  `All software has versions. This is Hugo's`,
+  Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
+  },
 }
 ```
 
@@ -453,8 +453,8 @@ You can also bind your flags with [viper](https://github.com/spf13/viper):
 var author string
 
 func init() {
-	RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-	viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
+  RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
+  viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
 }
 ```
 
@@ -483,19 +483,19 @@ An example of setting the custom validator:
 
 ```go
 var cmd = &cobra.Command{
-	Short: "hello",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("requires at least one arg")
-		}
-		if myapp.IsValidColor(args[0]) {
-		  return nil
-		}
-		return fmt.Errorf("invalid color specified: %s", args[0])
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello, World!")
-	},
+  Short: "hello",
+  Args: func(cmd *cobra.Command, args []string) error {
+    if len(args) < 1 {
+      return errors.New("requires at least one arg")
+    }
+    if myapp.IsValidColor(args[0]) {
+      return nil
+    }
+    return fmt.Errorf("invalid color specified: %s", args[0])
+  },
+  Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Hello, World!")
+  },
 }
 ```
 
@@ -514,56 +514,56 @@ More documentation about flags is available at https://github.com/spf13/pflag
 package main
 
 import (
-	"fmt"
-	"strings"
+  "fmt"
+  "strings"
 
-	"github.com/spf13/cobra"
+  "github.com/spf13/cobra"
 )
 
 func main() {
-	var echoTimes int
+  var echoTimes int
 
-	var cmdPrint = &cobra.Command{
-		Use:   "print [string to print]",
-		Short: "Print anything to the screen",
-		Long: `print is for printing anything back to the screen.
+  var cmdPrint = &cobra.Command{
+    Use:   "print [string to print]",
+    Short: "Print anything to the screen",
+    Long: `print is for printing anything back to the screen.
 For many years people have printed back to the screen.`,
     Args: cobra.MinimumArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Print: " + strings.Join(args, " "))
-		},
-	}
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Println("Print: " + strings.Join(args, " "))
+    },
+  }
 
-	var cmdEcho = &cobra.Command{
-		Use:   "echo [string to echo]",
-		Short: "Echo anything to the screen",
-		Long: `echo is for echoing anything back.
+  var cmdEcho = &cobra.Command{
+    Use:   "echo [string to echo]",
+    Short: "Echo anything to the screen",
+    Long: `echo is for echoing anything back.
 Echo works a lot like print, except it has a child command.`,
     Args: cobra.MinimumArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Print: " + strings.Join(args, " "))
-		},
-	}
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Println("Print: " + strings.Join(args, " "))
+    },
+  }
 
-	var cmdTimes = &cobra.Command{
-		Use:   "times [# times] [string to echo]",
-		Short: "Echo anything to the screen more times",
-		Long: `echo things multiple times back to the user by providing
+  var cmdTimes = &cobra.Command{
+    Use:   "times [# times] [string to echo]",
+    Short: "Echo anything to the screen more times",
+    Long: `echo things multiple times back to the user by providing
 a count and a string.`,
     Args: cobra.MinimumArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			for i := 0; i < echoTimes; i++ {
-				fmt.Println("Echo: " + strings.Join(args, " "))
-			}
-		},
-	}
+    Run: func(cmd *cobra.Command, args []string) {
+      for i := 0; i < echoTimes; i++ {
+        fmt.Println("Echo: " + strings.Join(args, " "))
+      }
+    },
+  }
 
-	cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+  cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
-	var rootCmd = &cobra.Command{Use: "app"}
-	rootCmd.AddCommand(cmdPrint, cmdEcho)
-	cmdEcho.AddCommand(cmdTimes)
-	rootCmd.Execute()
+  var rootCmd = &cobra.Command{Use: "app"}
+  rootCmd.AddCommand(cmdPrint, cmdEcho)
+  cmdEcho.AddCommand(cmdTimes)
+  rootCmd.Execute()
 }
 ```
 
@@ -649,16 +649,16 @@ The default help command is
 
 ```go
 func (c *Command) initHelp() {
-	if c.helpCommand == nil {
-		c.helpCommand = &Command{
-			Use:   "help [command]",
-			Short: "Help about any command",
-			Long: `Help provides help for any command in the application.
+  if c.helpCommand == nil {
+    c.helpCommand = &Command{
+      Use:   "help [command]",
+      Short: "Help about any command",
+      Long: `Help provides help for any command in the application.
         Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			Run: c.HelpFunc(),
-		}
-	}
-	c.AddCommand(c.helpCommand)
+      Run: c.HelpFunc(),
+    }
+  }
+  c.AddCommand(c.helpCommand)
 }
 ```
 
@@ -732,8 +732,8 @@ The default usage function is:
 
 ```go
 return func(c *Command) error {
-	err := tmpl(c.Out(), c.UsageTemplate(), c)
-	return err
+  err := tmpl(c.Out(), c.UsageTemplate(), c)
+  return err
 }
 ```
 
@@ -761,57 +761,57 @@ An example of two commands which use all of these features is below.  When the s
 package main
 
 import (
-	"fmt"
+  "fmt"
 
-	"github.com/spf13/cobra"
+  "github.com/spf13/cobra"
 )
 
 func main() {
 
-	var rootCmd = &cobra.Command{
-		Use:   "root [sub]",
-		Short: "My root command",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
-		},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside rootCmd PreRun with args: %v\n", args)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside rootCmd Run with args: %v\n", args)
-		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside rootCmd PostRun with args: %v\n", args)
-		},
-		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
-		},
-	}
+  var rootCmd = &cobra.Command{
+    Use:   "root [sub]",
+    Short: "My root command",
+    PersistentPreRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
+    },
+    PreRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PreRun with args: %v\n", args)
+    },
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd Run with args: %v\n", args)
+    },
+    PostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PostRun with args: %v\n", args)
+    },
+    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
+    },
+  }
 
-	var subCmd = &cobra.Command{
-		Use:   "sub [no options!]",
-		Short: "My subcommand",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside subCmd PreRun with args: %v\n", args)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside subCmd Run with args: %v\n", args)
-		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside subCmd PostRun with args: %v\n", args)
-		},
-		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Inside subCmd PersistentPostRun with args: %v\n", args)
-		},
-	}
+  var subCmd = &cobra.Command{
+    Use:   "sub [no options!]",
+    Short: "My subcommand",
+    PreRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside subCmd PreRun with args: %v\n", args)
+    },
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside subCmd Run with args: %v\n", args)
+    },
+    PostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside subCmd PostRun with args: %v\n", args)
+    },
+    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside subCmd PersistentPostRun with args: %v\n", args)
+    },
+  }
 
-	rootCmd.AddCommand(subCmd)
+  rootCmd.AddCommand(subCmd)
 
-	rootCmd.SetArgs([]string{""})
-	rootCmd.Execute()
-	fmt.Println()
-	rootCmd.SetArgs([]string{"sub", "arg1", "arg2"})
-	rootCmd.Execute()
+  rootCmd.SetArgs([]string{""})
+  rootCmd.Execute()
+  fmt.Println()
+  rootCmd.SetArgs([]string{"sub", "arg1", "arg2"})
+  rootCmd.Execute()
 }
 ```
 
@@ -837,28 +837,28 @@ command.
 package main
 
 import (
-	"errors"
-	"log"
+  "errors"
+  "log"
 
-	"github.com/spf13/cobra"
+  "github.com/spf13/cobra"
 )
 
 func main() {
-	var rootCmd = &cobra.Command{
-		Use:   "hugo",
-		Short: "Hugo is a very fast static site generator",
-		Long: `A Fast and Flexible Static Site Generator built with
+  var rootCmd = &cobra.Command{
+    Use:   "hugo",
+    Short: "Hugo is a very fast static site generator",
+    Long: `A Fast and Flexible Static Site Generator built with
 love by spf13 and friends in Go.
 Complete documentation is available at http://hugo.spf13.com`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// Do Stuff Here
-			return errors.New("some random error")
-		},
-	}
+    RunE: func(cmd *cobra.Command, args []string) error {
+      // Do Stuff Here
+      return errors.New("some random error")
+    },
+  }
 
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
+  if err := rootCmd.Execute(); err != nil {
+    log.Fatal(err)
+  }
 }
 ```
 
