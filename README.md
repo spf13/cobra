@@ -487,32 +487,37 @@ More in [viper documentation](https://github.com/spf13/viper#working-with-flags)
 
 ## Positional and Custom Arguments
 
-Validation of positional arguments can be specified using the `Args` field.
+Validation of positional arguments can be specified using the `Args` field
+of `Command`.
 
 The following validators are built in:
 
 - `NoArgs` - the command will report an error if there are any positional args.
 - `ArbitraryArgs` - the command will accept any args.
-- `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the ValidArgs list.
+- `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the `ValidArgs` field of `Command`.
 - `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
 - `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
 - `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
 - `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
 
-A custom validator can be provided like this:
+An example of setting the custom validator:
 
 ```go
-
-Args: func validColorArgs(cmd *cobra.Command, args []string) error {
-  if err := cli.RequiresMinArgs(1)(cmd, args); err != nil {
-    return err
-  }
-  if myapp.IsValidColor(args[0]) {
-     return nil
-  }
-  return fmt.Errorf("Invalid color specified: %s", args[0])
+var cmd = &cobra.Command{
+	Short: "hello",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return errors.New("requires at least one arg")
+		}
+		if myapp.IsValidColor(args[0]) {
+		  return nil
+		}
+		return fmt.Errorf("invalid color specified: %s", args[0])
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Hello, World!")
+	},
 }
-
 ```
 
 ## Example
@@ -537,15 +542,14 @@ import (
 )
 
 func main() {
-
 	var echoTimes int
 
 	var cmdPrint = &cobra.Command{
 		Use:   "print [string to print]",
 		Short: "Print anything to the screen",
 		Long: `print is for printing anything back to the screen.
-            For many years people have printed back to the screen.
-            `,
+For many years people have printed back to the screen.`,
+    Args: cobra.MinimumArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Print: " + strings.Join(args, " "))
 		},
@@ -555,8 +559,8 @@ func main() {
 		Use:   "echo [string to echo]",
 		Short: "Echo anything to the screen",
 		Long: `echo is for echoing anything back.
-            Echo works a lot like print, except it has a child command.
-            `,
+Echo works a lot like print, except it has a child command.`,
+    Args: cobra.MinimumArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Print: " + strings.Join(args, " "))
 		},
@@ -566,7 +570,8 @@ func main() {
 		Use:   "times [# times] [string to echo]",
 		Short: "Echo anything to the screen more times",
 		Long: `echo things multiple times back to the user by providing
-            a count and a string.`,
+a count and a string.`,
+    Args: cobra.MinimumArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			for i := 0; i < echoTimes; i++ {
 				fmt.Println("Echo: " + strings.Join(args, " "))
