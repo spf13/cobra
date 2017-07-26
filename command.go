@@ -54,13 +54,14 @@ type Command struct {
 	// ValidArgs is list of all valid non-flag arguments that are accepted in bash completions
 	ValidArgs []string
 
+	// Expected arguments
+	Args PositionalArgs
+
 	// ArgAliases is List of aliases for ValidArgs.
 	// These are not suggested to the user in the bash completion,
 	// but accepted if entered manually.
 	ArgAliases []string
 
-	// Expected arguments
-	Args PositionalArgs
 	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
 	BashCompletionFunction string
 
