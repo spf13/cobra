@@ -117,14 +117,6 @@ Flag functionality is provided by the [pflag
 library](https://github.com/spf13/pflag), a fork of the flag standard library
 which maintains the same interface while adding POSIX compliance.
 
-## Usage
-
-Cobra works by creating a set of commands and then organizing them into a tree.
-The tree defines the structure of the application.
-
-Once each command is defined with its corresponding flags, then the
-tree is assigned to the commander which is finally executed.
-
 # Installing
 Using Cobra is easy. First, use `go get` to install the latest version
 of the library. This command will install the `cobra` generator executable
@@ -419,19 +411,6 @@ root, but commands can be attached at any level.
 RootCmd.AddCommand(versionCmd)
 ```
 
-### Remove a command from its parent
-
-Removing a command is not a common action in simple programs, but it allows 3rd
-parties to customize an existing command tree.
-
-In this example, we remove the existing `VersionCmd` command of an existing
-root command, and we replace it with our own version:
-
-```go
-mainlib.RootCmd.RemoveCommand(mainlib.VersionCmd)
-mainlib.RootCmd.AddCommand(versionCmd)
-```
-
 ## Working with Flags
 
 Flags provide modifiers to control how the action command operates.
@@ -687,9 +666,7 @@ You can provide your own command, function or template through the following met
 
 ```go
 command.SetHelpCommand(cmd *Command)
-
 command.SetHelpFunc(f func(*Command, []string))
-
 command.SetHelpTemplate(s string)
 ```
 
@@ -831,10 +808,10 @@ func main() {
 	rootCmd.AddCommand(subCmd)
 
 	rootCmd.SetArgs([]string{""})
-	_ = rootCmd.Execute()
-	fmt.Print("\n")
+	rootCmd.Execute()
+	fmt.Println()
 	rootCmd.SetArgs([]string{"sub", "arg1", "arg2"})
-	_ = rootCmd.Execute()
+	rootCmd.Execute()
 }
 ```
 
@@ -871,8 +848,8 @@ func main() {
 		Use:   "hugo",
 		Short: "Hugo is a very fast static site generator",
 		Long: `A Fast and Flexible Static Site Generator built with
-                love by spf13 and friends in Go.
-                Complete documentation is available at http://hugo.spf13.com`,
+love by spf13 and friends in Go.
+Complete documentation is available at http://hugo.spf13.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Do Stuff Here
 			return errors.New("some random error")
@@ -937,16 +914,6 @@ Cobra can generate a man page based on the subcommands, flags, etc. A simple exa
 
 Cobra can generate a bash-completion file. If you add more information to your command, these completions can be amazingly powerful and flexible.  Read more about it in [Bash Completions](bash_completions.md).
 
-## Debugging
-
-Cobra provides a ‘DebugFlags’ method on a command which, when called, will print
-out everything Cobra knows about the flags for each command.
-
-### Example
-
-```go
-command.DebugFlags()
-```
 
 ## Extensions
 
