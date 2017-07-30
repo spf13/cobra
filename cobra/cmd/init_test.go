@@ -44,7 +44,7 @@ func TestGoldenInitCmd(t *testing.T) {
 		goldenPath := filepath.Join("testdata", filepath.Base(path)+".golden")
 
 		switch relPath {
-		// Know directories.
+		// Known directories.
 		case ".", "cmd":
 			return nil
 		// Known files.
