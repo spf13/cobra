@@ -22,9 +22,9 @@ func TestGoldenAddCmd(t *testing.T) {
 	// Initialize the project at first.
 	initializeProject(project)
 	defer os.RemoveAll(project.AbsPath())
-	defer viper.Set("year", nil)
 
-	viper.Set("year", 2017) // For reproducible builds
+	viper.Set("year", 2017) // For reproducible builds.
+	defer viper.Set("year", nil)
 
 	// Then add the "test" command.
 	cmdName := "test"
