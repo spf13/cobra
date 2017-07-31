@@ -121,7 +121,7 @@ func validateCmdName(source string) string {
 
 func createCmdFile(license License, path, cmdName string) {
 	template := `{{comment .copyright}}
-{{comment .license}}
+{{if .license}}{{comment .license}}{{end}}
 
 package {{.cmdPackage}}
 
