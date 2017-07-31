@@ -18,9 +18,6 @@ import (
 func TestGoldenAddCmd(t *testing.T) {
 	projectName := "github.com/spf13/testproject"
 	project := NewProject(projectName)
-
-	// Initialize the project at first.
-	initializeProject(project)
 	defer os.RemoveAll(project.AbsPath())
 
 	viper.Set("author", "NAME HERE <EMAIL ADDRESS>")
@@ -29,6 +26,9 @@ func TestGoldenAddCmd(t *testing.T) {
 	defer viper.Set("author", nil)
 	defer viper.Set("license", nil)
 	defer viper.Set("year", nil)
+
+	// Initialize the project first.
+	initializeProject(project)
 
 	// Then add the "test" command.
 	cmdName := "test"
