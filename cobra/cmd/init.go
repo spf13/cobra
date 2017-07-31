@@ -143,18 +143,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Fjolnir-Dvorak/environ"{{if .viper}}
+	"github.com/Fjolnir-Dvorak/environ"
 	"github.com/spf13/cobra"{{if .viper}}
 	"github.com/spf13/viper"
 	"path/filepath"{{end}}
-){{if .viper}}
+)
 
 const (
 	VendorName      = ""
 	ApplicationName = "{{.appName}}"
 	DefaultConfType = "yaml"
 )
-{{end}}
 var ({{if .viper}}
 	cfgFile string{{end}}
 	Environ environ.Environ
