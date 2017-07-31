@@ -18,9 +18,13 @@ func TestGoldenInitCmd(t *testing.T) {
 	projectName := "github.com/spf13/testproject"
 	project := NewProject(projectName)
 	defer os.RemoveAll(project.AbsPath())
-	defer viper.Set("year", nil)
 
-	viper.Set("year", 2017) // For reproducible builds
+	viper.Set("author", "NAME HERE <EMAIL ADDRESS>")
+	viper.Set("license", "apache")
+	viper.Set("year", 2017)
+	defer viper.Set("author", nil)
+	defer viper.Set("license", nil)
+	defer viper.Set("year", nil)
 
 	os.Args = []string{"cobra", "init", projectName}
 	if err := rootCmd.Execute(); err != nil {
