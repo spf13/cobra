@@ -24,7 +24,7 @@ import (
 
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
-	addCmd.Flags().StringVarP(&parentName, "parent", "p", "RootCmd", "name of parent command for this command")
+	addCmd.Flags().StringVarP(&parentName, "parent", "p", "RootCmd", "variable name of parent command for this command")
 }
 
 var packageName, parentName string
