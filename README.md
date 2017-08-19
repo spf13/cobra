@@ -489,7 +489,7 @@ More in [viper documentation](https://github.com/spf13/viper#working-with-flags)
 
 Validation of positional arguments can be specified using the `Args` field.
 
-The follow validators are built in:
+The following validators are built in:
 
 - `NoArgs` - the command will report an error if there are any positional args.
 - `ArbitraryArgs` - the command will accept any args.
