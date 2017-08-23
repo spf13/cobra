@@ -15,7 +15,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	lol "github.com/kris-nova/lolgopher"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,6 +26,7 @@ import (
 var (
 	// Used for flags.
 	cfgFile, userLicense string
+	fab                  bool
 
 	rootCmd = &cobra.Command{
 		Use:   "cobra",
@@ -31,6 +34,12 @@ var (
 		Long: `Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+		Run: func(command *cobra.Command, args []string) {
+			if fab {
+				command.SetOutput(&lol.Writer{Output: os.Stdout, ColorMode: lol.ColorModeTrueColor})
+			}
+			command.Help()
+		},
 	}
 )
 
@@ -45,6 +54,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
+	rootCmd.PersistentFlags().BoolVarP(&fab, "fab", "f", false, "enable fabulous encoding to STDOUT")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
@@ -53,6 +63,7 @@ func init() {
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
+
 }
 
 func initConfig() {
