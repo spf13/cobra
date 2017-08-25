@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -146,11 +147,11 @@ func TestBashCompletions(t *testing.T) {
 	// check for filename extension flags
 	check(t, output, `must_have_one_noun+=("three")`)
 	// check for filename extension flags
-	check(t, output, `flags_completion+=("__handle_filename_extension_flag json|yaml|yml")`)
+	check(t, output, fmt.Sprintf(`flags_completion+=("__%s_handle_filename_extension_flag json|yaml|yml")`, rootCmd.Name()))
 	// check for custom flags
 	check(t, output, `flags_completion+=("__complete_custom")`)
 	// check for subdirs_in_dir flags
-	check(t, output, `flags_completion+=("__handle_subdirs_in_dir_flag themes")`)
+	check(t, output, fmt.Sprintf(`flags_completion+=("__%s_handle_subdirs_in_dir_flag themes")`, rootCmd.Name()))
 
 	checkOmit(t, output, deprecatedCmd.Name())
 
