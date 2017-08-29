@@ -1,0 +1,14 @@
+language: go
+sudo: required
+go:
+  - 1.7.5
+  - 1.8
+  - tip
+os:
+  - linux
+matrix:
+  allow_failures:
+    - go: tip
+  fast_finish: true
+script:
+  - make check

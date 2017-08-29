@@ -1,0 +1,6 @@
+obj {
+    foo = [<<EOF
+        TEXT!
+EOF
+    ]
+}

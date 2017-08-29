@@ -34,3 +34,6 @@ tags
 *.exe
 
 cobra.test
+
+# ignore only the root vendor folder
+/vendor

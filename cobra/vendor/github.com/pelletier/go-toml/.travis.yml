@@ -1,0 +1,21 @@
+sudo: false
+language: go
+go:
+  - 1.6.4
+  - 1.7.5
+  - 1.8
+  - tip
+matrix:
+  allow_failures:
+    - go: tip
+  fast_finish: true
+script:
+  - ./test.sh
+before_install:
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
+branches:
+  only: [master]
+after_success:
+  - $HOME/gopath/bin/goveralls -service=travis-ci -coverprofile=coverage.out -repotoken $COVERALLS_TOKEN
