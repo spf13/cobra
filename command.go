@@ -806,6 +806,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 
 // ResetCommands used for testing.
 func (c *Command) ResetCommands() {
+	c.parent = nil
 	c.commands = nil
 	c.helpCommand = nil
 	c.parentsPflags = nil
@@ -1192,6 +1193,10 @@ func (c *Command) ResetFlags() {
 	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
+
+	c.lflags = nil
+	c.iflags = nil
+	c.parentsPflags = nil
 }
 
 // HasFlags checks if the command contains any flags (local plus persistent from the entire structure).

@@ -190,6 +190,7 @@ func flagInit() {
 	cmdTimes.Flags().IntVarP(&flagi2, "inttwo", "j", 234, "help message for flag inttwo")
 	cmdTimes.Flags().StringVarP(&flags2b, "strtwo", "t", "2", strtwoChildHelp)
 	cmdTimes.PersistentFlags().StringVarP(&flags2b, "strtwo", "t", "2", strtwoChildHelp)
+	cmdTimes.LocalFlags() // populate lflags before parent is set
 	cmdPrint.Flags().BoolVarP(&flagb3, "boolthree", "b", true, "help message for flag boolthree")
 	cmdPrint.PersistentFlags().StringVarP(&flags3, "strthree", "s", "three", "help message for flag strthree")
 }
@@ -210,8 +211,8 @@ func initialize() *Command {
 	rootPersPre, echoPre, echoPersPre, timesPersPre = nil, nil, nil, nil
 
 	var c = cmdRootNoRun
-	flagInit()
 	commandInit()
+	flagInit()
 	return c
 }
 
@@ -219,8 +220,8 @@ func initializeWithSameName() *Command {
 	tt, tp, te = nil, nil, nil
 	rootPersPre, echoPre, echoPersPre, timesPersPre = nil, nil, nil, nil
 	var c = cmdRootSameName
-	flagInit()
 	commandInit()
+	flagInit()
 	return c
 }
 
@@ -910,6 +911,7 @@ func TestRootHelp(t *testing.T) {
 func TestFlagAccess(t *testing.T) {
 	initialize()
 
+	cmdEcho.AddCommand(cmdTimes)
 	local := cmdTimes.LocalFlags()
 	inherited := cmdTimes.InheritedFlags()
 
