@@ -23,7 +23,7 @@
 
 [[constraint]]
   name = "github.com/cpuguy83/go-md2man"
-  version = "1.0.6"
+  version = "1.0.7"
 
 [[constraint]]
   name = "github.com/inconshreveable/mousetrap"
