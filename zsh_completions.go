@@ -4,8 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
+
+// GenZshCompletionFile generates zsh completion file.
+func (cmd *Command) GenZshCompletionFile(filename string) error {
+	outFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	return cmd.GenZshCompletion(outFile)
+}
 
 // GenZshCompletion generates a zsh completion file and writes to the passed writer.
 func (cmd *Command) GenZshCompletion(w io.Writer) error {
