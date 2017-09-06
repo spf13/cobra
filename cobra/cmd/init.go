@@ -16,7 +16,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -117,10 +116,7 @@ func main() {
 	cmd.Execute()
 }
 `
-	data := make(map[string]interface{})
-	data["copyright"] = copyrightLine()
-	data["license"] = project.License().Header
-	data["importpath"] = path.Join(project.Name(), filepath.Base(project.CmdPath()))
+	data := project.ProjectToMap()
 
 	mainScript, err := executeTemplate(mainTemplate, data)
 	if err != nil {
@@ -215,11 +211,8 @@ func initConfig() {
 }{{ end }}
 `
 
-	data := make(map[string]interface{})
-	data["copyright"] = copyrightLine()
+	data := project.ProjectToMap()
 	data["viper"] = viper.GetBool("useViper")
-	data["license"] = project.License().Header
-	data["appName"] = path.Base(project.Name())
 
 	rootCmdScript, err := executeTemplate(template, data)
 	if err != nil {
