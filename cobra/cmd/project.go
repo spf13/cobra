@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,6 +15,32 @@ type Project struct {
 	srcPath string
 	license License
 	name    string
+}
+
+// ProjectToMap returns a map representation of a Project suitable for using
+// in template expansion.
+func (p *Project) ProjectToMap() map[string]interface{} {
+	ret := make(map[string]interface{})
+	ret["absPath"] = p.absPath
+	ret["cmdPath"] = p.cmdPath
+	ret["srcPath"] = p.srcPath
+	ret["name"] = p.name
+
+	m := make(map[string]string)
+	m["Name"] = p.license.Name
+	m["Text"] = p.license.Text
+	m["Header"] = p.license.Header
+
+	ret["License"] = m
+
+	ret["copyright"] = copyrightLine()
+	ret["importpath"] = path.Join(p.Name(), filepath.Base(p.CmdPath()))
+	ret["appName"] = path.Base(p.Name())
+
+	expHeader, _ := executeTemplate(p.License().Header, ret)
+	ret["license"] = expHeader
+
+	return ret
 }
 
 // NewProject returns Project with specified project name.
