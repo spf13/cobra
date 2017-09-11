@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
-	"os/exec"
 )
 
 var cmdDirs = [...]string{"cmd", "cmds", "command", "commands"}
