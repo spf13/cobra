@@ -1167,9 +1167,16 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	}
 
 	rootCmd := initialize()
+	rootCmd.AddCommand(cmdEcho)
+
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
 	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
 		t.Error("rootCmd seems to have a wrong normalization function")
+	}
+
+	// Also check it propagates retroactively
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(cmdEcho.GlobalNormalizationFunc()).Pointer() {
+		t.Error("cmdEcho should have had the normalization function of rootCmd")
 	}
 
 	// First add the cmdEchoSub to cmdPrint
@@ -1183,6 +1190,64 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	if reflect.ValueOf(cmdPrint.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() ||
 		reflect.ValueOf(cmdEchoSub.GlobalNormalizationFunc()).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
 		t.Error("cmdPrint and cmdEchoSub should had the normalization function of rootCmd")
+	}
+}
+
+func TestNormPassedOnLocal(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+
+	cmd := &Command{}
+	flagVal := false
+
+	cmd.Flags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	cmd.SetGlobalNormalizationFunc(n)
+	if cmd.LocalFlags().Lookup("flagname") != cmd.LocalFlags().Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to Local flag set")
+	}
+}
+
+func TestNormPassedOnInherited(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+
+	cmd, childBefore, childAfter := &Command{}, &Command{}, &Command{}
+	flagVal := false
+	cmd.AddCommand(childBefore)
+
+	cmd.PersistentFlags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	cmd.SetGlobalNormalizationFunc(n)
+
+	cmd.AddCommand(childAfter)
+
+	if f := childBefore.InheritedFlags(); f.Lookup("flagname") == nil || f.Lookup("flagname") != f.Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to inherited flag set in command added before flag")
+	}
+	if f := childAfter.InheritedFlags(); f.Lookup("flagname") == nil || f.Lookup("flagname") != f.Lookup("FLAGNAME") {
+		t.Error("Normalization function should be passed on to inherited flag set in command added after flag")
+	}
+}
+
+// Related to https://github.com/spf13/cobra/issues/521.
+func TestNormConsistent(t *testing.T) {
+	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ToUpper(name))
+	}
+
+	cmd := &Command{}
+	flagVal := false
+
+	cmd.Flags().BoolVar(&flagVal, "flagname", true, "this is a dummy flag")
+	// Build local flag set
+	cmd.LocalFlags()
+
+	cmd.SetGlobalNormalizationFunc(n)
+	cmd.SetGlobalNormalizationFunc(nil)
+
+	if cmd.LocalFlags().Lookup("flagname") == cmd.LocalFlags().Lookup("FLAGNAME") {
+		t.Error("Normalizing flag names should not result in duplicate flags")
 	}
 }
 
