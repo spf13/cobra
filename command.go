@@ -806,6 +806,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 
 // ResetCommands used for testing.
 func (c *Command) ResetCommands() {
+	c.parent = nil
 	c.commands = nil
 	c.helpCommand = nil
 	c.parentsPflags = nil
@@ -1132,6 +1133,9 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 		c.lflags.SetOutput(c.flagErrorBuf)
 	}
 	c.lflags.SortFlags = c.Flags().SortFlags
+	if c.globNormFunc != nil {
+		c.lflags.SetNormalizeFunc(c.globNormFunc)
+	}
 
 	addToLocal := func(f *flag.Flag) {
 		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
@@ -1156,6 +1160,10 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 	}
 
 	local := c.LocalFlags()
+	if c.globNormFunc != nil {
+		c.iflags.SetNormalizeFunc(c.globNormFunc)
+	}
+
 	c.parentsPflags.VisitAll(func(f *flag.Flag) {
 		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
 			c.iflags.AddFlag(f)
@@ -1189,6 +1197,10 @@ func (c *Command) ResetFlags() {
 	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
+
+	c.lflags = nil
+	c.iflags = nil
+	c.parentsPflags = nil
 }
 
 // HasFlags checks if the command contains any flags (local plus persistent from the entire structure).
@@ -1296,6 +1308,10 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
+	}
+
+	if c.globNormFunc != nil {
+		c.parentsPflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
 	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
