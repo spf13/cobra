@@ -1133,7 +1133,9 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 		c.lflags.SetOutput(c.flagErrorBuf)
 	}
 	c.lflags.SortFlags = c.Flags().SortFlags
-	c.lflags.SetNormalizeFunc(c.Flags().GetNormalizeFunc())
+	if c.globNormFunc != nil {
+		c.lflags.SetNormalizeFunc(c.globNormFunc)
+	}
 
 	addToLocal := func(f *flag.Flag) {
 		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
@@ -1158,7 +1160,9 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 	}
 
 	local := c.LocalFlags()
-	c.iflags.SetNormalizeFunc(c.parentsPflags.GetNormalizeFunc())
+	if c.globNormFunc != nil {
+		c.iflags.SetNormalizeFunc(c.globNormFunc)
+	}
 
 	c.parentsPflags.VisitAll(func(f *flag.Flag) {
 		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
@@ -1306,8 +1310,8 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags.SortFlags = false
 	}
 
-	if c.HasParent() {
-		c.parentsPflags.SetNormalizeFunc(c.Parent().PersistentFlags().GetNormalizeFunc())
+	if c.globNormFunc != nil {
+		c.parentsPflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
 	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
