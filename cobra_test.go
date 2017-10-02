@@ -1235,6 +1235,9 @@ func TestNormConsistent(t *testing.T) {
 	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
 	}
+	id := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(name)
+	}
 
 	cmd := &Command{}
 	flagVal := false
@@ -1244,7 +1247,7 @@ func TestNormConsistent(t *testing.T) {
 	cmd.LocalFlags()
 
 	cmd.SetGlobalNormalizationFunc(n)
-	cmd.SetGlobalNormalizationFunc(nil)
+	cmd.SetGlobalNormalizationFunc(id)
 
 	if cmd.LocalFlags().Lookup("flagname") == cmd.LocalFlags().Lookup("FLAGNAME") {
 		t.Error("Normalizing flag names should not result in duplicate flags")
