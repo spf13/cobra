@@ -906,6 +906,10 @@ Run 'kubectl help' for usage.
 
 Cobra can generate a Markdown-formatted document based on the subcommands, flags, etc. A simple example of how to do this for your command can be found in [Markdown Docs](doc/md_docs.md).
 
+## Generating reStructured Text-formatted documentation for your command
+
+Cobra can generate a reStructured Text-formatted document based on the subcommands, flags, etc. A simple example of how to do this for your command can be found in [ReST Docs](doc/rest_docs.md).
+
 ## Generating man pages for your command
 
 Cobra can generate a man page based on the subcommands, flags, etc. A simple example of how to do this for your command can be found in [Man Docs](doc/man_docs.md).
