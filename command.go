@@ -125,7 +125,7 @@ type Command struct {
 	// Must be > 0.
 	SuggestionsMinimumDistance int
 
-	// TraverseChildren parses flags on all parents before executing child command
+	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
 
 	// name is the command name, usually the executable's name.
@@ -532,7 +532,7 @@ func (c *Command) findNext(next string) *Command {
 		if cmd.Name() == next || cmd.HasAlias(next) {
 			return cmd
 		}
-		if EnablePrefixMatching && cmd.HasNameOrAliasPrefix(next) {
+		if EnablePrefixMatching && cmd.hasNameOrAliasPrefix(next) {
 			matches = append(matches, cmd)
 		}
 	}
@@ -1046,9 +1046,9 @@ func (c *Command) HasAlias(s string) bool {
 	return false
 }
 
-// HasNameOrAliasPrefix returns true if the Name or any of aliases start
+// hasNameOrAliasPrefix returns true if the Name or any of aliases start
 // with prefix
-func (c *Command) HasNameOrAliasPrefix(prefix string) bool {
+func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
 	if strings.HasPrefix(c.Name(), prefix) {
 		return true
 	}
@@ -1060,6 +1060,7 @@ func (c *Command) HasNameOrAliasPrefix(prefix string) bool {
 	return false
 }
 
+// NameAndAliases returns a list of the command name and all aliases
 func (c *Command) NameAndAliases() string {
 	return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
 }
