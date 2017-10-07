@@ -347,3 +347,94 @@ func TestSetHelpCommand(t *testing.T) {
 		t.Errorf("Expected to contain %q message, but got %q", correctMessage, output.String())
 	}
 }
+
+func TestTraverseWithParentFlags(t *testing.T) {
+	cmd := &Command{
+		Use:              "do",
+		TraverseChildren: true,
+	}
+	cmd.Flags().String("foo", "", "foo things")
+	cmd.Flags().BoolP("goo", "g", false, "foo things")
+
+	sub := &Command{Use: "next"}
+	sub.Flags().String("add", "", "add things")
+	cmd.AddCommand(sub)
+
+	c, args, err := cmd.Traverse([]string{"-g", "--foo", "ok", "next", "--add"})
+	if err != nil {
+		t.Fatalf("Expected no error: %s", err)
+	}
+	if len(args) != 1 && args[0] != "--add" {
+		t.Fatalf("wrong args %s", args)
+	}
+	if c.Name() != sub.Name() {
+		t.Fatalf("wrong command %q expected %q", c.Name(), sub.Name())
+	}
+}
+
+func TestTraverseNoParentFlags(t *testing.T) {
+	cmd := &Command{
+		Use:              "do",
+		TraverseChildren: true,
+	}
+	cmd.Flags().String("foo", "", "foo things")
+
+	sub := &Command{Use: "next"}
+	sub.Flags().String("add", "", "add things")
+	cmd.AddCommand(sub)
+
+	c, args, err := cmd.Traverse([]string{"next"})
+	if err != nil {
+		t.Fatalf("Expected no error: %s", err)
+	}
+	if len(args) != 0 {
+		t.Fatalf("wrong args %s", args)
+	}
+	if c.Name() != sub.Name() {
+		t.Fatalf("wrong command %q expected %q", c.Name(), sub.Name())
+	}
+}
+
+func TestTraverseWithBadParentFlags(t *testing.T) {
+	cmd := &Command{
+		Use:              "do",
+		TraverseChildren: true,
+	}
+	sub := &Command{Use: "next"}
+	sub.Flags().String("add", "", "add things")
+	cmd.AddCommand(sub)
+
+	expected := "got unknown flag: --add"
+
+	c, _, err := cmd.Traverse([]string{"--add", "ok", "next"})
+	if err == nil || strings.Contains(err.Error(), expected) {
+		t.Fatalf("Expected error %s got %s", expected, err)
+	}
+	if c != nil {
+		t.Fatalf("Expected nil command")
+	}
+}
+
+func TestTraverseWithBadChildFlag(t *testing.T) {
+	cmd := &Command{
+		Use:              "do",
+		TraverseChildren: true,
+	}
+	cmd.Flags().String("foo", "", "foo things")
+
+	sub := &Command{Use: "next"}
+	cmd.AddCommand(sub)
+
+	// Expect no error because the last commands args shouldn't be parsed in
+	// Traverse
+	c, args, err := cmd.Traverse([]string{"next", "--add"})
+	if err != nil {
+		t.Fatalf("Expected no error: %s", err)
+	}
+	if len(args) != 1 && args[0] != "--add" {
+		t.Fatalf("wrong args %s", args)
+	}
+	if c.Name() != sub.Name() {
+		t.Fatalf("wrong command %q expected %q", c.Name(), sub.Name())
+	}
+}

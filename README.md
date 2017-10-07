@@ -343,6 +343,19 @@ A flag can also be assigned locally which will only apply to that specific comma
 RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
+### Local Flag on Parent Commands
+
+By default Cobra only parses local flags on the target command, any local flags on 
+parent commands are ignored. By enabling `Command.TraverseChildren` Cobra will 
+parse local flags on each command before executing the target command.
+
+```go
+command := cobra.Command{
+  Use: "print [OPTIONS] [COMMANDS]",
+  TraverseChildren: true,
+}
+```
+
 ### Bind Flags with Config
 
 You can also bind your flags with [viper](https://github.com/spf13/viper):
