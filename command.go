@@ -175,6 +175,9 @@ type Command struct {
 	// helpCommand is command with usage 'help'. If it's not defined by user,
 	// cobra uses default help command.
 	helpCommand *Command
+	
+	// CustomData permits you to store arbitrary data for specific needs
+	CustomData interface{}
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
