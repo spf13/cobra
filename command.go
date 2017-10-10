@@ -693,6 +693,9 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
+	if err := c.validateRequiredFlags(); err != nil {
+		return err
+	}
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
@@ -808,6 +811,25 @@ func (c *Command) ValidateArgs(args []string) error {
 		return nil
 	}
 	return c.Args(c, args)
+}
+
+func (c *Command) validateRequiredFlags() error {
+	flags := c.Flags()
+	missingFlagNames := []string{}
+	flags.VisitAll(func(pflag *flag.Flag) {
+		requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
+		if !found {
+			return
+		}
+		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+			missingFlagNames = append(missingFlagNames, pflag.Name)
+		}
+	})
+
+	if len(missingFlagNames) > 0 {
+		return fmt.Errorf(`Required flag(s) "%s" have/has not been set`, strings.Join(missingFlagNames, `", "`))
+	}
+	return nil
 }
 
 // InitDefaultHelpFlag adds default help flag to c.
