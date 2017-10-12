@@ -1360,6 +1360,9 @@ func (c *Command) ParseFlags(args []string) error {
 		return nil
 	}
 
+	if c.flagErrorBuf == nil {
+		c.flagErrorBuf = new(bytes.Buffer)
+	}
 	beforeErrorBufLen := c.flagErrorBuf.Len()
 	c.mergePersistentFlags()
 	err := c.Flags().Parse(args)
