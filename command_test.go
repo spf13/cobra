@@ -486,3 +486,15 @@ func TestPersistentRequiredFlags(t *testing.T) {
 		}
 	}
 }
+
+// TestUpdateName checks if c.Name() updates on changed c.Use.
+// Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
+func TestUpdateName(t *testing.T) {
+	c := &Command{Use: "name xyz"}
+	originalName := c.Name()
+
+	c.Use = "changedName abc"
+	if originalName == c.Name() || c.Name() != "changedName" {
+		t.Error("c.Name() should be updated on changed c.Use")
+	}
+}
