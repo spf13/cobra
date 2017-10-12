@@ -439,6 +439,32 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 	}
 }
 
+func TestTraverseWithTwoSubcommands(t *testing.T) {
+	cmd := &Command{
+		Use:              "do",
+		TraverseChildren: true,
+	}
+
+	sub := &Command{
+		Use:              "sub",
+		TraverseChildren: true,
+	}
+	cmd.AddCommand(sub)
+
+	subsub := &Command{
+		Use: "subsub",
+	}
+	sub.AddCommand(subsub)
+
+	c, _, err := cmd.Traverse([]string{"sub", "subsub"})
+	if err != nil {
+		t.Fatalf("Expected no error: %s", err)
+	}
+	if c.Name() != subsub.Name() {
+		t.Fatalf("wrong command %q expected %q", c.Name(), subsub.Name())
+	}
+}
+
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: func(*Command, []string) {}}
 	output := new(bytes.Buffer)
