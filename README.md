@@ -224,10 +224,6 @@ func init() {
   viper.SetDefault("license", "apache")
 }
 
-func Execute() {
-  RootCmd.Execute()
-}
-
 func initConfig() {
   // Don't forget to read config either from cfgFile or from home directory!
   if cfgFile != "" {
