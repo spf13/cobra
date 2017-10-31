@@ -621,10 +621,8 @@ func (c *Command) Root() *Command {
 	return c
 }
 
-// ArgsLenAtDash will return the length of f.Args at the moment when a -- was
-// found during arg parsing. This allows your program to know which args were
-// before the -- and which came after. (Description from
-// https://godoc.org/github.com/spf13/pflag#FlagSet.ArgsLenAtDash).
+// ArgsLenAtDash will return the length of c.Flags().Args at the moment
+// when a -- was found during args parsing.
 func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
