@@ -188,3 +188,12 @@ func ld(s, t string, ignoreCase bool) int {
 	}
 	return d[len(s)][len(t)]
 }
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
