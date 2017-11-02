@@ -32,6 +32,18 @@ func resetCommandLineFlagSet() {
 	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 }
 
+func checkStringContains(t *testing.T, got, expected string) {
+	if !strings.Contains(got, expected) {
+		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
+	}
+}
+
+func checkStringOmits(t *testing.T, got, expected string) {
+	if strings.Contains(got, expected) {
+		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
+	}
+}
+
 func TestSingleCommand(t *testing.T) {
 	var rootCmdArgs []string
 	rootCmd := &Command{
@@ -400,9 +412,7 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 		t.Errorf("Invalid flag should generate error")
 	}
 
-	if !strings.Contains(err.Error(), "unknown shorthand") {
-		t.Errorf("Wrong error message: %q", err.Error())
-	}
+	checkStringContains(t, err.Error(), "unknown shorthand")
 
 	if intFlagValue != 7 {
 		t.Errorf("Expected flag value: %v, got %v", 7, intFlagValue)
@@ -418,9 +428,7 @@ func TestFlagInvalidInput(t *testing.T) {
 		t.Errorf("Invalid flag value should generate error")
 	}
 
-	if !strings.Contains(err.Error(), "invalid syntax") {
-		t.Errorf("Wrong error message: %q", err)
-	}
+	checkStringContains(t, err.Error(), "invalid syntax")
 }
 
 func TestFlagBeforeCommand(t *testing.T) {
@@ -731,9 +739,7 @@ func TestHelpCommandExecuted(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output, rootCmd.Long) {
-		t.Errorf("Expected to contain: %q, got: %q", rootCmd.Long, output)
-	}
+	checkStringContains(t, output, rootCmd.Long)
 }
 
 func TestHelpCommandExecutedOnChild(t *testing.T) {
@@ -746,9 +752,7 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output, childCmd.Long) {
-		t.Errorf("Expected to contain: %q, got: %q", childCmd.Long, output)
-	}
+	checkStringContains(t, output, childCmd.Long)
 }
 
 func TestSetHelpCommand(t *testing.T) {
@@ -782,9 +786,7 @@ func TestHelpFlagExecuted(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output, rootCmd.Long) {
-		t.Errorf("Expected to contain: %q, got: %q", rootCmd.Long, output)
-	}
+	checkStringContains(t, output, rootCmd.Long)
 }
 
 func TestHelpFlagExecutedOnChild(t *testing.T) {
@@ -797,9 +799,7 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output, childCmd.Long) {
-		t.Errorf("Expected to contain: %q, got: %q", childCmd.Long, output)
-	}
+	checkStringContains(t, output, childCmd.Long)
 }
 
 // TestHelpFlagInHelp checks,
@@ -807,22 +807,17 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 // that has no other flags.
 // Related to https://github.com/spf13/cobra/issues/302.
 func TestHelpFlagInHelp(t *testing.T) {
-	output := new(bytes.Buffer)
-	parent := &Command{Use: "parent", Run: func(*Command, []string) {}}
-	parent.SetOutput(output)
+	parentCmd := &Command{Use: "parent", Run: func(*Command, []string) {}}
 
-	child := &Command{Use: "child", Run: func(*Command, []string) {}}
-	parent.AddCommand(child)
+	childCmd := &Command{Use: "child", Run: func(*Command, []string) {}}
+	parentCmd.AddCommand(childCmd)
 
-	parent.SetArgs([]string{"help", "child"})
-	err := parent.Execute()
+	output, err := executeCommand(parentCmd, "help", "child")
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output.String(), "[flags]") {
-		t.Errorf("\nExpecting to contain: %v\nGot: %v", "[flags]", output.String())
-	}
+	checkStringContains(t, output, "[flags]")
 }
 
 func TestFlagsInUsage(t *testing.T) {
@@ -832,10 +827,7 @@ func TestFlagsInUsage(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	expected := "[flags]"
-	if !strings.Contains(output, expected) {
-		t.Errorf("Expected to contain %q\ngot: %v", expected, output)
-	}
+	checkStringContains(t, output, "[flags]")
 }
 
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
@@ -848,9 +840,7 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if !strings.Contains(output, childCmd.Long) {
-		t.Errorf("Expected to contain: %q, got: %q", childCmd.Long, output)
-	}
+	checkStringContains(t, output, childCmd.Long)
 }
 
 func TestUsageIsNotPrintedTwice(t *testing.T) {
@@ -997,10 +987,7 @@ func TestDeprecatedCommand(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	expected := deprecatedCmd.Deprecated
-	if !strings.Contains(output, expected) {
-		t.Errorf("Expected to contain: %q\nGot:%q", expected, output)
-	}
+	checkStringContains(t, output, deprecatedCmd.Deprecated)
 }
 
 func TestHooks(t *testing.T) {
@@ -1248,9 +1235,7 @@ func TestFlagOnPflagCommandLine(t *testing.T) {
 	c.AddCommand(&Command{Use: "child", Run: emptyRun})
 
 	output, _ := executeCommand(c, "--help")
-	if !strings.Contains(output, flagName) {
-		t.Errorf("Expected to contain: %q\nGot: %v", flagName, output)
-	}
+	checkStringContains(t, output, flagName)
 
 	resetCommandLineFlagSet()
 }
@@ -1406,9 +1391,7 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	if err != nil {
 		t.Error("Unexpected error:", err)
 	}
-	if !strings.Contains(output, "This flag is deprecated") {
-		t.Errorf("Expected to contain deprecated message, but got %q", output)
-	}
+	checkStringContains(t, output, "This flag is deprecated")
 }
 
 func TestTraverseWithParentFlags(t *testing.T) {
