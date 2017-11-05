@@ -140,7 +140,7 @@ type Command struct {
 	commandsAreSorted bool
 	// commandCalledAs is the name or alias value used to call this command.
 	commandCalledAs struct {
-		name string
+		name   string
 		called bool
 	}
 

@@ -526,11 +526,11 @@ func TestUpdateName(t *testing.T) {
 }
 
 type calledAsTestcase struct {
-		args []string
-		call string
-		want string
-		epm  bool
-		tc   bool
+	args []string
+	call string
+	want string
+	epm  bool
+	tc   bool
 }
 
 func (tc *calledAsTestcase) test(t *testing.T) {
