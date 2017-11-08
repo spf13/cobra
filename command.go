@@ -1163,7 +1163,7 @@ func (c *Command) HasAvailableSubCommands() bool {
 		}
 	}
 
-	// the command either has no sub comamnds, or no available (non deprecated/help/hidden)
+	// the command either has no sub commands, or no available (non deprecated/help/hidden)
 	// sub commands
 	return false
 }
