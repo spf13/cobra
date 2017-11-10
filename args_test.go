@@ -34,10 +34,13 @@ func TestNoArgsWithArgs(t *testing.T) {
 
 func TestOnlyValidArgs(t *testing.T) {
 	c := &Command{
-		Use:       "c",
-		Args:      OnlyValidArgs,
-		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
+		Use:  "c",
+		Args: OnlyValidArgs,
+		ValidArgs: []ValidArgs{
+			{"one", "one thing"},
+			{"two", "two things"},
+		},
+		Run: emptyRun,
 	}
 
 	output, err := executeCommand(c, "one", "two")
@@ -51,10 +54,13 @@ func TestOnlyValidArgs(t *testing.T) {
 
 func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
 	c := &Command{
-		Use:       "c",
-		Args:      OnlyValidArgs,
-		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
+		Use:  "c",
+		Args: OnlyValidArgs,
+		ValidArgs: []ValidArgs{
+			{"one", "one thing"},
+			{"two", "two things"},
+		},
+		Run: emptyRun,
 	}
 
 	_, err := executeCommand(c, "three")

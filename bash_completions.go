@@ -428,9 +428,11 @@ func writeRequiredFlag(buf *bytes.Buffer, cmd *Command) {
 
 func writeRequiredNouns(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    must_have_one_noun=()\n")
-	sort.Sort(sort.StringSlice(cmd.ValidArgs))
+	sort.Slice(cmd.ValidArgs, func(i, j int) bool {
+		return cmd.ValidArgs[i].Name < cmd.ValidArgs[j].Name
+	})
 	for _, value := range cmd.ValidArgs {
-		buf.WriteString(fmt.Sprintf("    must_have_one_noun+=(%q)\n", value))
+		buf.WriteString(fmt.Sprintf("    must_have_one_noun+=(%q)\n", value.Name))
 	}
 }
 

@@ -80,7 +80,12 @@ The `BashCompletionFunction` option is really only valid/useful on the root comm
 In the above example "pod" was assumed to already be typed. But if you want `kubectl get [tab][tab]` to show a list of valid "nouns" you have to set them. Simplified code from `kubectl get` looks like:
 
 ```go
-validArgs []string = { "pod", "node", "service", "replicationcontroller" }
+validArgs []ValidArgs = {
+  {"pod", ""},
+  {"node", ""},
+  {"service", ""},
+  {"replicationcontroller", ""},
+}
 
 cmd := &cobra.Command{
 	Use:     "get [(-o|--output=)json|yaml|template|...] (RESOURCE [NAME] | RESOURCE/NAME ...)",
