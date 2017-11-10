@@ -823,7 +823,11 @@ func (c *Command) validateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`Required flag(s) "%s" have/has not been set`, strings.Join(missingFlagNames, `", "`))
+		errFmtStr := `Required flags "%s" have not been set`
+		if len(missingFlagNames) == 1 {
+			errFmtStr = `Required flag "%s" has not been set`
+		}
+		return fmt.Errorf(errFmtStr, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
 }
