@@ -387,7 +387,7 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasValidArgs}}
 	
 Valid Args:{{range .ValidArgs}}
-	{{.Name}} {{.Short}}{{end}}{{end}}{{if .HasExample}}
+	{{rpad .Name 20}}	{{.Short}}{{end}}{{end}}{{if .HasExample}}
 
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
