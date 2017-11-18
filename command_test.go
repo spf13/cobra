@@ -681,7 +681,7 @@ func TestRequiredFlags(t *testing.T) {
 	c.MarkFlagRequired("foo2")
 	c.Flags().String("bar", "", "")
 
-	expected := fmt.Sprintf("Required flag(s) %q, %q have/has not been set", "foo1", "foo2")
+	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
 
 	_, err := executeCommand(c)
 	got := err.Error()
@@ -708,7 +708,7 @@ func TestPersistentRequiredFlags(t *testing.T) {
 
 	parent.AddCommand(child)
 
-	expected := fmt.Sprintf("Required flag(s) %q, %q, %q, %q have/has not been set", "bar1", "bar2", "foo1", "foo2")
+	expected := fmt.Sprintf("required flag(s) %q, %q, %q, %q not set", "bar1", "bar2", "foo1", "foo2")
 
 	_, err := executeCommand(parent, "child")
 	if err.Error() != expected {
