@@ -118,6 +118,10 @@ type Command struct {
 	// will be printed by generating docs for this command.
 	DisableAutoGenTag bool
 
+	// DisableFlagsInUseLine will disable the addition of [flags] to the usage
+	// line of a command when printing help or generating docs
+	DisableFlagsInUseLine bool
+
 	// DisableSuggestions disables the suggestions based on Levenshtein distance
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
@@ -993,6 +997,9 @@ func (c *Command) UseLine() string {
 		useline = c.parent.CommandPath() + " " + c.Use
 	} else {
 		useline = c.Use
+	}
+	if c.DisableFlagsInUseLine {
+		return useline
 	}
 	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
 		useline += " [flags]"
