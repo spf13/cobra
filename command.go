@@ -994,9 +994,6 @@ func (c *Command) UseLine() string {
 	} else {
 		useline = c.Use
 	}
-	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
-		useline += " [flags]"
-	}
 	return useline
 }
 
