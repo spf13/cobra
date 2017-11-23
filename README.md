@@ -158,10 +158,7 @@ import (
 )
 
 func main() {
-  if err := cmd.RootCmd.Execute(); err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-  }
+  cmd.Execute()
 }
 ```
 
@@ -174,7 +171,7 @@ commands you want. It's the easiest way to incorporate Cobra into your applicati
 
 ## Using the Cobra Library
 
-To manually implement Cobra you need to create a bare main.go file and a RootCmd file.
+To manually implement Cobra you need to create a bare main.go file and a rootCmd file.
 You will optionally provide additional commands as you see fit.
 
 ### Create rootCmd
@@ -184,7 +181,7 @@ Cobra doesn't require any special constructors. Simply create your commands.
 Ideally you place this in app/cmd/root.go:
 
 ```go
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
   Use:   "hugo",
   Short: "Hugo is a very fast static site generator",
   Long: `A Fast and Flexible Static Site Generator built with
@@ -212,14 +209,14 @@ import (
 
 func init() {
   cobra.OnInitialize(initConfig)
-  RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
-  RootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory eg. github.com/spf13/")
-  RootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
-  RootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
-  RootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
-  viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
-  viper.BindPFlag("projectbase", RootCmd.PersistentFlags().Lookup("projectbase"))
-  viper.BindPFlag("useViper", RootCmd.PersistentFlags().Lookup("viper"))
+  rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+  rootCmd.PersistentFlags().StringVarP(&projectBase, "projectbase", "b", "", "base project directory eg. github.com/spf13/")
+  rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "Author name for copyright attribution")
+  rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "Name of license for the project (can provide `licensetext` in config)")
+  rootCmd.PersistentFlags().Bool("viper", true, "Use Viper for configuration")
+  viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
+  viper.BindPFlag("projectbase", rootCmd.PersistentFlags().Lookup("projectbase"))
+  viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
   viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
   viper.SetDefault("license", "apache")
 }
@@ -267,10 +264,7 @@ import (
 )
 
 func main() {
-  if err := cmd.RootCmd.Execute(); err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-  }
+  cmd.Execute()
 }
 ```
 
@@ -292,7 +286,7 @@ import (
 )
 
 func init() {
-  RootCmd.AddCommand(versionCmd)
+  rootCmd.AddCommand(versionCmd)
 }
 
 var versionCmd = &cobra.Command{
@@ -329,7 +323,7 @@ command it's assigned to as well as every command under that command. For
 global flags, assign a flag as a persistent flag on the root.
 
 ```go
-RootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 ```
 
 ### Local Flags
@@ -337,7 +331,7 @@ RootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose out
 A flag can also be assigned locally which will only apply to that specific command.
 
 ```go
-RootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
+rootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
 ### Local Flag on Parent Commands
@@ -360,8 +354,8 @@ You can also bind your flags with [viper](https://github.com/spf13/viper):
 var author string
 
 func init() {
-  RootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-  viper.BindPFlag("author", RootCmd.PersistentFlags().Lookup("author"))
+  rootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
+  viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
 }
 ```
 
