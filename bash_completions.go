@@ -222,7 +222,7 @@ __%[1]s_handle_command()
         next_command="_${last_command}_${words[c]//:/__}"
     else
         if [[ $c -eq 0 ]]; then
-            next_command="_$(basename "${words[c]//:/__}")"
+            next_command="_root_command"
         else
             next_command="_${words[c]//:/__}"
         fi
@@ -243,7 +243,7 @@ __%[1]s_handle_word()
         __%[1]s_handle_flag
     elif __%[1]s_contains_word "${words[c]}" "${commands[@]}"; then
         __%[1]s_handle_command
-    elif [[ $c -eq 0 ]] && __%[1]s_contains_word "$(basename "${words[c]}")" "${commands[@]}"; then
+    elif [[ $c -eq 0 ]]; then
         __%[1]s_handle_command
     else
         __%[1]s_handle_noun
@@ -455,7 +455,13 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 	commandName := cmd.CommandPath()
 	commandName = strings.Replace(commandName, " ", "_", -1)
 	commandName = strings.Replace(commandName, ":", "__", -1)
-	buf.WriteString(fmt.Sprintf("_%s()\n{\n", commandName))
+
+	if cmd.Root() == cmd {
+		buf.WriteString(fmt.Sprint("_root_command()\n{\n"))
+	} else {
+		buf.WriteString(fmt.Sprintf("_%s()\n{\n", commandName))
+	}
+
 	buf.WriteString(fmt.Sprintf("    last_command=%q\n", commandName))
 	writeCommands(buf, cmd)
 	writeFlags(buf, cmd)
