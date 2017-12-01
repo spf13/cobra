@@ -843,6 +843,63 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
+func TestVersionFlagExecuted(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
+func TestVersionTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "customized version: 1.0.0")
+}
+
+func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--version", "sub")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
+func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	_, err := executeCommand(rootCmd, "sub", "--version")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, err.Error(), "unknown flag: --version")
+}
+
+func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+
+	_, err := executeCommand(rootCmd, "--version")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "unknown flag: --version")
+}
+
 func TestUsageIsNotPrintedTwice(t *testing.T) {
 	var cmd = &Command{Use: "root"}
 	var sub = &Command{Use: "sub"}
