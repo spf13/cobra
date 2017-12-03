@@ -48,9 +48,14 @@ const bashCompletionFunc = `__custom_func() {
 
 func TestBashCompletions(t *testing.T) {
 	rootCmd := &Command{
-		Use:                    "root",
-		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
-		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
+		Use:        "root",
+		ArgAliases: []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
+		ValidArgs: []ValidArgs{
+			{"pod", ""},
+			{"node", ""},
+			{"service", ""},
+			{"replicationcontroller", ""},
+		},
 		BashCompletionFunction: bashCompletionFunc,
 		Run: emptyRun,
 	}
@@ -111,10 +116,15 @@ func TestBashCompletions(t *testing.T) {
 		Use:        "times [# times] [string to echo]",
 		SuggestFor: []string{"counts"},
 		Args:       OnlyValidArgs,
-		ValidArgs:  []string{"one", "two", "three", "four"},
-		Short:      "Echo anything to the screen more times",
-		Long:       "a slightly useless command for testing.",
-		Run:        emptyRun,
+		ValidArgs: []ValidArgs{
+			{"one", ""},
+			{"two", ""},
+			{"three", ""},
+			{"four", ""},
+		},
+		Short: "Echo anything to the screen more times",
+		Long:  "a slightly useless command for testing.",
+		Run:   emptyRun,
 	}
 
 	echoCmd.AddCommand(timesCmd)

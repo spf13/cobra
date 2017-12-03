@@ -1,4 +1,3 @@
-// Copyright © 2013 Steve Francia <spf@spf13.com>.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +26,17 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// This structure has been created to replace
+// ValidArgs []string in Command object to prevent
+// wasting memory when new command objects are added simply
+// to add new subsubcommands.
+type ValidArgs struct {
+	// Name of subcommand
+	Name string
+	// Short description
+	Short string
+}
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -52,7 +62,9 @@ type Command struct {
 	Example string
 
 	// ValidArgs is list of all valid non-flag arguments that are accepted in bash completions
-	ValidArgs []string
+	// We can use ValidArgs instead of adding new commands to list. This is to prevent
+	// wasting memory with new Command objects.
+	ValidArgs []ValidArgs
 
 	// Expected arguments
 	Args PositionalArgs
@@ -388,7 +400,10 @@ func (c *Command) UsageTemplate() string {
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
 Aliases:
-  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+  {{.NameAndAliases}}{{end}}{{if .HasValidArgs}}
+	
+Valid Args:{{range .ValidArgs}}
+	{{rpad .Name 20}}	{{.Short}}{{end}}{{end}}{{if .HasExample}}
 
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
@@ -407,6 +422,13 @@ Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
 `
+}
+
+func (c *Command) HasValidArgs() bool {
+	if len(c.ValidArgs) > 0 {
+		return true
+	}
+	return false
 }
 
 // HelpTemplate return help template for the command.

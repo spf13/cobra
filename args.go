@@ -35,7 +35,14 @@ func NoArgs(cmd *Command, args []string) error {
 func OnlyValidArgs(cmd *Command, args []string) error {
 	if len(cmd.ValidArgs) > 0 {
 		for _, v := range args {
-			if !stringInSlice(v, cmd.ValidArgs) {
+			if !func() bool {
+				for _, cmdargs := range cmd.ValidArgs {
+					if v == cmdargs.Name {
+						return true
+					}
+				}
+				return false
+			}() {
 				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
 			}
 		}
