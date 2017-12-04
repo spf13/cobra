@@ -82,7 +82,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		return err
 	}
 	if hasSeeAlso(cmd) {
-		buf.WriteString("### SEE ALSO\n")
+		buf.WriteString("### SEE ALSO\n\n")
 		if cmd.HasParent() {
 			parent := cmd.Parent()
 			pname := parent.CommandPath()
