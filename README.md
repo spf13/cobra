@@ -20,6 +20,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 * [rclone](http://rclone.org/)
 * [nehm](https://github.com/bogem/nehm)
+* [Pouch](https://github.com/alibaba/pouch)
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg "Travis CI status")](https://travis-ci.org/spf13/cobra)
 [![CircleCI status](https://circleci.com/gh/spf13/cobra.png?circle-token=:circle-token "CircleCI status")](https://circleci.com/gh/spf13/cobra)
