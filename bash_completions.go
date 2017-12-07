@@ -239,7 +239,7 @@ __handle_word()
     if [[ "${words[c]}" == -* ]]; then
         __handle_flag
     elif __contains_word "${words[c]}" "${commands[@]}"; then
-    		__handle_command
+        __handle_command
     elif __contains_word "${words[c]}" "${command_aliases[@]}"; then
         words[${c}]=${aliasHash[${words[c]}]}
         __handle_command
