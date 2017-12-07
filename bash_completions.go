@@ -239,6 +239,9 @@ __handle_word()
     if [[ "${words[c]}" == -* ]]; then
         __handle_flag
     elif __contains_word "${words[c]}" "${commands[@]}"; then
+    		__handle_command
+    elif __contains_word "${words[c]}" "${command_aliases[@]}"; then
+        words[${c}]=${aliasHash[${words[c]}]}
         __handle_command
     elif [[ $c -eq 0 ]]; then
         __handle_command
@@ -296,6 +299,7 @@ func writeCommands(buf *bytes.Buffer, cmd *Command) {
 			continue
 		}
 		buf.WriteString(fmt.Sprintf("    commands+=(%q)\n", c.Name()))
+		writeCmdAliases(buf, c)
 	}
 	buf.WriteString("\n")
 }
@@ -434,6 +438,16 @@ func writeRequiredNouns(buf *bytes.Buffer, cmd *Command) {
 	}
 }
 
+func writeCmdAliases(buf *bytes.Buffer, cmd *Command) {
+	sort.Sort(sort.StringSlice(cmd.Aliases))
+
+	for _, value := range cmd.Aliases {
+		buf.WriteString(fmt.Sprintf("    command_aliases+=(%q)\n", value))
+		buf.WriteString(fmt.Sprintf("    aliasHash[%q]=%q\n", value, cmd.Name()))
+	}
+	buf.WriteString("\n")
+}
+
 func writeArgAliases(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    noun_aliases=()\n")
 	sort.Sort(sort.StringSlice(cmd.ArgAliases))
@@ -460,6 +474,11 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 	}
 
 	buf.WriteString(fmt.Sprintf("    last_command=%q\n", commandName))
+	buf.WriteString("\n")
+	buf.WriteString(fmt.Sprintf("    declare -A aliasHash 2>/dev/null || :\n"))
+	buf.WriteString("    command_aliases=()\n")
+	buf.WriteString("\n")
+
 	writeCommands(buf, cmd)
 	writeFlags(buf, cmd)
 	writeRequiredFlag(buf, cmd)
