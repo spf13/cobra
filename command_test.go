@@ -867,7 +867,7 @@ func TestVersionTemplate(t *testing.T) {
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
 	output, err := executeCommand(rootCmd, "--version", "sub")
