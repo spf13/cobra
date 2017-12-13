@@ -25,9 +25,10 @@ import (
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
+	addCmd.Flags().StringVarP(&description, "description", "d", "A brief description of your command", "optional short description of this command")
 }
 
-var packageName, parentName string
+var packageName, parentName, description string
 
 var addCmd = &cobra.Command{
 	Use:     "add [command name]",
@@ -134,7 +135,7 @@ import (
 // {{.cmdName}}Cmd represents the {{.cmdName}} command
 var {{.cmdName}}Cmd = &cobra.Command{
 	Use:   "{{.cmdName}}",
-	Short: "A brief description of your command",
+	Short: "{{.description}}",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -166,6 +167,7 @@ func init() {
 	data["license"] = license.Header
 	data["cmdPackage"] = filepath.Base(filepath.Dir(path)) // last dir of path
 	data["parentName"] = parentName
+	data["description"] = description
 	data["cmdName"] = cmdName
 
 	cmdScript, err := executeTemplate(template, data)
