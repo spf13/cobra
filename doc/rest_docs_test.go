@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestGenMdDoc(t *testing.T) {
-	// We generate on subcommand so we have both subcommands and parents.
+func TestGenRSTDoc(t *testing.T) {
+	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMarkdown(echoCmd, buf); err != nil {
+	if err := GenReST(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -27,37 +27,39 @@ func TestGenMdDoc(t *testing.T) {
 	checkStringOmits(t, output, deprecatedCmd.Short)
 }
 
-func TestGenMdNoTag(t *testing.T) {
+func TestGenRSTNoTag(t *testing.T) {
 	rootCmd.DisableAutoGenTag = true
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenMarkdown(rootCmd, buf); err != nil {
+	if err := GenReST(rootCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
 
-	checkStringOmits(t, output, "Auto generated")
+	unexpected := "Auto generated"
+	checkStringOmits(t, output, unexpected)
 }
 
-func TestGenMdTree(t *testing.T) {
+func TestGenRSTTree(t *testing.T) {
 	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
-	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+
+	tmpdir, err := ioutil.TempDir("", "test-gen-rst-tree")
 	if err != nil {
-		t.Fatalf("Failed to create tmpdir: %v", err)
+		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenMarkdownTree(c, tmpdir); err != nil {
-		t.Fatalf("GenMarkdownTree failed: %v", err)
+	if err := GenReSTTree(c, tmpdir); err != nil {
+		t.Fatalf("GenReSTTree failed: %s", err.Error())
 	}
 
-	if _, err := os.Stat(filepath.Join(tmpdir, "do.md")); err != nil {
-		t.Fatalf("Expected file 'do.md' to exist")
+	if _, err := os.Stat(filepath.Join(tmpdir, "do.rst")); err != nil {
+		t.Fatalf("Expected file 'do.rst' to exist")
 	}
 }
 
-func BenchmarkGenMarkdownToFile(b *testing.B) {
+func BenchmarkGenReSTToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
 		b.Fatal(err)
@@ -67,7 +69,7 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenMarkdown(rootCmd, file); err != nil {
+		if err := GenReST(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
 	}
