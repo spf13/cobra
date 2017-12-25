@@ -185,7 +185,7 @@ func Execute() {
 
 func init() {
 	Environ = environ.New(VendorName, ApplicationName)
- {{if .viper}}
+{{if .viper}}
 	cobra.OnInitialize(initConfig)
 {{end}}
 	// Here you will define your flags and configuration settings.
