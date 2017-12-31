@@ -174,7 +174,7 @@ func Execute() {
 	}
 }
 
-func init() { {{if .viper}}
+func init() { {{- if .viper}}
 	cobra.OnInitialize(initConfig)
 {{end}}
 	// Here you will define your flags and configuration settings.
