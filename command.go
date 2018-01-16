@@ -436,10 +436,13 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
-func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	flag := fs.Lookup(name)
+func hasDefault(name string, c *Command) bool {
+	flag := c.Flags().Lookup(name)
 	if flag == nil {
-		return false
+		return true
+	}
+	if flag.Value.Type() == "bool" {
+		return true
 	}
 	return flag.NoOptDefVal != ""
 }
@@ -468,16 +471,13 @@ func stripFlags(args []string, c *Command) []string {
 		return args
 	}
 	c.mergePersistentFlags()
-
 	commands := []string{}
-	flags := c.Flags()
-
 Loop:
 	for len(args) > 0 {
 		s := args[0]
 		args = args[1:]
 		switch {
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
+		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasDefault(s[2:], c):
 			// If '--flag arg' then
 			// delete arg from args.
 			fallthrough // (do the same as below)
@@ -580,6 +580,7 @@ func (c *Command) findNext(next string) *Command {
 // Traverse the command tree to find the command, and parse args for
 // each parent.
 func (c *Command) Traverse(args []string) (*Command, []string, error) {
+	c.mergePersistentFlags()
 	flags := []string{}
 	inFlag := false
 
@@ -588,7 +589,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
-			inFlag = !hasNoOptDefVal(arg[2:], c.Flags())
+			inFlag = !hasDefault(arg[2:], c)
 			flags = append(flags, arg)
 			continue
 		// A short flag with a space separated value
