@@ -444,16 +444,23 @@ func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
-func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	if len(name) == 0 {
-		return false
+func shortWithSpace(arg string, c *Command) bool {
+	if strings.HasPrefix(arg, "-") {
+		if !strings.Contains(arg, "=") {
+			if len(arg) == 2 {
+				flag := c.Flags().ShorthandLookup(arg[1:])
+				if flag == nil {
+					return false
+				}
+				if flag.Value.Type() == "bool" {
+					return false
+				}
+				//shortHasNoOptDefVal
+				return flag.NoOptDefVal != ""
+			}
+		}
 	}
-
-	flag := fs.ShorthandLookup(name[:1])
-	if flag == nil {
-		return false
-	}
-	return flag.NoOptDefVal != ""
+	return false
 }
 
 func stripFlags(args []string, c *Command) []string {
@@ -474,7 +481,7 @@ Loop:
 			// If '--flag arg' then
 			// delete arg from args.
 			fallthrough // (do the same as below)
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+		case shortWithSpace(s, c):
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
 			if len(args) <= 1 {
@@ -585,7 +592,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			flags = append(flags, arg)
 			continue
 		// A short flag with a space separated value
-		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
+		case shortWithSpace(arg, c):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
