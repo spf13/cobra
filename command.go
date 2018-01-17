@@ -576,6 +576,8 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 	flags := []string{}
 	inFlag := false
 
+	c.mergePersistentFlags()
+
 	for i, arg := range args {
 		switch {
 		// A long flag with a space separated value
