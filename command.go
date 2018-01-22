@@ -186,6 +186,30 @@ type Command struct {
 	versionTemplate string
 }
 
+// SetUse allows you to set the Use property after the command has been created, primarily intended to
+// facilitate localisation
+func (c *Command) SetUse(s string) {
+	c.Use = s
+}
+
+// SetShort allows you to set the Short property after the command has been created, primarily intended to
+// facilitate localisation
+func (c *Command) SetShort(s string) {
+	c.Short = s
+}
+
+// SetLong allows you to set the Long property after the command has been created, primarily intended to
+// facilitate localisation
+func (c *Command) SetLong(s string) {
+	c.Long = s
+}
+
+// SetExample allows you to set the Example property after the command has been created, primarily intended to
+// facilitate localisation
+func (c *Command) SetExample(s string) {
+	c.Example = s
+}
+
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
