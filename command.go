@@ -1245,7 +1245,7 @@ func (c *Command) HasParent() bool {
 	return c.parent != nil
 }
 
-// GlobalNormalizationFunc returns the global normalization function or nil if doesn't exists.
+// GlobalNormalizationFunc returns the global normalization function or nil if it doesn't exist.
 func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) flag.NormalizedName {
 	return c.globNormFunc
 }
