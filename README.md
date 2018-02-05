@@ -192,6 +192,13 @@ var rootCmd = &cobra.Command{
     // Do Stuff Here
   },
 }
+
+func Execute() {
+  if err := rootCmd.Execute(); err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  }
+}
 ```
 
 You will additionally define flags and handle configuration in your init() function.
