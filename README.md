@@ -337,8 +337,8 @@ rootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read
 
 ### Local Flag on Parent Commands
 
-By default Cobra only parses local flags on the target command, any local flags on 
-parent commands are ignored. By enabling `Command.TraverseChildren` Cobra will 
+By default Cobra only parses local flags on the target command, any local flags on
+parent commands are ignored. By enabling `Command.TraverseChildren` Cobra will
 parse local flags on each command before executing the target command.
 
 ```go
@@ -365,6 +365,15 @@ In this example the persistent flag `author` is bound with `viper`.
 when the `--author` flag is not provided by user.
 
 More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
+
+### Required flags
+
+Flags are optional by default. If instead you wish your command to report an error
+when a flag has not been set, mark it as required:
+```go
+rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.MarkFlagRequired("region")
+```
 
 ## Positional and Custom Arguments
 

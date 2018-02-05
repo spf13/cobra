@@ -494,17 +494,20 @@ func (c *Command) GenBashCompletionFile(filename string) error {
 	return c.GenBashCompletion(outFile)
 }
 
-// MarkFlagRequired adds the BashCompOneRequiredFlag annotation to the named flag, if it exists.
+// MarkFlagRequired adds the BashCompOneRequiredFlag annotation to the named flag if it exists,
+// and causes your command to report an error if invoked without the flag.
 func (c *Command) MarkFlagRequired(name string) error {
 	return MarkFlagRequired(c.Flags(), name)
 }
 
-// MarkPersistentFlagRequired adds the BashCompOneRequiredFlag annotation to the named persistent flag, if it exists.
+// MarkPersistentFlagRequired adds the BashCompOneRequiredFlag annotation to the named persistent flag if it exists,
+// and causes your command to report an error if invoked without the flag.
 func (c *Command) MarkPersistentFlagRequired(name string) error {
 	return MarkFlagRequired(c.PersistentFlags(), name)
 }
 
-// MarkFlagRequired adds the BashCompOneRequiredFlag annotation to the named flag in the flag set, if it exists.
+// MarkFlagRequired adds the BashCompOneRequiredFlag annotation to the named flag if it exists,
+// and causes your command to report an error if invoked without the flag.
 func MarkFlagRequired(flags *pflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompOneRequiredFlag, []string{"true"})
 }
