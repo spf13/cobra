@@ -43,6 +43,17 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 	return nil
 }
 
+// OnlySubCommands returns an error if any args are included except for subcommands.
+func OnlySubCommands(cmd *Command, args []string) error {
+	if !cmd.HasSubCommands() {
+		return nil
+	}
+	if len(args) > 0 {
+		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
+	}
+	return nil
+}
+
 // ArbitraryArgs never returns an error.
 func ArbitraryArgs(cmd *Command, args []string) error {
 	return nil
