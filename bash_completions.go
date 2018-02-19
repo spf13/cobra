@@ -473,7 +473,6 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 
 // GenBashCompletion generates bash completion file and writes to the passed writer.
 func (c *Command) GenBashCompletion(w io.Writer) error {
-	fmt.Println("called")
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
 	if len(c.BashCompletionFunction) > 0 {
