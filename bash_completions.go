@@ -222,7 +222,7 @@ __%[1]s_handle_command()
         next_command="_${last_command}_${words[c]//:/__}"
     else
         if [[ $c -eq 0 ]]; then
-            next_command="_root_command"
+            next_command="_%[1]s_root_command"
         else
             next_command="_${words[c]//:/__}"
         fi
@@ -457,7 +457,7 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 	commandName = strings.Replace(commandName, ":", "__", -1)
 
 	if cmd.Root() == cmd {
-		buf.WriteString(fmt.Sprint("_root_command()\n{\n"))
+		buf.WriteString(fmt.Sprintf("_%s_root_command()\n{\n", commandName))
 	} else {
 		buf.WriteString(fmt.Sprintf("_%s()\n{\n", commandName))
 	}
@@ -473,6 +473,7 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 
 // GenBashCompletion generates bash completion file and writes to the passed writer.
 func (c *Command) GenBashCompletion(w io.Writer) error {
+	fmt.Println("called")
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
 	if len(c.BashCompletionFunction) > 0 {
