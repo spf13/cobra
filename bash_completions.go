@@ -136,6 +136,12 @@ __%[1]s_handle_reply()
     if declare -F __ltrim_colon_completions >/dev/null; then
         __ltrim_colon_completions "$cur"
     fi
+
+    # If there is only 1 completion and it is a flag with an = it will be completed
+    # but we don't want a space after the =
+    if [[ "${#COMPREPLY[@]}" -eq "1" ]] && [[ $(type -t compopt) = "builtin" ]] && [[ "${COMPREPLY[0]}" == --*= ]]; then
+       compopt -o nospace
+    fi
 }
 
 # The arguments should be in the form "ext1|ext2|extn"
