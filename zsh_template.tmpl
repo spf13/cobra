@@ -1,0 +1,56 @@
+{{define "complexFlag"}}{{ /* for pflag.Flag with short and long options */ -}}
+"(-{{.Shorthand}} --{{.Name}})"\{-{{.Shorthand}}, --{{.Name}}\}[{{.Usage}}]
+{{- end}}
+
+{{define "simpleFlag"}}{{ /* for pflag.Flag with either short or long options */ -}}
+"{{with .Name}}-{{.}}{{else}}--{{.Shorthand}}{{end}}[{{.Usage}}]"
+{{- end}}
+
+{{define "argumentsC"}}
+{{- /* should accept Command (that contains subcommands) as parameter */ -}}
+function {{constructPath .}} {
+  local line
+
+  _arguments -C \
+{{range extractFlags . -}}
+    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \
+{{end -}}
+    "1: :({{subCmdList .}})" \
+    "*:arg:->args"
+
+    case $line[1] in
+{{range .Commands -}}
+        {{.Use}})
+            {{constructPath .}}
+            ;;
+{{end -}}
+    esac
+}
+{{range .Commands -}}
+
+{{template "selectCmdTemplate" .}}
+{{end -}}
+{{end}}
+
+{{define "arguments"}}
+function {{constructPath .}} {
+{{- /* should accept Command without subcommands as parameter */ -}}
+{{with extractFlags . -}}
+  _arguments \
+{{range .}}
+    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \
+{{end -}}
+{{ /* leave this line empty because of the last backslash */ }}
+{{end -}}
+}
+{{end}}
+
+{{define "selectCmdTemplate" -}}
+{{with .Commands}}{{template "argumentsC" .}}{{else}}{{template "arguments" .}}{{end}}
+{{end -}}
+
+{{define "Main"}}
+#compdef _{{.Use}} {{.Use}}
+
+{{template "selectCmdTemplate" .}}
+{{end}}
