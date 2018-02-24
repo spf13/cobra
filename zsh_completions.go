@@ -1,11 +1,82 @@
 package cobra
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"text/template"
+
+	"github.com/spf13/pflag"
+)
+
+var (
+	funcMap = template.FuncMap{
+		"constructPath": constructPath,
+		"subCmdList":    subCmdList,
+		"extractFlags":  extractFlags,
+		"simpleFlag":    simpleFlag,
+	}
+	zshCompletionText = `
+{{/* for pflag.Flag (specifically annotations) */}}
+{{define "flagAnnotations" -}}
+{{with index .Annotations "cobra_annotation_bash_completion_filename_extensions"}}:filename:_files{{end}}
+{{- end}}
+
+{{/* for pflag.Flag with short and long options */}}
+{{define "complexFlag" -}}
+"(-{{.Shorthand}} --{{.Name}})"{-{{.Shorthand}},--{{.Name}}}"[{{.Usage}}]{{template "flagAnnotations" .}}"
+{{- end}}
+
+{{/* for pflag.Flag with either short or long options */}}
+{{define "simpleFlag" -}}
+"{{with .Name}}--{{.}}{{else}}-{{.Shorthand}}{{end}}[{{.Usage}}]{{template "flagAnnotations" .}}"
+{{- end}}
+
+{{/* should accept Command (that contains subcommands) as parameter */}}
+{{define "argumentsC" -}}
+function {{constructPath .}} {
+  local line
+
+  _arguments -C \
+{{range extractFlags . -}}
+{{"    "}}{{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \
+{{end}}    "1: :({{subCmdList .}})" \
+    "*::arg:->args"
+
+    case $line[1] in {{- range .Commands}}
+        {{.Use}})
+            {{constructPath .}}
+            ;;
+{{end}}    esac
+}
+{{range .Commands}}
+{{template "selectCmdTemplate" .}}
+{{- end}}
+{{- end}}
+
+{{/* should accept Command without subcommands as parameter */}}
+{{define "arguments" -}}
+function {{constructPath .}} {
+{{with extractFlags . -}}
+{{ "  _arguments" -}}
+{{range .}} \
+    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end -}}
+{{end}}
+{{end -}}
+}
+{{- end}}
+
+{{define "selectCmdTemplate" -}}
+{{if .Commands}}{{template "argumentsC" .}}{{else}}{{template "arguments" .}}{{end}}
+{{- end}}
+
+{{define "Main" -}}
+#compdef _{{.Use}} {{.Use}}
+
+{{template "selectCmdTemplate" .}}
+{{end}}
+`
 )
 
 // GenZshCompletionFile generates zsh completion file.
@@ -21,106 +92,56 @@ func (c *Command) GenZshCompletionFile(filename string) error {
 
 // GenZshCompletion generates a zsh completion file and writes to the passed writer.
 func (c *Command) GenZshCompletion(w io.Writer) error {
-	buf := new(bytes.Buffer)
-
-	writeHeader(buf, c)
-	maxDepth := maxDepth(c)
-	writeLevelMapping(buf, maxDepth)
-	writeLevelCases(buf, maxDepth, c)
-
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-func writeHeader(w io.Writer, cmd *Command) {
-	fmt.Fprintf(w, "#compdef %s\n\n", cmd.Name())
-}
-
-func maxDepth(c *Command) int {
-	if len(c.Commands()) == 0 {
-		return 0
+	tmpl, err := template.New("Main").Funcs(funcMap).Parse(zshCompletionText)
+	if err != nil {
+		return fmt.Errorf("error creating zsh completion template: %v", err)
 	}
-	maxDepthSub := 0
-	for _, s := range c.Commands() {
-		subDepth := maxDepth(s)
-		if subDepth > maxDepthSub {
-			maxDepthSub = subDepth
+	return tmpl.Execute(w, c)
+}
+
+func constructPath(c *Command) string {
+	var path []string
+	tmpCmd := c
+	path = append(path, tmpCmd.Use)
+
+	for {
+		if !tmpCmd.HasParent() {
+			break
 		}
+		tmpCmd = tmpCmd.Parent()
+		path = append(path, tmpCmd.Use)
 	}
-	return 1 + maxDepthSub
+
+	// reverse path
+	for left, right := 0, len(path)-1; left < right; left, right = left+1, right-1 {
+		path[left], path[right] = path[right], path[left]
+	}
+
+	return "_" + strings.Join(path, "_")
 }
 
-func writeLevelMapping(w io.Writer, numLevels int) {
-	fmt.Fprintln(w, `_arguments \`)
-	for i := 1; i <= numLevels; i++ {
-		fmt.Fprintf(w, `  '%d: :->level%d' \`, i, i)
-		fmt.Fprintln(w)
+// subCmdList returns a space separated list of subcommands names
+func subCmdList(c *Command) string {
+	var subCmds []string
+
+	for _, cmd := range c.Commands() {
+		subCmds = append(subCmds, cmd.Use)
 	}
-	fmt.Fprintf(w, `  '%d: :%s'`, numLevels+1, "_files")
-	fmt.Fprintln(w)
+
+	return strings.Join(subCmds, " ")
 }
 
-func writeLevelCases(w io.Writer, maxDepth int, root *Command) {
-	fmt.Fprintln(w, "case $state in")
-	defer fmt.Fprintln(w, "esac")
-
-	for i := 1; i <= maxDepth; i++ {
-		fmt.Fprintf(w, "  level%d)\n", i)
-		writeLevel(w, root, i)
-		fmt.Fprintln(w, "  ;;")
-	}
-	fmt.Fprintln(w, "  *)")
-	fmt.Fprintln(w, "    _arguments '*: :_files'")
-	fmt.Fprintln(w, "  ;;")
+func extractFlags(c *Command) []*pflag.Flag {
+	var flags []*pflag.Flag
+	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		flags = append(flags, f)
+	})
+	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
+		flags = append(flags, f)
+	})
+	return flags
 }
 
-func writeLevel(w io.Writer, root *Command, i int) {
-	fmt.Fprintf(w, "    case $words[%d] in\n", i)
-	defer fmt.Fprintln(w, "    esac")
-
-	commands := filterByLevel(root, i)
-	byParent := groupByParent(commands)
-
-	for p, c := range byParent {
-		names := names(c)
-		fmt.Fprintf(w, "      %s)\n", p)
-		fmt.Fprintf(w, "        _arguments '%d: :(%s)'\n", i, strings.Join(names, " "))
-		fmt.Fprintln(w, "      ;;")
-	}
-	fmt.Fprintln(w, "      *)")
-	fmt.Fprintln(w, "        _arguments '*: :_files'")
-	fmt.Fprintln(w, "      ;;")
-
-}
-
-func filterByLevel(c *Command, l int) []*Command {
-	cs := make([]*Command, 0)
-	if l == 0 {
-		cs = append(cs, c)
-		return cs
-	}
-	for _, s := range c.Commands() {
-		cs = append(cs, filterByLevel(s, l-1)...)
-	}
-	return cs
-}
-
-func groupByParent(commands []*Command) map[string][]*Command {
-	m := make(map[string][]*Command)
-	for _, c := range commands {
-		parent := c.Parent()
-		if parent == nil {
-			continue
-		}
-		m[parent.Name()] = append(m[parent.Name()], c)
-	}
-	return m
-}
-
-func names(commands []*Command) []string {
-	ns := make([]string, len(commands))
-	for i, c := range commands {
-		ns[i] = c.Name()
-	}
-	return ns
+func simpleFlag(p *pflag.Flag) bool {
+	return p.Name == "" || p.Shorthand == ""
 }
