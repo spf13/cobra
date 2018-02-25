@@ -15,6 +15,7 @@ var (
 		"constructPath": constructPath,
 		"subCmdList":    subCmdList,
 		"extractFlags":  extractFlags,
+		"cmdName":       cmdName,
 		"simpleFlag":    simpleFlag,
 	}
 	zshCompletionText = `
@@ -45,7 +46,7 @@ function {{constructPath .}} {
     "*::arg:->args"
 
     case $line[1] in {{- range .Commands}}
-        {{.Use}})
+        {{cmdName .}})
             {{constructPath .}}
             ;;
 {{end}}    esac
@@ -72,7 +73,7 @@ function {{constructPath .}} {
 {{- end}}
 
 {{define "Main" -}}
-#compdef _{{.Use}} {{.Use}}
+#compdef _{{cmdName .}} {{cmdName .}}
 
 {{template "selectCmdTemplate" .}}
 {{end}}
@@ -102,14 +103,14 @@ func (c *Command) GenZshCompletion(w io.Writer) error {
 func constructPath(c *Command) string {
 	var path []string
 	tmpCmd := c
-	path = append(path, tmpCmd.Use)
+	path = append(path, tmpCmd.Name())
 
 	for {
 		if !tmpCmd.HasParent() {
 			break
 		}
 		tmpCmd = tmpCmd.Parent()
-		path = append(path, tmpCmd.Use)
+		path = append(path, tmpCmd.Name())
 	}
 
 	// reverse path
@@ -125,7 +126,7 @@ func subCmdList(c *Command) string {
 	var subCmds []string
 
 	for _, cmd := range c.Commands() {
-		subCmds = append(subCmds, cmd.Use)
+		subCmds = append(subCmds, cmd.Name())
 	}
 
 	return strings.Join(subCmds, " ")
@@ -140,6 +141,11 @@ func extractFlags(c *Command) []*pflag.Flag {
 		flags = append(flags, f)
 	})
 	return flags
+}
+
+// cmdName returns the command's innvocation
+func cmdName(c *Command) string {
+	return c.Name()
 }
 
 func simpleFlag(p *pflag.Flag) bool {

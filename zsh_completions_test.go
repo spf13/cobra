@@ -21,12 +21,13 @@ func TestGenZshCompletion(t *testing.T) {
 				r := &Command{
 					Use:  "mycommand",
 					Long: "My Command long description",
+					Run:  emptyRun,
 				}
 				r.Flags().BoolVar(&debug, "debug", debug, "description")
 				return r
 			}(),
 			expectedExpressions: []string{
-				`function _mycommand {\s+_arguments \\\s+"--debug\[description\]"\s+}`,
+				`(?s)function _mycommand {\s+_arguments \\\s+"--debug\[description\]".*--help.*}`,
 				"#compdef _mycommand mycommand",
 			},
 		},
@@ -36,6 +37,7 @@ func TestGenZshCompletion(t *testing.T) {
 				r := &Command{
 					Use:  "testcmd",
 					Long: "long description",
+					Run:  emptyRun,
 				}
 				r.Flags().BoolVarP(&debug, "debug", "d", debug, "debug description")
 				return r
@@ -54,10 +56,12 @@ func TestGenZshCompletion(t *testing.T) {
 				d := &Command{
 					Use:   "subcmd1",
 					Short: "Subcmd1 short descrition",
+					Run:   emptyRun,
 				}
 				e := &Command{
 					Use:  "subcmd2",
 					Long: "Subcmd2 short description",
+					Run:  emptyRun,
 				}
 				r.PersistentFlags().BoolVar(&debug, "debug", debug, "description")
 				d.Flags().StringVarP(&option, "option", "o", option, "option description")
@@ -65,7 +69,7 @@ func TestGenZshCompletion(t *testing.T) {
 				return r
 			}(),
 			expectedExpressions: []string{
-				`\\\n\s+"1: :\(subcmd1 subcmd2\)" \\\n`,
+				`\\\n\s+"1: :\(help subcmd1 subcmd2\)" \\\n`,
 				`_arguments \\\n.*"--debug\[description]"`,
 				`_arguments -C \\\n.*"--debug\[description]"`,
 				`function _rootcmd_subcmd1 {`,
@@ -80,6 +84,7 @@ func TestGenZshCompletion(t *testing.T) {
 				r := &Command{
 					Use:   "mycmd",
 					Short: "my command short description",
+					Run:   emptyRun,
 				}
 				r.Flags().StringVarP(&file, "config", "c", file, "config file")
 				r.MarkFlagFilename("config", "ext")
@@ -93,6 +98,7 @@ func TestGenZshCompletion(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			tc.root.Execute()
 			buf := new(bytes.Buffer)
 			tc.root.GenZshCompletion(buf)
 			output := buf.Bytes()
