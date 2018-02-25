@@ -45,11 +45,11 @@ function {{constructPath .}} {
 {{end}}    "1: :({{subCmdList .}})" \
     "*::arg:->args"
 
-    case $line[1] in {{- range .Commands}}
+    case $line[1] in {{- range .Commands}}{{if not .Hidden}}
         {{cmdName .}})
             {{constructPath .}}
             ;;
-{{end}}    esac
+{{end}}{{end}}    esac
 }
 {{range .Commands}}
 {{template "selectCmdTemplate" .}}
@@ -69,7 +69,9 @@ function {{constructPath .}} {
 {{- end}}
 
 {{define "selectCmdTemplate" -}}
+{{if .Hidden}}{{/* ignore hidden*/}}{{else -}}
 {{if .Commands}}{{template "argumentsC" .}}{{else}}{{template "arguments" .}}{{end}}
+{{- end}}
 {{- end}}
 
 {{define "Main" -}}
@@ -126,6 +128,9 @@ func subCmdList(c *Command) string {
 	var subCmds []string
 
 	for _, cmd := range c.Commands() {
+		if cmd.Hidden {
+			continue
+		}
 		subCmds = append(subCmds, cmd.Name())
 	}
 
@@ -135,10 +140,14 @@ func subCmdList(c *Command) string {
 func extractFlags(c *Command) []*pflag.Flag {
 	var flags []*pflag.Flag
 	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
-		flags = append(flags, f)
+		if !f.Hidden {
+			flags = append(flags, f)
+		}
 	})
 	c.InheritedFlags().VisitAll(func(f *pflag.Flag) {
-		flags = append(flags, f)
+		if !f.Hidden {
+			flags = append(flags, f)
+		}
 	})
 	return flags
 }

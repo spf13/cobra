@@ -3,6 +3,7 @@ package cobra
 import (
 	"bytes"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -114,7 +115,74 @@ func TestGenZshCompletion(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestGenZshCompletionHidden(t *testing.T) {
+	tcs := []struct {
+		name                string
+		root                *Command
+		expectedExpressions []string
+	}{
+		{
+			name: "hidden commmands",
+			root: func() *Command {
+				r := &Command{
+					Use:   "main",
+					Short: "main short description",
+				}
+				s1 := &Command{
+					Use:    "sub1",
+					Hidden: true,
+					Run:    emptyRun,
+				}
+				s2 := &Command{
+					Use:   "sub2",
+					Short: "short sub2 description",
+					Run:   emptyRun,
+				}
+				r.AddCommand(s1, s2)
+
+				return r
+			}(),
+			expectedExpressions: []string{
+				"sub1",
+			},
+		},
+		{
+			name: "hidden flags",
+			root: func() *Command {
+				var hidden string
+				r := &Command{
+					Use:   "root",
+					Short: "root short description",
+					Run:   emptyRun,
+				}
+				r.Flags().StringVarP(&hidden, "hidden", "H", hidden, "hidden usage")
+				if err := r.Flags().MarkHidden("hidden"); err != nil {
+					t.Errorf("Error setting flag hidden: %v\n", err)
+				}
+				return r
+			}(),
+			expectedExpressions: []string{
+				"--hidden",
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.root.Execute()
+			buf := new(bytes.Buffer)
+			tc.root.GenZshCompletion(buf)
+			output := buf.String()
+
+			for _, expr := range tc.expectedExpressions {
+				if strings.Contains(output, expr) {
+					t.Errorf("Expected completion (%s) not to contain '%s' but it does", output, expr)
+				}
+			}
+		})
+	}
 }
 
 func BenchmarkConstructPath(b *testing.B) {
