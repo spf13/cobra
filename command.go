@@ -23,10 +23,12 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	flag "github.com/spf13/pflag"
+	"strings"
 )
+
+var NotRunnable = errors.New("Command not runnable; need subcommand.")
 
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
@@ -714,7 +716,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return errors.New("Subcommand required.")
+		return NotRunnable
 	}
 
 	c.preRun()
@@ -848,6 +850,14 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if err == flag.ErrHelp {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
+		}
+
+		// If command wasn't runnable, show full help, but do return the error.
+		// This will result in apps by default returning a non-success exit code, but also gives them the option to
+		// handle specially.
+		if err == NotRunnable {
+			cmd.HelpFunc()(cmd, args)
+			return cmd, err
 		}
 
 		// If root command has SilentErrors flagged,
