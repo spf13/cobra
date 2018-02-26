@@ -17,6 +17,7 @@ package cobra
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -713,7 +714,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return flag.ErrHelp
+		return errors.New("Subcommand required.")
 	}
 
 	c.preRun()
