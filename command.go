@@ -311,7 +311,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
+		err := tmpl(c.OutOrStderr(), c.HelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
