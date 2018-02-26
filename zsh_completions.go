@@ -37,43 +37,50 @@ var (
 {{/* should accept Command (that contains subcommands) as parameter */}}
 {{define "argumentsC" -}}
 function {{constructPath .}} {
-  local line
+  local -a commands
 
-  _arguments -C \
-{{range extractFlags . -}}
-{{"    "}}{{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \
-{{end}}    "1: :({{subCmdList .}})" \
+  _arguments -C \{{- range extractFlags .}}
+    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \{{- end}}
+    "1: :->cmnds" \
     "*::arg:->args"
 
-    case $line[1] in {{- range .Commands}}{{if not .Hidden}}
-        {{cmdName .}})
-            {{constructPath .}}
-            ;;
-{{end}}{{end}}    esac
+  case $state in
+  cmnds)
+    commands=({{range .Commands}}{{if not .Hidden}}
+      "{{cmdName .}}:{{.Short}}"{{end}}{{end}}
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in {{- range .Commands}}{{if not .Hidden}}
+  {{cmdName .}})
+    {{constructPath .}}
+    ;;{{end}}{{end}}
+  esac
 }
-{{range .Commands}}
+{{range .Commands}}{{if not .Hidden}}
 {{template "selectCmdTemplate" .}}
-{{- end}}
+{{- end}}{{end}}
 {{- end}}
 
 {{/* should accept Command without subcommands as parameter */}}
 {{define "arguments" -}}
 function {{constructPath .}} {
-{{with extractFlags . -}}
-{{ "  _arguments" -}}
-{{range .}} \
+{{"  _arguments"}}{{range extractFlags .}} \
     {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end -}}
 {{end}}
-{{end -}}
 }
-{{- end}}
+{{end}}
 
+{{/* dispatcher for commands with or without subcommands */}}
 {{define "selectCmdTemplate" -}}
 {{if .Hidden}}{{/* ignore hidden*/}}{{else -}}
 {{if .Commands}}{{template "argumentsC" .}}{{else}}{{template "arguments" .}}{{end}}
 {{- end}}
 {{- end}}
 
+{{/* template entry point */}}
 {{define "Main" -}}
 #compdef _{{cmdName .}} {{cmdName .}}
 
