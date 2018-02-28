@@ -317,7 +317,7 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 
 			var ext string
 			if len(value) > 0 {
-				ext = fmt.Sprintf("__%s_handle_filename_extension_flag ", cmd.Name()) + strings.Join(value, "|")
+				ext = fmt.Sprintf("__%s_handle_filename_extension_flag ", cmd.Root().Name()) + strings.Join(value, "|")
 			} else {
 				ext = "_filedir"
 			}
@@ -335,7 +335,7 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 
 			var ext string
 			if len(value) == 1 {
-				ext = fmt.Sprintf("__%s_handle_subdirs_in_dir_flag ", cmd.Name()) + value[0]
+				ext = fmt.Sprintf("__%s_handle_subdirs_in_dir_flag ", cmd.Root().Name()) + value[0]
 			} else {
 				ext = "_filedir -d"
 			}
