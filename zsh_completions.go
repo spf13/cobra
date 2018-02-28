@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/pflag"
@@ -12,11 +11,9 @@ import (
 
 var (
 	funcMap = template.FuncMap{
-		"constructPath": constructPath,
-		"subCmdList":    subCmdList,
-		"extractFlags":  extractFlags,
-		"cmdName":       cmdName,
-		"simpleFlag":    simpleFlag,
+		"genZshFuncName": generateZshCompletionFuncName,
+		"extractFlags":   extractFlags,
+		"simpleFlag":     simpleFlag,
 	}
 	zshCompletionText = `
 {{/* for pflag.Flag (specifically annotations) */}}
@@ -36,7 +33,8 @@ var (
 
 {{/* should accept Command (that contains subcommands) as parameter */}}
 {{define "argumentsC" -}}
-function {{constructPath .}} {
+{{ $cmdPath := genZshFuncName .}}
+function {{$cmdPath}} {
   local -a commands
 
   _arguments -C \{{- range extractFlags .}}
@@ -47,15 +45,15 @@ function {{constructPath .}} {
   case $state in
   cmnds)
     commands=({{range .Commands}}{{if not .Hidden}}
-      "{{cmdName .}}:{{.Short}}"{{end}}{{end}}
+      "{{.Name}}:{{.Short}}"{{end}}{{end}}
     )
     _describe "command" commands
     ;;
   esac
 
   case "$words[1]" in {{- range .Commands}}{{if not .Hidden}}
-  {{cmdName .}})
-    {{constructPath .}}
+  {{.Name}})
+    {{$cmdPath}}_{{.Name}}
     ;;{{end}}{{end}}
   esac
 }
@@ -66,7 +64,7 @@ function {{constructPath .}} {
 
 {{/* should accept Command without subcommands as parameter */}}
 {{define "arguments" -}}
-function {{constructPath .}} {
+function {{genZshFuncName .}} {
 {{"  _arguments"}}{{range extractFlags .}} \
     {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end -}}
 {{end}}
@@ -82,7 +80,7 @@ function {{constructPath .}} {
 
 {{/* template entry point */}}
 {{define "Main" -}}
-#compdef _{{cmdName .}} {{cmdName .}}
+#compdef _{{.Name}} {{.Name}}
 
 {{template "selectCmdTemplate" .}}
 {{end}}
@@ -109,39 +107,11 @@ func (c *Command) GenZshCompletion(w io.Writer) error {
 	return tmpl.Execute(w, c)
 }
 
-func constructPath(c *Command) string {
-	var path []string
-	tmpCmd := c
-	path = append(path, tmpCmd.Name())
-
-	for {
-		if !tmpCmd.HasParent() {
-			break
-		}
-		tmpCmd = tmpCmd.Parent()
-		path = append(path, tmpCmd.Name())
+func generateZshCompletionFuncName(c *Command) string {
+	if c.HasParent() {
+		return generateZshCompletionFuncName(c.Parent()) + "_" + c.Name()
 	}
-
-	// reverse path
-	for left, right := 0, len(path)-1; left < right; left, right = left+1, right-1 {
-		path[left], path[right] = path[right], path[left]
-	}
-
-	return "_" + strings.Join(path, "_")
-}
-
-// subCmdList returns a space separated list of subcommands names
-func subCmdList(c *Command) string {
-	var subCmds []string
-
-	for _, cmd := range c.Commands() {
-		if cmd.Hidden {
-			continue
-		}
-		subCmds = append(subCmds, cmd.Name())
-	}
-
-	return strings.Join(subCmds, " ")
+	return "_" + c.Name()
 }
 
 func extractFlags(c *Command) []*pflag.Flag {
@@ -157,11 +127,6 @@ func extractFlags(c *Command) []*pflag.Flag {
 		}
 	})
 	return flags
-}
-
-// cmdName returns the command's innvocation
-func cmdName(c *Command) string {
-	return c.Name()
 }
 
 func simpleFlag(p *pflag.Flag) bool {
