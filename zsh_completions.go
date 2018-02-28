@@ -131,7 +131,7 @@ func genFlagEntryForZshArguments(f *pflag.Flag) string {
 func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 	var option, multiMark, extras string
 
-	if f.Value.Type() == "stringArray" {
+	if flagCouldBeSpecifiedMoreThenOnce(f) {
 		multiMark = "*"
 	}
 
@@ -147,7 +147,7 @@ func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
 	var options, parenMultiMark, curlyMultiMark, extras string
 
-	if f.Value.Type() == "stringArray" {
+	if flagCouldBeSpecifiedMoreThenOnce(f) {
 		parenMultiMark = "*"
 		curlyMultiMark = "\\*"
 	}
@@ -165,9 +165,14 @@ func genZshFlagEntryExtras(f *pflag.Flag) string {
 	_, pathSpecified := f.Annotations[BashCompFilenameExt]
 	if pathSpecified {
 		extras = ":filename:_files"
-	} else if !strings.HasPrefix(f.Value.Type(), "bool") {
+	} else if f.NoOptDefVal == "" {
 		extras = ":" // allow option variable without assisting
 	}
 
 	return extras
+}
+
+func flagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
+	return strings.Contains(f.Value.Type(), "Slice") ||
+		strings.Contains(f.Value.Type(), "Array")
 }
