@@ -48,7 +48,7 @@ func TestGenZshCompletion(t *testing.T) {
 			},
 		},
 		{
-			name: "command with subcommands",
+			name: "command with subcommands and flags with values",
 			root: func() *Command {
 				r := &Command{
 					Use:  "rootcmd",
@@ -75,7 +75,7 @@ func TestGenZshCompletion(t *testing.T) {
 				`_arguments -C \\\n.*"--debug\[description]"`,
 				`function _rootcmd_subcmd1 {`,
 				`function _rootcmd_subcmd1 {`,
-				`_arguments \\\n.*"\(-o --option\)"{-o,--option}"\[option description]" \\\n`,
+				`_arguments \\\n.*"\(-o --option\)"{-o,--option}"\[option description]:" \\\n`,
 			},
 		},
 		{
@@ -88,11 +88,24 @@ func TestGenZshCompletion(t *testing.T) {
 					Run:   emptyRun,
 				}
 				r.Flags().StringVarP(&file, "config", "c", file, "config file")
-				r.MarkFlagFilename("config", "ext")
+				r.MarkFlagFilename("config")
 				return r
 			}(),
 			expectedExpressions: []string{
 				`\n +"\(-c --config\)"{-c,--config}"\[config file]:filename:_files"`,
+			},
+		},
+		{
+			name: "repeated variables both with and without value",
+			root: func() *Command {
+				r := genTestCommand("mycmd", true)
+				_ = r.Flags().StringArrayP("debug", "d", []string{}, "debug usage")
+				_ = r.Flags().StringArray("option", []string{}, "options")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`"\*--option\[options]`,
+				`"\(\*-d \*--debug\)"{\\\*-d,\\\*--debug}`,
 			},
 		},
 	}
@@ -101,7 +114,9 @@ func TestGenZshCompletion(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.root.Execute()
 			buf := new(bytes.Buffer)
-			tc.root.GenZshCompletion(buf)
+			if err := tc.root.GenZshCompletion(buf); err != nil {
+				t.Error(err)
+			}
 			output := buf.Bytes()
 
 			for _, expr := range tc.expectedExpressions {
@@ -173,7 +188,9 @@ func TestGenZshCompletionHidden(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.root.Execute()
 			buf := new(bytes.Buffer)
-			tc.root.GenZshCompletion(buf)
+			if err := tc.root.GenZshCompletion(buf); err != nil {
+				t.Error(err)
+			}
 			output := buf.String()
 
 			for _, expr := range tc.expectedExpressions {
@@ -230,6 +247,7 @@ func constructLargeCommandHeirarchy() *Command {
 	var config, st1, st2 string
 	var long, debug bool
 	var in1, in2 int
+	var verbose []bool
 
 	r := genTestCommand("mycmd", false)
 	r.PersistentFlags().StringVarP(&config, "config", "c", config, "config usage")
@@ -238,6 +256,8 @@ func constructLargeCommandHeirarchy() *Command {
 	}
 	s1 := genTestCommand("sub1", true)
 	s1.Flags().BoolVar(&long, "long", long, "long descriptin")
+	s1.Flags().BoolSliceVar(&verbose, "verbose", verbose, "verbose description")
+	s1.Flags().StringArray("option", []string{}, "various options")
 	s2 := genTestCommand("sub2", true)
 	s2.PersistentFlags().BoolVar(&debug, "debug", debug, "debug description")
 	s3 := genTestCommand("sub3", true)
@@ -249,6 +269,7 @@ func constructLargeCommandHeirarchy() *Command {
 	s1_3 := genTestCommand("sub1sub3", true)
 	s1_3.Flags().IntVar(&in1, "int1", in1, "int1 descriptionn")
 	s1_3.Flags().IntVar(&in2, "int2", in2, "int2 descriptionn")
+	s1_3.Flags().StringArrayP("option", "O", []string{}, "more options")
 	s2_1 := genTestCommand("sub2sub1", true)
 	s2_2 := genTestCommand("sub2sub2", true)
 	s2_3 := genTestCommand("sub2sub3", true)
