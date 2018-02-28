@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/pflag"
@@ -11,26 +12,11 @@ import (
 
 var (
 	funcMap = template.FuncMap{
-		"genZshFuncName": generateZshCompletionFuncName,
-		"extractFlags":   extractFlags,
-		"simpleFlag":     simpleFlag,
+		"genZshFuncName":              generateZshCompletionFuncName,
+		"extractFlags":                extractFlags,
+		"genFlagEntryForZshArguments": genFlagEntryForZshArguments,
 	}
 	zshCompletionText = `
-{{/* for pflag.Flag (specifically annotations) */}}
-{{define "flagAnnotations" -}}
-{{with index .Annotations "cobra_annotation_bash_completion_filename_extensions"}}:filename:_files{{end}}
-{{- end}}
-
-{{/* for pflag.Flag with short and long options */}}
-{{define "complexFlag" -}}
-"(-{{.Shorthand}} --{{.Name}})"{-{{.Shorthand}},--{{.Name}}}"[{{.Usage}}]{{template "flagAnnotations" .}}"
-{{- end}}
-
-{{/* for pflag.Flag with either short or long options */}}
-{{define "simpleFlag" -}}
-"{{with .Name}}--{{.}}{{else}}-{{.Shorthand}}{{end}}[{{.Usage}}]{{template "flagAnnotations" .}}"
-{{- end}}
-
 {{/* should accept Command (that contains subcommands) as parameter */}}
 {{define "argumentsC" -}}
 {{ $cmdPath := genZshFuncName .}}
@@ -38,7 +24,7 @@ function {{$cmdPath}} {
   local -a commands
 
   _arguments -C \{{- range extractFlags .}}
-    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end}} \{{- end}}
+    {{genFlagEntryForZshArguments .}} \{{- end}}
     "1: :->cmnds" \
     "*::arg:->args"
 
@@ -66,7 +52,7 @@ function {{$cmdPath}} {
 {{define "arguments" -}}
 function {{genZshFuncName .}} {
 {{"  _arguments"}}{{range extractFlags .}} \
-    {{if simpleFlag .}}{{template "simpleFlag" .}}{{else}}{{template "complexFlag" .}}{{end -}}
+    {{genFlagEntryForZshArguments . -}}
 {{end}}
 }
 {{end}}
@@ -131,4 +117,57 @@ func extractFlags(c *Command) []*pflag.Flag {
 
 func simpleFlag(p *pflag.Flag) bool {
 	return p.Name == "" || p.Shorthand == ""
+}
+
+// genFlagEntryForZshArguments returns an entry that matches _arguments
+// zsh-completion parameters. It's too complicated to generate in a template.
+func genFlagEntryForZshArguments(f *pflag.Flag) string {
+	if f.Name == "" || f.Shorthand == "" {
+		return genFlagEntryForSingleOptionFlag(f)
+	}
+	return genFlagEntryForMultiOptionFlag(f)
+}
+
+func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
+	var option, multiMark, extras string
+
+	if f.Value.Type() == "stringArray" {
+		multiMark = "*"
+	}
+
+	option = "--" + f.Name
+	if option == "--" {
+		option = "-" + f.Shorthand
+	}
+	extras = genZshFlagEntryExtras(f)
+
+	return fmt.Sprintf(`"%s%s[%s]%s"`, multiMark, option, f.Usage, extras)
+}
+
+func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
+	var options, parenMultiMark, curlyMultiMark, extras string
+
+	if f.Value.Type() == "stringArray" {
+		parenMultiMark = "*"
+		curlyMultiMark = "\\*"
+	}
+
+	options = fmt.Sprintf(`"(%s-%s %s--%s)"{%s-%s,%s--%s}`,
+		parenMultiMark, f.Shorthand, parenMultiMark, f.Name, curlyMultiMark, f.Shorthand, curlyMultiMark, f.Name)
+	extras = genZshFlagEntryExtras(f)
+
+	return fmt.Sprintf(`%s"[%s]%s"`, options, f.Usage, extras)
+}
+
+func genZshFlagEntryExtras(f *pflag.Flag) string {
+	var extras string
+
+	_, pathSpecified := f.Annotations[BashCompFilenameExt]
+	if pathSpecified {
+		extras = ":filename:_files"
+	} else if !strings.HasPrefix(f.Value.Type(), "bool") {
+		extras = ":" // allow option variable without assisting
+	}
+
+	return extras
 }
