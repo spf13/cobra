@@ -23,9 +23,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	flag "github.com/spf13/pflag"
-	"strings"
 )
 
 var NotRunnable = errors.New("Command not runnable; need subcommand.")
