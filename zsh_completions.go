@@ -115,10 +115,6 @@ func extractFlags(c *Command) []*pflag.Flag {
 	return flags
 }
 
-func simpleFlag(p *pflag.Flag) bool {
-	return p.Name == "" || p.Shorthand == ""
-}
-
 // genFlagEntryForZshArguments returns an entry that matches _arguments
 // zsh-completion parameters. It's too complicated to generate in a template.
 func genFlagEntryForZshArguments(f *pflag.Flag) string {
