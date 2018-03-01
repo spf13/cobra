@@ -48,6 +48,7 @@ etc.
   * [Suggestions when "unknown command" happens](#suggestions-when-unknown-command-happens)
   * [Generating documentation for your command](#generating-documentation-for-your-command)
   * [Generating bash completions](#generating-bash-completions)
+  * [Generating zsh completions](#generating-zsh-completions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -718,6 +719,11 @@ Cobra can generate documentation based on subcommands, flags, etc. in the follow
 ## Generating bash completions
 
 Cobra can generate a bash-completion file. If you add more information to your command, these completions can be amazingly powerful and flexible.  Read more about it in [Bash Completions](bash_completions.md).
+
+## Generating zsh completions
+
+Cobra can generate zsh-completion file. Read more about it in
+[Zsh Completions](zsh_completions.md).
 
 # Contributing
 
