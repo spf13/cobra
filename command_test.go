@@ -1552,6 +1552,27 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+func TestTraversalWithPersistentFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd.PersistentFlags().BoolP("toggle", "t", false, "Help message for toggle")
+	subCmd := &Command{
+		Use:                "sub",
+		DisableFlagParsing: true,
+	}
+	rootCmd.AddCommand(subCmd)
+
+	c, args, err := rootCmd.Traverse([]string{"-t", "sub", "abc"})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(args) != 1 && args[0] != "abc" {
+		t.Errorf("Wrong args: %v", args)
+	}
+	if c.Name() != subCmd.Name() {
+		t.Errorf("Expected command: %q, got: %q", subCmd.Name(), c.Name())
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {

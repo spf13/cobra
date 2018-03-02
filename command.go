@@ -441,30 +441,7 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
-func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	flag := fs.Lookup(name)
-	if flag == nil {
-		return false
-	}
-	return flag.NoOptDefVal != ""
-}
-
-func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	if len(name) == 0 {
-		return false
-	}
-
-	flag := fs.ShorthandLookup(name[:1])
-	if flag == nil {
-		return false
-	}
-	return flag.NoOptDefVal != ""
-}
-
 func stripFlags(args []string, c *Command) []string {
-	if len(args) == 0 {
-		return args
-	}
 	c.mergePersistentFlags()
 
 	commands := []string{}
@@ -475,11 +452,11 @@ Loop:
 		s := args[0]
 		args = args[1:]
 		switch {
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
+		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasDefaultValue(s[2:], flags):
 			// If '--flag arg' then
 			// delete arg from args.
 			fallthrough // (do the same as below)
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+		case isShortFlagWithNoDefaultValue(s, flags):
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
 			if len(args) <= 1 {
@@ -494,6 +471,30 @@ Loop:
 	}
 
 	return commands
+}
+
+func hasDefaultValue(name string, fs *flag.FlagSet) bool {
+	flag := fs.Lookup(name)
+	if flag == nil {
+		return false
+	}
+	return flag.NoOptDefVal != ""
+}
+
+func isShortFlagWithNoDefaultValue(arg string, flags *flag.FlagSet) bool {
+	return strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortFlagHasDefaultValue(arg[1:], flags)
+}
+
+func shortFlagHasDefaultValue(name string, fs *flag.FlagSet) bool {
+	if len(name) == 0 {
+		return false
+	}
+
+	flag := fs.ShorthandLookup(name[:1])
+	if flag == nil {
+		return false
+	}
+	return flag.NoOptDefVal != ""
 }
 
 // argsMinusFirstX removes only the first x from args.  Otherwise, commands that look like
@@ -583,16 +584,17 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 	flags := []string{}
 	inFlag := false
 
+	c.mergePersistentFlags()
+
 	for i, arg := range args {
 		switch {
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
-			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
-			inFlag = !hasNoOptDefVal(arg[2:], c.Flags())
+			inFlag = !hasDefaultValue(arg[2:], c.Flags())
 			flags = append(flags, arg)
 			continue
 		// A short flag with a space separated value
-		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
+		case isShortFlagWithNoDefaultValue(arg, c.Flags()):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
