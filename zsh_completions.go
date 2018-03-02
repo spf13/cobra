@@ -137,7 +137,7 @@ func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 	}
 	extras = genZshFlagEntryExtras(f)
 
-	return fmt.Sprintf(`"%s%s[%s]%s"`, multiMark, option, f.Usage, extras)
+	return fmt.Sprintf(`'%s%s[%s]%s'`, multiMark, option, f.Usage, extras)
 }
 
 func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
@@ -148,19 +148,22 @@ func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
 		curlyMultiMark = "\\*"
 	}
 
-	options = fmt.Sprintf(`"(%s-%s %s--%s)"{%s-%s,%s--%s}`,
+	options = fmt.Sprintf(`'(%s-%s %s--%s)'{%s-%s,%s--%s}`,
 		parenMultiMark, f.Shorthand, parenMultiMark, f.Name, curlyMultiMark, f.Shorthand, curlyMultiMark, f.Name)
 	extras = genZshFlagEntryExtras(f)
 
-	return fmt.Sprintf(`%s"[%s]%s"`, options, f.Usage, extras)
+	return fmt.Sprintf(`%s'[%s]%s'`, options, f.Usage, extras)
 }
 
 func genZshFlagEntryExtras(f *pflag.Flag) string {
 	var extras string
 
-	_, pathSpecified := f.Annotations[BashCompFilenameExt]
+	globs, pathSpecified := f.Annotations[BashCompFilenameExt]
 	if pathSpecified {
 		extras = ":filename:_files"
+		for _, g := range globs {
+			extras = extras + fmt.Sprintf(` -g "%s"`, g)
+		}
 	} else if f.NoOptDefVal == "" {
 		extras = ":" // allow option variable without assisting
 	}

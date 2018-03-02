@@ -9,8 +9,7 @@ The generated completion script should be put somewhere in your `$fpath` named
 * Completion for all non-hidden subcommands using their `.Short` description.
 * Completion for all non-hidden flags using the following rules:
   * Filename completion works by marking the flag with `cmd.MarkFlagFilename...`
-    family of commands. However, it will ignore specific extensions requested by
-    this command (see about what's not supported yet below).
+    family of commands.
   * The requirement for argument to the flag is decided by the `.NoOptDefVal`
     flag value - if it's empty then completion will expect an argument.
   * Flags of one of the various `*Arrary` and `*Slice` types supports multiple
@@ -19,7 +18,6 @@ The generated completion script should be put somewhere in your `$fpath` named
 ### What's not yet Supported
 
 * Positional argument completion are not supported yet.
-* Filename completion ignores extension specification.
 * Custom completion scripts are not supported yet (We should probably create zsh
   specific one, doesn't make sense to re-use the bash one as the functions will
   be different).
