@@ -29,7 +29,7 @@ func TestGenZshCompletion(t *testing.T) {
 				return r
 			}(),
 			expectedExpressions: []string{
-				`(?s)function _mycommand {\s+_arguments \\\s+"--debug\[description\]".*--help.*}`,
+				`(?s)function _mycommand {\s+_arguments \\\s+'--debug\[description\]'.*--help.*}`,
 				"#compdef _mycommand mycommand",
 			},
 		},
@@ -45,7 +45,7 @@ func TestGenZshCompletion(t *testing.T) {
 				return r
 			}(),
 			expectedExpressions: []string{
-				`"\(-d --debug\)"{-d,--debug}"\[debug description\]"`,
+				`'\(-d --debug\)'{-d,--debug}'\[debug description\]'`,
 			},
 		},
 		{
@@ -72,15 +72,15 @@ func TestGenZshCompletion(t *testing.T) {
 			}(),
 			expectedExpressions: []string{
 				`commands=\(\n\s+"help:.*\n\s+"subcmd1:.*\n\s+"subcmd2:.*\n\s+\)`,
-				`_arguments \\\n.*"--debug\[description]"`,
-				`_arguments -C \\\n.*"--debug\[description]"`,
+				`_arguments \\\n.*'--debug\[description]'`,
+				`_arguments -C \\\n.*'--debug\[description]'`,
 				`function _rootcmd_subcmd1 {`,
 				`function _rootcmd_subcmd1 {`,
-				`_arguments \\\n.*"\(-o --option\)"{-o,--option}"\[option description]:" \\\n`,
+				`_arguments \\\n.*'\(-o --option\)'{-o,--option}'\[option description]:' \\\n`,
 			},
 		},
 		{
-			name: "filename completion",
+			name: "filename completion with and without globs",
 			root: func() *Command {
 				var file string
 				r := &Command{
@@ -90,10 +90,13 @@ func TestGenZshCompletion(t *testing.T) {
 				}
 				r.Flags().StringVarP(&file, "config", "c", file, "config file")
 				r.MarkFlagFilename("config")
+				r.Flags().String("output", "", "output file")
+				r.MarkFlagFilename("output", "*.log", "*.txt")
 				return r
 			}(),
 			expectedExpressions: []string{
-				`\n +"\(-c --config\)"{-c,--config}"\[config file]:filename:_files"`,
+				`\n +'\(-c --config\)'{-c,--config}'\[config file]:filename:_files'`,
+				`:_files -g "\*.log" -g "\*.txt"`,
 			},
 		},
 		{
@@ -105,8 +108,8 @@ func TestGenZshCompletion(t *testing.T) {
 				return r
 			}(),
 			expectedExpressions: []string{
-				`"\*--option\[options]`,
-				`"\(\*-d \*--debug\)"{\\\*-d,\\\*--debug}`,
+				`'\*--option\[options]`,
+				`'\(\*-d \*--debug\)'{\\\*-d,\\\*--debug}`,
 			},
 		},
 		{
@@ -117,7 +120,7 @@ func TestGenZshCompletion(t *testing.T) {
 				return r
 			}(),
 			expectedExpressions: []string{
-				`"\*--verbose\[verbosity level]"`,
+				`'\*--verbose\[verbosity level]'`,
 			},
 			skip: "BoolSlice behaves strangely both with NoOptDefVal and type (identifies as bool)",
 		},
