@@ -15,7 +15,6 @@ func TestGenZshCompletion(t *testing.T) {
 		name                string
 		root                *Command
 		expectedExpressions []string
-		skip                string
 	}{
 		{
 			name: "simple command",
@@ -112,18 +111,6 @@ func TestGenZshCompletion(t *testing.T) {
 				`'\(\*-d \*--debug\)'{\\\*-d,\\\*--debug}`,
 			},
 		},
-		{
-			name: "boolSlice should not accept arguments",
-			root: func() *Command {
-				r := genTestCommand("mycmd", true)
-				r.Flags().BoolSlice("verbose", []bool{}, "verbosity level")
-				return r
-			}(),
-			expectedExpressions: []string{
-				`'\*--verbose\[verbosity level]'`,
-			},
-			skip: "BoolSlice behaves strangely both with NoOptDefVal and type (identifies as bool)",
-		},
 	}
 
 	for _, tc := range tcs {
@@ -134,10 +121,6 @@ func TestGenZshCompletion(t *testing.T) {
 				t.Error(err)
 			}
 			output := buf.Bytes()
-
-			if tc.skip != "" {
-				t.Skip("Skipping:", tc.skip)
-			}
 
 			for _, expr := range tc.expectedExpressions {
 				rgx, err := regexp.Compile(expr)
