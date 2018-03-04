@@ -15,6 +15,8 @@ func TestGenZshCompletion(t *testing.T) {
 		name                string
 		root                *Command
 		expectedExpressions []string
+		invocationArgs      []string
+		skip                string
 	}{
 		{
 			name: "simple command",
@@ -112,7 +114,7 @@ func TestGenZshCompletion(t *testing.T) {
 			},
 		},
 		{
-			name: "command should run on the root command so --version and --help will be generated",
+			name: "generated flags --help and --version should be created even when not executing root cmd",
 			root: func() *Command {
 				r := &Command{
 					Use:     "mycmd",
@@ -127,11 +129,19 @@ func TestGenZshCompletion(t *testing.T) {
 				"--version",
 				"--help",
 			},
+			invocationArgs: []string{
+				"sub1",
+			},
+			skip: "--version and --help are currently not generated when not running on root command",
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.skip != "" {
+				t.Skip(tc.skip)
+			}
+			tc.root.Root().SetArgs(tc.invocationArgs)
 			tc.root.Execute()
 			buf := new(bytes.Buffer)
 			if err := tc.root.GenZshCompletion(buf); err != nil {
