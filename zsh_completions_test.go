@@ -134,6 +134,18 @@ func TestGenZshCompletion(t *testing.T) {
 			},
 			skip: "--version and --help are currently not generated when not running on root command",
 		},
+		{
+			name: "zsh generation should run on root commannd",
+			root: func() *Command {
+				r := genTestCommand("root", false)
+				s := genTestCommand("sub1", true)
+				r.AddCommand(s)
+				return s
+			}(),
+			expectedExpressions: []string{
+				"function _root {",
+			},
+		},
 	}
 
 	for _, tc := range tcs {
