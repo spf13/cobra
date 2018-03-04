@@ -111,6 +111,23 @@ func TestGenZshCompletion(t *testing.T) {
 				`'\(\*-d \*--debug\)'{\\\*-d,\\\*--debug}`,
 			},
 		},
+		{
+			name: "command should run on the root command so --version and --help will be generated",
+			root: func() *Command {
+				r := &Command{
+					Use:     "mycmd",
+					Short:   "mycmd short description",
+					Version: "myversion",
+				}
+				s := genTestCommand("sub1", true)
+				r.AddCommand(s)
+				return s
+			}(),
+			expectedExpressions: []string{
+				"--version",
+				"--help",
+			},
+		},
 	}
 
 	for _, tc := range tcs {

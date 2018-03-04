@@ -84,13 +84,15 @@ func (c *Command) GenZshCompletionFile(filename string) error {
 	return c.GenZshCompletion(outFile)
 }
 
-// GenZshCompletion generates a zsh completion file and writes to the passed writer.
+// GenZshCompletion generates a zsh completion file and writes to the passed
+// writer. The completion always run on the root command regardless of the
+// command it was called from.
 func (c *Command) GenZshCompletion(w io.Writer) error {
 	tmpl, err := template.New("Main").Funcs(funcMap).Parse(zshCompletionText)
 	if err != nil {
 		return fmt.Errorf("error creating zsh completion template: %v", err)
 	}
-	return tmpl.Execute(w, c)
+	return tmpl.Execute(w, c.Root())
 }
 
 func generateZshCompletionFuncName(c *Command) string {
