@@ -146,6 +146,17 @@ func TestGenZshCompletion(t *testing.T) {
 				"function _root {",
 			},
 		},
+		{
+			name: "flag description with single quote (') shouldn't break quotes in completion file",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.Flags().Bool("private", false, "Don't show public info")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`--private\[Don'\\''t show public info]`,
+			},
+		},
 	}
 
 	for _, tc := range tcs {
