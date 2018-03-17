@@ -139,7 +139,7 @@ func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 	}
 	extras = genZshFlagEntryExtras(f)
 
-	return fmt.Sprintf(`'%s%s[%s]%s'`, multiMark, option, f.Usage, extras)
+	return fmt.Sprintf(`'%s%s[%s]%s'`, multiMark, option, quoteDescription(f.Usage), extras)
 }
 
 func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
@@ -154,7 +154,7 @@ func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
 		parenMultiMark, f.Shorthand, parenMultiMark, f.Name, curlyMultiMark, f.Shorthand, curlyMultiMark, f.Name)
 	extras = genZshFlagEntryExtras(f)
 
-	return fmt.Sprintf(`%s'[%s]%s'`, options, f.Usage, extras)
+	return fmt.Sprintf(`%s'[%s]%s'`, options, quoteDescription(f.Usage), extras)
 }
 
 func genZshFlagEntryExtras(f *pflag.Flag) string {
@@ -176,4 +176,8 @@ func genZshFlagEntryExtras(f *pflag.Flag) string {
 func flagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
 	return strings.Contains(f.Value.Type(), "Slice") ||
 		strings.Contains(f.Value.Type(), "Array")
+}
+
+func quoteDescription(s string) string {
+	return strings.Replace(s, "'", `'\''`, -1)
 }
