@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	funcMap = template.FuncMap{
-		"genZshFuncName":              generateZshCompletionFuncName,
-		"extractFlags":                extractFlags,
-		"genFlagEntryForZshArguments": genFlagEntryForZshArguments,
+	zshCompFuncMap = template.FuncMap{
+		"genZshFuncName":              zshCompGenFuncName,
+		"extractFlags":                zshCompExtractFlag,
+		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
 	}
 	zshCompletionText = `
 {{/* should accept Command (that contains subcommands) as parameter */}}
@@ -88,21 +88,21 @@ func (c *Command) GenZshCompletionFile(filename string) error {
 // writer. The completion always run on the root command regardless of the
 // command it was called from.
 func (c *Command) GenZshCompletion(w io.Writer) error {
-	tmpl, err := template.New("Main").Funcs(funcMap).Parse(zshCompletionText)
+	tmpl, err := template.New("Main").Funcs(zshCompFuncMap).Parse(zshCompletionText)
 	if err != nil {
 		return fmt.Errorf("error creating zsh completion template: %v", err)
 	}
 	return tmpl.Execute(w, c.Root())
 }
 
-func generateZshCompletionFuncName(c *Command) string {
+func zshCompGenFuncName(c *Command) string {
 	if c.HasParent() {
-		return generateZshCompletionFuncName(c.Parent()) + "_" + c.Name()
+		return zshCompGenFuncName(c.Parent()) + "_" + c.Name()
 	}
 	return "_" + c.Name()
 }
 
-func extractFlags(c *Command) []*pflag.Flag {
+func zshCompExtractFlag(c *Command) []*pflag.Flag {
 	var flags []*pflag.Flag
 	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
 		if !f.Hidden {
@@ -117,19 +117,19 @@ func extractFlags(c *Command) []*pflag.Flag {
 	return flags
 }
 
-// genFlagEntryForZshArguments returns an entry that matches _arguments
+// zshCompGenFlagEntryForArguments returns an entry that matches _arguments
 // zsh-completion parameters. It's too complicated to generate in a template.
-func genFlagEntryForZshArguments(f *pflag.Flag) string {
+func zshCompGenFlagEntryForArguments(f *pflag.Flag) string {
 	if f.Name == "" || f.Shorthand == "" {
-		return genFlagEntryForSingleOptionFlag(f)
+		return zshCompGenFlagEntryForSingleOptionFlag(f)
 	}
-	return genFlagEntryForMultiOptionFlag(f)
+	return zshCompGenFlagEntryForMultiOptionFlag(f)
 }
 
-func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
+func zshCompGenFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 	var option, multiMark, extras string
 
-	if flagCouldBeSpecifiedMoreThenOnce(f) {
+	if zshCompFlagCouldBeSpecifiedMoreThenOnce(f) {
 		multiMark = "*"
 	}
 
@@ -137,27 +137,27 @@ func genFlagEntryForSingleOptionFlag(f *pflag.Flag) string {
 	if option == "--" {
 		option = "-" + f.Shorthand
 	}
-	extras = genZshFlagEntryExtras(f)
+	extras = zshCompGenFlagEntryExtras(f)
 
-	return fmt.Sprintf(`'%s%s[%s]%s'`, multiMark, option, quoteDescription(f.Usage), extras)
+	return fmt.Sprintf(`'%s%s[%s]%s'`, multiMark, option, zshCompQuoteFlagDescription(f.Usage), extras)
 }
 
-func genFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
+func zshCompGenFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
 	var options, parenMultiMark, curlyMultiMark, extras string
 
-	if flagCouldBeSpecifiedMoreThenOnce(f) {
+	if zshCompFlagCouldBeSpecifiedMoreThenOnce(f) {
 		parenMultiMark = "*"
 		curlyMultiMark = "\\*"
 	}
 
 	options = fmt.Sprintf(`'(%s-%s %s--%s)'{%s-%s,%s--%s}`,
 		parenMultiMark, f.Shorthand, parenMultiMark, f.Name, curlyMultiMark, f.Shorthand, curlyMultiMark, f.Name)
-	extras = genZshFlagEntryExtras(f)
+	extras = zshCompGenFlagEntryExtras(f)
 
-	return fmt.Sprintf(`%s'[%s]%s'`, options, quoteDescription(f.Usage), extras)
+	return fmt.Sprintf(`%s'[%s]%s'`, options, zshCompQuoteFlagDescription(f.Usage), extras)
 }
 
-func genZshFlagEntryExtras(f *pflag.Flag) string {
+func zshCompGenFlagEntryExtras(f *pflag.Flag) string {
 	var extras string
 
 	globs, pathSpecified := f.Annotations[BashCompFilenameExt]
@@ -173,11 +173,11 @@ func genZshFlagEntryExtras(f *pflag.Flag) string {
 	return extras
 }
 
-func flagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
+func zshCompFlagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
 	return strings.Contains(f.Value.Type(), "Slice") ||
 		strings.Contains(f.Value.Type(), "Array")
 }
 
-func quoteDescription(s string) string {
+func zshCompQuoteFlagDescription(s string) string {
 	return strings.Replace(s, "'", `'\''`, -1)
 }
