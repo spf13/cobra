@@ -285,8 +285,8 @@ func TestExtractFlags(t *testing.T) {
 	d.Flags().BoolVar(&cmdd, "cmd-d", cmdd, "Command D")
 	c.AddCommand(d)
 
-	resC := extractFlags(c)
-	resD := extractFlags(d)
+	resC := zshCompExtractFlag(c)
+	resD := zshCompExtractFlag(d)
 
 	if len(resC) != 2 {
 		t.Errorf("expected Command C to return 2 flags, got %d", len(resC))
