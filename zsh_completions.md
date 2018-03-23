@@ -12,7 +12,7 @@ The generated completion script should be put somewhere in your `$fpath` named
     family of commands.
   * The requirement for argument to the flag is decided by the `.NoOptDefVal`
     flag value - if it's empty then completion will expect an argument.
-  * Flags of one of the various `*Arrary` and `*Slice` types supports multiple
+  * Flags of one of the various `*Array` and `*Slice` types supports multiple
     specifications (with or without argument depending on the specific type).
 * Completion of positional arguments using the following rules:
   * Argument position for all options below starts at `1`. If argument position
