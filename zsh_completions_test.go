@@ -58,7 +58,7 @@ func TestGenZshCompletion(t *testing.T) {
 				}
 				d := &Command{
 					Use:   "subcmd1",
-					Short: "Subcmd1 short descrition",
+					Short: "Subcmd1 short description",
 					Run:   emptyRun,
 				}
 				e := &Command{
@@ -135,7 +135,7 @@ func TestGenZshCompletion(t *testing.T) {
 			skip: "--version and --help are currently not generated when not running on root command",
 		},
 		{
-			name: "zsh generation should run on root commannd",
+			name: "zsh generation should run on root command",
 			root: func() *Command {
 				r := genTestCommand("root", false)
 				s := genTestCommand("sub1", true)
@@ -155,6 +155,63 @@ func TestGenZshCompletion(t *testing.T) {
 			}(),
 			expectedExpressions: []string{
 				`--private\[Don'\\''t show public info]`,
+			},
+		},
+		{
+			name: "argument completion for file with and without patterns",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.MarkZshCompPositionalArgumentFile(1, "*.log")
+				r.MarkZshCompPositionalArgumentFile(2)
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :_files -g "\*.log"' \\\n\s+'2: :_files`,
+			},
+		},
+		{
+			name: "argument zsh completion for words",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.MarkZshCompPositionalArgumentWords(1, "word1", "word2")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :\("word1" "word2"\)`,
+			},
+		},
+		{
+			name: "argument completion for words with spaces",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.MarkZshCompPositionalArgumentWords(1, "single", "multiple words")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :\("single" "multiple words"\)'`,
+			},
+		},
+		{
+			name: "argument completion when command has ValidArgs and no annotation for argument completion",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.ValidArgs = []string{"word1", "word2"}
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :\("word1" "word2"\)'`,
+			},
+		},
+		{
+			name: "argument completion when command has ValidArgs and no annotation for argument at argPosition 1",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.ValidArgs = []string{"word1", "word2"}
+				r.MarkZshCompPositionalArgumentFile(2)
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :\("word1" "word2"\)' \\`,
 			},
 		},
 	}
@@ -178,7 +235,7 @@ func TestGenZshCompletion(t *testing.T) {
 					t.Errorf("error compiling expression (%s): %v", expr, err)
 				}
 				if !rgx.Match(output) {
-					t.Errorf("expeced completion (%s) to match '%s'", buf.String(), expr)
+					t.Errorf("expected completion (%s) to match '%s'", buf.String(), expr)
 				}
 			}
 		})
@@ -192,7 +249,7 @@ func TestGenZshCompletionHidden(t *testing.T) {
 		expectedExpressions []string
 	}{
 		{
-			name: "hidden commmands",
+			name: "hidden commands",
 			root: func() *Command {
 				r := &Command{
 					Use:   "main",
@@ -255,8 +312,61 @@ func TestGenZshCompletionHidden(t *testing.T) {
 	}
 }
 
+func TestMarkZshCompPositionalArgumentFile(t *testing.T) {
+	t.Run("Doesn't allow overwriting existing positional argument", func(t *testing.T) {
+		c := &Command{}
+		if err := c.MarkZshCompPositionalArgumentFile(1, "*.log"); err != nil {
+			t.Errorf("Received error when we shouldn't have: %v\n", err)
+		}
+		if err := c.MarkZshCompPositionalArgumentFile(1); err == nil {
+			t.Error("Didn't receive an error when trying to overwrite argument position")
+		}
+	})
+
+	t.Run("Refuses to accept argPosition less then 1", func(t *testing.T) {
+		c := &Command{}
+		err := c.MarkZshCompPositionalArgumentFile(0, "*")
+		if err == nil {
+			t.Fatal("Error was not thrown when indicating argument position 0")
+		}
+		if !strings.Contains(err.Error(), "position") {
+			t.Errorf("expected error message '%s' to contain 'position'", err.Error())
+		}
+	})
+}
+
+func TestMarkZshCompPositionalArgumentWords(t *testing.T) {
+	t.Run("Doesn't allow overwriting existing positional argument", func(t *testing.T) {
+		c := &Command{}
+		if err := c.MarkZshCompPositionalArgumentFile(1, "*.log"); err != nil {
+			t.Errorf("Received error when we shouldn't have: %v\n", err)
+		}
+		if err := c.MarkZshCompPositionalArgumentWords(1, "hello"); err == nil {
+			t.Error("Didn't receive an error when trying to overwrite argument position")
+		}
+	})
+
+	t.Run("Doesn't allow calling without words", func(t *testing.T) {
+		c := &Command{}
+		if err := c.MarkZshCompPositionalArgumentWords(0); err == nil {
+			t.Error("Should not allow saving empty word list for annotation")
+		}
+	})
+
+	t.Run("Refuses to accept argPosition less then 1", func(t *testing.T) {
+		c := &Command{}
+		err := c.MarkZshCompPositionalArgumentWords(0, "word")
+		if err == nil {
+			t.Fatal("Should not allow setting argument position less then 1")
+		}
+		if !strings.Contains(err.Error(), "position") {
+			t.Errorf("Expected error '%s' to contain 'position' but didn't", err.Error())
+		}
+	})
+}
+
 func BenchmarkMediumSizeConstruct(b *testing.B) {
-	root := constructLargeCommandHeirarchy()
+	root := constructLargeCommandHierarchy()
 	// if err := root.GenZshCompletionFile("_mycmd"); err != nil {
 	// 	b.Error(err)
 	// }
@@ -296,7 +406,7 @@ func TestExtractFlags(t *testing.T) {
 	}
 }
 
-func constructLargeCommandHeirarchy() *Command {
+func constructLargeCommandHierarchy() *Command {
 	var config, st1, st2 string
 	var long, debug bool
 	var in1, in2 int
@@ -308,7 +418,7 @@ func constructLargeCommandHeirarchy() *Command {
 		panic(err)
 	}
 	s1 := genTestCommand("sub1", true)
-	s1.Flags().BoolVar(&long, "long", long, "long descriptin")
+	s1.Flags().BoolVar(&long, "long", long, "long description")
 	s1.Flags().BoolSliceVar(&verbose, "verbose", verbose, "verbose description")
 	s1.Flags().StringArray("option", []string{}, "various options")
 	s2 := genTestCommand("sub2", true)
@@ -320,8 +430,8 @@ func constructLargeCommandHeirarchy() *Command {
 	s1_1.Flags().StringVar(&st2, "st2", st2, "st2 description")
 	s1_2 := genTestCommand("sub1sub2", true)
 	s1_3 := genTestCommand("sub1sub3", true)
-	s1_3.Flags().IntVar(&in1, "int1", in1, "int1 descriptionn")
-	s1_3.Flags().IntVar(&in2, "int2", in2, "int2 descriptionn")
+	s1_3.Flags().IntVar(&in1, "int1", in1, "int1 description")
+	s1_3.Flags().IntVar(&in2, "int2", in2, "int2 description")
 	s1_3.Flags().StringArrayP("option", "O", []string{}, "more options")
 	s2_1 := genTestCommand("sub2sub1", true)
 	s2_2 := genTestCommand("sub2sub2", true)

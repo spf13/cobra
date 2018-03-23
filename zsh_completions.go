@@ -1,13 +1,21 @@
 package cobra
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/spf13/pflag"
+)
+
+const (
+	zshCompArgumentAnnotation   = "cobra_annotations_zsh_completion_argument_annotation"
+	zshCompArgumentFilenameComp = "cobra_annotations_zsh_completion_argument_file_completion"
+	zshCompArgumentWordComp     = "cobra_annotations_zsh_completion_argument_word_completion"
 )
 
 var (
@@ -15,6 +23,7 @@ var (
 		"genZshFuncName":              zshCompGenFuncName,
 		"extractFlags":                zshCompExtractFlag,
 		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
+		"extractArgsCompletions":      zshCompExtractArgumentCompletionHintsForRendering,
 	}
 	zshCompletionText = `
 {{/* should accept Command (that contains subcommands) as parameter */}}
@@ -53,7 +62,8 @@ function {{$cmdPath}} {
 function {{genZshFuncName .}} {
 {{"  _arguments"}}{{range extractFlags .}} \
     {{genFlagEntryForZshArguments . -}}
-{{end}}
+{{end}}{{range extractArgsCompletions .}} \
+    {{.}}{{end}}
 }
 {{end}}
 
@@ -72,6 +82,19 @@ function {{genZshFuncName .}} {
 {{end}}
 `
 )
+
+// zshCompArgsAnnotation is used to encode/decode zsh completion for
+// arguments to/from Command.Annotations.
+type zshCompArgsAnnotation map[int]zshCompArgHint
+
+type zshCompArgHint struct {
+	// Indicates the type of the completion to use. One of:
+	// zshCompArgumentFilenameComp or zshCompArgumentWordComp
+	Tipe string `json:"type"`
+
+	// A value for the type above (globs for file completion or words)
+	Options []string `json:"options"`
+}
 
 // GenZshCompletionFile generates zsh completion file.
 func (c *Command) GenZshCompletionFile(filename string) error {
@@ -93,6 +116,130 @@ func (c *Command) GenZshCompletion(w io.Writer) error {
 		return fmt.Errorf("error creating zsh completion template: %v", err)
 	}
 	return tmpl.Execute(w, c.Root())
+}
+
+// MarkZshCompPositionalArgumentFile marks the specified argument (first
+// argument is 1) as completed by file selection. patterns (e.g. "*.txt") are
+// optional - if not provided the completion will search for all files.
+func (c *Command) MarkZshCompPositionalArgumentFile(argPosition int, patterns ...string) error {
+	if argPosition < 1 {
+		return fmt.Errorf("Invalid argument position (%d)", argPosition)
+	}
+	annotation, err := c.zshCompGetArgsAnnotations()
+	if err != nil {
+		return err
+	}
+	if c.zshcompArgsAnnotationnIsDuplicatePosition(annotation, argPosition) {
+		return fmt.Errorf("Duplicate annotation for positional argument at index %d", argPosition)
+	}
+	annotation[argPosition] = zshCompArgHint{
+		Tipe:    zshCompArgumentFilenameComp,
+		Options: patterns,
+	}
+	return c.zshCompSetArgsAnnotations(annotation)
+}
+
+// MarkZshCompPositionalArgumentWords marks the specified positional argument
+// (first argument is 1) as completed by the provided words. At east one word
+// must be provided, spaces within words will be offered completion with
+// "word\ word".
+func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...string) error {
+	if argPosition < 1 {
+		return fmt.Errorf("Invalid argument position (%d)", argPosition)
+	}
+	if len(words) == 0 {
+		return fmt.Errorf("Trying to set empty word list for positional argument %d", argPosition)
+	}
+	annotation, err := c.zshCompGetArgsAnnotations()
+	if err != nil {
+		return err
+	}
+	if c.zshcompArgsAnnotationnIsDuplicatePosition(annotation, argPosition) {
+		return fmt.Errorf("Duplicate annotation for positional argument at index %d", argPosition)
+	}
+	annotation[argPosition] = zshCompArgHint{
+		Tipe:    zshCompArgumentWordComp,
+		Options: words,
+	}
+	return c.zshCompSetArgsAnnotations(annotation)
+}
+
+func zshCompExtractArgumentCompletionHintsForRendering(c *Command) ([]string, error) {
+	var result []string
+	annotation, err := c.zshCompGetArgsAnnotations()
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range annotation {
+		s, err := zshCompRenderZshCompArgHint(k, v)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, s)
+	}
+	if len(c.ValidArgs) > 0 {
+		if _, positionOneExists := annotation[1]; !positionOneExists {
+			s, err := zshCompRenderZshCompArgHint(1, zshCompArgHint{
+				Tipe:    zshCompArgumentWordComp,
+				Options: c.ValidArgs,
+			})
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, s)
+		}
+	}
+	sort.Strings(result)
+	return result, nil
+}
+
+func zshCompRenderZshCompArgHint(i int, z zshCompArgHint) (string, error) {
+	switch t := z.Tipe; t {
+	case zshCompArgumentFilenameComp:
+		var globs []string
+		for _, g := range z.Options {
+			globs = append(globs, fmt.Sprintf(`-g "%s"`, g))
+		}
+		return fmt.Sprintf(`'%d: :_files %s'`, i, strings.Join(globs, " ")), nil
+	case zshCompArgumentWordComp:
+		var words []string
+		for _, w := range z.Options {
+			words = append(words, fmt.Sprintf("%q", w))
+		}
+		return fmt.Sprintf(`'%d: :(%s)'`, i, strings.Join(words, " ")), nil
+	default:
+		return "", fmt.Errorf("Invalid zsh argument completion annotation: %s", t)
+	}
+}
+
+func (c *Command) zshcompArgsAnnotationnIsDuplicatePosition(annotation zshCompArgsAnnotation, position int) bool {
+	_, dup := annotation[position]
+	return dup
+}
+
+func (c *Command) zshCompGetArgsAnnotations() (zshCompArgsAnnotation, error) {
+	annotation := make(zshCompArgsAnnotation)
+	annotationString, ok := c.Annotations[zshCompArgumentAnnotation]
+	if !ok {
+		return annotation, nil
+	}
+	err := json.Unmarshal([]byte(annotationString), &annotation)
+	if err != nil {
+		return annotation, fmt.Errorf("Error unmarshaling zsh argument annotation: %v", err)
+	}
+	return annotation, nil
+}
+
+func (c *Command) zshCompSetArgsAnnotations(annotation zshCompArgsAnnotation) error {
+	jsn, err := json.Marshal(annotation)
+	if err != nil {
+		return fmt.Errorf("Error marshaling zsh argument annotation: %v", err)
+	}
+	if c.Annotations == nil {
+		c.Annotations = make(map[string]string)
+	}
+	c.Annotations[zshCompArgumentAnnotation] = string(jsn)
+	return nil
 }
 
 func zshCompGenFuncName(c *Command) string {
