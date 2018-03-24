@@ -861,7 +861,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilentUsage flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceUsage && !c.SilenceUsage {
-			c.Println(cmd.UsageString())
+			cmd.Help()
 		}
 	}
 	return cmd, err
