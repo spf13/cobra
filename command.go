@@ -84,6 +84,7 @@ type Command struct {
 	Version string
 
 	// The *Run functions are executed in the following order:
+	//   * ValidateArgsFn()
 	//   * PersistentPreRun()
 	//   * PreRun()
 	//   * Run()
@@ -91,6 +92,8 @@ type Command struct {
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name.
 	//
+	// ValidateArgsFn: Used to validate the input arguments from the user.
+	ValidateArgsFn func(cmd *Command, args []string) error
 	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
 	// PersistentPreRunE: PersistentPreRun but returns an error.
@@ -734,6 +737,12 @@ func (c *Command) execute(a []string) (err error) {
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err
+	}
+
+	if c.ValidateArgsFn != nil {
+		if err := c.ValidateArgsFn(c, argWoFlags); err != nil {
+			return err
+		}
 	}
 
 	for p := c; p != nil; p = p.Parent() {
