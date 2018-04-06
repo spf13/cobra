@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"fmt"
+	"strings"
 )
 
 type PositionalArgs func(cmd *Command, args []string) error
@@ -25,10 +26,18 @@ func legacyArgs(cmd *Command, args []string) error {
 
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
-	if len(args) > 0 {
+	if len(args) == 0 {
+		return nil
+	}
+
+	// If we have exactly one argument and we have sub-commands, then assume the user
+	// made a typo on a subcommand, or typed the wrong subcommand
+	if len(args) == 1 && len(cmd.commands) > 0 {
 		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
 	}
-	return nil
+
+	// Otherwise, assume that this is one or more invalid arguments
+	return fmt.Errorf("invalid argument(s) %q for %q", strings.Join(args, " "), cmd.CommandPath())
 }
 
 // OnlyValidArgs returns an error if any args are not in the list of ValidArgs.

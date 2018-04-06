@@ -26,7 +26,7 @@ func TestNoArgsWithArgs(t *testing.T) {
 	}
 
 	got := err.Error()
-	expected := `unknown command "illegal" for "c"`
+	expected := `invalid argument(s) "illegal" for "c"`
 	if got != expected {
 		t.Errorf("Expected: %q, got: %q", expected, got)
 	}
@@ -223,7 +223,7 @@ func TestChildTakesNoArgs(t *testing.T) {
 	}
 
 	got := err.Error()
-	expected := `unknown command "illegal" for "root child"`
+	expected := `invalid argument(s) "illegal args" for "root child"`
 	if !strings.Contains(got, expected) {
 		t.Errorf("expected %q, got %q", expected, got)
 	}
