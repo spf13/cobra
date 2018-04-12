@@ -134,21 +134,21 @@ func (p *Project) CmdPath() string {
 // looks for existing cmd dir in absPath.
 func findCmdDir(absPath string) string {
 	if !exists(absPath) || isEmpty(absPath) {
-		return "cmd"
+		return string(os.PathSeparator) + "cmd"
 	}
 
 	if isCmdDir(absPath) {
-		return filepath.Base(absPath)
+		return string(os.PathSeparator) + filepath.Base(absPath)
 	}
 
 	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
 	for _, file := range files {
 		if isCmdDir(file) {
-			return filepath.Base(file)
+			return string(os.PathSeparator) + filepath.Base(file)
 		}
 	}
 
-	return "cmd"
+	return string(os.PathSeparator) + "cmd"
 }
 
 // isCmdDir checks if base of name is one of cmdDir.
