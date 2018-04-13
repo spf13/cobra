@@ -119,9 +119,15 @@ func main() {
 `
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
-	data["license"] = project.License().Header
 	data["importpath"] = path.Join(project.Name(), filepath.Base(project.CmdPath()))
+	data["appName"] = path.Base(project.Name())
 
+	header, err := executeTemplate(project.License().Header, data)
+	if err != nil {
+		er(err)
+	}
+	data["license"] = header
+	
 	mainScript, err := executeTemplate(mainTemplate, data)
 	if err != nil {
 		er(err)
@@ -218,8 +224,13 @@ func initConfig() {
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
 	data["viper"] = viper.GetBool("useViper")
-	data["license"] = project.License().Header
 	data["appName"] = path.Base(project.Name())
+
+	header, err := executeTemplate(project.License().Header, data)
+	if err != nil {
+		er(err)
+	}
+	data["license"] = header
 
 	rootCmdScript, err := executeTemplate(template, data)
 	if err != nil {
