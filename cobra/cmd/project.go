@@ -92,7 +92,9 @@ func NewProjectFromPath(absPath string) *Project {
 	}
 
 	p := new(Project)
-	p.absPath = strings.TrimSuffix(absPath, findCmdDir(absPath))
+
+	cmdDir := findCmdDir(absPath)
+	p.absPath = strings.TrimSuffix(absPath, findCmdSuffix(cmdDir))
 	p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
 	return p
 }
@@ -130,25 +132,33 @@ func (p *Project) CmdPath() string {
 	return p.cmdPath
 }
 
+// findCmdSuffix return the cmd dir start with file path separator
+func findCmdSuffix(cmdDir string) string {
+	if filepathHasPrefix(cmdDir, string(os.PathSeparator)) {
+		return cmdDir
+	}
+	return string(os.PathSeparator) + cmdDir
+}
+
 // findCmdDir checks if base of absPath is cmd dir and returns it or
 // looks for existing cmd dir in absPath.
 func findCmdDir(absPath string) string {
 	if !exists(absPath) || isEmpty(absPath) {
-		return string(os.PathSeparator) + "cmd"
+		return "cmd"
 	}
 
 	if isCmdDir(absPath) {
-		return string(os.PathSeparator) + filepath.Base(absPath)
+		return filepath.Base(absPath)
 	}
 
 	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
 	for _, file := range files {
 		if isCmdDir(file) {
-			return string(os.PathSeparator) + filepath.Base(file)
+			return filepath.Base(file)
 		}
 	}
 
-	return string(os.PathSeparator) + "cmd"
+	return "cmd"
 }
 
 // isCmdDir checks if base of name is one of cmdDir.
