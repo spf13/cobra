@@ -127,7 +127,7 @@ func main() {
 		er(err)
 	}
 	data["license"] = header
-	
+
 	mainScript, err := executeTemplate(mainTemplate, data)
 	if err != nil {
 		er(err)
