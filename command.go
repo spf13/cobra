@@ -932,7 +932,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().Bool("version", false, usage)
+		c.Flags().BoolP("version", "v", false, usage)
 	}
 }
 

@@ -51,7 +51,7 @@ var EnableCommandSorting = true
 // if the CLI is started from explorer.exe.
 // To disable the mousetrap, just set this variable to blank string ("").
 // Works only on Microsoft Windows.
-var MousetrapHelpText string = `This is a command line tool.
+var MousetrapHelpText = `This is a command line tool.
 
 You need to open cmd.exe and run it from there.
 `
