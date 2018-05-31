@@ -392,7 +392,7 @@ The following validators are built in:
 - `NoArgs` - the command will report an error if there are any positional args.
 - `ArbitraryArgs` - the command will accept any args.
 - `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the `ValidArgs` field of `Command`.
-- `OnlySubCommands` - the command will report an error if if any args are included except for subcommands.
+- `OnlySubCommands` - the command will report an error if any args are included except for subcommands.
 - `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
 - `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
 - `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
