@@ -1,5 +1,40 @@
 # Generating Bash Completions For Your Own cobra.Command
 
+If you are using the generator you can create a completion command by running
+
+```bash
+cobra add completion
+```
+
+Update the help text show how to install the bash_completion Linux show here [Kubectl docs show mac options](https://kubernetes.io/docs/tasks/tools/install-kubectl/#enabling-shell-autocompletion)
+
+Writing the shell script to stdout allows the most flexible use.
+
+```go
+// completionCmd represents the completion command
+var completionCmd = &cobra.Command{
+	Use:   "completion",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
+
+. <(bitbucket completion)
+
+To configure your bash shell to load completions for each session add to your bashrc
+
+# ~/.bashrc or ~/.profile
+. <(bitbucket completion)
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		rootCmd.GenBashCompletion(os.Stdout);
+	},
+}
+```
+
+**Note:** The cobra generator may include messages printed to stdout for example if the config file is loaded, this will break the auto complete script
+
+
+## Example from kubectl
+
 Generating bash completions from a cobra command is incredibly easy. An actual program which does so for the kubernetes kubectl binary is as follows:
 
 ```go
