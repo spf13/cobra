@@ -16,6 +16,7 @@ const (
 	zshCompArgumentAnnotation   = "cobra_annotations_zsh_completion_argument_annotation"
 	zshCompArgumentFilenameComp = "cobra_annotations_zsh_completion_argument_file_completion"
 	zshCompArgumentWordComp     = "cobra_annotations_zsh_completion_argument_word_completion"
+	zshCompDirname              = "cobra_annotations_zsh_dirname"
 )
 
 var (
@@ -305,16 +306,21 @@ func zshCompGenFlagEntryForMultiOptionFlag(f *pflag.Flag) string {
 }
 
 func zshCompGenFlagEntryExtras(f *pflag.Flag) string {
-	var extras string
+	if f.NoOptDefVal != "" {
+		return ""
+	}
 
-	globs, pathSpecified := f.Annotations[BashCompFilenameExt]
-	if pathSpecified {
-		extras = ":filename:_files"
-		for _, g := range globs {
-			extras = extras + fmt.Sprintf(` -g "%s"`, g)
+	extras := ":" // allow options for flag (even without assistance)
+	for key, values := range f.Annotations {
+		switch key {
+		case zshCompDirname:
+			extras = fmt.Sprintf(":filename:_files -g %q", values[0])
+		case BashCompFilenameExt:
+			extras = ":filename:_files"
+			for _, pattern := range values {
+				extras = extras + fmt.Sprintf(` -g "%s"`, pattern)
+			}
 		}
-	} else if f.NoOptDefVal == "" {
-		extras = ":" // allow option variable without assisting
 	}
 
 	return extras
