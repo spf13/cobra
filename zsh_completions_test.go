@@ -214,6 +214,21 @@ func TestGenZshCompletion(t *testing.T) {
 				`'1: :\("word1" "word2"\)' \\`,
 			},
 		},
+		{
+			name: "directory completion for flag",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.Flags().String("test", "", "test")
+				r.PersistentFlags().String("ptest", "", "ptest")
+				r.MarkFlagDirname("test")
+				r.MarkPersistentFlagDirname("ptest")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`--test\[test]:filename:_files -g "-\(/\)"`,
+				`--ptest\[ptest]:filename:_files -g "-\(/\)"`,
+			},
+		},
 	}
 
 	for _, tc := range tcs {
