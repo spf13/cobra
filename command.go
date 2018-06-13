@@ -195,6 +195,8 @@ type Command struct {
 	helpCommand *Command
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
+	// errorTemplate is the error template defined by user.
+	errorTemplate string
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
@@ -217,6 +219,11 @@ func (c *Command) SetUsageFunc(f func(*Command) error) {
 // SetUsageTemplate sets usage template. Can be defined by Application.
 func (c *Command) SetUsageTemplate(s string) {
 	c.usageTemplate = s
+}
+
+// SetErrorTemplate sets error template to be used. Application can use it to set custom template.
+func (c *Command) SetErrorTemplate(s string) {
+	c.errorTemplate = s
 }
 
 // SetFlagErrorFunc sets a function to generate an error when flag parsing
@@ -432,6 +439,18 @@ func (c *Command) HelpTemplate() string {
 	return `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+}
+
+// ErrorTemplate return error template for the command.
+func (c *Command) ErrorTemplate() string {
+	if c.errorTemplate != "" {
+		return c.errorTemplate
+	}
+
+	if c.HasParent() {
+		return c.parent.ErrorTemplate()
+	}
+	return "Error: {{ .Error }}\n"
 }
 
 // VersionTemplate return version template for the command.
@@ -838,7 +857,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			tmpl(c.OutOrStdout(), c.ErrorTemplate(), err)
 			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -861,7 +880,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			tmpl(c.OutOrStdout(), c.ErrorTemplate(), err)
 		}
 
 		// If root command has SilentUsage flagged,

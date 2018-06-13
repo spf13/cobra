@@ -866,6 +866,16 @@ func TestVersionTemplate(t *testing.T) {
 	checkStringContains(t, output, "customized version: 1.0.0")
 }
 
+func TestErrorTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+	rootCmd.SetErrorTemplate(`customized error: {{ . }}`)
+
+	output, _ := executeCommand(rootCmd, "unknown")
+
+	checkStringContains(t, output, "customized error: unknown command")
+}
+
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
