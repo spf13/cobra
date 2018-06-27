@@ -42,7 +42,7 @@ func TestZshCompletion(t *testing.T) {
 				r.AddCommand(&Command{Use: "c2"})
 				return r
 			}(),
-			expectedExpressions: []string{"(c1 c2)"},
+			expectedExpressions: []string{"'c1' 'c2'"},
 		},
 		{
 			name: "tree",
@@ -69,7 +69,7 @@ func TestZshCompletion(t *testing.T) {
 
 				return r
 			}(),
-			expectedExpressions: []string{"(sub11 sub12)", "(sub21 sub22)"},
+			expectedExpressions: []string{"'sub11' 'sub12'", "'sub21' 'sub22'"},
 		},
 	}
 

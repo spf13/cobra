@@ -1,4 +1,4 @@
-package main
+package cobra
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 // GenZshCompletionFile generates zsh completion file.
@@ -124,7 +126,11 @@ func commandNames(command *Command) []string {
 	commands := command.Commands()
 	ns := make([]string, len(commands))
 	for i, c := range commands {
-		ns[i] = fmt.Sprintf("%s[%s]", c.Name(), c.Short)
+        commandMsg := c.Name()
+        if len(c.Short) > 0 {
+            commandMsg += fmt.Sprintf("[%s]", c.Short)
+        }
+		ns[i] = commandMsg
 	}
 	return ns
 }
@@ -132,12 +138,17 @@ func commandNames(command *Command) []string {
 func commandFlags(command *Command) []string {
 	flags := command.Flags()
 	ns := make([]string, 0)
-	flags.VisitAll(func(flag *pflag.Flag) {
+	flags.VisitAll(func(flag *flag.Flag) {
+        var flagMsg string
 		if len(flag.Shorthand) > 0 {
-			ns = append(ns, fmt.Sprintf("{-%s,--%s}'[%s]'", flag.Shorthand, flag.Name, flag.Usage))
+			flagMsg = fmt.Sprintf("{-%s,--%s}", flag.Shorthand, flag.Name)
 		} else {
-			ns = append(ns, fmt.Sprintf("--%s'[%s]'", flag.Name, flag.Usage))
+			flagMsg = fmt.Sprintf("--%s", flag.Name)
 		}
+        if len(flag.Usage) > 0 {
+            flagMsg += fmt.Sprintf("'[%s]'", flag.Usage)
+        }
+        ns = append(ns, flagMsg)
 	})
 	return ns
 }
