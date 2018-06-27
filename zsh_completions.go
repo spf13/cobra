@@ -21,14 +21,23 @@ func (c *Command) GenZshCompletionFile(filename string) error {
 	return c.GenZshCompletion(outFile)
 }
 
+func argName(cmd *Command) string {
+	for cmd.HasParent() {
+		cmd = cmd.Parent()
+	}
+	name := fmt.Sprintf("%s_cmd_args", cmd.Name())
+	return strings.Replace(name, "-", "_",-1)
+}
 // GenZshCompletion generates a zsh completion file and writes to the passed writer.
 func (c *Command) GenZshCompletion(w io.Writer) error {
 	buf := new(bytes.Buffer)
 
 	writeHeader(buf, c)
 	maxDepth := maxDepth(c)
-	writeLevelMapping(buf, maxDepth)
+	fmt.Fprintf(buf, "_%s() {\n", c.Name())
+	writeLevelMapping(buf, maxDepth, c)
 	writeLevelCases(buf, maxDepth, c)
+	fmt.Fprintf(buf, "}\n_%s \"$@\"\n", c.Name())
 
 	_, err := buf.WriteTo(w)
 	return err
@@ -52,16 +61,15 @@ func maxDepth(c *Command) int {
 	return 1 + maxDepthSub
 }
 
-func writeLevelMapping(w io.Writer, numLevels int) {
-	fmt.Fprintln(w, "local -a cmd_options")
+func writeLevelMapping(w io.Writer, numLevels int, root *Command) {
+	fmt.Fprintln(w, `local context curcontext="$curcontext" state line`)
+	fmt.Fprintln(w, `typeset -A opt_args`)
 	fmt.Fprintln(w, `_arguments -C  \`)
-	fmt.Fprintln(w, `  $jamf_pro_options \`)
 	for i := 1; i <= numLevels; i++ {
-		fmt.Fprintf(w, `  '%d: :->level%d' \`, i, i)
-		fmt.Fprintln(w)
+		fmt.Fprintf(w, "  '%d: :->level%d' \\\n", i, i)
 	}
-	fmt.Fprintf(w, `  '%d: :%s'`, numLevels+1, "_files")
-	fmt.Fprintln(w)
+	fmt.Fprintf(w, "  $%s \\\n", argName(root))
+	fmt.Fprintln(w, `  '*: :_files'`)
 }
 
 func writeLevelCases(w io.Writer, maxDepth int, root *Command) {
@@ -75,10 +83,10 @@ func writeLevelCases(w io.Writer, maxDepth int, root *Command) {
 	fmt.Fprintln(w, "esac")
 }
 
-func writeLevel(w io.Writer, root *Command, level int) {
-	fmt.Fprintf(w, "  level%d)\n", level)
-	fmt.Fprintf(w, "    case $words[%d] in\n", level)
-	for _, c := range filterByLevel(root, level) {
+func writeLevel(w io.Writer, root *Command, l int) {
+	fmt.Fprintf(w, "  level%d)\n", l)
+	fmt.Fprintf(w, "    case $words[%d] in\n", l)
+	for _, c := range filterByLevel(root, l) {
 		writeCommandArgsBlock(w, c)
 	}
 	fmt.Fprintln(w, "      *)")
@@ -96,11 +104,11 @@ func writeCommandArgsBlock(w io.Writer, c *Command) {
 		defer fmt.Fprintln(w, "      ;;")
 	}
 	if len(flags) > 0 {
-        fmt.Fprintln(w, "        cmd_options=(")
+        fmt.Fprintf(w, "        %s=(\n", argName(c))
 		for _, flag := range flags {
 			fmt.Fprintf(w, "            %s\n", flag)
 		}
-		fmt.Fprintln(w, "\n       )")
+		fmt.Fprintln(w, "        )")
 	}
 	if len(names) > 0 {
 		fmt.Fprintf(w, "        _values 'command' '%s'\n", strings.Join(names, "' '"))
