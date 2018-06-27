@@ -1,10 +1,12 @@
-package cobra
+package main
 
 import (
+	"os"
+	"io"
 	"bytes"
 	"fmt"
-	"io"
-	"os"
+	"github.com/spf13/cobra"
+"github.com/spf13/pflag"
 	"strings"
 )
 
@@ -83,8 +85,10 @@ func writeLevel(w io.Writer, root *Command, i int) {
 
 	for p, c := range byParent {
 		names := names(c)
-		fmt.Fprintf(w, "      %s)\n", p)
-		fmt.Fprintf(w, "        _arguments '%d: :(%s)'\n", i, strings.Join(names, " "))
+		//flags := flags(p)
+		fmt.Fprintf(w, "      %s)\n", p.Name())
+		fmt.Fprintf(w, "        _values '%s command' ", p.Name())
+		fmt.Fprintf(w, "'%s'\n", strings.Join(names, "' '"))
 		fmt.Fprintln(w, "      ;;")
 	}
 	fmt.Fprintln(w, "      *)")
@@ -105,14 +109,14 @@ func filterByLevel(c *Command, l int) []*Command {
 	return cs
 }
 
-func groupByParent(commands []*Command) map[string][]*Command {
-	m := make(map[string][]*Command)
+func groupByParent(commands []*Command) map[*Command][]*Command {
+	m := make(map[*Command][]*Command)
 	for _, c := range commands {
 		parent := c.Parent()
 		if parent == nil {
 			continue
 		}
-		m[parent.Name()] = append(m[parent.Name()], c)
+		m[parent] = append(m[parent], c)
 	}
 	return m
 }
@@ -120,7 +124,20 @@ func groupByParent(commands []*Command) map[string][]*Command {
 func names(commands []*Command) []string {
 	ns := make([]string, len(commands))
 	for i, c := range commands {
-		ns[i] = c.Name()
+		ns[i] = fmt.Sprintf("%s[%s]", c.Name(), c.Short)
+	}
+	return ns
+}
+
+func flags(command *Command) []string {
+	flags := command.Flags()
+	ns := make([]string, flags.NArg())
+	if flags.NArg() > 0 {
+		i := 0
+		flags.VisitAll(func(f *pflag.Flag) {
+			ns[i] = fmt.Sprintf("%s[%s]", f.Name, f.Usage)
+			i += 1
+		})
 	}
 	return ns
 }
