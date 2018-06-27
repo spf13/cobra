@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
-	"io"
 	"bytes"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 )
 
@@ -51,7 +51,7 @@ func maxDepth(c *Command) int {
 }
 
 func writeLevelMapping(w io.Writer, numLevels int) {
-	fmt.Fprintln(w, "local -a rails_options")
+	fmt.Fprintln(w, "local -a cmd_options")
 	fmt.Fprintln(w, `_arguments -C  \`)
 	fmt.Fprintln(w, `  $jamf_pro_options \`)
 	for i := 1; i <= numLevels; i++ {
@@ -94,7 +94,7 @@ func writeCommandArgsBlock(w io.Writer, c *Command) {
 		defer fmt.Fprintln(w, "      ;;")
 	}
 	if len(flags) > 0 {
-		fmt.Fprintln(w, "        jamf_pro_options=(")
+        fmt.Fprintln(w, "        cmd_options=(")
 		for _, flag := range flags {
 			fmt.Fprintf(w, "            %s\n", flag)
 		}
