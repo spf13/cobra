@@ -735,7 +735,7 @@ func (c *Command) execute(a []string) *CmdError {
 			if err != nil {
 				c.Println(err)
 			}
-			return &CmdError{err, CommandError}
+			return nil
 		}
 	}
 
