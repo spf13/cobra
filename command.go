@@ -136,6 +136,9 @@ type Command struct {
 	// SilenceUsage is an option to silence usage when an error occurs.
 	SilenceUsage bool
 
+	// ShowRunErrorUsage is an option to show usage when an error is returned by a RunE function.
+	ShowRunErrorUsage bool
+
 	// DisableFlagParsing disables the flag parsing.
 	// If this is true all flags will be passed to the command as arguments.
 	DisableFlagParsing bool
@@ -876,7 +879,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			return cmd, nil
 		}
 
-		if cmdErr.CmdErrorType == RunError {
+		if cmdErr.CmdErrorType == RunError && (!cmd.ShowRunErrorUsage && !c.ShowRunErrorUsage) {
 			return cmd, cmdErr
 		}
 
