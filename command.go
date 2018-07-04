@@ -693,7 +693,7 @@ func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
 
-func (c *Command) execute(a []string) *CmdError {
+func (c *Command) execute(a []string) error {
 	if c == nil {
 		return &CmdError{fmt.Errorf("Called Execute() on a nil Command"), CommandError}
 	}
@@ -870,23 +870,27 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		cmd.commandCalledAs.name = cmd.Name()
 	}
 
-	cmdErr := cmd.execute(flags)
-	if cmdErr != nil {
-		// Always show help if requested, even if SilenceErrors is in
-		// effect
-		if cmdErr.CmdErrorType == ErrHelp {
-			cmd.HelpFunc()(cmd, args)
-			return cmd, nil
-		}
+	err = cmd.execute(flags)
+	if err != nil {
 
-		if cmdErr.CmdErrorType == RunError && (!cmd.ShowRunErrorUsage && !c.ShowRunErrorUsage) {
-			return cmd, cmdErr
+		cmdErr, ok := err.(*CmdError)
+		if ok {
+			// Always show help if requested, even if SilenceErrors is in
+			// effect
+			if cmdErr.CmdErrorType == ErrHelp {
+				cmd.HelpFunc()(cmd, args)
+				return cmd, nil
+			}
+
+			if cmdErr.CmdErrorType == RunError && (!cmd.ShowRunErrorUsage && !c.ShowRunErrorUsage) {
+				return cmd, err
+			}
 		}
 
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Error:", cmdErr)
+			c.Println("Error:", err)
 		}
 
 		// If root command has SilentUsage flagged,
@@ -894,7 +898,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
 		}
-		return cmd, cmdErr
 	}
 	return cmd, err
 }
