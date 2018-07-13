@@ -736,17 +736,22 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
+	persistentPreRuns := []*Command{}
 	for p := c; p != nil; p = p.Parent() {
+		persistentPreRuns = append(persistentPreRuns, p)
+	}
+
+	for i := len(persistentPreRuns) - 1; i >= 0; i-- {
+		p := persistentPreRuns[i]
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
 				return err
 			}
-			break
 		} else if p.PersistentPreRun != nil {
 			p.PersistentPreRun(c, argWoFlags)
-			break
 		}
 	}
+
 	if c.PreRunE != nil {
 		if err := c.PreRunE(c, argWoFlags); err != nil {
 			return err
@@ -765,6 +770,7 @@ func (c *Command) execute(a []string) (err error) {
 	} else {
 		c.Run(c, argWoFlags)
 	}
+
 	if c.PostRunE != nil {
 		if err := c.PostRunE(c, argWoFlags); err != nil {
 			return err
@@ -772,15 +778,20 @@ func (c *Command) execute(a []string) (err error) {
 	} else if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
 	}
+
+	persistentPostRuns := []*Command{}
 	for p := c; p != nil; p = p.Parent() {
+		persistentPostRuns = append(persistentPostRuns, p)
+	}
+
+	for i := len(persistentPostRuns) - 1; i >= 0; i-- {
+		p := persistentPostRuns[i]
 		if p.PersistentPostRunE != nil {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
 				return err
 			}
-			break
 		} else if p.PersistentPostRun != nil {
 			p.PersistentPostRun(c, argWoFlags)
-			break
 		}
 	}
 
