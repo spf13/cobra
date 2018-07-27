@@ -586,7 +586,7 @@ the version template. The template can be customized using the
 
 ## PreRun and PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  These functions are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  If parent and child commands declare `Persistent*Run` functions, they will be run in order from parent to child.  These functions are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
