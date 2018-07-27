@@ -1117,9 +1117,15 @@ func TestPersistentHooks(t *testing.T) {
 		childPersPostArgs string
 	)
 
+	var (
+		lastPersPreRunCalled  string
+		lastPersPostRunCalled string
+	)
+
 	parentCmd := &Command{
 		Use: "parent",
 		PersistentPreRun: func(_ *Command, args []string) {
+			lastPersPreRunCalled = "parentCmd"
 			parentPersPreArgs = strings.Join(args, " ")
 		},
 		PreRun: func(_ *Command, args []string) {
@@ -1132,6 +1138,7 @@ func TestPersistentHooks(t *testing.T) {
 			parentPostArgs = strings.Join(args, " ")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
+			lastPersPostRunCalled = "parentCmd"
 			parentPersPostArgs = strings.Join(args, " ")
 		},
 	}
@@ -1139,6 +1146,7 @@ func TestPersistentHooks(t *testing.T) {
 	childCmd := &Command{
 		Use: "child",
 		PersistentPreRun: func(_ *Command, args []string) {
+			lastPersPreRunCalled = "childCmd"
 			childPersPreArgs = strings.Join(args, " ")
 		},
 		PreRun: func(_ *Command, args []string) {
@@ -1151,6 +1159,7 @@ func TestPersistentHooks(t *testing.T) {
 			childPostArgs = strings.Join(args, " ")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
+			lastPersPostRunCalled = "childCmd"
 			childPersPostArgs = strings.Join(args, " ")
 		},
 	}
@@ -1164,12 +1173,8 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	// TODO: currently PersistenPreRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPreRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPreArgs != "" {
-		t.Errorf("Expected blank parentPersPreArgs, got %q", parentPersPreArgs)
+	if parentPersPreArgs != "one two" {
+		t.Errorf("Expected %q parentPersPreArgs, got %q", "one two", parentPersPreArgs)
 	}
 	if parentPreArgs != "" {
 		t.Errorf("Expected blank parentPreArgs, got %q", parentPreArgs)
@@ -1180,12 +1185,8 @@ func TestPersistentHooks(t *testing.T) {
 	if parentPostArgs != "" {
 		t.Errorf("Expected blank parentPostArgs, got %q", parentPostArgs)
 	}
-	// TODO: currently PersistenPostRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPostRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPostArgs != "" {
-		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
+	if parentPersPostArgs != "one two" {
+		t.Errorf("Expected %q parentPersPostArgs, got %q", "one two", parentPersPostArgs)
 	}
 
 	if childPersPreArgs != "one two" {
@@ -1202,6 +1203,13 @@ func TestPersistentHooks(t *testing.T) {
 	}
 	if childPersPostArgs != "one two" {
 		t.Errorf("Expected childPersPostArgs %q, got %q", "one two", childPersPostArgs)
+	}
+
+	if lastPersPreRunCalled != "childCmd" {
+		t.Errorf("Expected %q PersistentPreRun to be the last called, got %q", "childCmd", lastPersPreRunCalled)
+	}
+	if lastPersPostRunCalled != "childCmd" {
+		t.Errorf("Expected %q PersistentPostRun to be the last called, got %q", "childCmd", lastPersPostRunCalled)
 	}
 }
 
