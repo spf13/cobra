@@ -17,12 +17,14 @@ package cobra
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	flag "github.com/spf13/pflag"
 )
@@ -195,6 +197,10 @@ type Command struct {
 	helpCommand *Command
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
+
+	// ctx is a standard context.
+	ctx   context.Context
+	ctxMu sync.RWMutex
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
@@ -680,6 +686,8 @@ func (c *Command) execute(a []string) (err error) {
 	if len(c.Deprecated) > 0 {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
+
+	c.ctx = context.Background()
 
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
@@ -1514,4 +1522,18 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+// Context returns the command's current context.
+func (c *Command) Context() context.Context {
+	c.ctxMu.RLock()
+	defer c.ctxMu.RUnlock()
+	return c.ctx
+}
+
+// SetContext sets the command's current context.
+func (c *Command) SetContext(ctx context.Context) {
+	c.ctxMu.Lock()
+	defer c.ctxMu.Unlock()
+	c.ctx = ctx
 }
