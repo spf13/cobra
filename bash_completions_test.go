@@ -53,7 +53,7 @@ func runShellCheck(s string) error {
 }
 
 // World worst custom function, just keep telling you to enter hello!
-const bashCompletionFunc = `__custom_func() {
+const bashCompletionFunc = `__root_custom_func() {
 	COMPREPLY=( "hello" )
 }
 `
@@ -150,7 +150,10 @@ func TestBashCompletions(t *testing.T) {
 	// check for required flags
 	check(t, output, `must_have_one_flag+=("--introot=")`)
 	check(t, output, `must_have_one_flag+=("--persistent-filename=")`)
-	// check for custom completion function
+	// check for custom completion function with both qualified and unqualified name
+	check(t, output, `__root_custom_func`)
+	check(t, output, `__custom_func`)
+	// check for custom completion function body
 	check(t, output, `COMPREPLY=( "hello" )`)
 	// check for required nouns
 	check(t, output, `must_have_one_noun+=("pod")`)
