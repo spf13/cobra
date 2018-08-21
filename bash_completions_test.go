@@ -22,6 +22,13 @@ func check(t *testing.T, found, expected string) {
 	}
 }
 
+func checkNumOccurrences(t *testing.T, found, expected string, expectedOccurrences int) {
+	numOccurrences := strings.Count(found, expected)
+	if numOccurrences != expectedOccurrences {
+		t.Errorf("Expecting to contain %d occurrences of: \n %q\nGot %d:\n %q\n", expectedOccurrences, expected, numOccurrences, found)
+	}
+}
+
 func checkRegex(t *testing.T, found, pattern string) {
 	matched, err := regexp.MatchString(pattern, found)
 	if err != nil {
@@ -53,7 +60,7 @@ func runShellCheck(s string) error {
 }
 
 // World worst custom function, just keep telling you to enter hello!
-const bashCompletionFunc = `__custom_func() {
+const bashCompletionFunc = `__root_custom_func() {
 	COMPREPLY=( "hello" )
 }
 `
@@ -150,7 +157,10 @@ func TestBashCompletions(t *testing.T) {
 	// check for required flags
 	check(t, output, `must_have_one_flag+=("--introot=")`)
 	check(t, output, `must_have_one_flag+=("--persistent-filename=")`)
-	// check for custom completion function
+	// check for custom completion function with both qualified and unqualified name
+	checkNumOccurrences(t, output, `__custom_func`, 2)      // 1. check existence, 2. invoke
+	checkNumOccurrences(t, output, `__root_custom_func`, 3) // 1. check existence, 2. invoke, 3. actual definition
+	// check for custom completion function body
 	check(t, output, `COMPREPLY=( "hello" )`)
 	// check for required nouns
 	check(t, output, `must_have_one_noun+=("pod")`)
