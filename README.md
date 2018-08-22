@@ -291,6 +291,13 @@ import (
   "github.com/spf13/cobra"
 )
 
+var (
+	Version    string
+	BuildStamp string
+	SHA        string
+)
+
+
 func init() {
   rootCmd.AddCommand(versionCmd)
 }
@@ -300,9 +307,41 @@ var versionCmd = &cobra.Command{
   Short: "Print the version number of Hugo",
   Long:  `All software has versions. This is Hugo's`,
   Run: func(cmd *cobra.Command, args []string) {
-    fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
+    fmt.Printf("%#v %#v %#v\n", Version, BuildStamp, SHA)
   },
 }
+```
+
+You might also want to support a `--version` flag in your `cmd/root.go`.
+
+```go
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Use:     "stuff",
+	Short:   "Do stuff",
+	Long:    `Longer details about doing stuff.`,
+	Version: Version,
+	Run:     func(cmd *cobra.Command, args []string) {
+               fmt.Println("do stuff")
+             },
+}
+```
+
+And build it passing `-ldflags -X full/path/to/cmd.Version=v0.0.0`.
+For example:
+
+```bash
+PROJECT_LC=$(echo "${CIRCLE_PROJECT_USERNAME}" | tr '[:upper:]' '[:lower:]')
+BASE="github.com/${PROJECT_LC}/${CIRCLE_PROJECT_REPONAME}/cmd"
+LDFLAGS="-X $BASE.Version=$(git describe --tags) -X $BASE.BuildStamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ') -X $BASE.SHA=$(git rev-parse HEAD)"
+gox -tags netgo -output "bin/${CIRCLE_PROJECT_REPONAME}_{{.OS}}_{{.Arch}}" -ldflags "$LDFLAGS"
 ```
 
 ## Working with Flags
