@@ -26,11 +26,11 @@ version: 2
 jobs:
   go-current:
     docker:
-      - image: circleci/golang:1.10.0
+      - image: circleci/golang:1.11
     <<: *base
   go-previous:
     docker:
-      - image: circleci/golang:1.9.4
+      - image: circleci/golang:1.10
     <<: *base
   go-latest:
     docker:
