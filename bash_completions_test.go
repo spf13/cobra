@@ -71,7 +71,7 @@ func TestBashCompletions(t *testing.T) {
 		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
 		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
 		BashCompletionFunction: bashCompletionFunc,
-		Run: emptyRun,
+		Run:                    emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
 	rootCmd.MarkFlagRequired("introot")
