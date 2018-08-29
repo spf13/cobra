@@ -16,7 +16,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [CockroachDB](http://www.cockroachlabs.com/)
 * [Bleve](http://www.blevesearch.com/)
 * [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
-* [GiantSwarm's swarm](https://github.com/giantswarm/cli)
+* [Giant Swarm's gsctl](https://github.com/giantswarm/gsctl)
 * [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 * [rclone](http://rclone.org/)
 * [nehm](https://github.com/bogem/nehm)
