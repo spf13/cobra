@@ -58,7 +58,8 @@ func Execute() {
 	}
 }
 
-func init() {Environ = environ.New(VendorName, ApplicationName)
+func init() {
+	Environ = environ.New(VendorName, ApplicationName)
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
