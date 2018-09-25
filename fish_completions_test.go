@@ -88,6 +88,7 @@ func TestFishCompletions(t *testing.T) {
 	// check for preamble helper functions
 	check(t, output, "__fish_root_no_subcommand")
 	check(t, output, "__fish_root_has_flag")
+	check(t, output, "__fish_root_seen_subcommand_path")
 
 	// check for subcommands
 	check(t, output, "-a echo")
@@ -96,21 +97,21 @@ func TestFishCompletions(t *testing.T) {
 	check(t, output, "-a cmd:colon")
 
 	// check for nested subcommands
-	checkRegex(t, output, `-n '__fish_seen_subcommand_from echo(; and[^']*)?' -a times`)
+	checkRegex(t, output, `-n '__fish_root_seen_subcommand_path echo(; and[^']*)?' -a times`)
 
 	// check for flags that will take arguments
 	check(t, output, "-n '__fish_root_no_subcommand' -r -s i -l introot")
 	check(t, output, "-n '__fish_root_no_subcommand' -r  -l filename")
 	check(t, output, "-n '__fish_root_no_subcommand' -r  -l persistent-filename")
 	check(t, output, "-n '__fish_root_no_subcommand' -r  -l theme")
-	check(t, output, "-n '__fish_seen_subcommand_from echo' -r  -l config")
-	check(t, output, "-n '__fish_seen_subcommand_from echo' -r  -l filename")
+	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l config")
+	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l filename")
 
 	// check for persistent flags that will take arguments
-	check(t, output, "-n '__fish_seen_subcommand_from cmd:colon' -r  -l persistent-filename")
-	check(t, output, "-n '__fish_seen_subcommand_from echo' -r  -l persistent-filename")
-	check(t, output, "-n '__fish_seen_subcommand_from echo times' -r  -l persistent-filename")
-	check(t, output, "-n '__fish_seen_subcommand_from print' -r  -l persistent-filename")
+	check(t, output, "-n '__fish_root_seen_subcommand_path cmd:colon' -r  -l persistent-filename")
+	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l persistent-filename")
+	check(t, output, "-n '__fish_root_seen_subcommand_path echo times' -r  -l persistent-filename")
+	check(t, output, "-n '__fish_root_seen_subcommand_path print' -r  -l persistent-filename")
 
 	// check for positional arguments to a command
 	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a pod`)
