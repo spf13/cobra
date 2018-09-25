@@ -26,7 +26,7 @@ func writeFishPreamble(cmd *Command, buf *bytes.Buffer) {
 		subCommandNames = append(subCommandNames, subCmd.Name())
 	})
 	buf.WriteString(fmt.Sprintf(`
-function __fish_%s_no_subcommand --description 'Test if oly has yet to be given the subcommand'
+function __fish_%s_no_subcommand --description 'Test if %s has yet to be given the subcommand'
 	for i in (commandline -opc)
 		if contains -- $i %s
 			return 1
@@ -42,7 +42,7 @@ function __fish_%s_has_flag
 	end
 	return 1
 end
-`, cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name()))
+`, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name()))
 }
 
 func writeFishCommandCompletion(rootCmd, cmd *Command, buf *bytes.Buffer) {
