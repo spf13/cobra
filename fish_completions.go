@@ -39,15 +39,7 @@ function __fish_%s_seen_subcommand_path --description 'Test whether the full pat
 	set -e cmd[1]
   return (test (string trim -- "$argv") = (string trim -- "$cmd"))
 end
-function __fish_%s_has_flag
-  for i in (commandline -opc)
-		if contains -- "--$1" $i
-			return 0
-		end
-	end
-	return 1
-end
-`, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name(), cmd.Name()))
+`, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name()))
 }
 
 func writeFishCommandCompletion(rootCmd, cmd *Command, buf *bytes.Buffer) {
@@ -130,7 +122,11 @@ func commandCompletionCondition(rootCmd, cmd *Command) string {
 		bareConditions = append(bareConditions, fmt.Sprintf("__fish_%s_no_subcommand", rootCmd.Name()))
 	}
 	localNonPersistentFlags.VisitAll(func(flag *pflag.Flag) {
-		bareConditions = append(bareConditions, fmt.Sprintf("not __fish_%s_has_flag %s", rootCmd.Name(), flag.Name))
+		flagSelector := fmt.Sprintf("-l %s", flag.Name)
+		if len(flag.Shorthand) > 0 {
+			flagSelector = fmt.Sprintf("-s %s %s", flag.Shorthand, flagSelector)
+		}
+		bareConditions = append(bareConditions, fmt.Sprintf("not __fish_seen_argument %s", flagSelector))
 	})
 	return fmt.Sprintf("-n '%s'", strings.Join(bareConditions, "; and "))
 }

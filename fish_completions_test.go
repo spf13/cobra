@@ -87,7 +87,6 @@ func TestFishCompletions(t *testing.T) {
 
 	// check for preamble helper functions
 	check(t, output, "__fish_root_no_subcommand")
-	check(t, output, "__fish_root_has_flag")
 	check(t, output, "__fish_root_seen_subcommand_path")
 
 	// check for subcommands
@@ -112,6 +111,13 @@ func TestFishCompletions(t *testing.T) {
 	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l persistent-filename")
 	check(t, output, "-n '__fish_root_seen_subcommand_path echo times' -r  -l persistent-filename")
 	check(t, output, "-n '__fish_root_seen_subcommand_path print' -r  -l persistent-filename")
+
+	// check for local non-persistent flags
+	checkRegex(t, output, `; and not __fish_seen_argument -l custom[^']*' -a echo`)
+	checkRegex(t, output, `; and not __fish_seen_argument -l filename[^']*' -a echo`)
+	checkRegex(t, output, `; and not __fish_seen_argument -l filename-ext[^']*' -a echo`)
+	checkRegex(t, output, `; and not __fish_seen_argument -s i -l introot[^']*' -a echo`)
+	checkRegex(t, output, `; and not __fish_seen_argument -l theme[^']*' -a echo`)
 
 	// check for positional arguments to a command
 	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a pod`)
