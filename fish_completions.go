@@ -67,7 +67,8 @@ end
 func writeFishCommandCompletion(rootCmd, cmd *Command, buf *bytes.Buffer) {
 	rangeCommands(cmd, func(subCmd *Command) {
 		condition := commandCompletionCondition(rootCmd, cmd)
-		buf.WriteString(fmt.Sprintf("complete -c %s -f %s -a %s -d '%s'\n", rootCmd.Name(), condition, subCmd.Name(), subCmd.Short))
+		escapedDescription := strings.Replace(subCmd.Short, "'", "\\'", -1)
+		buf.WriteString(fmt.Sprintf("complete -c %s -f %s -a %s -d '%s'\n", rootCmd.Name(), condition, subCmd.Name(), escapedDescription))
 	})
 	for _, validArg := range append(cmd.ValidArgs, cmd.ArgAliases...) {
 		condition := commandCompletionCondition(rootCmd, cmd)
@@ -102,8 +103,9 @@ func writeCommandFlagCompletion(rootCmd, cmd *Command, buf *bytes.Buffer, flag *
 		shortHandPortion = fmt.Sprintf("-s %s", flag.Shorthand)
 	}
 	condition := completionCondition(rootCmd, cmd)
+	escapedUsage := strings.Replace(flag.Usage, "'", "\\'", -1)
 	buf.WriteString(fmt.Sprintf("complete -c %s -f %s %s %s -l %s -d '%s'\n",
-		rootCmd.Name(), condition, flagRequiresArgumentCompletion(flag), shortHandPortion, flag.Name, flag.Usage))
+		rootCmd.Name(), condition, flagRequiresArgumentCompletion(flag), shortHandPortion, flag.Name, escapedUsage))
 }
 
 func flagRequiresArgumentCompletion(flag *pflag.Flag) string {

@@ -12,7 +12,7 @@ func TestFishCompletions(t *testing.T) {
 		ValidArgs:  []string{"pod", "node", "service", "replicationcontroller"},
 		Run:        emptyRun,
 	}
-	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
+	rootCmd.Flags().IntP("introot", "i", -1, "help's message for flag introot")
 	rootCmd.MarkFlagRequired("introot")
 
 	// Filename.
@@ -36,7 +36,7 @@ func TestFishCompletions(t *testing.T) {
 	echoCmd := &Command{
 		Use:     "echo [string to echo]",
 		Aliases: []string{"say"},
-		Short:   "Echo anything to the screen",
+		Short:   "Echo anything's to the screen",
 		Long:    "an utterly useless command for testing.",
 		Example: "Just run cobra-test echo",
 		Run:     emptyRun,
@@ -106,6 +106,9 @@ func TestFishCompletions(t *testing.T) {
 	check(t, output, "-n '__fish_root_no_subcommand' -r  -l theme")
 	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l config")
 	check(t, output, "-n '__fish_root_seen_subcommand_path echo' -r  -l filename")
+
+	// checks escape of description in flags
+	check(t, output, "-n '__fish_root_no_subcommand' -r -s i -l introot -d 'help\\'s message for flag introot'")
 
 	// check for persistent flags that will take arguments
 	check(t, output, "-n '__fish_root_seen_subcommand_path cmd:colon' -r  -l persistent-filename")
