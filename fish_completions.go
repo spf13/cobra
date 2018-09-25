@@ -34,6 +34,11 @@ function __fish_%s_no_subcommand --description 'Test if %s has yet to be given t
 	end
 	return 0
 end
+function __fish_%s_seen_subcommand_path --description 'Test whether the full path of subcommands is the current path'
+	set -l cmd (commandline -opc)
+	set -e cmd[1]
+  return (test (string trim -- "$argv") = (string trim -- "$cmd"))
+end
 function __fish_%s_has_flag
   for i in (commandline -opc)
 		if contains -- "--$1" $i
@@ -42,7 +47,7 @@ function __fish_%s_has_flag
 	end
 	return 1
 end
-`, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name()))
+`, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name(), cmd.Name()))
 }
 
 func writeFishCommandCompletion(rootCmd, cmd *Command, buf *bytes.Buffer) {
@@ -120,7 +125,7 @@ func commandCompletionCondition(rootCmd, cmd *Command) string {
 	localNonPersistentFlags := cmd.LocalNonPersistentFlags()
 	bareConditions := []string{}
 	if rootCmd != cmd {
-		bareConditions = append(bareConditions, fmt.Sprintf("__fish_seen_subcommand_from %s", subCommandPath(rootCmd, cmd)))
+		bareConditions = append(bareConditions, fmt.Sprintf("__fish_%s_seen_subcommand_path %s", rootCmd.Name(), subCommandPath(rootCmd, cmd)))
 	} else {
 		bareConditions = append(bareConditions, fmt.Sprintf("__fish_%s_no_subcommand", rootCmd.Name()))
 	}
@@ -133,7 +138,7 @@ func commandCompletionCondition(rootCmd, cmd *Command) string {
 func completionCondition(rootCmd, cmd *Command) string {
 	condition := fmt.Sprintf("-n '__fish_%s_no_subcommand'", rootCmd.Name())
 	if rootCmd != cmd {
-		condition = fmt.Sprintf("-n '__fish_seen_subcommand_from %s'", subCommandPath(rootCmd, cmd))
+		condition = fmt.Sprintf("-n '__fish_%s_seen_subcommand_path %s'", rootCmd.Name(), subCommandPath(rootCmd, cmd))
 	}
 	return condition
 }
