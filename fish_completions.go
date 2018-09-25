@@ -50,6 +50,12 @@ func writeFishCommandCompletion(rootCmd, cmd *Command, buf *bytes.Buffer) {
 		condition := commandCompletionCondition(rootCmd, cmd)
 		buf.WriteString(fmt.Sprintf("complete -c %s -f %s -a %s -d '%s'\n", rootCmd.Name(), condition, subCmd.Name(), subCmd.Short))
 	})
+	for _, validArg := range cmd.ValidArgs {
+		condition := commandCompletionCondition(rootCmd, cmd)
+		buf.WriteString(
+			fmt.Sprintf("complete -c %s -f %s -a %s -d '%s'\n",
+				rootCmd.Name(), condition, validArg, fmt.Sprintf("Positional Argument to %s", cmd.Name())))
+	}
 	writeCommandFlagsCompletion(rootCmd, cmd, buf)
 	rangeCommands(cmd, func(subCmd *Command) {
 		writeFishCommandCompletion(rootCmd, subCmd, buf)
