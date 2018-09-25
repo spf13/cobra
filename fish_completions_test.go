@@ -88,6 +88,7 @@ func TestFishCompletions(t *testing.T) {
 	// check for preamble helper functions
 	check(t, output, "__fish_root_no_subcommand")
 	check(t, output, "__fish_root_seen_subcommand_path")
+	check(t, output, "__fish_seen_argument")
 
 	// check for subcommands
 	check(t, output, "-a echo")

@@ -39,6 +39,28 @@ function __fish_%s_seen_subcommand_path --description 'Test whether the full pat
 	set -e cmd[1]
   return (test (string trim -- "$argv") = (string trim -- "$cmd"))
 end
+# borrowed from current fish-shell master, since it is not in current 2.7.1 release
+function __fish_seen_argument
+	argparse 's/short=+' 'l/long=+' -- $argv
+
+	set cmd (commandline -co)
+	set -e cmd[1]
+	for t in $cmd
+		for s in $_flag_s
+			if string match -qr "^-[A-z0-9]*"$s"[A-z0-9]*\$" -- $t
+				return 0
+			end
+		end
+
+		for l in $_flag_l
+			if string match -q -- "--$l" $t
+				return 0
+			end
+		end
+	end
+
+	return 1
+end
 `, cmd.Name(), cmd.Name(), strings.Join(subCommandNames, " "), cmd.Name()))
 }
 
