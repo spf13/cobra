@@ -117,4 +117,14 @@ func TestFishCompletions(t *testing.T) {
 	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a node`)
 	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a service`)
 	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a replicationcontroller`)
+
+	// check for aliases to positional arguments for a command
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a pods`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a nodes`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a services`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a replicationcontrollers`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a po`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a no`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a svc`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a rc`)
 }
