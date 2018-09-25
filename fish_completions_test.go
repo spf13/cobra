@@ -7,10 +7,10 @@ import (
 
 func TestFishCompletions(t *testing.T) {
 	rootCmd := &Command{
-		Use:                    "root",
-		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
-		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
-		Run:                    emptyRun,
+		Use:        "root",
+		ArgAliases: []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
+		ValidArgs:  []string{"pod", "node", "service", "replicationcontroller"},
+		Run:        emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
 	rootCmd.MarkFlagRequired("introot")
@@ -111,4 +111,10 @@ func TestFishCompletions(t *testing.T) {
 	check(t, output, "-n '__fish_seen_subcommand_from echo' -r  -l persistent-filename")
 	check(t, output, "-n '__fish_seen_subcommand_from echo times' -r  -l persistent-filename")
 	check(t, output, "-n '__fish_seen_subcommand_from print' -r  -l persistent-filename")
+
+	// check for positional arguments to a command
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a pod`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a node`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a service`)
+	checkRegex(t, output, `-n '__fish_root_no_subcommand(; and[^']*)?' -a replicationcontroller`)
 }
