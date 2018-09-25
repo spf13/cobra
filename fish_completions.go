@@ -103,8 +103,7 @@ func subCommandPath(rootCmd *Command, cmd *Command) string {
 
 func rangeCommands(cmd *Command, callback func(subCmd *Command)) {
 	for _, subCmd := range cmd.Commands() {
-		// TODO: for merging to cobra: add || subCmd == cmd.helpCommand
-		if !subCmd.IsAvailableCommand() {
+		if !subCmd.IsAvailableCommand() || subCmd == cmd.helpCommand {
 			continue
 		}
 		callback(subCmd)
