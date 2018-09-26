@@ -119,6 +119,9 @@ func flagRequiresArgumentCompletion(flag *pflag.Flag) string {
 func subCommandPath(rootCmd *Command, cmd *Command) string {
 	path := []string{}
 	currentCmd := cmd
+	if rootCmd == cmd {
+		return ""
+	}
 	for {
 		path = append([]string{currentCmd.Name()}, path...)
 		if currentCmd.Parent() == rootCmd {
@@ -126,7 +129,6 @@ func subCommandPath(rootCmd *Command, cmd *Command) string {
 		}
 		currentCmd = currentCmd.Parent()
 	}
-	return ""
 }
 
 func rangeCommands(cmd *Command, callback func(subCmd *Command)) {
