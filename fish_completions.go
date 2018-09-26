@@ -35,9 +35,10 @@ function __fish_%s_no_subcommand --description 'Test if %s has yet to be given t
 	return 0
 end
 function __fish_%s_seen_subcommand_path --description 'Test whether the full path of subcommands is the current path'
-	set -l cmd (commandline -opc)
-	set -e cmd[1]
-  return (test (string trim -- "$argv") = (string trim -- "$cmd"))
+	  set -l cmd (commandline -opc)
+	  set -e cmd[1]
+    set -l pattern (string replace -a " " ".+" "$argv")
+    string match -r "$pattern" (string trim -- "$cmd")
 end
 # borrowed from current fish-shell master, since it is not in current 2.7.1 release
 function __fish_seen_argument
