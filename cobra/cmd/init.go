@@ -143,7 +143,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Fjolnir-Dvorak/environ"
+	environ "gopkg.in/Fjolnir-Dvorak/environ.v1/pkg"
 	"github.com/spf13/cobra"{{if .viper}}
 	"github.com/spf13/viper"
 	"path/filepath"{{end}}
@@ -184,6 +184,9 @@ func Execute() {
 }
 
 func init() {
+	environ.CacheResults = false
+	environ.CreateTemp = false
+	environ.CreateUserConfig = false
 	Environ = environ.New(VendorName, ApplicationName)
 {{- if .viper}}
 	cobra.OnInitialize(initConfig)
@@ -191,10 +194,10 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.{{ if .viper }}
-	configFile := filepath.Join(Environ.VarConfigLocal(), ApplicationName + "." + DefaultConfType)
+	configFile := filepath.Join(Environ.UserConfig() + "config." + DefaultConfType)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 		"config file (default is " + configFile + ")"){{ else }}
-	// configFile := filepath.Join(Environ.VarConfigLocal(), ApplicationName + "." + DefaultConfType)
+	// configFile := filepath.Join(Environ.UserConfig() + "config." + DefaultConfType)
 	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
 	//	"config file (default is " + configFile + ")"){{ end }}
 
