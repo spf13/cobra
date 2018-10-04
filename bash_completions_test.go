@@ -64,7 +64,7 @@ func TestBashCompletions(t *testing.T) {
 		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
 		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
 		BashCompletionFunction: bashCompletionFunc,
-		Run: emptyRun,
+		Run:                    emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
 	rootCmd.MarkFlagRequired("introot")
@@ -213,5 +213,31 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 
 	if strings.Contains(output, flagName) {
 		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
+	}
+}
+
+func TestBashCompletionDisableDefaultValuesSet(t *testing.T) {
+	c := &Command{Run: emptyRun, DisableBashCompletionDefaultValues: true}
+
+	buf := new(bytes.Buffer)
+	c.GenBashCompletion(buf)
+	output := buf.String()
+
+	const defaultOutput = "-o default"
+	if strings.Contains(output, defaultOutput) {
+		t.Errorf("expected completion to not include %q flag: Got %v", defaultOutput, output)
+	}
+}
+
+func TestBashCompletionDisableDefaultValuesUnset(t *testing.T) {
+	c := &Command{Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	c.GenBashCompletion(buf)
+	output := buf.String()
+
+	const defaultOutput = "-o default"
+	if !strings.Contains(output, defaultOutput) {
+		t.Errorf("expected completion to include %q flag: Got %v", defaultOutput, output)
 	}
 }
