@@ -17,7 +17,7 @@ import (
 // Use -update to update existing golden files.
 func TestGoldenAddCmd(t *testing.T) {
 	projectName := "github.com/spf13/testproject"
-	project := NewProject(projectName, false)
+	project := NewProject(projectName, "")
 	defer os.RemoveAll(project.AbsPath())
 
 	viper.Set("author", "NAME HERE <EMAIL ADDRESS>")
