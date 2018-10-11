@@ -40,6 +40,7 @@ and the appropriate structure for a Cobra-based CLI application.
 Init will not use an existing directory with contents.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
+
 		wd, err := os.Getwd()
 		if err != nil {
 			er(err)
@@ -47,16 +48,16 @@ Init will not use an existing directory with contents.`,
 
 		var project *Project
 		if len(args) == 0 {
-			project = NewProjectFromPath(wd)
+			project = NewProjectFromPath(wd, vgo)
 		} else if len(args) == 1 {
 			arg := args[0]
 			if arg[0] == '.' {
 				arg = filepath.Join(wd, arg)
 			}
 			if filepath.IsAbs(arg) {
-				project = NewProjectFromPath(arg)
+				project = NewProjectFromPath(arg, vgo)
 			} else {
-				project = NewProject(arg)
+				project = NewProject(arg, vgo) // testing this case
 			}
 		} else {
 			er("please provide only one argument")

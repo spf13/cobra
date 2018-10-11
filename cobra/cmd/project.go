@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,7 +18,7 @@ type Project struct {
 }
 
 // NewProject returns Project with specified project name.
-func NewProject(projectName string) *Project {
+func NewProject(projectName string, vgo string) *Project {
 	if projectName == "" {
 		er("can't create project with blank name")
 	}
@@ -25,31 +26,54 @@ func NewProject(projectName string) *Project {
 	p := new(Project)
 	p.name = projectName
 
-	// 1. Find already created protect.
-	p.absPath = findPackage(projectName)
-
-	// 2. If there are no created project with this path, and user is in GOPATH,
-	// then use GOPATH/src/projectName.
-	if p.absPath == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			er(err)
-		}
-		for _, srcPath := range srcPaths {
-			goPath := filepath.Dir(srcPath)
-			if filepathHasPrefix(wd, goPath) {
-				p.absPath = filepath.Join(srcPath, projectName)
-				break
-			}
-		}
+	wd, err := os.Getwd()
+	if err != nil {
+		er(err)
 	}
 
-	// 3. If user is not in GOPATH, then use (first GOPATH)/src/projectName.
-	if p.absPath == "" {
-		p.absPath = filepath.Join(srcPaths[0], projectName)
+	/* add support for Go modules. ISSUE #756 */
+	if vgo == "" {
+		// vgo not set, business as usual
+		// 1. Find already created protect.
+		p.absPath = findPackage(projectName)
+
+		// 2. If there are no created project with this path, and user is in GOPATH,
+		// then use GOPATH/src/projectName.
+		if p.absPath == "" {
+			for _, srcPath := range srcPaths {
+				goPath := filepath.Dir(srcPath)
+				if filepathHasPrefix(wd, goPath) {
+					p.absPath = filepath.Join(srcPath, projectName)
+					break
+				}
+			}
+		}
+
+		// 3. If user is not in GOPATH, then use (first GOPATH)/src/projectName.
+		if p.absPath == "" {
+			p.absPath = filepath.Join(srcPaths[0], projectName)
+		}
+	} else {
+		if wd != p.name {
+			wd = fmt.Sprintf("%s/%s", wd, p.name)
+		}
+		p.name = vgo
+		p = createWithModuleSupport(wd, p)
 	}
 
 	return p
+}
+
+/* add support for Go modules. ISSUE #756 */
+func createWithModuleSupport(workingDir string, project *Project) *Project {
+	for _, srcPath := range srcPaths {
+		goPath := filepath.Dir(srcPath)
+		if filepathHasPrefix(workingDir, goPath) || workingDir == goPath {
+			er("using modules, must be outside of GOPATH")
+		}
+	}
+	project.absPath = workingDir
+	return project
 }
 
 // findPackage returns full path to existing go package in GOPATHs.
@@ -70,7 +94,7 @@ func findPackage(packageName string) string {
 
 // NewProjectFromPath returns Project with specified absolute path to
 // package.
-func NewProjectFromPath(absPath string) *Project {
+func NewProjectFromPath(absPath string, vgo string) *Project {
 	if absPath == "" {
 		er("can't create project: absPath can't be blank")
 	}
@@ -92,8 +116,14 @@ func NewProjectFromPath(absPath string) *Project {
 	}
 
 	p := new(Project)
-	p.absPath = strings.TrimSuffix(absPath, findCmdDir(absPath))
-	p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
+	if vgo == "" {
+		p.absPath = strings.TrimSuffix(absPath, findCmdDir(absPath))
+		p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
+	} else {
+		p.name = vgo
+		p = createWithModuleSupport(absPath, p)
+	}
+
 	return p
 }
 

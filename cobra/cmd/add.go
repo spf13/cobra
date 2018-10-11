@@ -49,13 +49,13 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 
 		var project *Project
 		if packageName != "" {
-			project = NewProject(packageName)
+			project = NewProject(packageName, vgo)
 		} else {
 			wd, err := os.Getwd()
 			if err != nil {
 				er(err)
 			}
-			project = NewProjectFromPath(wd)
+			project = NewProjectFromPath(wd, vgo)
 		}
 
 		cmdName := validateCmdName(args[0])
