@@ -57,7 +57,7 @@ Init will not use an existing directory with contents.`,
 			if filepath.IsAbs(arg) {
 				project = NewProjectFromPath(arg, vgo)
 			} else {
-				project = NewProject(arg, vgo) // testing this case
+				project = NewProject(arg, vgo)
 			}
 		} else {
 			er("please provide only one argument")
