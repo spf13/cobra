@@ -24,7 +24,7 @@ func writePreamble(buf *bytes.Buffer, name string) {
 	buf.WriteString(fmt.Sprintf(`
 __%[1]s_debug()
 {
-    if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
+    if [[ -n "${BASH_COMP_DEBUG_FILE}" ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }
@@ -39,21 +39,21 @@ __%[1]s_init_completion()
 
 __%[1]s_index_of_word()
 {
-    local w word=$1
+    local w word="$1"
     shift
     index=0
     for w in "$@"; do
-        [[ $w = "$word" ]] && return
-        index=$((index+1))
+        [[ "$w" = "$word" ]] && return
+        index="$((index+1))"
     done
     index=-1
 }
 
 __%[1]s_contains_word()
 {
-    local w word=$1; shift
+    local w word="$1"; shift
     for w in "$@"; do
-        [[ $w = "$word" ]] && return
+        [[ "$w" = "$word" ]] && return
     done
     return 1
 }
@@ -61,25 +61,25 @@ __%[1]s_contains_word()
 __%[1]s_handle_reply()
 {
     __%[1]s_debug "${FUNCNAME[0]}"
-    case $cur in
+    case "$cur" in
         -*)
-            if [[ $(type -t compopt) = "builtin" ]]; then
+            if [[ "$(type -t compopt)" = "builtin" ]]; then
                 compopt -o nospace
             fi
             local allflags
-            if [ ${#must_have_one_flag[@]} -ne 0 ]; then
+            if [ "${#must_have_one_flag[@]}" -ne 0 ]; then
                 allflags=("${must_have_one_flag[@]}")
             else
                 allflags=("${flags[*]} ${two_word_flags[*]}")
             fi
-            COMPREPLY=( $(compgen -W "${allflags[*]}" -- "$cur") )
-            if [[ $(type -t compopt) = "builtin" ]]; then
+            COMPREPLY=( "$(compgen -W "${allflags[*]}" -- "$cur")" )
+            if [[ "$(type -t compopt)" = "builtin" ]]; then
                 [[ "${COMPREPLY[0]}" == *= ]] || compopt +o nospace
             fi
 
             # complete after --flag=abc
-            if [[ $cur == *=* ]]; then
-                if [[ $(type -t compopt) = "builtin" ]]; then
+            if [[ "$cur" == *=* ]]; then
+                if [[ "$(type -t compopt)" = "builtin" ]]; then
                     compopt +o nospace
                 fi
 
@@ -87,10 +87,10 @@ __%[1]s_handle_reply()
                 flag="${cur%%=*}"
                 __%[1]s_index_of_word "${flag}" "${flags_with_completion[@]}"
                 COMPREPLY=()
-                if [[ ${index} -ge 0 ]]; then
+                if [[ "${index}" -ge 0 ]]; then
                     PREFIX=""
                     cur="${cur#*=}"
-                    ${flags_completion[${index}]}
+                    "${flags_completion["${index}"]}"
                     if [ -n "${ZSH_VERSION}" ]; then
                         # zsh completion needs --flag= prefix
                         eval "COMPREPLY=( \"\${COMPREPLY[@]/#/${flag}=}\" )"
@@ -104,31 +104,31 @@ __%[1]s_handle_reply()
     # check if we are handling a flag with special work handling
     local index
     __%[1]s_index_of_word "${prev}" "${flags_with_completion[@]}"
-    if [[ ${index} -ge 0 ]]; then
-        ${flags_completion[${index}]}
+    if [[ "${index}" -ge 0 ]]; then
+        "${flags_completion["${index}"]}"
         return
     fi
 
     # we are parsing a flag and don't have a special handler, no completion
-    if [[ ${cur} != "${words[cword]}" ]]; then
+    if [[ "${cur}" != "${words[cword]}" ]]; then
         return
     fi
 
     local completions
     completions=("${commands[@]}")
-    if [[ ${#must_have_one_noun[@]} -ne 0 ]]; then
+    if [[ "${#must_have_one_noun[@]}" -ne 0 ]]; then
         completions=("${must_have_one_noun[@]}")
     fi
-    if [[ ${#must_have_one_flag[@]} -ne 0 ]]; then
+    if [[ "${#must_have_one_flag[@]}" -ne 0 ]]; then
         completions+=("${must_have_one_flag[@]}")
     fi
-    COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
+    COMPREPLY=( "$(compgen -W "${completions[*]}" -- "$cur")" )
 
-    if [[ ${#COMPREPLY[@]} -eq 0 && ${#noun_aliases[@]} -gt 0 && ${#must_have_one_noun[@]} -ne 0 ]]; then
-        COMPREPLY=( $(compgen -W "${noun_aliases[*]}" -- "$cur") )
+    if [[ "${#COMPREPLY[@]}" -eq 0 && "${#noun_aliases[@]}" -gt 0 && "${#must_have_one_noun[@]}" -ne 0 ]]; then
+        COMPREPLY=( "$(compgen -W "${noun_aliases[*]}" -- "$cur")" )
     fi
 
-    if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
+    if [[ "${#COMPREPLY[@]}" -eq 0 ]]; then
 		if declare -F __%[1]s_custom_func >/dev/null; then
 			# try command name qualified custom func
 			__%[1]s_custom_func
@@ -145,7 +145,7 @@ __%[1]s_handle_reply()
 
     # If there is only 1 completion and it is a flag with an = it will be completed
     # but we don't want a space after the =
-    if [[ "${#COMPREPLY[@]}" -eq "1" ]] && [[ $(type -t compopt) = "builtin" ]] && [[ "${COMPREPLY[0]}" == --*= ]]; then
+    if [[ "${#COMPREPLY[@]}" -eq "1" ]] && [[ "$(type -t compopt)" = "builtin" ]] && [[ "${COMPREPLY[0]}" == --*= ]]; then
        compopt -o nospace
     fi
 }
@@ -168,12 +168,12 @@ __%[1]s_handle_flag()
     __%[1]s_debug "${FUNCNAME[0]}: c is $c words[c] is ${words[c]}"
 
     # if a command required a flag, and we found it, unset must_have_one_flag()
-    local flagname=${words[c]}
+    local flagname="${words[c]}"
     local flagvalue
     # if the word contained an =
-    if [[ ${words[c]} == *"="* ]]; then
-        flagvalue=${flagname#*=} # take in as flagvalue after the =
-        flagname=${flagname%%=*} # strip everything after the =
+    if [[ "${words[c]}" == *"="* ]]; then
+        flagvalue="${flagname#*=}" # take in as flagvalue after the =
+        flagname="${flagname%%=*}" # strip everything after the =
         flagname="${flagname}=" # but put the = back
     fi
     __%[1]s_debug "${FUNCNAME[0]}: looking for ${flagname}"
@@ -190,24 +190,24 @@ __%[1]s_handle_flag()
     # flaghash variable is an associative array which is only supported in bash > 3.
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         if [ -n "${flagvalue}" ] ; then
-            flaghash[${flagname}]=${flagvalue}
-        elif [ -n "${words[ $((c+1)) ]}" ] ; then
-            flaghash[${flagname}]=${words[ $((c+1)) ]}
+            flaghash["${flagname}"]="${flagvalue}"
+        elif [ -n "${words[ "$((c+1))" ]}" ] ; then
+            flaghash["${flagname}"]="${words[ "$((c+1))" ]}"
         else
-            flaghash[${flagname}]="true" # pad "true" for bool flag
+            flaghash["${flagname}"]="true" # pad "true" for bool flag
         fi
     fi
 
     # skip the argument to a two word flag
     if __%[1]s_contains_word "${words[c]}" "${two_word_flags[@]}"; then
-        c=$((c+1))
+        c="$((c+1))"
         # if we are looking for a flags value, don't show commands
-        if [[ $c -eq $cword ]]; then
+        if [[ "$c" -eq "$cword" ]]; then
             commands=()
         fi
     fi
 
-    c=$((c+1))
+    c="$((c+1))"
 
 }
 
@@ -222,7 +222,7 @@ __%[1]s_handle_noun()
     fi
 
     nouns+=("${words[c]}")
-    c=$((c+1))
+    c="$((c+1))"
 }
 
 __%[1]s_handle_command()
@@ -230,23 +230,23 @@ __%[1]s_handle_command()
     __%[1]s_debug "${FUNCNAME[0]}: c is $c words[c] is ${words[c]}"
 
     local next_command
-    if [[ -n ${last_command} ]]; then
+    if [[ -n "${last_command}" ]]; then
         next_command="_${last_command}_${words[c]//:/__}"
     else
-        if [[ $c -eq 0 ]]; then
+        if [[ "$c" -eq 0 ]]; then
             next_command="_%[1]s_root_command"
         else
             next_command="_${words[c]//:/__}"
         fi
     fi
-    c=$((c+1))
+    c="$((c+1))"
     __%[1]s_debug "${FUNCNAME[0]}: looking for ${next_command}"
     declare -F "$next_command" >/dev/null && $next_command
 }
 
 __%[1]s_handle_word()
 {
-    if [[ $c -ge $cword ]]; then
+    if [[ "$c" -ge "$cword" ]]; then
         __%[1]s_handle_reply
         return
     fi
@@ -255,12 +255,12 @@ __%[1]s_handle_word()
         __%[1]s_handle_flag
     elif __%[1]s_contains_word "${words[c]}" "${commands[@]}"; then
         __%[1]s_handle_command
-    elif [[ $c -eq 0 ]]; then
+    elif [[ "$c" -eq 0 ]]; then
         __%[1]s_handle_command
     elif __%[1]s_contains_word "${words[c]}" "${command_aliases[@]}"; then
         # aliashash variable is an associative array which is only supported in bash > 3.
         if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
-            words[c]=${aliashash[${words[c]}]}
+            words[c]="${aliashash["${words[c]}"]}"
             __%[1]s_handle_command
         else
             __%[1]s_handle_noun
@@ -303,7 +303,7 @@ func writePostscript(buf *bytes.Buffer, name string) {
 }
 
 `, name))
-	buf.WriteString(fmt.Sprintf(`if [[ $(type -t compopt) = "builtin" ]]; then
+	buf.WriteString(fmt.Sprintf(`if [[ "$(type -t compopt)" = "builtin" ]]; then
     complete -o default -F __start_%s %s
 else
     complete -o default -o nospace -F __start_%s %s
