@@ -389,6 +389,7 @@ The following validators are built in:
 - `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
 - `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
 - `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
+- `ExactValidArgs(int)` = the command will report and error if there are not exactly N positional args OR if there are any positional args that are not in the `ValidArgs` field of `Command`
 - `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
 
 An example of setting the custom validator:

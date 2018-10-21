@@ -158,6 +158,52 @@ func TestExactArgsWithInvalidCount(t *testing.T) {
 	}
 }
 
+func TestExactValidArgs(t *testing.T) {
+	c := &Command{Use: "c", Args: ExactValidArgs(3), ValidArgs: []string{"a", "b", "c"}, Run: emptyRun}
+	output, err := executeCommand(c, "a", "b", "c")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestExactValidArgsWithInvalidCount(t *testing.T) {
+	c := &Command{Use: "c", Args: ExactValidArgs(2), Run: emptyRun}
+	_, err := executeCommand(c, "a", "b", "c")
+
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	got := err.Error()
+	expected := "accepts 2 arg(s), received 3"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
+func TestExactValidArgsWithInvalidArgs(t *testing.T) {
+	c := &Command{
+		Use:       "c",
+		Args:      ExactValidArgs(1),
+		ValidArgs: []string{"one", "two"},
+		Run:       emptyRun,
+	}
+
+	_, err := executeCommand(c, "three")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	got := err.Error()
+	expected := `invalid argument "three" for "c"`
+	if got != expected {
+		t.Errorf("Expected: %q, got: %q", expected, got)
+	}
+}
+
 func TestRangeArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: RangeArgs(2, 4), Run: emptyRun}
 	output, err := executeCommand(c, "a", "b", "c")
