@@ -18,7 +18,9 @@ base: &base
           go get -t -v ./...
           PATH=$PATH:$PWD/bin go test -v ./...
           go build
-          diff -u <(echo -n) <(gofmt -d -s .)
+          if [ -n $LATEST_GO ]; then
+            diff -u <(echo -n) <(gofmt -d -s .);
+          fi
           if [ -z $NOVET ]; then
             diff -u <(echo -n) <(go tool vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
           fi
@@ -26,13 +28,15 @@ version: 2
 jobs:
   go-current:
     docker:
-      - image: circleci/golang:1.10.0
+      - image: circleci/golang:1.11
     <<: *base
   go-previous:
     docker:
-      - image: circleci/golang:1.9.4
+      - image: circleci/golang:1.10
     <<: *base
   go-latest:
     docker:
       - image: circleci/golang:latest
+    environment:
+        LATEST_GO: LATEST_GO
     <<: *base
