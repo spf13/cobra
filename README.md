@@ -399,7 +399,7 @@ var cmd = &cobra.Command{
   Short: "hello",
   Args: func(cmd *cobra.Command, args []string) error {
     if len(args) < 1 {
-      return errors.New("requires at least one arg")
+      return errors.New("requires a color argument")
     }
     if myapp.IsValidColor(args[0]) {
       return nil
