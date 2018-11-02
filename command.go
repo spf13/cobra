@@ -143,6 +143,9 @@ type Command struct {
 	//FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
 
+	// ValidateRequiredFlagsFunc is called to validate if all required flags are set
+	ValidateRequiredFlagsFunc func(*Command) error
+
 	// commands is the list of commands supported by this program.
 	commands []*Command
 	// parent is a parent command for this command.
@@ -880,7 +883,8 @@ func (c *Command) ValidateArgs(args []string) error {
 	return c.Args(c, args)
 }
 
-func (c *Command) validateRequiredFlags() error {
+// GetMissingRequiredFlags returns the names of the missing required flags
+func (c *Command) GetMissingRequiredFlags() []string {
 	flags := c.Flags()
 	missingFlagNames := []string{}
 	flags.VisitAll(func(pflag *flag.Flag) {
@@ -892,7 +896,18 @@ func (c *Command) validateRequiredFlags() error {
 			missingFlagNames = append(missingFlagNames, pflag.Name)
 		}
 	})
+	return missingFlagNames
+}
 
+func (c *Command) validateRequiredFlags() error {
+	if c.ValidateRequiredFlagsFunc != nil {
+		return c.ValidateRequiredFlagsFunc(c)
+	}
+	return c.defaultValidateRequiredFlags()
+}
+
+func (c *Command) defaultValidateRequiredFlags() error {
+	missingFlagNames := c.GetMissingRequiredFlags()
 	if len(missingFlagNames) > 0 {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}

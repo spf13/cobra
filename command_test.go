@@ -691,6 +691,27 @@ func TestRequiredFlags(t *testing.T) {
 	}
 }
 
+func TestRequiredFlagsFunc(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun, ValidateRequiredFlagsFunc: func(c *Command) error {
+		missing := c.GetMissingRequiredFlags()
+		return fmt.Errorf(strings.Join(missing, "|"))
+	}}
+	c.Flags().String("foo1", "", "")
+	c.MarkFlagRequired("foo1")
+	c.Flags().String("foo2", "", "")
+	c.MarkFlagRequired("foo2")
+	c.Flags().String("bar", "", "")
+
+	expected := "foo1|foo2"
+
+	_, err := executeCommand(c)
+	got := err.Error()
+
+	if got != expected {
+		t.Errorf("Expected error: %q, got: %q", expected, got)
+	}
+}
+
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().String("foo1", "", "")
@@ -709,6 +730,34 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	parent.AddCommand(child)
 
 	expected := fmt.Sprintf("required flag(s) %q, %q, %q, %q not set", "bar1", "bar2", "foo1", "foo2")
+
+	_, err := executeCommand(parent, "child")
+	if err.Error() != expected {
+		t.Errorf("Expected %q, got %q", expected, err.Error())
+	}
+}
+
+func TestPersistentRequiredFlagsFunc(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun}
+	parent.PersistentFlags().String("foo1", "", "")
+	parent.MarkPersistentFlagRequired("foo1")
+	parent.PersistentFlags().String("foo2", "", "")
+	parent.MarkPersistentFlagRequired("foo2")
+	parent.Flags().String("foo3", "", "")
+
+	child := &Command{Use: "child", Run: emptyRun, ValidateRequiredFlagsFunc: func(c *Command) error {
+		missing := c.GetMissingRequiredFlags()
+		return fmt.Errorf(strings.Join(missing, "|"))
+	}}
+	child.Flags().String("bar1", "", "")
+	child.MarkFlagRequired("bar1")
+	child.Flags().String("bar2", "", "")
+	child.MarkFlagRequired("bar2")
+	child.Flags().String("bar3", "", "")
+
+	parent.AddCommand(child)
+
+	expected := "bar1|bar2|foo1|foo2"
 
 	_, err := executeCommand(parent, "child")
 	if err.Error() != expected {
