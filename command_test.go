@@ -1569,7 +1569,7 @@ func TestUpdateName(t *testing.T) {
 type calledAsTestcase struct {
 	args []string
 	call string
-	want string
+	want []string
 	epm  bool
 	tc   bool
 }
@@ -1584,10 +1584,13 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	parent := &Command{Use: "parent", Run: run}
 	child1 := &Command{Use: "child1", Run: run, Aliases: []string{"this"}}
 	child2 := &Command{Use: "child2", Run: run, Aliases: []string{"that"}}
+	child11 := &Command{Use: "child11", Run: run, Aliases: []string{"foo"}}
 
 	parent.AddCommand(child1)
 	parent.AddCommand(child2)
 	parent.SetArgs(tc.args)
+
+	child1.AddCommand(child11)
 
 	output := new(bytes.Buffer)
 	parent.SetOutput(output)
@@ -1603,25 +1606,57 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 
 	if called.Name() != tc.call {
 		t.Errorf("called command == %q; Wanted %q", called.Name(), tc.call)
-	} else if got := called.CalledAs(); got != tc.want {
+		return
+	}
+
+	if got := called.CalledAs(); got != tc.want[0] {
 		t.Errorf("%s.CalledAs() == %q; Wanted: %q", tc.call, got, tc.want)
+	}
+	if len(tc.want) > 1 {
+		// Run through the parents to see they were called with an alias you can
+		// get the correct names as well.
+		p := called
+		for _, want := range tc.want[1:] {
+			p = p.Parent()
+			if p == nil {
+				t.Errorf("did not find expected parent for %v", want)
+				return
+			}
+			if got := p.CalledAs(); got != want {
+				t.Errorf("%v.CalledAS() == %q; Wanted: %q", p.Name(), got, want)
+				return
+			}
+		}
 	}
 }
 
 func TestCalledAs(t *testing.T) {
 	tests := map[string]calledAsTestcase{
-		"find/no-args":            {nil, "parent", "parent", false, false},
-		"find/real-name":          {[]string{"child1"}, "child1", "child1", false, false},
-		"find/full-alias":         {[]string{"that"}, "child2", "that", false, false},
-		"find/part-no-prefix":     {[]string{"thi"}, "", "", false, false},
-		"find/part-alias":         {[]string{"thi"}, "child1", "this", true, false},
-		"find/conflict":           {[]string{"th"}, "", "", true, false},
-		"traverse/no-args":        {nil, "parent", "parent", false, true},
-		"traverse/real-name":      {[]string{"child1"}, "child1", "child1", false, true},
-		"traverse/full-alias":     {[]string{"that"}, "child2", "that", false, true},
-		"traverse/part-no-prefix": {[]string{"thi"}, "", "", false, true},
-		"traverse/part-alias":     {[]string{"thi"}, "child1", "this", true, true},
-		"traverse/conflict":       {[]string{"th"}, "", "", true, true},
+		"find/no-args":        {nil, "parent", []string{"parent"}, false, false},
+		"find/real-name":      {[]string{"child1"}, "child1", []string{"child1"}, false, false},
+		"find/full-alias":     {[]string{"that"}, "child2", []string{"that"}, false, false},
+		"find/part-no-prefix": {[]string{"thi"}, "", []string{""}, false, false},
+		"find/part-alias":     {[]string{"thi"}, "child1", []string{"this"}, true, false},
+		"find/conflict":       {[]string{"th"}, "", []string{""}, true, false},
+
+		"traverse/no-args": {nil, "parent", []string{"parent"}, false, true},
+
+		"traverse/real-name":                     {[]string{"child1"}, "child1", []string{"child1"}, false, true},
+		"traverse/real-name/traverse/real-name":  {[]string{"child1", "child11"}, "child11", []string{"child11"}, false, false},
+		"traverse/real-name/traverse/full-alias": {[]string{"child1", "foo"}, "child11", []string{"foo", "child1"}, false, false},
+		"traverse/real-name/traverse/part-alias": {[]string{"child1", "fo"}, "child11", []string{"foo", "child1"}, true, false},
+
+		"traverse/full-alias":                     {[]string{"that"}, "child2", []string{"that"}, false, true},
+		"traverse/full-alias/traverse/real-name":  {[]string{"this", "child11"}, "child11", []string{"child11", "this"}, false, false},
+		"traverse/full-alias/traverse/full-alias": {[]string{"this", "foo"}, "child11", []string{"foo", "this"}, false, false},
+		"traverse/full-alias/traverse/part-alias": {[]string{"this", "fo"}, "child11", []string{"foo", "this"}, true, false},
+		"traverse/part-no-prefix":                 {[]string{"thi"}, "", []string{""}, false, true},
+
+		"traverse/part-alias":                     {[]string{"thi"}, "child1", []string{"this"}, true, true},
+		"traverse/part-alias/traverse/real-name":  {[]string{"thi", "child11"}, "child11", []string{"child11", "this"}, true, false},
+		"traverse/part-alias/traverse/full-alias": {[]string{"thi", "foo"}, "child11", []string{"foo", "this"}, true, false},
+		"traverse/part-alias/traverse/part-alias": {[]string{"thi", "fo"}, "child11", []string{"foo", "this"}, true, false},
+		"traverse/conflict":                       {[]string{"th"}, "", []string{""}, true, true},
 	}
 
 	for name, tc := range tests {

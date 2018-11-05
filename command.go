@@ -1157,12 +1157,14 @@ func (c *Command) HasAlias(s string) bool {
 }
 
 // CalledAs returns the command name or alias that was used to invoke
-// this command or an empty string if the command has not been called.
+// this command
 func (c *Command) CalledAs() string {
-	if c.commandCalledAs.called {
-		return c.commandCalledAs.name
-	}
-	return ""
+	return c.commandCalledAs.name
+}
+
+// Called returns weather the command was called or not.
+func (c *Command) Called() bool {
+	return c.commandCalledAs.called
 }
 
 // hasNameOrAliasPrefix returns true if the Name or any of aliases start
