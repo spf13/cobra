@@ -240,6 +240,16 @@ func (c *Command) SetHelpTemplate(s string) {
 	c.helpTemplate = s
 }
 
+// SetShortHelpString sets short help string to be used. Application can use it to set custom short help string.
+func (c *Command) SetShortHelpString(s string) {
+	c.helpCommand.Short = s
+}
+
+// SetLongHelpString sets long help string to be used. Application can use it to set custom long help string.
+func (c *Command) SetLongHelpString(s string) {
+	c.helpCommand.Long = s
+}
+
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
 func (c *Command) SetVersionTemplate(s string) {
 	c.versionTemplate = s
