@@ -431,7 +431,7 @@ func (c *Command) HelpTemplate() string {
 	}
 	return `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 
-{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+{{end}}{{if or .Runnable .HasSubCommands .HasFlags}}{{.UsageString}}{{end}}`
 }
 
 // VersionTemplate return version template for the command.
@@ -721,6 +721,10 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
+	if err := c.validateRequiredFlags(); err != nil {
+		return err
+	}
+
 	if !c.Runnable() {
 		return flag.ErrHelp
 	}
@@ -755,9 +759,6 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
-	if err := c.validateRequiredFlags(); err != nil {
-		return err
-	}
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err

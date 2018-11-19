@@ -835,12 +835,12 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	childCmd := &Command{Use: "child", Long: "Long description"}
 	rootCmd.AddCommand(childCmd)
 
-	output, err := executeCommand(rootCmd, "child")
+	output, err := executeCommand(rootCmd, "child", "--help")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	checkStringContains(t, output, childCmd.Long)
+	checkStringContains(t, output, "Usage")
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
