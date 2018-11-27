@@ -134,7 +134,7 @@ __%[1]s_handle_reply()
 			__%[1]s_custom_func
 		else
 			# otherwise fall back to unqualified for compatibility
-			declare -F ___custom_func >/dev/null && __custom_func
+			declare -F __custom_func >/dev/null && __custom_func
 		fi
     fi
 
