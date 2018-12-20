@@ -80,7 +80,7 @@ func OnInitialize(y ...func()) {
 // OnInitializeE sets the passed functions to be run when each command's
 // Execute method is called.
 func OnInitializeE(y ...func() error) {
-	initializers = append(initializers, y...)
+	initializersWithError = append(initializersWithError, y...)
 }
 
 // FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
