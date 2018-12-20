@@ -805,6 +805,8 @@ func (c *Command) preRunE() error {
 			return err
 		}
 	}
+
+	return nil
 }
 
 // Execute uses the args (os.Args[1:] by default)
