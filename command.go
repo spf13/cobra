@@ -798,7 +798,7 @@ func (c *Command) preRun() {
 	}
 }
 
-func (c *Command) preRunE() {
+func (c *Command) preRunE() error {
 	for _, x := range initializersWithError {
 		err := x()
 		if err != nil {
