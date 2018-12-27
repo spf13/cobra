@@ -23,6 +23,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+func init() {
+	initCmd.Flags().BoolVarP(&force, "force", "f", false, "force init to work in non-empty directories")
+}
+
+var force bool
+
 var initCmd = &cobra.Command{
 	Use:     "init [name]",
 	Aliases: []string{"initialize", "initialise", "create"},
@@ -36,8 +42,9 @@ and the appropriate structure for a Cobra-based CLI application.
     (e.g. github.com/spf13/hugo);
   * If an absolute path is provided, it will be created;
   * If the directory already exists but is empty, it will be used.
+  * If the directory already exists, the force flag is used, and it is not empty, existing files will not be overwritten
 
-Init will not use an existing directory with contents.`,
+Init will not use an existing directory with contents unless specified via --force or -f`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		wd, err := os.Getwd()
@@ -78,14 +85,29 @@ func initializeProject(project *Project) {
 		if err != nil {
 			er(err)
 		}
-	} else if !isEmpty(project.AbsPath()) { // If path exists and is not empty don't use it
+	} else if !isEmpty(project.AbsPath()) && !force { // If path exists and is not empty don't use it
 		er("Cobra will not create a new project in a non empty directory: " + project.AbsPath())
-	}
+	} else if !isEmpty(project.AbsPath()) && force {  // If path exists and force flag is true, use it but check to see if files exist first
+		if !exists(project.AbsPath() + "/"  + project.License().Name) {
+			fmt.Println(project.AbsPath() + "/LICENSE.txt exists... Skipping")
+			createLicenseFile(project.License(), project.AbsPath())
+		}
 
-	// We have a directory and it's empty. Time to initialize it.
-	createLicenseFile(project.License(), project.AbsPath())
-	createMainFile(project)
-	createRootCmdFile(project)
+		if !exists(project.AbsPath() + "/"  + "main.go") {
+			fmt.Println(project.AbsPath() + "/main.go exists... Skipping")
+			createMainFile(project)
+		}
+
+		if !exists(project.AbsPath() + "/"  + "cmd/root.go") {
+			fmt.Println(project.AbsPath() + "/cmd/root.go exists... Skipping")
+			createRootCmdFile(project)
+		}
+	} else {
+		// We have a directory and it's empty. Time to initialize it.
+		createLicenseFile(project.License(), project.AbsPath())
+		createMainFile(project)
+		createRootCmdFile(project)
+	}
 }
 
 func createLicenseFile(license License, path string) {
