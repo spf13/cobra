@@ -88,18 +88,18 @@ func initializeProject(project *Project) {
 	} else if !isEmpty(project.AbsPath()) && !force { // If path exists and is not empty don't use it
 		er("Cobra will not create a new project in a non empty directory: " + project.AbsPath())
 	} else if !isEmpty(project.AbsPath()) && force {  // If path exists and force flag is true, use it but check to see if files exist first
-		if !exists(project.AbsPath() + "/"  + project.License().Name) {
-			fmt.Println(project.AbsPath() + "/LICENSE.txt exists... Skipping")
+		if !exists(project.AbsPath() + "/"  + "LICENSE.txt") {
+			fmt.Println(project.AbsPath() + "/LICENSE.txt does not exist... Creating")
 			createLicenseFile(project.License(), project.AbsPath())
 		}
 
 		if !exists(project.AbsPath() + "/"  + "main.go") {
-			fmt.Println(project.AbsPath() + "/main.go exists... Skipping")
+			fmt.Println(project.AbsPath() + "/main.go does not exist... Creating")
 			createMainFile(project)
 		}
 
 		if !exists(project.AbsPath() + "/"  + "cmd/root.go") {
-			fmt.Println(project.AbsPath() + "/cmd/root.go exists... Skipping")
+			fmt.Println(project.AbsPath() + "/cmd/root.go does not exist... Creating")
 			createRootCmdFile(project)
 		}
 	} else {
