@@ -817,13 +817,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// overriding
 	c.InitDefaultHelpCmd()
 
-	var args []string
+	args := c.args
 
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
 	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
-	} else {
-		args = c.args
 	}
 
 	var flags []string
