@@ -95,6 +95,10 @@ func TestBashCompletions(t *testing.T) {
 	rootCmd.Flags().String("theme", "", "theme to use (located in /themes/THEMENAME/)")
 	rootCmd.Flags().SetAnnotation("theme", BashCompSubdirsInDir, []string{"themes"})
 
+	// For two word flags check
+	rootCmd.Flags().StringP("two", "t", "", "this is two word flags")
+	rootCmd.Flags().BoolP("two-w-default", "T", false, "this is not two word flags")
+
 	echoCmd := &Command{
 		Use:     "echo [string to echo]",
 		Aliases: []string{"say"},
@@ -182,6 +186,12 @@ func TestBashCompletions(t *testing.T) {
 	check(t, output, fmt.Sprintf(`flags_completion+=("__%s_handle_subdirs_in_dir_flag themes")`, rootCmd.Name()))
 	// check for subdirs_in_dir flags in a subcommand
 	checkRegex(t, output, fmt.Sprintf(`_root_echo\(\)\n{[^}]*flags_completion\+=\("__%s_handle_subdirs_in_dir_flag config"\)`, rootCmd.Name()))
+
+	// check two word flags
+	check(t, output, `two_word_flags+=("--two")`)
+	check(t, output, `two_word_flags+=("-t")`)
+	checkOmit(t, output, `two_word_flags+=("--two-w-default")`)
+	checkOmit(t, output, `two_word_flags+=("-T")`)
 
 	checkOmit(t, output, deprecatedCmd.Name())
 
