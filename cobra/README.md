@@ -28,9 +28,9 @@ cobra init github.com/spf13/newApp
 Once an application is initialized, Cobra can create additional commands for you.
 Let's say you created an app and you wanted the following commands for it:
 
-* app serve
-* app config
-* app config create
+* add serve
+* add config
+* add config create
 
 In your project directory (where your main.go file is) you would run the following:
 
