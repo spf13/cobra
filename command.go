@@ -684,11 +684,6 @@ func (c *Command) execute(a []string) (err error) {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
-	// Set the help verb to "help" if a custom word is not defined.
-	if len(c.HelpVerb) == 0 {
-		c.HelpVerb = "help"
-	}
-
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
 	c.InitDefaultHelpFlag()
@@ -819,6 +814,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// windows hook
 	if preExecHookFn != nil {
 		preExecHookFn(c)
+	}
+
+	// Set the help verb to "help" if a custom word is not defined.
+	if len(c.HelpVerb) == 0 {
+		c.HelpVerb = "help"
 	}
 
 	// initialize help as the last point possible to allow for user
