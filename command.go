@@ -83,6 +83,9 @@ type Command struct {
 	// will print content of the "Version" variable.
 	Version string
 
+	// HelpVerb deines the word used for "help" in the default command and flag.
+	HelpVerb string
+
 	// The *Run functions are executed in the following order:
 	//   * PersistentPreRun()
 	//   * PreRun()
@@ -404,7 +407,7 @@ Aliases:
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name .HelpVerb))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
@@ -681,6 +684,11 @@ func (c *Command) execute(a []string) (err error) {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
+	// Set the help verb to "help" if a custom word is not defined.
+	if len(c.HelpVerb) == 0 {
+		c.HelpVerb = "help"
+	}
+
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
 	c.InitDefaultHelpFlag()
@@ -693,11 +701,11 @@ func (c *Command) execute(a []string) (err error) {
 
 	// If help is called, regardless of other flags, return we want help.
 	// Also say we need help if the command isn't runnable.
-	helpVal, err := c.Flags().GetBool("help")
+	helpVal, err := c.Flags().GetBool(c.HelpVerb)
 	if err != nil {
 		// should be impossible to get here as we always declare a help
 		// flag in InitDefaultHelpFlag()
-		c.Println("\"help\" flag declared as non-bool. Please correct your code")
+		c.Printf("\"%s\" flag declared as non-bool. Please correct your code\n", c.HelpVerb)
 		return err
 	}
 
@@ -839,7 +847,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.Println("Error:", err.Error())
-			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+			c.Printf("Run '%v --%s' for usage.\n", c.CommandPath(), c.HelpVerb)
 		}
 		return c, err
 	}
@@ -904,14 +912,14 @@ func (c *Command) validateRequiredFlags() error {
 // If c already has help flag, it will do nothing.
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
-	if c.Flags().Lookup("help") == nil {
-		usage := "help for "
+	if c.Flags().Lookup(c.HelpVerb) == nil {
+		usage := c.HelpVerb + " for "
 		if c.Name() == "" {
 			usage += "this command"
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().BoolP("help", "h", false, usage)
+		c.Flags().BoolP(c.HelpVerb, "h", false, usage)
 	}
 }
 
@@ -946,15 +954,15 @@ func (c *Command) InitDefaultHelpCmd() {
 
 	if c.helpCommand == nil {
 		c.helpCommand = &Command{
-			Use:   "help [command]",
-			Short: "Help about any command",
-			Long: `Help provides help for any command in the application.
-Simply type ` + c.Name() + ` help [path to command] for full details.`,
+			Use:   c.HelpVerb + " [command]",
+			Short: strings.Title(c.HelpVerb) + " about any command",
+			Long: fmt.Sprintf(`%s provides help for any command in the application.
+Simply type %s %s [path to command] for full details.`, strings.Title(c.HelpVerb), c.Name(), c.HelpVerb),
 
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q\n", args)
+					c.Printf("Unknown %s topic %#q\n", c.HelpVerb, args)
 					c.Root().Usage()
 				} else {
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
