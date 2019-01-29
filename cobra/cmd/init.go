@@ -56,8 +56,8 @@ Init will not use an existing directory with contents.`,
 				PkgName:      pkgName,
 				Legal:        getLicense(),
 				Copyright:    copyrightLine(),
-				// viper
-				// appname
+				Viper:        viper.GetBool("useViper"),
+				AppName:      path.Base(pkgName),
 			}
 
 			// create main.go
