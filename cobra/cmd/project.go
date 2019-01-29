@@ -14,6 +14,8 @@ type Project struct {
 	Copyright    string
 	AbsolutePath string
 	Legal        License
+	Viper        bool
+	AppName      string
 
 	// v1
 	absPath string
