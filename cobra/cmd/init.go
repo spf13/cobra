@@ -56,20 +56,38 @@ Init will not use an existing directory with contents.`,
 				PkgName:      pkgName,
 				Legal:        getLicense(),
 				Copyright:    copyrightLine(),
+				// viper
+				// appname
 			}
 
-			// open file for writing
-			f, err := os.Create(fmt.Sprintf("%s/main.go", project.AbsolutePath))
+			// create main.go
+			mainFile, err := os.Create(fmt.Sprintf("%s/main.go", project.AbsolutePath))
 			if err != nil {
 				er(err)
 			}
-			defer f.Close()
+			defer mainFile.Close()
 
-			t := template.Must(template.New("init").Parse(string(tpl.MainTemplate())))
-			err = t.Execute(f, project)
+			mainTemplate := template.Must(template.New("main").Parse(string(tpl.MainTemplate())))
+			err = mainTemplate.Execute(mainFile, project)
 			if err != nil {
 				er(err)
 			}
+
+			// create cmd/root.go
+			rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", project.AbsolutePath))
+			if err != nil {
+				er(err)
+			}
+			defer rootFile.Close()
+
+			rootTemplate := template.Must(template.New("root").Parse(string(tpl.RootTemplate())))
+			err = rootTemplate.Execute(rootFile, project)
+			if err != nil {
+				er(err)
+			}
+
+			createLicenseFile(project.Legal, project.AbsolutePath)
+
 			/*
 				wd, err := os.Getwd()
 				if err != nil {
