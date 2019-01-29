@@ -9,6 +9,13 @@ import (
 
 // Project contains name, license and paths to projects.
 type Project struct {
+	// v2
+	PkgName      string
+	Copyright    string
+	AbsolutePath string
+	Legal        License
+
+	// v1
 	absPath string
 	cmdPath string
 	srcPath string

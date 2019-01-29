@@ -15,19 +15,24 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/cobra/cobra/tpl"
 	"os"
 	"path"
 	"path/filepath"
+	"text/template"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var initCmd = &cobra.Command{
-	Use:     "init [name]",
-	Aliases: []string{"initialize", "initialise", "create"},
-	Short:   "Initialize a Cobra Application",
-	Long: `Initialize (cobra init) will create a new application, with a license
+var (
+	pkgName string
+
+	initCmd = &cobra.Command{
+		Use:     "init [name]",
+		Aliases: []string{"initialize", "initialise", "create"},
+		Short:   "Initialize a Cobra Application",
+		Long: `Initialize (cobra init) will create a new application, with a license
 and the appropriate structure for a Cobra-based CLI application.
 
   * If a name is provided, it will be created in the current directory;
@@ -39,37 +44,66 @@ and the appropriate structure for a Cobra-based CLI application.
 
 Init will not use an existing directory with contents.`,
 
-	Run: func(cmd *cobra.Command, args []string) {
-		wd, err := os.Getwd()
-		if err != nil {
-			er(err)
-		}
+		Run: func(cmd *cobra.Command, args []string) {
 
-		var project *Project
-		if len(args) == 0 {
-			project = NewProjectFromPath(wd)
-		} else if len(args) == 1 {
-			arg := args[0]
-			if arg[0] == '.' {
-				arg = filepath.Join(wd, arg)
+			wd, err := os.Getwd()
+			if err != nil {
+				er(err)
 			}
-			if filepath.IsAbs(arg) {
-				project = NewProjectFromPath(arg)
-			} else {
-				project = NewProject(arg)
+
+			project := &Project{
+				AbsolutePath: wd,
+				PkgName:      pkgName,
+				Legal:        getLicense(),
+				Copyright:    copyrightLine(),
 			}
-		} else {
-			er("please provide only one argument")
-		}
 
-		initializeProject(project)
+			// open file for writing
+			f, err := os.Create(fmt.Sprintf("%s/main.go", project.AbsolutePath))
+			if err != nil {
+				er(err)
+			}
+			defer f.Close()
 
-		fmt.Fprintln(cmd.OutOrStdout(), `Your Cobra application is ready at
-`+project.AbsPath()+`
+			t := template.Must(template.New("init").Parse(string(tpl.MainTemplate())))
+			err = t.Execute(f, project)
+			if err != nil {
+				er(err)
+			}
+			/*
+				wd, err := os.Getwd()
+				if err != nil {
+					er(err)
+				}
 
-Give it a try by going there and running `+"`go run main.go`."+`
-Add commands to it by running `+"`cobra add [cmdname]`.")
-	},
+				var project *Project
+				if len(args) == 0 {
+					project = NewProjectFromPath(wd)
+				} else if len(args) == 1 {
+					arg := args[0]
+					if arg[0] == '.' {
+						arg = filepath.Join(wd, arg)
+					}
+					if filepath.IsAbs(arg) {
+						project = NewProjectFromPath(arg)
+					} else {
+						project = NewProject(arg)
+					}
+				} else {
+					er("please provide only one argument")
+				}
+
+				initializeProject(project)
+			*/
+
+			fmt.Printf("Your Cobra applicaton is ready at\n%s\n", project.AbsolutePath)
+		},
+	}
+)
+
+func init() {
+	initCmd.Flags().StringVar(&pkgName, "pkg-name", "", "fully qualified pkg name")
+	initCmd.MarkFlagRequired("pkg-name")
 }
 
 func initializeProject(project *Project) {

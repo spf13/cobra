@@ -23,7 +23,8 @@ import (
 
 var (
 	// Used for flags.
-	cfgFile, userLicense string
+	cfgFile     string
+	userLicense string
 
 	rootCmd = &cobra.Command{
 		Use:   "cobra",
