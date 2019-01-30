@@ -30,6 +30,14 @@ type Project struct {
 
 func (p *Project) Create() error {
 
+	// check if AbsolutePath exists
+	if _, err := os.Stat(p.AbsolutePath); os.IsNotExist(err) {
+		// create directory
+		if err := os.Mkdir(p.AbsolutePath, 0754); err != nil {
+			return err
+		}
+	}
+
 	// create main.go
 	mainFile, err := os.Create(fmt.Sprintf("%s/main.go", p.AbsolutePath))
 	if err != nil {
@@ -45,7 +53,7 @@ func (p *Project) Create() error {
 
 	// create cmd/root.go
 	if _, err = os.Stat(fmt.Sprintf("%s/cmd", p.AbsolutePath)); os.IsNotExist(err) {
-		os.Mkdir("cmd", 0751)
+		os.Mkdir(fmt.Sprintf("%s/cmd", p.AbsolutePath), 0751)
 	}
 	rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", p.AbsolutePath))
 	if err != nil {
