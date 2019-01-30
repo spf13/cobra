@@ -60,7 +60,7 @@ func (p *Project) Create() error {
 	}
 
 	// create license
-	return createLicenseFile(p.Legal, p.AbsolutePath)
+	return p. createLicenseFile()
 }
 
 func (p *Project) createLicenseFile() error {
