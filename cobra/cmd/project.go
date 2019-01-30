@@ -76,23 +76,6 @@ func (p *Project) createLicenseFile() error {
 	return licenseTemplate.Execute(licenseFile, data)
 }
 
-//func createLicenseFile(license License, path string) {
-//	data := make(map[string]interface{})
-//	data["copyright"] = copyrightLine()
-//
-//	// Generate license template from text and data.
-//	text, err := executeTemplate(license.Text, data)
-//	if err != nil {
-//		er(err)
-//	}
-//
-//	// Write license text to LICENSE file.
-//	err = writeStringToFile(filepath.Join(path, "LICENSE"), text)
-//	if err != nil {
-//		er(err)
-//	}
-//}
-
 // NewProject returns Project with specified project name.
 func NewProject(projectName string) *Project {
 	if projectName == "" {
