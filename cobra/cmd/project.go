@@ -98,10 +98,11 @@ func (c *Command) Create() error {
 	defer cmdFile.Close()
 
 	commandTemplate := template.Must(template.New("sub").Parse(string(tpl.AddCommandTemplate())))
-	err = commandTemplate.Execute(cmdFile, c.Project.AbsolutePath)
+	err = commandTemplate.Execute(cmdFile, c)
 	if err != nil {
 		return err
 	}
+	return nil
 }
 
 // NewProject returns Project with specified project name.

@@ -110,8 +110,8 @@ func initConfig() {
 
 func AddCommandTemplate() []byte {
 	return []byte(`/*
-{{ .Copyright }}
-{{ if .Legal.Header }}{{ .Legal.Header }}{{ end }}
+{{ .Project.Copyright }}
+{{ if .Project.Legal.Header }}{{ .Project.Legal.Header }}{{ end }}
 */
 package cmd
 
