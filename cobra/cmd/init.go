@@ -74,6 +74,9 @@ Init will not use an existing directory with contents.`,
 			}
 
 			// create cmd/root.go
+			if _, err = os.Stat(fmt.Sprintf("%s/cmd", project.AbsolutePath)); os.IsNotExist(err) {
+				os.Mkdir("cmd", 0751)
+			}
 			rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", project.AbsolutePath))
 			if err != nil {
 				er(err)
