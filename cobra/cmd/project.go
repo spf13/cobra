@@ -91,7 +91,7 @@ func (p *Project) createLicenseFile() error {
 }
 
 func (c *Command) Create() error {
-	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.Project.AbsolutePath, c.CmdName))
+	cmdFile, err := os.Create(fmt.Sprintf("%s/%s.go", c.Project.AbsolutePath, c.CmdName))
 	if err != nil {
 		return err
 	}
