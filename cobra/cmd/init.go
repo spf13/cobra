@@ -15,14 +15,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra/cobra/tpl"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 	"path"
 	"path/filepath"
-	"text/template"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -60,62 +57,9 @@ Init will not use an existing directory with contents.`,
 				AppName:      path.Base(pkgName),
 			}
 
-			// create main.go
-			mainFile, err := os.Create(fmt.Sprintf("%s/main.go", project.AbsolutePath))
-			if err != nil {
+			if err := project.Create(); err != nil {
 				er(err)
 			}
-			defer mainFile.Close()
-
-			mainTemplate := template.Must(template.New("main").Parse(string(tpl.MainTemplate())))
-			err = mainTemplate.Execute(mainFile, project)
-			if err != nil {
-				er(err)
-			}
-
-			// create cmd/root.go
-			if _, err = os.Stat(fmt.Sprintf("%s/cmd", project.AbsolutePath)); os.IsNotExist(err) {
-				os.Mkdir("cmd", 0751)
-			}
-			rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", project.AbsolutePath))
-			if err != nil {
-				er(err)
-			}
-			defer rootFile.Close()
-
-			rootTemplate := template.Must(template.New("root").Parse(string(tpl.RootTemplate())))
-			err = rootTemplate.Execute(rootFile, project)
-			if err != nil {
-				er(err)
-			}
-
-			createLicenseFile(project.Legal, project.AbsolutePath)
-
-			/*
-				wd, err := os.Getwd()
-				if err != nil {
-					er(err)
-				}
-
-				var project *Project
-				if len(args) == 0 {
-					project = NewProjectFromPath(wd)
-				} else if len(args) == 1 {
-					arg := args[0]
-					if arg[0] == '.' {
-						arg = filepath.Join(wd, arg)
-					}
-					if filepath.IsAbs(arg) {
-						project = NewProjectFromPath(arg)
-					} else {
-						project = NewProject(arg)
-					}
-				} else {
-					er("please provide only one argument")
-				}
-
-				initializeProject(project)
-			*/
 
 			fmt.Printf("Your Cobra applicaton is ready at\n%s\n", project.AbsolutePath)
 		},
