@@ -19,6 +19,8 @@ type Project struct {
 	Legal        License
 	Viper        bool
 	AppName      string
+	CmdName string
+	CmdParent string
 
 	// v1
 	absPath string
