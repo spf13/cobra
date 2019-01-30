@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/spf13/cobra/cobra/tpl"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 )
 
 // Project contains name, license and paths to projects.
@@ -23,6 +26,42 @@ type Project struct {
 	srcPath string
 	license License
 	name    string
+}
+
+func (p *Project) Create() error {
+
+	// create main.go
+	mainFile, err := os.Create(fmt.Sprintf("%s/main.go", p.AbsolutePath))
+	if err != nil {
+		return err
+	}
+	defer mainFile.Close()
+
+	mainTemplate := template.Must(template.New("main").Parse(string(tpl.MainTemplate())))
+	err = mainTemplate.Execute(mainFile, p)
+	if err != nil {
+		return err
+	}
+
+	// create cmd/root.go
+	if _, err = os.Stat(fmt.Sprintf("%s/cmd", p.AbsolutePath)); os.IsNotExist(err) {
+		os.Mkdir("cmd", 0751)
+	}
+	rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", p.AbsolutePath))
+	if err != nil {
+		return err
+	}
+	defer rootFile.Close()
+
+	rootTemplate := template.Must(template.New("root").Parse(string(tpl.RootTemplate())))
+	err = rootTemplate.Execute(rootFile, p)
+	if err != nil {
+		return err
+	}
+
+	// create license
+	createLicenseFile(p.Legal, p.AbsolutePath)
+	return nil
 }
 
 // NewProject returns Project with specified project name.
