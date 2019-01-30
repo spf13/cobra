@@ -47,6 +47,10 @@ Init will not use an existing directory with contents.`,
 				er(err)
 			}
 
+			// todo:
+			// if . use current directory
+			// else create named directory and set wd to that
+
 			project := &Project{
 				AbsolutePath: wd,
 				PkgName:      pkgName,
