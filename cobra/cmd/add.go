@@ -43,17 +43,12 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				er("add needs a name for the command")
 			}
 
-			commandName := validateCmdName(args[0])
-
-			if packageName == "" {
-				// derive packageName
-			}
-
 			wd, err := os.Getwd()
 			if err != nil {
 				er(err)
 			}
 
+			commandName := validateCmdName(args[0])
 			command := &Command{
 				CmdName:   commandName,
 				CmdParent: parentName,
