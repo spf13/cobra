@@ -54,8 +54,6 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				CmdParent: parentName,
 				Project: &Project{
 					AbsolutePath: fmt.Sprintf("%s/cmd", wd),
-					//AppName:      path.Base(packageName),
-					//PkgName:      packageName,
 					Legal:     getLicense(),
 					Copyright: copyrightLine(),
 				},
