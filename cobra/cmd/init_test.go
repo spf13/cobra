@@ -13,6 +13,7 @@ func TestGoldenInitCmd(t *testing.T) {
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
 		PkgName:      "github.com/spf13/testproject",
 		Legal:        getLicense(),
+		Copyright:    copyrightLine(),
 		Viper:        true,
 		AppName:      "testproject",
 	}
