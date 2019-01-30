@@ -47,9 +47,11 @@ Init will not use an existing directory with contents.`,
 				er(err)
 			}
 
-			// todo:
-			// if . use current directory
-			// else create named directory and set wd to that
+			if len(args) > 0 {
+				if args[0] != "." {
+					wd = fmt.Sprintf("%s/%s", wd, args[0])
+				}
+			}
 
 			project := &Project{
 				AbsolutePath: wd,
