@@ -19,8 +19,6 @@ type Project struct {
 	Legal        License
 	Viper        bool
 	AppName      string
-	CmdName string
-	CmdParent string
 
 	// v1
 	absPath string
@@ -28,6 +26,12 @@ type Project struct {
 	srcPath string
 	license License
 	name    string
+}
+
+type Command struct {
+	CmdName   string
+	CmdParent string
+	*Project
 }
 
 func (p *Project) Create() error {
@@ -84,6 +88,10 @@ func (p *Project) createLicenseFile() error {
 
 	licenseTemplate := template.Must(template.New("license").Parse(p.Legal.Text))
 	return licenseTemplate.Execute(licenseFile, data)
+}
+
+func (c *Command) Create() error {
+	return nil
 }
 
 // NewProject returns Project with specified project name.
