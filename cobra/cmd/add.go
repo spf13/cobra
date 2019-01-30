@@ -74,6 +74,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
+	addCmd.Flags().MarkDeprecated("package", "this operation has been removed.")
 }
 
 // validateCmdName returns source without any dashes and underscore.
