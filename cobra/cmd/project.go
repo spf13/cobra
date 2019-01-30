@@ -60,9 +60,38 @@ func (p *Project) Create() error {
 	}
 
 	// create license
-	createLicenseFile(p.Legal, p.AbsolutePath)
-	return nil
+	return createLicenseFile(p.Legal, p.AbsolutePath)
 }
+
+func (p *Project) createLicenseFile() error {
+	data := map[string]interface{}{
+		"copyright": copyrightLine(),
+	}
+	licenseFile, err := os.Create(fmt.Sprintf("%s/LICENSE", p.AbsolutePath))
+	if err != nil {
+		return err
+	}
+
+	licenseTemplate := template.Must(template.New("license").Parse(p.Legal.Text))
+	return licenseTemplate.Execute(licenseFile, data)
+}
+
+//func createLicenseFile(license License, path string) {
+//	data := make(map[string]interface{})
+//	data["copyright"] = copyrightLine()
+//
+//	// Generate license template from text and data.
+//	text, err := executeTemplate(license.Text, data)
+//	if err != nil {
+//		er(err)
+//	}
+//
+//	// Write license text to LICENSE file.
+//	err = writeStringToFile(filepath.Join(path, "LICENSE"), text)
+//	if err != nil {
+//		er(err)
+//	}
+//}
 
 // NewProject returns Project with specified project name.
 func NewProject(projectName string) *Project {
