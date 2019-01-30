@@ -91,7 +91,17 @@ func (p *Project) createLicenseFile() error {
 }
 
 func (c *Command) Create() error {
-	return nil
+	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.Project.AbsolutePath, c.CmdName))
+	if err != nil {
+		return err
+	}
+	defer cmdFile.Close()
+
+	commandTemplate := template.Must(template.New("sub").Parse(string(tpl.AddCommandTemplate())))
+	err = commandTemplate.Execute(cmdFile, c.Project.AbsolutePath)
+	if err != nil {
+		return err
+	}
 }
 
 // NewProject returns Project with specified project name.
