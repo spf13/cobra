@@ -53,9 +53,9 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				CmdName:   commandName,
 				CmdParent: parentName,
 				Project: &Project{
-					AbsolutePath: fmt.Sprintf("%s/cmd", wd),
-					Legal:     getLicense(),
-					Copyright: copyrightLine(),
+					AbsolutePath: wd,
+					Legal:        getLicense(),
+					Copyright:    copyrightLine(),
 				},
 			}
 
@@ -64,7 +64,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				er(err)
 			}
 
-			fmt.Printf("%s created at %s", command.CmdName, command.Project.AbsolutePath)
+			fmt.Printf("%s created at %s", command.CmdName, command.AbsolutePath)
 		},
 	}
 )
