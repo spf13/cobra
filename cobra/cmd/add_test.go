@@ -16,8 +16,21 @@ func TestGoldenAddCmd(t *testing.T) {
 			AbsolutePath: fmt.Sprintf("%s/testproject", wd),
 			Legal:        getLicense(),
 			Copyright:    copyrightLine(),
+
+			// required to init
+			AppName: "testproject",
+			PkgName: "github.com/spf13/testproject",
+			Viper:   true,
 		},
 	}
+
+	// init project first
+	command.Project.Create()
+	defer func() {
+		if _, err := os.Stat(command.AbsolutePath); err == nil {
+			os.RemoveAll(command.AbsolutePath)
+		}
+	}()
 
 	if err := command.Create(); err != nil {
 		t.Fatal(err)

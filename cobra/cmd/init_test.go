@@ -8,6 +8,7 @@ import (
 )
 
 func TestGoldenInitCmd(t *testing.T) {
+
 	wd, _ := os.Getwd()
 	project := &Project{
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
@@ -22,6 +23,12 @@ func TestGoldenInitCmd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer func() {
+		if _, err := os.Stat(project.AbsolutePath); err == nil {
+			os.RemoveAll(project.AbsolutePath)
+		}
+	}()
 
 	expectedFiles := []string{"LICENSE", "main.go", "cmd/root.go"}
 	for _, f := range expectedFiles {
