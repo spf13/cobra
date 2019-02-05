@@ -61,7 +61,7 @@ func checkLackFiles(expected, got []string) error {
 		}
 	}
 	if len(lacks) > 0 {
-		return fmt.Errorf("Lack %v file(s): %v", len(lacks), lacks)
+		return fmt.Errorf("lack %v file(s): %v", len(lacks), lacks)
 	}
 	return nil
 }
