@@ -217,12 +217,12 @@ func (c *Command) SetOutput(output io.Writer) {
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
 func (c *Command) SetOut(newOut io.Writer) {
-	c.outWriter =  newOut
+	c.outWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
 // If newErr is nil, os.Stderr is used.
-func (c *Command) SetErr(newErr io.Writer)  {
+func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
 }
 
