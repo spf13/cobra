@@ -210,8 +210,10 @@ func (c *Command) SetArgs(a []string) {
 
 // SetOutput sets the destination for usage and error messages.
 // If output is nil, os.Stderr is used.
+// Deprecated: Use SetOut and/or SetErr instead
 func (c *Command) SetOutput(output io.Writer) {
 	c.outWriter = output
+	c.errWriter = output
 }
 
 // SetOut sets the destination for usage messages.
