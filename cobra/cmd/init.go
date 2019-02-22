@@ -168,8 +168,7 @@ func init() { {{- if .viper}}
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	{{ printFlagCreates .flags true }}
+	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle"){{ printFlagCreates .flags true }}
 }
 
 // rootCmd represents the base command when called without any subcommands

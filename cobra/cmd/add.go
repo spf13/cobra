@@ -136,8 +136,7 @@ import (
 {{ printFlagVars .flags }}
 
 func init() {
-	{{ printFlagCreates .flags false }}
-	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
+	{{.parentName}}.AddCommand({{.cmdName}}Cmd){{ printFlagCreates .flags false }}
 }
 
 // {{.cmdName}}Cmd represents the {{.cmdName}} command
