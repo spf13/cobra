@@ -37,13 +37,18 @@ func printFlagVars(iFlags interface{}) string {
 	return varDefs
 }
 
-func printFlagCreates(iFlags interface{}) string {
+func printFlagCreates(iFlags interface{}, persistent bool) string {
 	flags := toFlagArray(iFlags)
 	createStrs := ""
+	flagsFn := "Flags"
+	if persistent {
+		flagsFn = "PersistentFlags"
+	}
 	for _, f := range flags {
-		createStrs += fmt.Sprintf( `%sCmd.Flags().%s(&%s, "%s",%s "%s")
+		createStrs += fmt.Sprintf( `%sCmd.%s().%s(&%s, "%s",%s "%s")
 	`,
 			f.CmdName,
+			flagsFn,
 			f.CreateFn,
 			f.VarName,
 			f.Name,

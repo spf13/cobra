@@ -25,7 +25,7 @@ import (
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
-	addCmd.Flags().StringArrayVar(&cmdFlags, "flag", []string{}, "the arguments to auto generate format is 'flagName:type:description'")
+	addCmd.Flags().StringArrayVar(&cmdFlags, "flag", []string{}, `the flags to auto generate.  For each flag do '--flag "flagName:type:description"'`)
 }
 
 var packageName, parentName string
@@ -136,7 +136,7 @@ import (
 {{ printFlagVars .flags }}
 
 func init() {
-	{{ printFlagCreates .flags }}
+	{{ printFlagCreates .flags false }}
 	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
 }
 
