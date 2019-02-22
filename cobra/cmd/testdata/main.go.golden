@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/spf13/testproject/cmd"
+import "github.com/OneCloudInc/testproject/cmd"
 
 func main() {
 	cmd.Execute()
