@@ -8,8 +8,8 @@ package main
 import (
 	"log"
 
-	"github.com/OneCloudInc/cobra"
-	"github.com/OneCloudInc/cobra/doc"
+	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
 func main() {
