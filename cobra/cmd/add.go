@@ -144,8 +144,9 @@ var {{.cmdName}}Cmd = &cobra.Command{
 	Use:   "{{.cmdName}}",
 	Short: "{{.cmdName}}",
 	Long: ` + "`" + `Description` + "`" + `,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("{{.cmdName}} called, place the command logic here")
+		return nil
 	},
 }
 `
