@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/OneCloudInc/cobra"
+	"github.com/spf13/cobra"
 )
 
 func TestGenRSTDoc(t *testing.T) {
