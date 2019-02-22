@@ -104,6 +104,17 @@
   version = "v1.3.0"
 
 [[projects]]
+  digest = "1:e01b05ba901239c783dfe56450bcde607fc858908529868259c9a8765dc176d0"
+  name = "github.com/spf13/cobra"
+  packages = [
+    ".",
+    "doc",
+  ]
+  pruneopts = "UT"
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
+
+[[projects]]
   digest = "1:68ea4e23713989dc20b1bded5d9da2c5f9be14ff9885beef481848edd18c26cb"
   name = "github.com/spf13/jwalterweatherman"
   packages = ["."]
@@ -165,6 +176,8 @@
     "github.com/cpuguy83/go-md2man/md2man",
     "github.com/inconshreveable/mousetrap",
     "github.com/mitchellh/go-homedir",
+    "github.com/spf13/cobra",
+    "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",
     "gopkg.in/yaml.v2",

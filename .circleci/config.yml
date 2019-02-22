@@ -2,7 +2,7 @@ version: 2
 
 references:
   workspace: &workspace
-    /go/src/github.com/OneCloudInc/cobra
+    /go/src/github.com/spf13/cobra
 
   run_tests: &run_tests
     run:
