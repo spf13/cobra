@@ -1,4 +1,4 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,17 @@ import (
 	"github.com/OneCloudInc/cobra"
 )
 
+var testqueryIdFlag string
+var testparamsFlag stringMap
+
+
+func init() {
+	testCmd.Flags().StringVar(&testqueryIdFlag, "queryId", "", "Query ID")
+testCmd.Flags().StringMapVar(&testparamsFlag, "params", "", "Params")
+
+	rootCmd.AddCommand(testCmd)
+}
+
 // testCmd represents the test command
 var testCmd = &cobra.Command{
 	Use:   "test",
@@ -33,18 +44,4 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("test called")
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(testCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// testCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

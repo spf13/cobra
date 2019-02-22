@@ -19,7 +19,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -144,7 +144,7 @@ import (
 	"os"
 {{if .viper}}
 	homedir "github.com/mitchellh/go-homedir"{{end}}
-	"github.com/spf13/cobra"{{if .viper}}
+	"github.com/OneCloudInc/cobra"{{if .viper}}
 	"github.com/spf13/viper"{{end}}
 ){{if .viper}}
 
