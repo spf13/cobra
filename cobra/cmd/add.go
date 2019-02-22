@@ -25,9 +25,11 @@ import (
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
+	addCmd.Flags().StringArrayVar(&cmdFlags, "flag", []string{}, "the arguments to auto generate format is 'flagName:type:description'")
 }
 
 var packageName, parentName string
+var cmdFlags []string
 
 var addCmd = &cobra.Command{
 	Use:     "add [command name]",
@@ -69,7 +71,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 // validateCmdName returns source without any dashes and underscore.
 // If there will be dash or underscore, next letter will be uppered.
 // It supports only ASCII (1-byte character) strings.
-// https://github.com/spf13/cobra/issues/269
+// https://github.com/OneCloudInc/cobra/issues/269
 func validateCmdName(source string) string {
 	i := 0
 	l := len(source)
@@ -128,36 +130,24 @@ package {{.cmdPackage}}
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 )
+
+{{ printFlagVars .flags }}
+
+func init() {
+	{{ printFlagCreates .flags }}
+	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
+}
 
 // {{.cmdName}}Cmd represents the {{.cmdName}} command
 var {{.cmdName}}Cmd = &cobra.Command{
 	Use:   "{{.cmdName}}",
-	Short: "A brief description of your command",
-	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.` + "`" + `,
+	Short: "{{.cmdName}}",
+	Long: ` + "`" + `Description` + "`" + `,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("{{.cmdName}} called")
+		fmt.Println("{{.cmdName}} called, place the command logic here")
 	},
-}
-
-func init() {
-	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 `
 
@@ -167,6 +157,15 @@ func init() {
 	data["cmdPackage"] = filepath.Base(filepath.Dir(path)) // last dir of path
 	data["parentName"] = parentName
 	data["cmdName"] = cmdName
+	flags := []flagDefinition{}
+	for _, value := range cmdFlags {
+		f, err := buildFlag(value, cmdName)
+		if err != nil {
+			er(err)
+		}
+		flags = append(flags, f)
+	}
+	data["flags"] = flags
 
 	cmdScript, err := executeTemplate(template, data)
 	if err != nil {

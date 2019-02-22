@@ -111,7 +111,7 @@ func exists(path string) bool {
 }
 
 func executeTemplate(tmplStr string, data interface{}) (string, error) {
-	tmpl, err := template.New("").Funcs(template.FuncMap{"comment": commentifyString}).Parse(tmplStr)
+	tmpl, err := template.New("").Funcs(template.FuncMap{"comment": commentifyString, "printFlagVars": printFlagVars, "printFlagCreates": printFlagCreates}).Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}
