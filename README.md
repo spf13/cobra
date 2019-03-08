@@ -22,6 +22,7 @@ Many of the most widely used Go projects are built using Cobra including:
 * [nehm](https://github.com/bogem/nehm)
 * [Pouch](https://github.com/alibaba/pouch)
 * [Istio](https://istio.io)
+* [Prototool](https://github.com/uber/prototool)
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg "Travis CI status")](https://travis-ci.org/spf13/cobra)
 [![CircleCI status](https://circleci.com/gh/spf13/cobra.png?circle-token=:circle-token "CircleCI status")](https://circleci.com/gh/spf13/cobra)
