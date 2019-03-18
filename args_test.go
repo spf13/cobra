@@ -26,6 +26,72 @@ func expectSuccess(output string, err error, t *testing.T) {
 	}
 }
 
+func validWithInvalidArgs(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := `invalid argument "a" for "c"`
+	if got != expected {
+		t.Errorf("Expected: %q, got: %q", expected, got)
+	}
+}
+
+func noArgsWithArgs(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := `unknown command "illegal" for "c"`
+	if got != expected {
+		t.Errorf("Expected: %q, got: %q", expected, got)
+	}
+}
+
+func minimumNArgsWithLessArgs(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "requires at least 2 arg(s), only received 1"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
+func maximumNArgsWithMoreArgs(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts at most 2 arg(s), received 3"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
+func exactArgsWithInvalidCount(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts 2 arg(s), received 3"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
+func rangeArgsWithInvalidCount(err error, t *testing.T) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts between 2 and 4 arg(s), received 1"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
 func TestNoArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
 	output, err := executeCommand(c)
@@ -34,39 +100,20 @@ func TestNoArgs(t *testing.T) {
 
 func TestNoArgsWithArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
-
 	_, err := executeCommand(c, "illegal")
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := `unknown command "illegal" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
-	}
+	noArgsWithArgs(err, t)
 }
 
 func TestOnlyValidArgs(t *testing.T) {
 	c := getCommand(OnlyValidArgs, true)
-
 	output, err := executeCommand(c, "one", "two")
 	expectSuccess(output, err, t)
 }
 
 func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
 	c := getCommand(OnlyValidArgs, true)
-
 	_, err := executeCommand(c, "a")
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := `invalid argument "a" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
-	}
+	validWithInvalidArgs(err, t)
 }
 
 func TestArbitraryArgs(t *testing.T) {
@@ -84,16 +131,7 @@ func TestMinimumNArgs(t *testing.T) {
 func TestMinimumNArgsWithLessArgs(t *testing.T) {
 	c := getCommand(MinimumNArgs(2), false)
 	_, err := executeCommand(c, "a")
-
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := "requires at least 2 arg(s), only received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	minimumNArgsWithLessArgs(err, t)
 }
 
 func TestMaximumNArgs(t *testing.T) {
@@ -105,16 +143,7 @@ func TestMaximumNArgs(t *testing.T) {
 func TestMaximumNArgsWithMoreArgs(t *testing.T) {
 	c := getCommand(MaximumNArgs(2), false)
 	_, err := executeCommand(c, "a", "b", "c")
-
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := "accepts at most 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	maximumNArgsWithMoreArgs(err, t)
 }
 
 func TestExactArgs(t *testing.T) {
@@ -126,52 +155,25 @@ func TestExactArgs(t *testing.T) {
 func TestExactArgsWithInvalidCount(t *testing.T) {
 	c := getCommand(ExactArgs(2), false)
 	_, err := executeCommand(c, "a", "b", "c")
-
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := "accepts 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	exactArgsWithInvalidCount(err, t)
 }
 
 func TestExactValidArgs(t *testing.T) {
 	c := getCommand(ExactValidArgs(3), true)
-	output, err := executeCommand(c, "two", "three", "one")
+	output, err := executeCommand(c, "three", "one", "two")
 	expectSuccess(output, err, t)
 }
 
 func TestExactValidArgsWithInvalidCount(t *testing.T) {
 	c := getCommand(ExactValidArgs(2), false)
-	_, err := executeCommand(c, "two", "three", "one")
-
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := "accepts 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	_, err := executeCommand(c, "three", "one", "two")
+	exactArgsWithInvalidCount(err, t)
 }
 
 func TestExactValidArgsWithInvalidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(1), true)
-
-	_, err := executeCommand(c, "a")
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := `invalid argument "a" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
-	}
+	c := getCommand(ExactValidArgs(3), true)
+	_, err := executeCommand(c, "three", "a", "two")
+	validWithInvalidArgs(err, t)
 }
 
 func TestRangeArgs(t *testing.T) {
@@ -183,16 +185,7 @@ func TestRangeArgs(t *testing.T) {
 func TestRangeArgsWithInvalidCount(t *testing.T) {
 	c := getCommand(RangeArgs(2, 4), false)
 	_, err := executeCommand(c, "a")
-
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-
-	got := err.Error()
-	expected := "accepts between 2 and 4 arg(s), received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	rangeArgsWithInvalidCount(err, t)
 }
 
 func TestRootTakesNoArgs(t *testing.T) {
