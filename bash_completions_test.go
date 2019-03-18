@@ -138,7 +138,7 @@ func TestBashCompletions(t *testing.T) {
 	timesCmd := &Command{
 		Use:        "times [# times] [string to echo]",
 		SuggestFor: []string{"counts"},
-		Args:       OnlyValidArgs,
+		Args:       ArbitraryArgs,
 		ValidArgs:  []string{"one", "two", "three", "four"},
 		Short:      "Echo anything to the screen more times",
 		Long:       "a slightly useless command for testing.",

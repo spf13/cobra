@@ -14,6 +14,9 @@ before_install:
   - go get -u github.com/kyoh86/richgo
   - go get -u github.com/mitchellh/gox
 
+env:
+  - GO111MODULE=on
+
 matrix:
   allow_failures:
     - go: tip
@@ -25,5 +28,5 @@ matrix:
       go: 1.13.x
       script: make cobra_generator
 
-script: 
+script:
  - make test
