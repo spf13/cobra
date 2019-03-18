@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+func getCommand(args PositionalArgs, withValid bool) *Command {
+	c := &Command{
+		Use:  "c",
+		Args: args,
+		Run:  emptyRun,
+	}
+	if withValid {
+		c.ValidArgs = []string{"one", "two", "three"}
+	}
+	return c
+}
+
 func expectSuccess(output string, err error, t *testing.T) {
 	if output != "" {
 		t.Errorf("Unexpected output: %v", output)
@@ -15,13 +27,13 @@ func expectSuccess(output string, err error, t *testing.T) {
 }
 
 func TestNoArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: NoArgs, Run: emptyRun}
+	c := getCommand(NoArgs, false)
 	output, err := executeCommand(c)
 	expectSuccess(output, err, t)
 }
 
 func TestNoArgsWithArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: NoArgs, Run: emptyRun}
+	c := getCommand(NoArgs, false)
 
 	_, err := executeCommand(c, "illegal")
 	if err == nil {
@@ -36,51 +48,41 @@ func TestNoArgsWithArgs(t *testing.T) {
 }
 
 func TestOnlyValidArgs(t *testing.T) {
-	c := &Command{
-		Use:       "c",
-		Args:      OnlyValidArgs,
-		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
-	}
+	c := getCommand(OnlyValidArgs, true)
 
 	output, err := executeCommand(c, "one", "two")
 	expectSuccess(output, err, t)
 }
 
 func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
-	c := &Command{
-		Use:       "c",
-		Args:      OnlyValidArgs,
-		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
-	}
+	c := getCommand(OnlyValidArgs, true)
 
-	_, err := executeCommand(c, "three")
+	_, err := executeCommand(c, "a")
 	if err == nil {
 		t.Fatal("Expected an error")
 	}
 
 	got := err.Error()
-	expected := `invalid argument "three" for "c"`
+	expected := `invalid argument "a" for "c"`
 	if got != expected {
 		t.Errorf("Expected: %q, got: %q", expected, got)
 	}
 }
 
 func TestArbitraryArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: ArbitraryArgs, Run: emptyRun}
+	c := getCommand(ArbitraryArgs, false)
 	output, err := executeCommand(c, "a", "b")
 	expectSuccess(output, err, t)
 }
 
 func TestMinimumNArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: MinimumNArgs(2), Run: emptyRun}
+	c := getCommand(MinimumNArgs(2), false)
 	output, err := executeCommand(c, "a", "b", "c")
 	expectSuccess(output, err, t)
 }
 
 func TestMinimumNArgsWithLessArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: MinimumNArgs(2), Run: emptyRun}
+	c := getCommand(MinimumNArgs(2), false)
 	_, err := executeCommand(c, "a")
 
 	if err == nil {
@@ -95,13 +97,13 @@ func TestMinimumNArgsWithLessArgs(t *testing.T) {
 }
 
 func TestMaximumNArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: MaximumNArgs(3), Run: emptyRun}
+	c := getCommand(MaximumNArgs(3), false)
 	output, err := executeCommand(c, "a", "b")
 	expectSuccess(output, err, t)
 }
 
 func TestMaximumNArgsWithMoreArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: MaximumNArgs(2), Run: emptyRun}
+	c := getCommand(MaximumNArgs(2), false)
 	_, err := executeCommand(c, "a", "b", "c")
 
 	if err == nil {
@@ -116,13 +118,13 @@ func TestMaximumNArgsWithMoreArgs(t *testing.T) {
 }
 
 func TestExactArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: ExactArgs(3), Run: emptyRun}
+	c := getCommand(ExactArgs(3), false)
 	output, err := executeCommand(c, "a", "b", "c")
 	expectSuccess(output, err, t)
 }
 
 func TestExactArgsWithInvalidCount(t *testing.T) {
-	c := &Command{Use: "c", Args: ExactArgs(2), Run: emptyRun}
+	c := getCommand(ExactArgs(2), false)
 	_, err := executeCommand(c, "a", "b", "c")
 
 	if err == nil {
@@ -137,14 +139,14 @@ func TestExactArgsWithInvalidCount(t *testing.T) {
 }
 
 func TestExactValidArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: ExactValidArgs(3), ValidArgs: []string{"a", "b", "c"}, Run: emptyRun}
-	output, err := executeCommand(c, "a", "b", "c")
+	c := getCommand(ExactValidArgs(3), true)
+	output, err := executeCommand(c, "two", "three", "one")
 	expectSuccess(output, err, t)
 }
 
 func TestExactValidArgsWithInvalidCount(t *testing.T) {
-	c := &Command{Use: "c", Args: ExactValidArgs(2), Run: emptyRun}
-	_, err := executeCommand(c, "a", "b", "c")
+	c := getCommand(ExactValidArgs(2), false)
+	_, err := executeCommand(c, "two", "three", "one")
 
 	if err == nil {
 		t.Fatal("Expected an error")
@@ -158,33 +160,28 @@ func TestExactValidArgsWithInvalidCount(t *testing.T) {
 }
 
 func TestExactValidArgsWithInvalidArgs(t *testing.T) {
-	c := &Command{
-		Use:       "c",
-		Args:      ExactValidArgs(1),
-		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
-	}
+	c := getCommand(ExactValidArgs(1), true)
 
-	_, err := executeCommand(c, "three")
+	_, err := executeCommand(c, "a")
 	if err == nil {
 		t.Fatal("Expected an error")
 	}
 
 	got := err.Error()
-	expected := `invalid argument "three" for "c"`
+	expected := `invalid argument "a" for "c"`
 	if got != expected {
 		t.Errorf("Expected: %q, got: %q", expected, got)
 	}
 }
 
 func TestRangeArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: RangeArgs(2, 4), Run: emptyRun}
+	c := getCommand(RangeArgs(2, 4), false)
 	output, err := executeCommand(c, "a", "b", "c")
 	expectSuccess(output, err, t)
 }
 
 func TestRangeArgsWithInvalidCount(t *testing.T) {
-	c := &Command{Use: "c", Args: RangeArgs(2, 4), Run: emptyRun}
+	c := getCommand(RangeArgs(2, 4), false)
 	_, err := executeCommand(c, "a")
 
 	if err == nil {
