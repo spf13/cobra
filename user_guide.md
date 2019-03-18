@@ -302,30 +302,38 @@ rootCmd.MarkPersistentFlagRequired("region")
 
 ## Positional and Custom Arguments
 
-Validation of positional arguments can be specified using the `Args` field
-of `Command`.
-
+Validation of positional arguments can be specified using the `Args` field of `Command`.
 The following validators are built in:
 
-- `NoArgs` - the command will report an error if there are any positional args.
-- `ArbitraryArgs` - the command will accept any args.
-- `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the `ValidArgs` field of `Command`.
-- `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
-- `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
-- `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
-- `ExactValidArgs(int)` - the command will report an error if there are not exactly N positional args OR if there are any positional args that are not in the `ValidArgs` field of `Command`
-- `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
+- `NoArgs` - report an error if there are any positional args.
+- `ArbitraryArgs` - accept any number of args.
+- `MinimumNArgs(int)` - report an error if less than N positional args are provided.
+- `MaximumNArgs(int)` - report an error if more than N positional args are provided.
+- `ExactArgs(int)` - report an error if there are not exactly N positional args.
+- `RangeArgs(min, max)` - report an error if the number of args is not between `min` and `max`.
 - `MatchAll(pargs ...PositionalArgs)` - enables combining existing checks with arbitrary other checks (e.g. you want to check the ExactArgs length along with other qualities).
 
-An example of setting the custom validator:
+If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
+
+Field `ValidArgs` of type `[]string` can be defined in `Command`, in order to report an error if there are any
+positional args that are not in the list.
+This validation is executed implicitly before the validator defined in `Args`.
+
+> NOTE: `OnlyValidArgs` and `ExactValidArgs(int)` are now deprecated.
+> `ArbitraryArgs` and `ExactArgs(int)` provide the same functionality now.
+
+Moreover, it is possible to set any custom validator that satisfies `func(cmd *cobra.Command, args []string) error`.
+For example:
 
 ```go
 var cmd = &cobra.Command{
   Short: "hello",
   Args: func(cmd *cobra.Command, args []string) error {
-    if len(args) < 1 {
-      return errors.New("requires a color argument")
+    // Optionally run one of the validators provided by cobra
+    if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+        return err
     }
+    // Run the custom validation logic
     if myapp.IsValidColor(args[0]) {
       return nil
     }
