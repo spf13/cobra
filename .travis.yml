@@ -18,5 +18,5 @@ script:
   - PATH=$PATH:$PWD/bin go test -v ./...
   - go build
   - if [ -z $NOVET ]; then
-      diff -u <(echo -n) <(go tool vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
+      diff -u <(echo -n) <(go vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
     fi
