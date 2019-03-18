@@ -5,16 +5,19 @@ import (
 	"testing"
 )
 
-func TestNoArgs(t *testing.T) {
-	c := &Command{Use: "c", Args: NoArgs, Run: emptyRun}
-
-	output, err := executeCommand(c)
+func expectSuccess(output string, err error, t *testing.T) {
 	if output != "" {
-		t.Errorf("Unexpected string: %v", output)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
+}
+
+func TestNoArgs(t *testing.T) {
+	c := &Command{Use: "c", Args: NoArgs, Run: emptyRun}
+	output, err := executeCommand(c)
+	expectSuccess(output, err, t)
 }
 
 func TestNoArgsWithArgs(t *testing.T) {
@@ -41,12 +44,7 @@ func TestOnlyValidArgs(t *testing.T) {
 	}
 
 	output, err := executeCommand(c, "one", "two")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
@@ -72,23 +70,13 @@ func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
 func TestArbitraryArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: ArbitraryArgs, Run: emptyRun}
 	output, err := executeCommand(c, "a", "b")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestMinimumNArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: MinimumNArgs(2), Run: emptyRun}
 	output, err := executeCommand(c, "a", "b", "c")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestMinimumNArgsWithLessArgs(t *testing.T) {
@@ -109,12 +97,7 @@ func TestMinimumNArgsWithLessArgs(t *testing.T) {
 func TestMaximumNArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: MaximumNArgs(3), Run: emptyRun}
 	output, err := executeCommand(c, "a", "b")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestMaximumNArgsWithMoreArgs(t *testing.T) {
@@ -135,12 +118,7 @@ func TestMaximumNArgsWithMoreArgs(t *testing.T) {
 func TestExactArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: ExactArgs(3), Run: emptyRun}
 	output, err := executeCommand(c, "a", "b", "c")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestExactArgsWithInvalidCount(t *testing.T) {
@@ -161,12 +139,7 @@ func TestExactArgsWithInvalidCount(t *testing.T) {
 func TestExactValidArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: ExactValidArgs(3), ValidArgs: []string{"a", "b", "c"}, Run: emptyRun}
 	output, err := executeCommand(c, "a", "b", "c")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestExactValidArgsWithInvalidCount(t *testing.T) {
@@ -207,12 +180,7 @@ func TestExactValidArgsWithInvalidArgs(t *testing.T) {
 func TestRangeArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: RangeArgs(2, 4), Run: emptyRun}
 	output, err := executeCommand(c, "a", "b", "c")
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	expectSuccess(output, err, t)
 }
 
 func TestRangeArgsWithInvalidCount(t *testing.T) {
