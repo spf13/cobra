@@ -4,16 +4,19 @@ stages:
   - diff
   - test
 
+go:
+  - 1.10.x
+  - 1.11.x
+  - 1.12.x
+  - tip
+
 matrix:
-  include:
-    - go: 1.11.x
-    - go: 1.12.x
+  allow_failures:
     - go: tip
+  include:
     - stage: diff
       go: 1.12.x
       script: diff -u <(echo -n) <(gofmt -d -s .)
-  allow_failures:
-    - go: tip
 
 before_install:
   - mkdir -p bin
