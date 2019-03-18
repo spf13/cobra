@@ -4,11 +4,13 @@ stages:
   - diff
   - test
 
+go:
+  - 1.10.x
+  - 1.11.x
+  - tip
+
 matrix:
   include:
-    - go: 1.10.x
-    - go: 1.11.x
-    - go: tip
     - stage: diff
       go: 1.11.x
       script: diff -u <(echo -n) <(gofmt -d -s .)
