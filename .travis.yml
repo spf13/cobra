@@ -1,11 +1,16 @@
 language: go
 
+stages:
+  - diff
+  - test
+
 matrix:
   include:
     - go: 1.11.x
     - go: 1.12.x
     - go: tip
-    - go: 1.12.x
+    - stage: diff
+      go: 1.12.x
       script: diff -u <(echo -n) <(gofmt -d -s .)
   allow_failures:
     - go: tip
