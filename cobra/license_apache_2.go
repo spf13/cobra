@@ -13,7 +13,7 @@
 
 // Parts inspired by https://github.com/ryanuber/go-license
 
-package cmd
+package main
 
 func initApache2() {
 	Licenses["apache"] = License{

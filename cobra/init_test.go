@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ func getProject() *Project {
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
 		AppName:      "cmd",
-		PkgName:      "github.com/spf13/cobra/cobra/cmd/cmd",
+		PkgName:      "github.com/spf13/cobra/cobra/cmd",
 		Viper:        true,
 	}
 }
