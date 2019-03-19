@@ -26,27 +26,13 @@ func validateArgs(cmd *Command, args []string) error {
 	return nil
 }
 
-// Legacy arg validation has the following behaviour:
-// - root commands with no subcommands can take arbitrary arguments
-// - root commands with subcommands will do subcommand validity checking
-// - subcommands will always accept arbitrary arguments
-func legacyArgs(cmd *Command, args []string) error {
-	// no subcommand, always take args
-	if !cmd.HasSubCommands() {
-		return nil
-	}
-
-	// root command with subcommands, do subcommand checking.
-	if !cmd.HasParent() && len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
-	}
-	return nil
-}
-
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		if cmd.HasAvailableSubCommands() {
+			return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		}
+		return fmt.Errorf("\"%s\" rejected; %q does not accept args", args[0], cmd.CommandPath())
 	}
 	return nil
 }

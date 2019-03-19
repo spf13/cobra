@@ -134,9 +134,7 @@ func TestRootExecuteUnknownCommand(t *testing.T) {
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
 
 	output, _ := executeCommand(rootCmd, "unknown")
-
 	expected := "Error: unknown command \"unknown\" for \"root\"\nRun 'root --help' for usage.\n"
-
 	if output != expected {
 		t.Errorf("Expected:\n %q\nGot:\n %q\n", expected, output)
 	}
@@ -968,11 +966,13 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+
+	expected := `command "child" is not runnable`
+	if err.Error() != expected {
+		t.Errorf("Expected %q, got %q", expected, err.Error())
 	}
 
-	checkStringContains(t, output, childCmd.Long)
+	checkStringContains(t, output, "Usage:")
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
@@ -1820,9 +1820,9 @@ func TestTraverseWithParentFlags(t *testing.T) {
 
 	rootCmd.AddCommand(childCmd)
 
-	c, args, err := rootCmd.Traverse([]string{"-b", "--str", "ok", "child", "--int"})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	c, args := rootCmd.Traverse([]string{"-b", "--str", "ok", "child", "--int"})
+	if c == nil {
+		t.Errorf("Unexpected error: %s", args[0])
 	}
 	if len(args) != 1 && args[0] != "--add" {
 		t.Errorf("Wrong args: %v", args)
@@ -1840,9 +1840,9 @@ func TestTraverseNoParentFlags(t *testing.T) {
 	childCmd.Flags().String("str", "", "")
 	rootCmd.AddCommand(childCmd)
 
-	c, args, err := rootCmd.Traverse([]string{"child"})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	c, args := rootCmd.Traverse([]string{"child"})
+	if c == nil {
+		t.Errorf("Unexpected error: %v", args[0])
 	}
 	if len(args) != 0 {
 		t.Errorf("Wrong args %v", args)
@@ -1861,12 +1861,12 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 
 	expected := "unknown flag: --str"
 
-	c, _, err := rootCmd.Traverse([]string{"--str", "ok", "child"})
-	if err == nil || !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error, %q, got %q", expected, err)
-	}
+	c, args := rootCmd.Traverse([]string{"--str", "ok", "child"})
 	if c != nil {
 		t.Errorf("Expected nil command")
+	}
+	if !strings.Contains(args[0], expected) {
+		t.Errorf("Expected error, %q, got %q", expected, args[0])
 	}
 }
 
@@ -1879,9 +1879,9 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 
 	// Expect no error because the last commands args shouldn't be parsed in
 	// Traverse.
-	c, args, err := rootCmd.Traverse([]string{"child", "--str"})
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	c, args := rootCmd.Traverse([]string{"child", "--str"})
+	if c == nil {
+		t.Errorf("Unexpected error: %s", args[0])
 	}
 	if len(args) != 1 && args[0] != "--str" {
 		t.Errorf("Wrong args: %v", args)
@@ -1902,9 +1902,9 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 	subCmd.AddCommand(subsubCmd)
 
-	c, _, err := rootCmd.Traverse([]string{"sub", "subsub"})
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+	c, args := rootCmd.Traverse([]string{"sub", "subsub"})
+	if c == nil {
+		t.Fatalf("Unexpected error: %v", args[0])
 	}
 	if c.Name() != subsubCmd.Name() {
 		t.Fatalf("Expected command: %q, got %q", subsubCmd.Name(), c.Name())

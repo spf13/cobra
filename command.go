@@ -29,6 +29,13 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+func ErrSubCommandRequired(s string) error {
+	return fmt.Errorf("command %s is not runnable; please provide a subcmd", s)
+}
+func ErrCommandNotRunnable(s string) error {
+	return fmt.Errorf(`command "%s" is not runnable`, s)
+}
+
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
@@ -505,7 +512,10 @@ func (c *Command) UsageTemplate() string {
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
 Aliases:
-  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+  {{.NameAndAliases}}{{end}}{{if (and .HasValidArgs .Runnable)}}
+
+Valid Args:
+  {{range .ValidArgs}}{{.}} {{end}}{{end}}{{if .HasExample}}
 
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
@@ -632,7 +642,7 @@ func isFlagArg(arg string) bool {
 
 // Find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
-func (c *Command) Find(args []string) (*Command, []string, error) {
+func (c *Command) Find(args []string) (*Command, []string) {
 	var innerfind func(*Command, []string) (*Command, []string)
 
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
@@ -649,11 +659,13 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 		return c, innerArgs
 	}
 
-	commandFound, a := innerfind(c, args)
-	if commandFound.Args == nil {
-		return commandFound, a, legacyArgs(commandFound, stripFlags(a, commandFound))
+	cF, a := innerfind(c, args)
+	// if Args is undefined and this is a root command with subcommands,
+	// do not accept arguments, unless ValidArgs is set
+	if cF.Args == nil && cF.HasSubCommands() && !cF.HasParent() && (len(cF.ValidArgs) == 0) {
+		cF.Args = NoArgs
 	}
-	return commandFound, a, nil
+	return cF, a
 }
 
 func (c *Command) findSuggestions(arg string) string {
@@ -694,7 +706,7 @@ func (c *Command) findNext(next string) *Command {
 
 // Traverse the command tree to find the command, and parse args for
 // each parent.
-func (c *Command) Traverse(args []string) (*Command, []string, error) {
+func (c *Command) Traverse(args []string) (*Command, []string) {
 	flags := []string{}
 	inFlag := false
 
@@ -724,15 +736,15 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 		cmd := c.findNext(arg)
 		if cmd == nil {
-			return c, args, nil
+			return c, args
 		}
 
 		if err := c.ParseFlags(flags); err != nil {
-			return nil, args, err
+			return nil, append([]string{err.Error()}, args...)
 		}
 		return cmd.Traverse(args[i+1:])
 	}
-	return c, args, nil
+	return c, args
 }
 
 // SuggestionsFor provides suggestions for the typedName.
@@ -828,7 +840,10 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return flag.ErrHelp
+		if c.HasAvailableSubCommands() {
+			return ErrSubCommandRequired(c.Name())
+		}
+		return ErrCommandNotRunnable(c.Name())
 	}
 
 	c.preRun()
@@ -949,7 +964,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	c.initDefaultCompletionCmd()
 
 	args := c.args
-
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
 	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
@@ -959,41 +973,40 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	c.initCompleteCmd(args)
 
 	var flags []string
+	f := c.Find
 	if c.TraverseChildren {
-		cmd, flags, err = c.Traverse(args)
-	} else {
-		cmd, flags, err = c.Find(args)
+		f = c.Traverse
 	}
-	if err != nil {
-		// If found parse to a subcommand and then failed, talk about the subcommand
-		if cmd != nil {
-			c = cmd
+	if cmd, flags = f(args); cmd != nil {
+		cmd.commandCalledAs.called = true
+		if cmd.commandCalledAs.name == "" {
+			cmd.commandCalledAs.name = cmd.Name()
 		}
 		if !c.SilenceErrors {
 			c.PrintErrln("Error:", err.Error())
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
-		return c, err
+		// We have to pass global context to children command
+		// if context is present on the parent command.
+		if cmd.ctx == nil {
+			cmd.ctx = c.ctx
+		}
+		err = cmd.execute(flags)
+	} else {
+		err = fmt.Errorf(flags[0])
 	}
 
-	cmd.commandCalledAs.called = true
-	if cmd.commandCalledAs.name == "" {
-		cmd.commandCalledAs.name = cmd.Name()
-	}
-
-	// We have to pass global context to children command
-	// if context is present on the parent command.
-	if cmd.ctx == nil {
-		cmd.ctx = c.ctx
-	}
-
-	err = cmd.execute(flags)
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
 		if errors.Is(err, flag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
+		}
+
+		// Check if a shorter help hint should be shown instead of the full Usage()
+		if err := helpHint(cmd, flags, err.Error()); err != nil {
+			return cmd, err
 		}
 
 		// If root command has SilenceErrors flagged,
@@ -1009,6 +1022,25 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 	}
 	return cmd, err
+}
+
+func helpHint(c *Command, fs []string, e string) error {
+	if len(fs) > 0 {
+		f := fs[0]
+		for _, s := range []string{"please provide a subcmd", "unknown command"} {
+			if strings.Contains(e, s) {
+				if s := c.findSuggestions(f); len(s) != 0 {
+					e += s
+				}
+				if !c.SilenceErrors {
+					c.Printf("Error: %s\n", e)
+					c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+				}
+				return fmt.Errorf("%s", e)
+			}
+		}
+	}
+	return nil
 }
 
 // ValidateArgs returns an error if any positional args are not in the
@@ -1277,7 +1309,33 @@ func (c *Command) UseLine() string {
 	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
 		useline += " [flags]"
 	}
+
+	useline += useLineArgs(c)
+
 	return useline
+}
+
+// useLineArgs puts out '[args]' if a given command accepts positional args
+func useLineArgs(c *Command) (s string) {
+	s = " [args]"
+	if c.Args == nil {
+		if !c.HasAvailableSubCommands() || c.HasParent() {
+			return
+		}
+		// if Args is undefined and this is a root command with subcommands,
+		// do not accept arguments, unless ValidArgs is set
+		if !c.HasParent() && c.HasAvailableSubCommands() && (len(c.ValidArgs) > 0) {
+			return
+		}
+		return ""
+	}
+	// Check if the Args validator is other than 'NoArgs'
+	err := c.Args(c, []string{"someUnexpectedIllegalArg"})
+	nerr := NoArgs(c, []string{"someUnexpectedIllegalArg"})
+	if err == nil || ((nerr != nil) && (err.Error() != nerr.Error())) {
+		return
+	}
+	return ""
 }
 
 // DebugFlags used to determine which flags have been assigned to which commands
@@ -1371,6 +1429,10 @@ func (c *Command) NameAndAliases() string {
 	return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
 }
 
+func (c *Command) HasValidArgs() bool {
+	return len(c.ValidArgs) > 0
+}
+
 // HasExample determines if the command has example.
 func (c *Command) HasExample() bool {
 	return len(c.Example) > 0
@@ -1444,16 +1506,14 @@ func (c *Command) HasHelpSubCommands() bool {
 // HasAvailableSubCommands determines if a command has available sub commands that
 // need to be shown in the usage/help default template under 'available commands'.
 func (c *Command) HasAvailableSubCommands() bool {
-	// return true on the first found available (non deprecated/help/hidden)
-	// sub command
+	// return true on the first found available (non deprecated/help/hidden) subcmd
 	for _, sub := range c.commands {
 		if sub.IsAvailableCommand() {
 			return true
 		}
 	}
-
-	// the command either has no sub commands, or no available (non deprecated/help/hidden)
-	// sub commands
+	// the command either has no sub commands,
+	// or no available (non deprecated/help/hidden) subcmds
 	return false
 }
 
