@@ -15,13 +15,13 @@ references:
         PATH=$PATH:$PWD/bin go test -v ./...
         go build
         if [ -z $NOVET ]; then
-          diff -u <(echo -n) <(go tool vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
+          diff -u <(echo -n) <(go vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
         fi
 
 jobs:
   go-current:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: *workspace
     steps:
       - checkout
@@ -31,7 +31,7 @@ jobs:
           command: diff -u <(echo -n) <(gofmt -d -s .)
   go-previous:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.11
     working_directory: *workspace
     steps:
       - checkout
