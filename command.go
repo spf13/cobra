@@ -879,6 +879,10 @@ func (c *Command) ValidateArgs(args []string) error {
 }
 
 func (c *Command) validateRequiredFlags() error {
+	if c.Name() == "help" {
+		return nil
+	}
+
 	flags := c.Flags()
 	missingFlagNames := []string{}
 	flags.VisitAll(func(pflag *flag.Flag) {
