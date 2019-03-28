@@ -179,6 +179,8 @@ type Command struct {
 
 	// output is an output writer defined by user.
 	output io.Writer
+	// errorFunc is error func defined by user.
+	errorFunc func(error)
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
 	// usageTemplate is usage template defined by user.
@@ -836,7 +838,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			c.printError(err)
 			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -859,7 +861,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			c.printError(err)
 		}
 
 		// If root command has SilentUsage flagged,
@@ -869,6 +871,35 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 	}
 	return cmd, err
+}
+
+// ErrorFunc returns either the function set by SetErrorFunc for this command
+// or a parent, or it returns a default error function.
+func (c *Command) ErrorFunc() func(error) {
+	if c.errorFunc != nil {
+		return c.errorFunc
+	}
+	if c.HasParent() {
+		return c.Parent().ErrorFunc()
+	}
+	return func(err error) {
+		c.Println("Error:", err.Error())
+	}
+}
+
+// SetErrorFunc sets error function.
+func (c *Command) SetErrorFunc(errFunc func(error)) {
+	c.errorFunc = errFunc
+}
+
+// printError would pick user defined error function if existed
+// else it would use it's default way to print
+func (c *Command) printError(err error) {
+	if c.errorFunc != nil {
+		c.errorFunc(err)
+	} else {
+		c.Println("Error:", err.Error())
+	}
 }
 
 func (c *Command) ValidateArgs(args []string) error {
