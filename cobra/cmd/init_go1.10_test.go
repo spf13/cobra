@@ -1,3 +1,5 @@
+// +build !go1.12
+
 package cmd
 
 import (
@@ -30,7 +32,7 @@ func TestGoldenInitCmd(t *testing.T) {
 		}
 	}()
 
-	expectedFiles := []string{"LICENSE", "main.go", "cmd/root.go"}
+	expectedFiles := []string{"LICENSE", "main.go"}
 	for _, f := range expectedFiles {
 		generatedFile := fmt.Sprintf("%s/%s", project.AbsolutePath, f)
 		goldenFile := fmt.Sprintf("testdata/%s.golden", filepath.Base(f))
@@ -38,5 +40,12 @@ func TestGoldenInitCmd(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+
+	rootCmd := "cmd/root.go"
+	generatedFile := fmt.Sprintf("%s/%s", project.AbsolutePath, rootCmd)
+	goldenFile := fmt.Sprintf("testdata/%s1.10.golden", filepath.Base(rootCmd))
+	if err = compareFiles(generatedFile, goldenFile); err != nil {
+		t.Fatal(err)
 	}
 }

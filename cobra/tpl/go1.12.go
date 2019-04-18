@@ -1,4 +1,4 @@
-// +build !go1.12
+// +build go1.12
 
 package tpl
 
@@ -29,7 +29,6 @@ import (
   "os"
   "github.com/spf13/cobra"
 {{- if .Viper }}
-  homedir "github.com/mitchellh/go-homedir"
   "github.com/spf13/viper"
 {{ end -}}
 )
@@ -88,7 +87,7 @@ func initConfig() {
     viper.SetConfigFile(cfgFile)
   } else {
     // Find home directory.
-    home, err := homedir.Dir()
+    home, err := os.UserHomeDir()
     if err != nil {
       fmt.Println(err)
       os.Exit(1)
