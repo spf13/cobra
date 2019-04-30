@@ -1381,6 +1381,30 @@ func TestSetOutput(t *testing.T) {
 	}
 }
 
+func TestSetOut(t *testing.T) {
+	c := &Command{}
+	c.SetOut(nil)
+	if out := c.OutOrStdout(); out != os.Stdout {
+		t.Errorf("Expected setting output to nil to revert back to stdout")
+	}
+}
+
+func TestSetErr(t *testing.T) {
+	c := &Command{}
+	c.SetErr(nil)
+	if out := c.ErrOrStderr(); out != os.Stderr {
+		t.Errorf("Expected setting error to nil to revert back to stderr")
+	}
+}
+
+func TestSetIn(t *testing.T) {
+	c := &Command{}
+	c.SetIn(nil)
+	if out := c.InOrStdin(); out != os.Stdin {
+		t.Errorf("Expected setting input to nil to revert back to stdin")
+	}
+}
+
 func TestFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
