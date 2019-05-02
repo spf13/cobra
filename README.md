@@ -23,6 +23,8 @@ Many of the most widely used Go projects are built using Cobra, such as:
 [Istio](https://istio.io),
 [Prototool](https://github.com/uber/prototool),
 [mattermost-server](https://github.com/mattermost/mattermost-server),
+[Tendermint](https://github.com/tendermint/tendermint),
+[Cosmos SDK](https://github.com/cosmos/cosmos-sdk),
 etc.
 
 [![Build Status](https://travis-ci.org/spf13/cobra.svg "Travis CI status")](https://travis-ci.org/spf13/cobra)
