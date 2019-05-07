@@ -16,12 +16,6 @@ type Project struct {
 	Legal        License
 	Viper        bool
 	AppName      string
-
-	//absPath string
-	//cmdPath string
-	//srcPath string
-	//license License
-	//name    string
 }
 
 type Command struct {
