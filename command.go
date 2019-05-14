@@ -837,7 +837,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.Println("Error:", err.Error())
-			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+			c.Printf("Run '%v help' for usage.\n", c.CommandPath())
 		}
 		return c, err
 	}
