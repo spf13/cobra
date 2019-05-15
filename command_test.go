@@ -1405,6 +1405,22 @@ func TestSetIn(t *testing.T) {
 	}
 }
 
+func TestUsageStringRedirected(t *testing.T) {
+	c := &Command{}
+
+	c.usageFunc = func(cmd *Command) error {
+		cmd.Print("[stdout1]")
+		cmd.PrintErr("[stderr2]")
+		cmd.Print("[stdout3]")
+		return nil;
+	}
+
+	expected := "[stdout1][stderr2][stdout3]"
+	if 	got := c.UsageString(); got != expected {
+		t.Errorf("Expected usage string to consider both stdout and stderr")
+	}
+}
+
 func TestFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
