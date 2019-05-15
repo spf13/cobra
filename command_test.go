@@ -1412,11 +1412,11 @@ func TestUsageStringRedirected(t *testing.T) {
 		cmd.Print("[stdout1]")
 		cmd.PrintErr("[stderr2]")
 		cmd.Print("[stdout3]")
-		return nil;
+		return nil
 	}
 
 	expected := "[stdout1][stderr2][stdout3]"
-	if 	got := c.UsageString(); got != expected {
+	if got := c.UsageString(); got != expected {
 		t.Errorf("Expected usage string to consider both stdout and stderr")
 	}
 }
