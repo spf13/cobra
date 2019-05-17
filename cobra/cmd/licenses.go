@@ -77,6 +77,9 @@ func getLicense() License {
 
 func copyrightLine() string {
 	author := viper.GetString("author")
+	if author == "none" {
+		return ""
+	}
 
 	year := viper.GetString("year") // For tests.
 	if year == "" {

@@ -92,3 +92,6 @@ license:
 
 You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
 **AGPL**, **MIT**, **2-Clause BSD** or **3-Clause BSD**.
+
+You can prevent the generation of the `// Copyright © 2015 AUTHOR <EMAIL>` line
+at the top of the file by setting `author` to `none`.
