@@ -130,6 +130,10 @@ type Command struct {
 	// line of a command when printing help or generating docs
 	DisableFlagsInUseLine bool
 
+	// DisableHelpSubCommand will disable the addition of the "help" subcommand.
+	// The "-h" and "--help" flags will still be available.
+	DisableHelpSubCommand bool
+
 	// DisableSuggestions disables the suggestions based on Levenshtein distance
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
@@ -938,7 +942,7 @@ func (c *Command) InitDefaultVersionFlag() {
 // It is called automatically by executing the c or by calling help and usage.
 // If c already has help command or c has no subcommands, it will do nothing.
 func (c *Command) InitDefaultHelpCmd() {
-	if !c.HasSubCommands() {
+	if c.DisableHelpSubCommand || !c.HasSubCommands() {
 		return
 	}
 
