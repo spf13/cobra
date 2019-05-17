@@ -106,9 +106,9 @@ func createLicenseFile(license License, path string) {
 }
 
 func createMainFile(project *Project) {
-	mainTemplate := `{{ comment .copyright }}
-{{if .license}}{{ comment .license }}{{end}}
-
+	mainTemplate := `{{if .copyright}}{{comment .copyright}}
+{{end}}{{if .license}}{{comment .license}}
+{{end}}
 package main
 
 import "{{ .importpath }}"
@@ -134,9 +134,9 @@ func main() {
 }
 
 func createRootCmdFile(project *Project) {
-	template := `{{comment .copyright}}
-{{if .license}}{{comment .license}}{{end}}
-
+	template := `{{if .copyright}}{{comment .copyright}}
+{{end}}{{if .license}}{{comment .license}}
+{{end}}
 package cmd
 
 import (
