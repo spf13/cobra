@@ -59,7 +59,6 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 		}
 
 		cmdName := validateCmdName(args[0])
-		//! Hier ein cmdNameConstructor
 		cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
 		createCmdFile(project.License(), cmdPath, cmdName)
 
