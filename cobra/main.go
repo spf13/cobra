@@ -13,7 +13,9 @@
 
 package main
 
-import "github.com/spf13/cobra/cobra/cmd"
+import (
+	"cobra/cobra/cmd"
+)
 
 func main() {
 	cmd.Execute()

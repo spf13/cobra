@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode"
 
 	"github.com/spf13/cobra"
@@ -59,8 +60,11 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 		}
 
 		cmdName := validateCmdName(args[0])
-		cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
-		createCmdFile(project.License(), cmdPath, cmdName)
+
+		cmdVariable := checkAgainstParent(cmdName, parentName)
+
+		cmdPath := filepath.Join(project.CmdPath(), cmdVariable+".go")
+		createCmdFile(project.License(), cmdPath, cmdName, cmdVariable)
 
 		fmt.Fprintln(cmd.OutOrStdout(), cmdName, "created at", cmdPath)
 	},
@@ -119,20 +123,35 @@ func validateCmdName(source string) string {
 	return output
 }
 
-func createCmdFile(license License, path, cmdName string) {
+func checkAgainstParent(cmdName string, parentName string) string {
+	if parentName != "rootCmd" {
+		parentName = strings.TrimSuffix(parentName, "Cmd")
+
+		// cmdName is global
+		if unicode.IsUpper(rune(cmdName[0])) {
+			parentName = strings.Title(parentName)
+		}
+		cmdName = strings.Title(cmdName)
+
+		cmdName = parentName + cmdName
+	}
+	return cmdName
+}
+
+func createCmdFile(license License, path, cmdName string, cmdVariable string) {
 	template := `{{comment .copyright}}
 {{if .license}}{{comment .license}}{{end}}
 
 package {{.cmdPackage}}
-
+//This is a test
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
 
-// {{.cmdName}}Cmd represents the {{.cmdName}} command
-var {{.cmdName}}Cmd = &cobra.Command{
+// {{.cmdVariable}}Cmd represents the {{.cmdName}} command
+var {{.cmdVariable}}Cmd = &cobra.Command{
 	Use:   "{{.cmdName}}",
 	Short: "A brief description of your command",
 	Long: ` + "`" + `A longer description that spans multiple lines and likely contains examples
@@ -142,22 +161,22 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.` + "`" + `,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("{{.cmdName}} called")
+		fmt.Println("{{.cmdVariable}} called")
 	},
 }
 
 func init() {
-	{{.parentName}}.AddCommand({{.cmdName}}Cmd)
+	{{.parentName}}.AddCommand({{.cmdVariable}}Cmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// {{.cmdName}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
+	// {{.cmdVariable}}Cmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// {{.cmdName}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// {{.cmdVariable}}Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 `
 
@@ -167,6 +186,7 @@ func init() {
 	data["cmdPackage"] = filepath.Base(filepath.Dir(path)) // last dir of path
 	data["parentName"] = parentName
 	data["cmdName"] = cmdName
+	data["cmdVariable"] = cmdVariable
 
 	cmdScript, err := executeTemplate(template, data)
 	if err != nil {
