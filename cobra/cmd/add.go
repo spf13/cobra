@@ -24,7 +24,7 @@ import (
 
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
-	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
+	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command (e.g. xyCmd)")
 }
 
 var packageName, parentName string
@@ -59,6 +59,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 		}
 
 		cmdName := validateCmdName(args[0])
+		//! Hier ein cmdNameConstructor
 		cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
 		createCmdFile(project.License(), cmdPath, cmdName)
 
