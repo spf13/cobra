@@ -143,7 +143,7 @@ func createCmdFile(license License, path, cmdName string, cmdVariable string) {
 {{if .license}}{{comment .license}}{{end}}
 
 package {{.cmdPackage}}
-//This is a test
+
 import (
 	"fmt"
 

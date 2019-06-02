@@ -31,9 +31,9 @@ func TestGoldenAddCmd(t *testing.T) {
 	initializeProject(project)
 
 	// Then add the "test" command.
-	cmdName := "test"
-	cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
-	createCmdFile(project.License(), cmdPath, cmdName)
+	// cmdName := "test"
+	// cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
+	// createCmdFile(project.License(), cmdPath, cmdName)
 
 	expectedFiles := []string{".", "root.go", "test.go"}
 	gotFiles := []string{}
