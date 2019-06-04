@@ -336,7 +336,7 @@ rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose out
 A flag can also be assigned locally which will only apply to that specific command.
 
 ```go
-rootCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
+localCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
 ```
 
 ### Local Flag on Parent Commands
