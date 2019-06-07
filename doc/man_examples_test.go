@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
+func er(msg interface{}) {
+	cobra.Er(msg)
+}
+
 func ExampleGenManTree() {
 	cmd := &cobra.Command{
 		Use:   "test",
