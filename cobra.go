@@ -19,6 +19,7 @@ package cobra
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -204,4 +205,19 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func er(msg interface{}) {
+	if msg != nil {
+		fmt.Println("Error:", msg)
+		os.Exit(1)
+	}
+}
+
+// Er prints the msg and exits with error code 1, unless the msg is nil
+func Er(msg interface{}) { er(msg) }
+
+func WrStringAndCheck(b io.StringWriter, s string) {
+	_, err := b.WriteString(s)
+	er(err)
 }
