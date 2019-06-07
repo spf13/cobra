@@ -1,200 +1,96 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/spf13/cobra/cobra/tpl"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
+	"text/template"
 )
 
 // Project contains name, license and paths to projects.
 type Project struct {
-	absPath string
-	cmdPath string
-	srcPath string
-	license License
-	name    string
+	// v2
+	PkgName      string
+	Copyright    string
+	AbsolutePath string
+	Legal        License
+	Viper        bool
+	AppName      string
 }
 
-// NewProject returns Project with specified project name.
-func NewProject(projectName string) *Project {
-	if projectName == "" {
-		er("can't create project with blank name")
-	}
+type Command struct {
+	CmdName   string
+	CmdParent string
+	*Project
+}
 
-	p := new(Project)
-	p.name = projectName
+func (p *Project) Create() error {
 
-	// 1. Find already created protect.
-	p.absPath = findPackage(projectName)
-
-	// 2. If there are no created project with this path, and user is in GOPATH,
-	// then use GOPATH/src/projectName.
-	if p.absPath == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			er(err)
-		}
-		for _, srcPath := range srcPaths {
-			goPath := filepath.Dir(srcPath)
-			if filepathHasPrefix(wd, goPath) {
-				p.absPath = filepath.Join(srcPath, projectName)
-				break
-			}
+	// check if AbsolutePath exists
+	if _, err := os.Stat(p.AbsolutePath); os.IsNotExist(err) {
+		// create directory
+		if err := os.Mkdir(p.AbsolutePath, 0754); err != nil {
+			return err
 		}
 	}
 
-	// 3. If user is not in GOPATH, then use (first GOPATH)/src/projectName.
-	if p.absPath == "" {
-		p.absPath = filepath.Join(srcPaths[0], projectName)
-	}
-
-	return p
-}
-
-// findPackage returns full path to existing go package in GOPATHs.
-func findPackage(packageName string) string {
-	if packageName == "" {
-		return ""
-	}
-
-	for _, srcPath := range srcPaths {
-		packagePath := filepath.Join(srcPath, packageName)
-		if exists(packagePath) {
-			return packagePath
-		}
-	}
-
-	return ""
-}
-
-// NewProjectFromPath returns Project with specified absolute path to
-// package.
-func NewProjectFromPath(absPath string) *Project {
-	if absPath == "" {
-		er("can't create project: absPath can't be blank")
-	}
-	if !filepath.IsAbs(absPath) {
-		er("can't create project: absPath is not absolute")
-	}
-
-	// If absPath is symlink, use its destination.
-	fi, err := os.Lstat(absPath)
+	// create main.go
+	mainFile, err := os.Create(fmt.Sprintf("%s/main.go", p.AbsolutePath))
 	if err != nil {
-		er("can't read path info: " + err.Error())
+		return err
 	}
-	if fi.Mode()&os.ModeSymlink != 0 {
-		path, err := os.Readlink(absPath)
-		if err != nil {
-			er("can't read the destination of symlink: " + err.Error())
-		}
-		absPath = path
-	}
+	defer mainFile.Close()
 
-	p := new(Project)
-	p.absPath = strings.TrimSuffix(absPath, findCmdDir(absPath))
-	p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
-	return p
-}
-
-// trimSrcPath trims at the beginning of absPath the srcPath.
-func trimSrcPath(absPath, srcPath string) string {
-	relPath, err := filepath.Rel(srcPath, absPath)
+	mainTemplate := template.Must(template.New("main").Parse(string(tpl.MainTemplate())))
+	err = mainTemplate.Execute(mainFile, p)
 	if err != nil {
-		er(err)
+		return err
 	}
-	return relPath
+
+	// create cmd/root.go
+	if _, err = os.Stat(fmt.Sprintf("%s/cmd", p.AbsolutePath)); os.IsNotExist(err) {
+		os.Mkdir(fmt.Sprintf("%s/cmd", p.AbsolutePath), 0751)
+	}
+	rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", p.AbsolutePath))
+	if err != nil {
+		return err
+	}
+	defer rootFile.Close()
+
+	rootTemplate := template.Must(template.New("root").Parse(string(tpl.RootTemplate())))
+	err = rootTemplate.Execute(rootFile, p)
+	if err != nil {
+		return err
+	}
+
+	// create license
+	return p.createLicenseFile()
 }
 
-// License returns the License object of project.
-func (p *Project) License() License {
-	if p.license.Text == "" && p.license.Name != "None" {
-		p.license = getLicense()
+func (p *Project) createLicenseFile() error {
+	data := map[string]interface{}{
+		"copyright": copyrightLine(),
 	}
-	return p.license
+	licenseFile, err := os.Create(fmt.Sprintf("%s/LICENSE", p.AbsolutePath))
+	if err != nil {
+		return err
+	}
+
+	licenseTemplate := template.Must(template.New("license").Parse(p.Legal.Text))
+	return licenseTemplate.Execute(licenseFile, data)
 }
 
-// Name returns the name of project, e.g. "github.com/spf13/cobra"
-func (p Project) Name() string {
-	return p.name
-}
-
-// CmdPath returns absolute path to directory, where all commands are located.
-func (p *Project) CmdPath() string {
-	if p.absPath == "" {
-		return ""
+func (c *Command) Create() error {
+	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdName))
+	if err != nil {
+		return err
 	}
-	if p.cmdPath == "" {
-		p.cmdPath = filepath.Join(p.absPath, findCmdDir(p.absPath))
+	defer cmdFile.Close()
+
+	commandTemplate := template.Must(template.New("sub").Parse(string(tpl.AddCommandTemplate())))
+	err = commandTemplate.Execute(cmdFile, c)
+	if err != nil {
+		return err
 	}
-	return p.cmdPath
-}
-
-// findCmdDir checks if base of absPath is cmd dir and returns it or
-// looks for existing cmd dir in absPath.
-func findCmdDir(absPath string) string {
-	if !exists(absPath) || isEmpty(absPath) {
-		return "cmd"
-	}
-
-	if isCmdDir(absPath) {
-		return filepath.Base(absPath)
-	}
-
-	files, _ := filepath.Glob(filepath.Join(absPath, "c*"))
-	for _, file := range files {
-		if isCmdDir(file) {
-			return filepath.Base(file)
-		}
-	}
-
-	return "cmd"
-}
-
-// isCmdDir checks if base of name is one of cmdDir.
-func isCmdDir(name string) bool {
-	name = filepath.Base(name)
-	for _, cmdDir := range []string{"cmd", "cmds", "command", "commands"} {
-		if name == cmdDir {
-			return true
-		}
-	}
-	return false
-}
-
-// AbsPath returns absolute path of project.
-func (p Project) AbsPath() string {
-	return p.absPath
-}
-
-// SrcPath returns absolute path to $GOPATH/src where project is located.
-func (p *Project) SrcPath() string {
-	if p.srcPath != "" {
-		return p.srcPath
-	}
-	if p.absPath == "" {
-		p.srcPath = srcPaths[0]
-		return p.srcPath
-	}
-
-	for _, srcPath := range srcPaths {
-		if filepathHasPrefix(p.absPath, srcPath) {
-			p.srcPath = srcPath
-			break
-		}
-	}
-
-	return p.srcPath
-}
-
-func filepathHasPrefix(path string, prefix string) bool {
-	if len(path) <= len(prefix) {
-		return false
-	}
-	if runtime.GOOS == "windows" {
-		// Paths in windows are case-insensitive.
-		return strings.EqualFold(path[0:len(prefix)], prefix)
-	}
-	return path[0:len(prefix)] == prefix
-
+	return nil
 }

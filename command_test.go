@@ -1381,6 +1381,46 @@ func TestSetOutput(t *testing.T) {
 	}
 }
 
+func TestSetOut(t *testing.T) {
+	c := &Command{}
+	c.SetOut(nil)
+	if out := c.OutOrStdout(); out != os.Stdout {
+		t.Errorf("Expected setting output to nil to revert back to stdout")
+	}
+}
+
+func TestSetErr(t *testing.T) {
+	c := &Command{}
+	c.SetErr(nil)
+	if out := c.ErrOrStderr(); out != os.Stderr {
+		t.Errorf("Expected setting error to nil to revert back to stderr")
+	}
+}
+
+func TestSetIn(t *testing.T) {
+	c := &Command{}
+	c.SetIn(nil)
+	if out := c.InOrStdin(); out != os.Stdin {
+		t.Errorf("Expected setting input to nil to revert back to stdin")
+	}
+}
+
+func TestUsageStringRedirected(t *testing.T) {
+	c := &Command{}
+
+	c.usageFunc = func(cmd *Command) error {
+		cmd.Print("[stdout1]")
+		cmd.PrintErr("[stderr2]")
+		cmd.Print("[stdout3]")
+		return nil
+	}
+
+	expected := "[stdout1][stderr2][stdout3]"
+	if got := c.UsageString(); got != expected {
+		t.Errorf("Expected usage string to consider both stdout and stderr")
+	}
+}
+
 func TestFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
