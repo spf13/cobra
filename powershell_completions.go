@@ -10,12 +10,12 @@ import (
 	"os"
 )
 
-func genPowerShellComp(buf *bytes.Buffer, name string, includeDesc bool) {
+func genPowerShellComp(buf io.StringWriter, name string, includeDesc bool) {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
-	buf.WriteString(fmt.Sprintf(`# powershell completion for %-36[1]s -*- shell-script -*-
+	WriteStringAndCheck(buf, fmt.Sprintf(`# powershell completion for %-36[1]s -*- shell-script -*-
 
 function __%[1]s_debug {
     if ($env:BASH_COMP_DEBUG_FILE) {
@@ -46,12 +46,12 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
     # We need to trigger completion from the $CursorPosition location, so we need
     # to truncate the command-line ($Command) up to the $CursorPosition location.
     # Make sure the $Command is longer then the $CursorPosition before we truncate.
-    # This happens because the $Command does not include the last space.    
+    # This happens because the $Command does not include the last space.
     if ($Command.Length -gt $CursorPosition) {
         $Command=$Command.Substring(0,$CursorPosition)
     }
 	__%[1]s_debug "Truncated command: $Command"
-	
+
     $ShellCompDirectiveError=%[3]d
     $ShellCompDirectiveNoSpace=%[4]d
     $ShellCompDirectiveNoFileComp=%[5]d
@@ -64,7 +64,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
     $RequestComp="$Program %[2]s $Arguments"
     __%[1]s_debug "RequestComp: $RequestComp"
 
-    # we cannot use $WordToComplete because it 
+    # we cannot use $WordToComplete because it
     # has the wrong values if the cursor was moved
     # so use the last argument
     if ($WordToComplete -ne "" ) {
@@ -102,7 +102,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         $Directive = 0
     }
     __%[1]s_debug "The completion directive is: $Directive"
-    
+
     # remove directive (last element) from out
     $Out = $Out | Where-Object { $_ -ne $Out[-1] }
     __%[1]s_debug "The completions are: $Out"
@@ -142,18 +142,18 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
 
     if (($Directive -band $ShellCompDirectiveNoFileComp) -ne 0 ) {
         __%[1]s_debug "ShellCompDirectiveNoFileComp is called"
-        
+
         if ($Values.Length -eq 0) {
-            # Just print an empty string here so the 
+            # Just print an empty string here so the
             # shell does not start to complete paths.
-            # We cannot use CompletionResult here because 
+            # We cannot use CompletionResult here because
             # it does not accept an empty string as argument.
             ""
             return
         }
     }
 
-    if ((($Directive -band $ShellCompDirectiveFilterFileExt) -ne 0 ) -or 
+    if ((($Directive -band $ShellCompDirectiveFilterFileExt) -ne 0 ) -or
        (($Directive -band $ShellCompDirectiveFilterDirs) -ne 0 ))  {
         __%[1]s_debug "ShellCompDirectiveFilterFileExt ShellCompDirectiveFilterDirs are not supported"
 
@@ -170,7 +170,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
             __%[1]s_debug "Join the equal sign flag back to the completion value"
             $_.Name = $Flag + "=" + $_.Name
         }
-    } 
+    }
 
     # Get the current mode
     $Mode = (Get-PSReadLineKeyHandler | Where-Object {$_.Key -eq "Tab" }).Function
@@ -224,14 +224,14 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
             # zsh like
             "MenuComplete" {
                 # insert space after value
-                # MenuComplete will automatically show the ToolTip of 
+                # MenuComplete will automatically show the ToolTip of
                 # the highlighted value at the bottom of the suggestions.
                 [System.Management.Automation.CompletionResult]::new($($comp.Name | __%[1]s_escapeStringWithSpecialChars) + $Space, "$($comp.Name)", 'ParameterValue', "$($comp.Description)")
             }
 
             # TabCompleteNext and in case we get something unknown
             Default {
-                # Like MenuComplete but we don't want to add a space here because 
+                # Like MenuComplete but we don't want to add a space here because
                 # the user need to press space anyway to get the completion.
                 # Description will not be shown because thats not possible with TabCompleteNext
                 [System.Management.Automation.CompletionResult]::new($($comp.Name | __%[1]s_escapeStringWithSpecialChars), "$($comp.Name)", 'ParameterValue', "$($comp.Description)")

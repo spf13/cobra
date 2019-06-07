@@ -527,8 +527,7 @@ func CompDebug(msg string, printToStdErr bool) {
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
 			defer f.Close()
-			_, err := f.WriteString(msg)
-			CheckErr(err)
+			WriteStringAndCheck(f, msg)
 		}
 	}
 
