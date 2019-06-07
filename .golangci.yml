@@ -1,0 +1,25 @@
+run:
+  deadline: 5m
+
+linters:
+  enable:
+    - deadcode
+    - errcheck
+    - gas
+    - goconst
+    - goimports
+    - golint
+    - govet
+    - ineffassign
+    - interfacer
+    - maligned
+    - megacheck
+    - structcheck
+    - unconvert
+    - varcheck
+  enable-all: false
+  disable-all: true
+#  presets:
+#    - bugs
+#    - unused
+  fast: false
