@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -92,7 +93,7 @@ func copyrightLine() string {
 func findLicense(name string) License {
 	found := matchLicense(name)
 	if found == "" {
-		er("unknown license: " + name)
+		er(fmt.Errorf("unknown license: " + name))
 	}
 	return Licenses[found]
 }

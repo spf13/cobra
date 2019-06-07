@@ -23,9 +23,7 @@ func TestGoldenInitCmd(t *testing.T) {
 	project := getProject()
 	defer os.RemoveAll(project.AbsolutePath)
 
-	if err := project.Create(); err != nil {
-		t.Fatal(err)
-	}
+	er(project.Create())
 
 	expectedFiles := []string{"LICENSE", "main.go", "cmd/root.go"}
 	for _, f := range expectedFiles {

@@ -60,8 +60,10 @@ func init() {
 }
 
 func er(msg interface{}) {
-	fmt.Println("Error:", msg)
-	os.Exit(1)
+	if msg != nil {
+		fmt.Println("Error:", msg)
+		os.Exit(1)
+	}
 }
 
 // isEmpty checks if a given path is empty.

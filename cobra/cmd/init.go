@@ -74,5 +74,5 @@ Init will not use an existing directory with contents.`,
 
 func init() {
 	initCmd.Flags().StringVar(&pkgName, "pkg-name", "", "fully qualified pkg name")
-	initCmd.MarkFlagRequired("pkg-name")
+	er(initCmd.MarkFlagRequired("pkg-name"))
 }
