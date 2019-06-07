@@ -53,13 +53,3 @@ func compareFiles(pathA, pathB string) error {
 	}
 	return nil
 }
-
-// stringInStringSlice checks if s is an element of slice.
-func stringInStringSlice(s string, slice []string) bool {
-	for _, v := range slice {
-		if s == v {
-			return true
-		}
-	}
-	return false
-}

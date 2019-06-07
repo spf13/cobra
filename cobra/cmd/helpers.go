@@ -15,7 +15,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,61 +61,4 @@ func er(msg interface{}) {
 		fmt.Println("Error:", msg)
 		os.Exit(1)
 	}
-}
-
-// exists checks if a file or directory exists.
-func exists(path string) bool {
-	if path == "" {
-		return false
-	}
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if !os.IsNotExist(err) {
-		er(err)
-	}
-	return false
-}
-
-// writeToFile writes r to file with path only
-// if file/directory on given path doesn't exist.
-func writeToFile(path string, r io.Reader) error {
-	if exists(path) {
-		return fmt.Errorf("%v already exists", path)
-	}
-
-	dir := filepath.Dir(path)
-	if dir != "" {
-		if err := os.MkdirAll(dir, 0777); err != nil {
-			return err
-		}
-	}
-
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, r)
-	return err
-}
-
-// commentfyString comments every line of in.
-func commentifyString(in string) string {
-	var newlines []string
-	lines := strings.Split(in, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "//") {
-			newlines = append(newlines, line)
-		} else {
-			if line == "" {
-				newlines = append(newlines, "//")
-			} else {
-				newlines = append(newlines, "// "+line)
-			}
-		}
-	}
-	return strings.Join(newlines, "\n")
 }
