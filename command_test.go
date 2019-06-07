@@ -676,9 +676,9 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().String("foo1", "", "")
-	c.MarkFlagRequired("foo1")
+	er(c.MarkFlagRequired("foo1"))
 	c.Flags().String("foo2", "", "")
-	c.MarkFlagRequired("foo2")
+	er(c.MarkFlagRequired("foo2"))
 	c.Flags().String("bar", "", "")
 
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
@@ -694,16 +694,16 @@ func TestRequiredFlags(t *testing.T) {
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().String("foo1", "", "")
-	parent.MarkPersistentFlagRequired("foo1")
+	er(parent.MarkPersistentFlagRequired("foo1"))
 	parent.PersistentFlags().String("foo2", "", "")
-	parent.MarkPersistentFlagRequired("foo2")
+	er(parent.MarkPersistentFlagRequired("foo2"))
 	parent.Flags().String("foo3", "", "")
 
 	child := &Command{Use: "child", Run: emptyRun}
 	child.Flags().String("bar1", "", "")
-	child.MarkFlagRequired("bar1")
+	er(child.MarkFlagRequired("bar1"))
 	child.Flags().String("bar2", "", "")
-	child.MarkFlagRequired("bar2")
+	er(child.MarkFlagRequired("bar2"))
 	child.Flags().String("bar3", "", "")
 
 	parent.AddCommand(child)
@@ -1484,7 +1484,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
-	c.Flags().MarkDeprecated("deprecated", "This flag is deprecated")
+	er(c.Flags().MarkDeprecated("deprecated", "This flag is deprecated"))
 
 	output, err := executeCommand(c, "c", "-d")
 	if err != nil {
