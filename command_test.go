@@ -125,7 +125,7 @@ func TestSubcommandExecuteC(t *testing.T) {
 	}
 
 	if c.Name() != "child" {
-		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got %q`, c.Name())
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
 	}
 }
 
@@ -563,7 +563,7 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 
 	got := strings.Join(rootCmdArgs, " ")
 	if got != onetwo {
-		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
+		t.Errorf("rootCmdArgs expected: %q, got %q", onetwo, got)
 	}
 	if flagValue != 7 {
 		t.Errorf("flagValue expected: %v, got %v", 7, flagValue)
@@ -1068,20 +1068,19 @@ func TestHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if persPreArgs != onetwo {
-		t.Errorf("Expected persPreArgs %q, got %q", onetwo, persPreArgs)
-	}
-	if preArgs != onetwo {
-		t.Errorf("Expected preArgs %q, got %q", onetwo, preArgs)
-	}
-	if runArgs != onetwo {
-		t.Errorf("Expected runArgs %q, got %q", onetwo, runArgs)
-	}
-	if postArgs != onetwo {
-		t.Errorf("Expected postArgs %q, got %q", onetwo, postArgs)
-	}
-	if persPostArgs != onetwo {
-		t.Errorf("Expected persPostArgs %q, got %q", onetwo, persPostArgs)
+	for _, v := range []struct {
+		name string
+		got  string
+	}{
+		{"persPreArgs", persPreArgs},
+		{"preArgs", preArgs},
+		{"runArgs", runArgs},
+		{"postArgs", postArgs},
+		{"persPostArgs", persPostArgs},
+	} {
+		if v.got != onetwo {
+			t.Errorf("Expected %s %q, got %q", v.name, onetwo, v.got)
+		}
 	}
 }
 
@@ -1149,44 +1148,42 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	// TODO: currently PersistenPreRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPreRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPreArgs != "" {
-		t.Errorf("Expected blank parentPersPreArgs, got %q", parentPersPreArgs)
-	}
-	if parentPreArgs != "" {
-		t.Errorf("Expected blank parentPreArgs, got %q", parentPreArgs)
-	}
-	if parentRunArgs != "" {
-		t.Errorf("Expected blank parentRunArgs, got %q", parentRunArgs)
-	}
-	if parentPostArgs != "" {
-		t.Errorf("Expected blank parentPostArgs, got %q", parentPostArgs)
-	}
-	// TODO: currently PersistenPostRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPostRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPostArgs != "" {
-		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
+	for _, v := range []struct {
+		name string
+		got  string
+	}{
+		// TODO: currently PersistenPreRun* defined in parent does not
+		// run if the matchin child subcommand has PersistenPreRun.
+		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
+		// this test must be fixed.
+		{"parentPersPreArgs", parentPersPreArgs},
+		{"parentPreArgs", parentPreArgs},
+		{"parentRunArgs", parentRunArgs},
+		{"parentPostArgs", parentPostArgs},
+		// TODO: currently PersistenPostRun* defined in parent does not
+		// run if the matchin child subcommand has PersistenPostRun.
+		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
+		// this test must be fixed.
+		{"parentPersPostArgs", parentPersPostArgs},
+	} {
+		if v.got != "" {
+			t.Errorf("Expected blank %s, got %q", v.name, v.got)
+		}
 	}
 
-	if childPersPreArgs != onetwo {
-		t.Errorf("Expected childPersPreArgs %q, got %q", onetwo, childPersPreArgs)
-	}
-	if childPreArgs != onetwo {
-		t.Errorf("Expected childPreArgs %q, got %q", onetwo, childPreArgs)
-	}
-	if childRunArgs != onetwo {
-		t.Errorf("Expected childRunArgs %q, got %q", onetwo, childRunArgs)
-	}
-	if childPostArgs != onetwo {
-		t.Errorf("Expected childPostArgs %q, got %q", onetwo, childPostArgs)
-	}
-	if childPersPostArgs != onetwo {
-		t.Errorf("Expected childPersPostArgs %q, got %q", onetwo, childPersPostArgs)
+	for _, v := range []struct {
+		name string
+		got  string
+	}{
+		{"childPersPreArgs", childPersPreArgs},
+		{"childPreArgs", childPreArgs},
+		{"childRunArgs", childRunArgs},
+		{"childPostArgs", childPostArgs},
+		{"childPersPostArgs", childPersPostArgs},
+	} {
+		if v.got != onetwo {
+			t.Errorf("Expected %s %q, got %q", v.name, onetwo, v.got)
+		}
 	}
 }
 
