@@ -27,7 +27,6 @@ import (
 	"os"
 	"github.com/spf13/cobra"
 {{ if .Viper }}
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"{{ end }}
 )
 
@@ -81,7 +80,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".{{ .AppName }}" (without extension).
