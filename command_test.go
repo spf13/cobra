@@ -737,9 +737,9 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().String("foo1", "", "")
-	c.MarkFlagRequired("foo1")
+	assertNoErr(t, c.MarkFlagRequired("foo1"))
 	c.Flags().String("foo2", "", "")
-	c.MarkFlagRequired("foo2")
+	assertNoErr(t, c.MarkFlagRequired("foo2"))
 	c.Flags().String("bar", "", "")
 
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
@@ -755,16 +755,16 @@ func TestRequiredFlags(t *testing.T) {
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().String("foo1", "", "")
-	parent.MarkPersistentFlagRequired("foo1")
+	assertNoErr(t, parent.MarkPersistentFlagRequired("foo1"))
 	parent.PersistentFlags().String("foo2", "", "")
-	parent.MarkPersistentFlagRequired("foo2")
+	assertNoErr(t, parent.MarkPersistentFlagRequired("foo2"))
 	parent.Flags().String("foo3", "", "")
 
 	child := &Command{Use: "child", Run: emptyRun}
 	child.Flags().String("bar1", "", "")
-	child.MarkFlagRequired("bar1")
+	assertNoErr(t, child.MarkFlagRequired("bar1"))
 	child.Flags().String("bar2", "", "")
-	child.MarkFlagRequired("bar2")
+	assertNoErr(t, child.MarkFlagRequired("bar2"))
 	child.Flags().String("bar3", "", "")
 
 	parent.AddCommand(child)
@@ -784,7 +784,7 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().Bool("foo", false, "")
 	flag := parent.PersistentFlags().Lookup("foo")
-	parent.MarkPersistentFlagRequired("foo")
+	assertNoErr(t, parent.MarkPersistentFlagRequired("foo"))
 
 	child := &Command{Use: "child", Run: emptyRun}
 	child.DisableFlagParsing = true
@@ -1729,7 +1729,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
-	c.Flags().MarkDeprecated("deprecated", "This flag is deprecated")
+	assertNoErr(t, c.Flags().MarkDeprecated("deprecated", "This flag is deprecated"))
 
 	output, err := executeCommand(c, "c", "-d")
 	if err != nil {
@@ -1877,7 +1877,7 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	parent.SetOut(output)
 	parent.SetErr(output)
 
-	parent.Execute()
+	_ = parent.Execute()
 
 	if called == nil {
 		if tc.call != "" {

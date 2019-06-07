@@ -234,11 +234,6 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-func er(msg interface{}) {
-	fmt.Println("Error:", msg)
-	os.Exit(1)
-}
-
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -246,9 +241,7 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
-		if err != nil {
-			er(err)
-		}
+		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".cobra" (without extension).
 		viper.AddConfigPath(home)

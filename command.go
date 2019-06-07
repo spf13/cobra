@@ -420,7 +420,7 @@ func (c *Command) UsageString() string {
 	c.outWriter = bb
 	c.errWriter = bb
 
-	c.Usage()
+	CheckErr(c.Usage())
 
 	// Setting things back to normal
 	c.outWriter = tmpOutput
@@ -1089,10 +1089,10 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q\n", args)
-					c.Root().Usage()
+					CheckErr(c.Root().Usage())
 				} else {
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-					cmd.Help()
+					CheckErr(cmd.Help())
 				}
 			},
 		}

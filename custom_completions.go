@@ -527,13 +527,14 @@ func CompDebug(msg string, printToStdErr bool) {
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
 			defer f.Close()
-			f.WriteString(msg)
+			_, err := f.WriteString(msg)
+			CheckErr(err)
 		}
 	}
 
 	if printToStdErr {
 		// Must print to stderr for this not to be read by the completion script.
-		fmt.Fprintf(os.Stderr, msg)
+		fmt.Fprint(os.Stderr, msg)
 	}
 }
 

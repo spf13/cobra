@@ -5,6 +5,12 @@ import (
 	"text/template"
 )
 
+func assertNoErr(t *testing.T, e error) {
+	if e != nil {
+		t.Error(e)
+	}
+}
+
 func TestAddTemplateFunctions(t *testing.T) {
 	AddTemplateFunc("t", func() bool { return true })
 	AddTemplateFuncs(template.FuncMap{

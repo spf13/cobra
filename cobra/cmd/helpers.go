@@ -14,11 +14,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 var srcPaths []string
@@ -40,23 +41,16 @@ func init() {
 		}
 
 		out, err := exec.Command(goExecutable, "env", "GOPATH").Output()
-		if err != nil {
-			er(err)
-		}
+		cobra.CheckErr(err)
 
 		toolchainGoPath := strings.TrimSpace(string(out))
 		goPaths = filepath.SplitList(toolchainGoPath)
 		if len(goPaths) == 0 {
-			er("$GOPATH is not set")
+			cobra.CheckErr("$GOPATH is not set")
 		}
 	}
 	srcPaths = make([]string, 0, len(goPaths))
 	for _, goPath := range goPaths {
 		srcPaths = append(srcPaths, filepath.Join(goPath, "src"))
 	}
-}
-
-func er(msg interface{}) {
-	fmt.Println("Error:", msg)
-	os.Exit(1)
 }
