@@ -15,7 +15,7 @@ func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, false)
+	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	check(t, output, ShellCompNoDescRequestCmd)
@@ -31,7 +31,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, true)
+	assertNoErr(t, rootCmd.GenFishCompletion(buf, true))
 	output := buf.String()
 
 	check(t, output, ShellCompRequestCmd)
@@ -41,7 +41,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 func TestProgWithDash(t *testing.T) {
 	rootCmd := &Command{Use: "root-dash", Args: NoArgs, Run: emptyRun}
 	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, false)
+	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replace the '-'
@@ -56,7 +56,7 @@ func TestProgWithDash(t *testing.T) {
 func TestProgWithColon(t *testing.T) {
 	rootCmd := &Command{Use: "root:colon", Args: NoArgs, Run: emptyRun}
 	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, false)
+	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replace the ':'

@@ -24,12 +24,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+	"github.com/spf13/cobra"
 {{ if .Viper }}
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
-{{ end -}}
+	"github.com/spf13/viper"{{ end }}
 )
 
 {{ if .Viper -}}
@@ -48,16 +46,13 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.` + "`" + `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	cobra.CheckErr(rootCmd.Execute())
 }
 
 func init() {
@@ -85,11 +80,8 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".{{ .AppName }}" (without extension).
 		viper.AddConfigPath(home)

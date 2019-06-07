@@ -5,6 +5,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/cobra/tpl"
 )
 
@@ -49,7 +50,7 @@ func (p *Project) Create() error {
 
 	// create cmd/root.go
 	if _, err = os.Stat(fmt.Sprintf("%s/cmd", p.AbsolutePath)); os.IsNotExist(err) {
-		os.Mkdir(fmt.Sprintf("%s/cmd", p.AbsolutePath), 0751)
+		cobra.CheckErr(os.Mkdir(fmt.Sprintf("%s/cmd", p.AbsolutePath), 0751))
 	}
 	rootFile, err := os.Create(fmt.Sprintf("%s/cmd/root.go", p.AbsolutePath))
 	if err != nil {

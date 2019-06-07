@@ -39,9 +39,7 @@ and the appropriate structure for a Cobra-based CLI application.
 		Run: func(_ *cobra.Command, args []string) {
 
 			projectPath, err := initializeProject(args)
-			if err != nil {
-				er(err)
-			}
+			cobra.CheckErr(err)
 			fmt.Printf("Your Cobra application is ready at\n%s\n", projectPath)
 		},
 	}
@@ -49,7 +47,7 @@ and the appropriate structure for a Cobra-based CLI application.
 
 func init() {
 	initCmd.Flags().StringVar(&pkgName, "pkg-name", "", "fully qualified pkg name")
-	initCmd.MarkFlagRequired("pkg-name")
+	cobra.CheckErr(initCmd.MarkFlagRequired("pkg-name"))
 }
 
 func initializeProject(args []string) (string, error) {

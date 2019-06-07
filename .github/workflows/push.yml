@@ -1,0 +1,58 @@
+name: 'push'
+
+on:
+  push:
+  pull_request:
+
+env:
+  GO111MODULE: on
+
+jobs:
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu, windows, macOS ]
+        go: [
+          1.12.x,
+          1.13.x,
+          1.14.x
+        ]
+
+    runs-on: ${{ matrix.os }}-latest
+
+    steps:
+
+    - name: Setup go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go }}
+
+
+    - run: git config --global core.autocrlf input
+      if: matrix.os == 'windows'
+      shell: bash
+
+    - uses: actions/checkout@v2
+
+    - name: Install golangci-lint, richgo and gox
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $HOME/go/bin/ latest
+        go install github.com/kyoh86/richgo
+        go install github.com/mitchellh/gox
+
+    - name: Run tests
+      shell: bash
+      run: |
+        export PATH=$PATH:$HOME/go/bin/
+        make test
+
+    - name: Check formatting
+      run: make fmt
+
+    - name: Build generator
+      shell: bash
+      run: |
+        export PATH=$PATH:$HOME/go/bin/
+        make cobra_generator
