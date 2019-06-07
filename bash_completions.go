@@ -465,7 +465,7 @@ func writeRequiredFlag(buf *bytes.Buffer, cmd *Command) {
 
 func writeRequiredNouns(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    must_have_one_noun=()\n")
-	sort.Sort(sort.StringSlice(cmd.ValidArgs))
+	sort.Strings(cmd.ValidArgs)
 	for _, value := range cmd.ValidArgs {
 		buf.WriteString(fmt.Sprintf("    must_have_one_noun+=(%q)\n", value))
 	}
@@ -476,7 +476,7 @@ func writeCmdAliases(buf *bytes.Buffer, cmd *Command) {
 		return
 	}
 
-	sort.Sort(sort.StringSlice(cmd.Aliases))
+	sort.Strings(cmd.Aliases)
 
 	buf.WriteString(fmt.Sprint(`    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then`, "\n"))
 	for _, value := range cmd.Aliases {
@@ -488,7 +488,7 @@ func writeCmdAliases(buf *bytes.Buffer, cmd *Command) {
 }
 func writeArgAliases(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    noun_aliases=()\n")
-	sort.Sort(sort.StringSlice(cmd.ArgAliases))
+	sort.Strings(cmd.ArgAliases)
 	for _, value := range cmd.ArgAliases {
 		buf.WriteString(fmt.Sprintf("    noun_aliases+=(%q)\n", value))
 	}
