@@ -14,14 +14,12 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"text/template"
 )
 
 var srcPaths []string
@@ -66,37 +64,6 @@ func er(msg interface{}) {
 	}
 }
 
-// isEmpty checks if a given path is empty.
-// Hidden files in path are ignored.
-func isEmpty(path string) bool {
-	fi, err := os.Stat(path)
-	if err != nil {
-		er(err)
-	}
-
-	if !fi.IsDir() {
-		return fi.Size() == 0
-	}
-
-	f, err := os.Open(path)
-	if err != nil {
-		er(err)
-	}
-	defer f.Close()
-
-	names, err := f.Readdirnames(-1)
-	if err != nil && err != io.EOF {
-		er(err)
-	}
-
-	for _, name := range names {
-		if len(name) > 0 && name[0] != '.' {
-			return false
-		}
-	}
-	return true
-}
-
 // exists checks if a file or directory exists.
 func exists(path string) bool {
 	if path == "" {
@@ -110,21 +77,6 @@ func exists(path string) bool {
 		er(err)
 	}
 	return false
-}
-
-func executeTemplate(tmplStr string, data interface{}) (string, error) {
-	tmpl, err := template.New("").Funcs(template.FuncMap{"comment": commentifyString}).Parse(tmplStr)
-	if err != nil {
-		return "", err
-	}
-
-	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, data)
-	return buf.String(), err
-}
-
-func writeStringToFile(path string, s string) error {
-	return writeToFile(path, strings.NewReader(s))
 }
 
 // writeToFile writes r to file with path only

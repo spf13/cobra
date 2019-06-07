@@ -3,13 +3,10 @@ package cmd
 import (
 	"bytes"
 	"errors"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
 )
-
-var update = flag.Bool("update", false, "update .golden files")
 
 func init() {
 	// Mute commands.
@@ -53,20 +50,6 @@ func compareFiles(pathA, pathB string) error {
 			output.WriteString("\n" + err.Error())
 		}
 		return errors.New(output.String())
-	}
-	return nil
-}
-
-// checkLackFiles checks if all elements of expected are in got.
-func checkLackFiles(expected, got []string) error {
-	lacks := make([]string, 0, len(expected))
-	for _, ev := range expected {
-		if !stringInStringSlice(ev, got) {
-			lacks = append(lacks, ev)
-		}
-	}
-	if len(lacks) > 0 {
-		return fmt.Errorf("Lack %v file(s): %v", len(lacks), lacks)
 	}
 	return nil
 }
