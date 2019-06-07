@@ -6,6 +6,7 @@ stages:
 
 go:
   - 1.12.x
+  - 1.13.x
   - tip
 
 env: GO111MODULE=on
@@ -19,6 +20,6 @@ matrix:
     - go: tip
   include:
     - stage: lint
-      go: 1.12.x
+      go: 1.13.x
       before_install: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin latest
       script: golangci-lint run -v
