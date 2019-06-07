@@ -1,85 +1,45 @@
 package cmd
 
 import (
-	"errors"
-	"io/ioutil"
+	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
-// TestGoldenAddCmd initializes the project "github.com/spf13/testproject"
-// in GOPATH, adds "test" command
-// and compares the content of all files in cmd directory of testproject
-// with appropriate golden files.
-// Use -update to update existing golden files.
 func TestGoldenAddCmd(t *testing.T) {
-	projectName := "github.com/spf13/testproject"
-	project := NewProject(projectName)
-	defer os.RemoveAll(project.AbsPath())
 
-	viper.Set("author", "NAME HERE <EMAIL ADDRESS>")
-	viper.Set("license", "apache")
-	viper.Set("year", 2017)
-	defer viper.Set("author", nil)
-	defer viper.Set("license", nil)
-	defer viper.Set("year", nil)
+	wd, _ := os.Getwd()
+	command := &Command{
+		CmdName:   "test",
+		CmdParent: parentName,
+		Project: &Project{
+			AbsolutePath: fmt.Sprintf("%s/testproject", wd),
+			Legal:        getLicense(),
+			Copyright:    copyrightLine(),
 
-	// Initialize the project first.
-	initializeProject(project)
+			// required to init
+			AppName: "testproject",
+			PkgName: "github.com/spf13/testproject",
+			Viper:   true,
+		},
+	}
 
-	// Then add the "test" command.
-	cmdName := "test"
-	cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
-	createCmdFile(project.License(), cmdPath, cmdName)
-
-	expectedFiles := []string{".", "root.go", "test.go"}
-	gotFiles := []string{}
-
-	// Check project file hierarchy and compare the content of every single file
-	// with appropriate golden file.
-	err := filepath.Walk(project.CmdPath(), func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	// init project first
+	command.Project.Create()
+	defer func() {
+		if _, err := os.Stat(command.AbsolutePath); err == nil {
+			os.RemoveAll(command.AbsolutePath)
 		}
+	}()
 
-		// Make path relative to project.CmdPath().
-		// E.g. path = "/home/user/go/src/github.com/spf13/testproject/cmd/root.go"
-		// then it returns just "root.go".
-		relPath, err := filepath.Rel(project.CmdPath(), path)
-		if err != nil {
-			return err
-		}
-		relPath = filepath.ToSlash(relPath)
-		gotFiles = append(gotFiles, relPath)
-		goldenPath := filepath.Join("testdata", filepath.Base(path)+".golden")
-
-		switch relPath {
-		// Known directories.
-		case ".":
-			return nil
-		// Known files.
-		case "root.go", "test.go":
-			if *update {
-				got, err := ioutil.ReadFile(path)
-				if err != nil {
-					return err
-				}
-				ioutil.WriteFile(goldenPath, got, 0644)
-			}
-			return compareFiles(path, goldenPath)
-		}
-		// Unknown file.
-		return errors.New("unknown file: " + path)
-	})
-	if err != nil {
+	if err := command.Create(); err != nil {
 		t.Fatal(err)
 	}
 
-	// Check if some files lack.
-	if err := checkLackFiles(expectedFiles, gotFiles); err != nil {
+	generatedFile := fmt.Sprintf("%s/cmd/%s.go", command.AbsolutePath, command.CmdName)
+	goldenFile := fmt.Sprintf("testdata/%s.go.golden", command.CmdName)
+	err := compareFiles(generatedFile, goldenFile)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
