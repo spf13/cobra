@@ -58,6 +58,8 @@ func checkStringOmits(t *testing.T, got, expected string) {
 	}
 }
 
+const onetwo = "one two"
+
 func TestSingleCommand(t *testing.T) {
 	var rootCmdArgs []string
 	rootCmd := &Command{
@@ -78,9 +80,8 @@ func TestSingleCommand(t *testing.T) {
 	}
 
 	got := strings.Join(rootCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("rootCmdArgs expected: %q, got: %q", expected, got)
+	if got != onetwo {
+		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 }
 
@@ -104,9 +105,8 @@ func TestChildCommand(t *testing.T) {
 	}
 
 	got := strings.Join(child1CmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("child1CmdArgs expected: %q, got: %q", expected, got)
+	if got != onetwo {
+		t.Errorf("child1CmdArgs expected: %q, got: %q", onetwo, got)
 	}
 }
 
@@ -243,9 +243,8 @@ func TestCommandAlias(t *testing.T) {
 	}
 
 	got := strings.Join(timesCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("timesCmdArgs expected: %v, got: %v", expected, got)
+	if got != onetwo {
+		t.Errorf("timesCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 }
 
@@ -271,9 +270,8 @@ func TestEnablePrefixMatching(t *testing.T) {
 	}
 
 	got := strings.Join(aCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("aCmdArgs expected: %q, got: %q", expected, got)
+	if got != onetwo {
+		t.Errorf("aCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 
 	EnablePrefixMatching = false
@@ -307,9 +305,8 @@ func TestAliasPrefixMatching(t *testing.T) {
 	}
 
 	got := strings.Join(timesCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("timesCmdArgs expected: %v, got: %v", expected, got)
+	if got != onetwo {
+		t.Errorf("timesCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 
 	EnablePrefixMatching = false
@@ -338,9 +335,8 @@ func TestChildSameName(t *testing.T) {
 	}
 
 	got := strings.Join(fooCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("fooCmdArgs expected: %v, got: %v", expected, got)
+	if got != onetwo {
+		t.Errorf("fooCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 }
 
@@ -368,9 +364,8 @@ func TestGrandChildSameName(t *testing.T) {
 	}
 
 	got := strings.Join(fooCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("fooCmdArgs expected: %v, got: %v", expected, got)
+	if got != onetwo {
+		t.Errorf("fooCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 }
 
@@ -406,9 +401,8 @@ func TestFlagLong(t *testing.T) {
 	}
 
 	got := strings.Join(cArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("Expected arguments: %q, got %q", expected, got)
+	if got != onetwo {
+		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 }
 
@@ -441,9 +435,8 @@ func TestFlagShort(t *testing.T) {
 	}
 
 	got := strings.Join(cArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("Expected arguments: %q, got %q", expected, got)
+	if got != onetwo {
+		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 }
 
@@ -645,9 +638,8 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	}
 
 	got := strings.Join(rootCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("rootCmdArgs expected: %q, got %q", expected, got)
+	if got != onetwo {
+		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 	if flagValue != 7 {
 		t.Errorf("flagValue expected: %v, got %v", 7, flagValue)
@@ -731,9 +723,8 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 	}
 
 	got := strings.Join(childCmdArgs, " ")
-	expected := "one two"
-	if got != expected {
-		t.Errorf("childCmdArgs expected: %q, got %q", expected, got)
+	if got != onetwo {
+		t.Errorf("rootCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 	if parentFlagValue != 8 {
 		t.Errorf("parentFlagValue expected: %v, got %v", 8, parentFlagValue)
@@ -1299,20 +1290,20 @@ func TestHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if persPreArgs != "one two" {
-		t.Errorf("Expected persPreArgs %q, got %q", "one two", persPreArgs)
+	if persPreArgs != onetwo {
+		t.Errorf("Expected persPreArgs %q, got %q", onetwo, persPreArgs)
 	}
-	if preArgs != "one two" {
-		t.Errorf("Expected preArgs %q, got %q", "one two", preArgs)
+	if preArgs != onetwo {
+		t.Errorf("Expected preArgs %q, got %q", onetwo, preArgs)
 	}
-	if runArgs != "one two" {
-		t.Errorf("Expected runArgs %q, got %q", "one two", runArgs)
+	if runArgs != onetwo {
+		t.Errorf("Expected runArgs %q, got %q", onetwo, runArgs)
 	}
-	if postArgs != "one two" {
-		t.Errorf("Expected postArgs %q, got %q", "one two", postArgs)
+	if postArgs != onetwo {
+		t.Errorf("Expected postArgs %q, got %q", onetwo, postArgs)
 	}
-	if persPostArgs != "one two" {
-		t.Errorf("Expected persPostArgs %q, got %q", "one two", persPostArgs)
+	if persPostArgs != onetwo {
+		t.Errorf("Expected persPostArgs %q, got %q", onetwo, persPostArgs)
 	}
 }
 
@@ -1404,20 +1395,20 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
 	}
 
-	if childPersPreArgs != "one two" {
-		t.Errorf("Expected childPersPreArgs %q, got %q", "one two", childPersPreArgs)
+	if childPersPreArgs != onetwo {
+		t.Errorf("Expected childPersPreArgs %q, got %q", onetwo, childPersPreArgs)
 	}
-	if childPreArgs != "one two" {
-		t.Errorf("Expected childPreArgs %q, got %q", "one two", childPreArgs)
+	if childPreArgs != onetwo {
+		t.Errorf("Expected childPreArgs %q, got %q", onetwo, childPreArgs)
 	}
-	if childRunArgs != "one two" {
-		t.Errorf("Expected childRunArgs %q, got %q", "one two", childRunArgs)
+	if childRunArgs != onetwo {
+		t.Errorf("Expected childRunArgs %q, got %q", onetwo, childRunArgs)
 	}
-	if childPostArgs != "one two" {
-		t.Errorf("Expected childPostArgs %q, got %q", "one two", childPostArgs)
+	if childPostArgs != onetwo {
+		t.Errorf("Expected childPostArgs %q, got %q", onetwo, childPostArgs)
 	}
-	if childPersPostArgs != "one two" {
-		t.Errorf("Expected childPersPostArgs %q, got %q", "one two", childPersPostArgs)
+	if childPersPostArgs != onetwo {
+		t.Errorf("Expected childPersPostArgs %q, got %q", onetwo, childPersPostArgs)
 	}
 }
 
