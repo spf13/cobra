@@ -38,12 +38,6 @@ func checkStringContains(t *testing.T, got, expected string) {
 	}
 }
 
-func checkStringOmits(t *testing.T, got, expected string) {
-	if strings.Contains(got, expected) {
-		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
-	}
-}
-
 const onetwo = "one two"
 
 func TestSingleCommand(t *testing.T) {
