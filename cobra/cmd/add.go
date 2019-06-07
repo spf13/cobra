@@ -163,10 +163,15 @@ func init() {
 
 	data := make(map[string]interface{})
 	data["copyright"] = copyrightLine()
-	data["license"] = license.Header
 	data["cmdPackage"] = filepath.Base(filepath.Dir(path)) // last dir of path
 	data["parentName"] = parentName
 	data["cmdName"] = cmdName
+
+	header, err := executeTemplate(license.Header, data)
+	if err != nil {
+		er(err)
+	}
+	data["license"] = header
 
 	cmdScript, err := executeTemplate(template, data)
 	if err != nil {
