@@ -99,8 +99,7 @@ cmd := &cobra.Command{
 	Long:    get_long,
 	Example: get_example,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := RunGet(f, out, cmd, args)
-		util.CheckErr(err)
+		cobra.CheckErr(RunGet(f, out, cmd, args))
 	},
 	ValidArgs: validArgs,
 }
@@ -132,7 +131,7 @@ the completion algorithm if entered manually, e.g. in:
 
 ```bash
 $ kubectl get rc [tab][tab]
-backend        frontend       database 
+backend        frontend       database
 ```
 
 Note that without declaring `rc` as an alias, the completion algorithm would not know to show the list of
@@ -254,7 +253,7 @@ and you'll get something like
 
 ```bash
 $ kubectl exec [tab][tab]
--c            --container=  -p            --pod=  
+-c            --container=  -p            --pod=
 ```
 
 ### Specify dynamic flag completion

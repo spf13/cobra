@@ -59,7 +59,7 @@ func TestGoldenInitCmd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			initCmd.Flags().Set("pkg-name", tt.pkgName)
+			assertNoErr(t, initCmd.Flags().Set("pkg-name", tt.pkgName))
 			viper.Set("useViper", true)
 			projectPath, err := initializeProject(tt.args)
 			defer func() {
