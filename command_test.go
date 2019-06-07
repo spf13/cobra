@@ -1632,7 +1632,7 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	output := new(bytes.Buffer)
 	parent.SetOutput(output)
 
-	parent.Execute()
+	_ = parent.Execute()
 
 	if called == nil {
 		if tc.call != "" {

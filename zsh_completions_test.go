@@ -90,9 +90,9 @@ func TestGenZshCompletion(t *testing.T) {
 					Run:   emptyRun,
 				}
 				r.Flags().StringVarP(&file, "config", "c", file, "config file")
-				r.MarkFlagFilename("config")
+				er(r.MarkFlagFilename("config"))
 				r.Flags().String("output", "", "output file")
-				r.MarkFlagFilename("output", "*.log", "*.txt")
+				er(r.MarkFlagFilename("output", "*.log", "*.txt"))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -161,8 +161,8 @@ func TestGenZshCompletion(t *testing.T) {
 			name: "argument completion for file with and without patterns",
 			root: func() *Command {
 				r := genTestCommand("root", true)
-				r.MarkZshCompPositionalArgumentFile(1, "*.log")
-				r.MarkZshCompPositionalArgumentFile(2)
+				er(r.MarkZshCompPositionalArgumentFile(1, "*.log"))
+				er(r.MarkZshCompPositionalArgumentFile(2))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -173,7 +173,7 @@ func TestGenZshCompletion(t *testing.T) {
 			name: "argument zsh completion for words",
 			root: func() *Command {
 				r := genTestCommand("root", true)
-				r.MarkZshCompPositionalArgumentWords(1, "word1", "word2")
+				er(r.MarkZshCompPositionalArgumentWords(1, "word1", "word2"))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -184,7 +184,7 @@ func TestGenZshCompletion(t *testing.T) {
 			name: "argument completion for words with spaces",
 			root: func() *Command {
 				r := genTestCommand("root", true)
-				r.MarkZshCompPositionalArgumentWords(1, "single", "multiple words")
+				er(r.MarkZshCompPositionalArgumentWords(1, "single", "multiple words"))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -207,7 +207,7 @@ func TestGenZshCompletion(t *testing.T) {
 			root: func() *Command {
 				r := genTestCommand("root", true)
 				r.ValidArgs = []string{"word1", "word2"}
-				r.MarkZshCompPositionalArgumentFile(2)
+				er(r.MarkZshCompPositionalArgumentFile(2))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -220,8 +220,8 @@ func TestGenZshCompletion(t *testing.T) {
 				r := genTestCommand("root", true)
 				r.Flags().String("test", "", "test")
 				r.PersistentFlags().String("ptest", "", "ptest")
-				r.MarkFlagDirname("test")
-				r.MarkPersistentFlagDirname("ptest")
+				er(r.MarkFlagDirname("test"))
+				er(r.MarkPersistentFlagDirname("ptest"))
 				return r
 			}(),
 			expectedExpressions: []string{
@@ -237,7 +237,7 @@ func TestGenZshCompletion(t *testing.T) {
 				t.Skip(tc.skip)
 			}
 			tc.root.Root().SetArgs(tc.invocationArgs)
-			tc.root.Execute()
+			_ = tc.root.Execute()
 			buf := new(bytes.Buffer)
 			if err := tc.root.GenZshCompletion(buf); err != nil {
 				t.Error(err)
@@ -311,11 +311,9 @@ func TestGenZshCompletionHidden(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.root.Execute()
+			_ = tc.root.Execute()
 			buf := new(bytes.Buffer)
-			if err := tc.root.GenZshCompletion(buf); err != nil {
-				t.Error(err)
-			}
+			er(tc.root.GenZshCompletion(buf))
 			output := buf.String()
 
 			for _, expr := range tc.expectedExpressions {
@@ -457,7 +455,7 @@ func constructLargeCommandHierarchy() *Command {
 	s1.AddCommand(s1_1, s1_2, s1_3)
 	s2.AddCommand(s2_1, s2_2, s2_3, s2_4, s2_5)
 	r.AddCommand(s1, s2, s3)
-	r.Execute()
+	er(r.Execute())
 	return r
 }
 

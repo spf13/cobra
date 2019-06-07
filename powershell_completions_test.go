@@ -109,7 +109,7 @@ func TestPowerShellCompletion(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			tc.root.GenPowerShellCompletion(buf)
+			er(tc.root.GenPowerShellCompletion(buf))
 			output := buf.String()
 
 			for _, expectedExpression := range tc.expectedExpressions {
