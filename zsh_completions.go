@@ -17,14 +17,18 @@ const (
 	zshCompArgumentFilenameComp = "cobra_annotations_zsh_completion_argument_file_completion"
 	zshCompArgumentWordComp     = "cobra_annotations_zsh_completion_argument_word_completion"
 	zshCompDirname              = "cobra_annotations_zsh_dirname"
+	zshCompDynamicCompletion    = "cobra_annotations_zsh_completion_dynamic_completion"
 )
 
 var (
 	zshCompFuncMap = template.FuncMap{
-		"genZshFuncName":              zshCompGenFuncName,
-		"extractFlags":                zshCompExtractFlag,
-		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
-		"extractArgsCompletions":      zshCompExtractArgumentCompletionHintsForRendering,
+		"genZshFuncName":                      zshCompGenFuncName,
+		"extractFlags":                        zshCompExtractFlag,
+		"genFlagEntryForZshArguments":         zshCompGenFlagEntryForArguments,
+		"extractArgsCompletions":              zshCompExtractArgumentCompletionHintsForRendering,
+		"genZshFlagDynamicCompletionFuncName": zshCompGenFlagCompletionFuncName,
+		"hasDynamicCompletions":               zshCompHasDynamicCompletions,
+		"flagCompletionsEnvVar":               func() string { return FlagCompletionEnvVar },
 	}
 	zshCompletionText = `
 {{/* should accept Command (that contains subcommands) as parameter */}}
@@ -78,6 +82,21 @@ function {{genZshFuncName .}} {
 {{/* template entry point */}}
 {{define "Main" -}}
 #compdef _{{.Name}} {{.Name}}
+
+{{if hasDynamicCompletions . -}}
+function {{genZshFlagDynamicCompletionFuncName .}} {
+  export COBRA_FLAG_COMPLETION="$1"
+  if suggestions="$("$words[@]" 2>&1)" ; then
+    local -a args
+    while read -d $'\0' line ; do
+      args+="$line"
+    done <<< "$suggestions"
+    _values "$1" "$args[@]"
+  else
+    _message "Exception occurred during completion: $suggestions"
+  fi
+  unset COBRA_FLAG_COMPLETION
+}{{- end}}
 
 {{template "selectCmdTemplate" .}}
 {{end}}
@@ -250,6 +269,10 @@ func zshCompGenFuncName(c *Command) string {
 	return "_" + c.Name()
 }
 
+func zshCompGenFlagCompletionFuncName(c *Command) string {
+	return "_" + c.Root().Name() + "-flag-completion"
+}
+
 func zshCompExtractFlag(c *Command) []*pflag.Flag {
 	var flags []*pflag.Flag
 	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
@@ -310,7 +333,7 @@ func zshCompGenFlagEntryExtras(f *pflag.Flag) string {
 		return ""
 	}
 
-	extras := ":" // allow options for flag (even without assistance)
+	extras := ":" + f.Name // allow options for flag (even without assistance)
 	for key, values := range f.Annotations {
 		switch key {
 		case zshCompDirname:
@@ -320,6 +343,8 @@ func zshCompGenFlagEntryExtras(f *pflag.Flag) string {
 			for _, pattern := range values {
 				extras = extras + fmt.Sprintf(` -g "%s"`, pattern)
 			}
+		case zshCompDynamicCompletion:
+			extras += fmt.Sprintf(":{%s %s}", values[0], f.Name)
 		}
 	}
 
@@ -333,4 +358,16 @@ func zshCompFlagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
 
 func zshCompQuoteFlagDescription(s string) string {
 	return strings.Replace(s, "'", `'\''`, -1)
+}
+
+func zshCompHasDynamicCompletions(c *Command) bool {
+	if len(c.flagCompletions) > 0 {
+		return true
+	}
+	for _, subcommand := range c.Commands() {
+		if zshCompHasDynamicCompletions(subcommand) {
+			return true
+		}
+	}
+	return false
 }
