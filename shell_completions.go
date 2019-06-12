@@ -34,6 +34,12 @@ func (c *Command) MarkFlagCustom(name string, f string) error {
 	return MarkFlagCustom(c.Flags(), name, f)
 }
 
+// MarkPFlagCustom adds the BashCompCustom annotation to the named pflag, if it exists.
+// Generated shell autocompletion will call the function f for the flag.
+func (c *Command) MarkPFlagCustom(name string, f string) error {
+	return MarkFlagCustom(c.PersistentFlags(), name, f)
+}
+
 // MarkPersistentFlagFilename instructs the various shell completion
 // implementations to limit completions for this persistent flag to the
 // specified extensions (patterns).

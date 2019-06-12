@@ -68,6 +68,9 @@ type Command struct {
 	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
 	BashCompletionFunction string
 
+	// ZshCompletionFunction is custom functions used by the zsh autocompletion generator.
+	ZshCompletionFunction string
+
 	// Deprecated defines, if this command is deprecated and should print this string when used.
 	Deprecated string
 

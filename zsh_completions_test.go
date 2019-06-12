@@ -77,7 +77,7 @@ func TestGenZshCompletion(t *testing.T) {
 				`_arguments -C \\\n.*'--debug\[description]'`,
 				`function _rootcmd_subcmd1 {`,
 				`function _rootcmd_subcmd1 {`,
-				`_arguments \\\n.*'\(-o --option\)'{-o,--option}'\[option description]:' \\\n`,
+				`_arguments \\\n.*'\(-o --option\)'{-o,--option}'\[option description]:\(\)' \\\n`,
 			},
 		},
 		{
@@ -376,6 +376,32 @@ func TestMarkZshCompPositionalArgumentWords(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), "position") {
 			t.Errorf("Expected error '%s' to contain 'position' but didn't", err.Error())
+		}
+	})
+}
+func TestMarkZshCompPositionalArgumentCustom(t *testing.T) {
+	t.Run("testPositionalCustom", func(t *testing.T) {
+		c := &Command{}
+		c.ZshCompletionFunction = `
+function __custom_function {
+  _values 'test' a b c
+}` 
+		c.MarkZshCompPositionalArgumentCustom(1, "__custom_function")
+
+		buf := new(bytes.Buffer)
+		err := c.GenZshCompletion(buf)
+		if err != nil {
+			t.Error(err)
+		}
+
+		output := buf.String()
+
+		if !strings.Contains(output, "'1: :__custom_function'") {
+			t.Error("should contain custom function argument")
+		}
+		
+		if !strings.Contains(output, "function __custom_function {") {
+			t.Error("should contain custom function")
 		}
 	})
 }
