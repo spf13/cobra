@@ -385,7 +385,7 @@ func TestMarkZshCompPositionalArgumentCustom(t *testing.T) {
 		c.ZshCompletionFunction = `
 function __custom_function {
   _values 'test' a b c
-}` 
+}`
 		c.MarkZshCompPositionalArgumentCustom(1, "__custom_function")
 
 		buf := new(bytes.Buffer)
@@ -399,7 +399,7 @@ function __custom_function {
 		if !strings.Contains(output, "'1: :__custom_function'") {
 			t.Error("should contain custom function argument")
 		}
-		
+
 		if !strings.Contains(output, "function __custom_function {") {
 			t.Error("should contain custom function")
 		}
