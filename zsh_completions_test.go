@@ -77,7 +77,7 @@ func TestGenZshCompletion(t *testing.T) {
 				`_arguments -C \\\n.*'--debug\[description]'`,
 				`function _rootcmd_subcmd1 {`,
 				`function _rootcmd_subcmd1 {`,
-				`_arguments \\\n.*'\(-o --option\)'{-o,--option}'\[option description]:' \\\n`,
+				`_arguments \\\n.*'\(-o --option\)'{-o,--option}'\[option description]:option' \\\n`,
 			},
 		},
 		{
