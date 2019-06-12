@@ -147,6 +147,10 @@ type Command struct {
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
 
+	// RunPreRunsDuringCompletion defines if the (Persistent)PreRun functions should be run before calling the
+	// completion functions
+	RunPreRunsDuringCompletion bool
+
 	ctx context.Context
 
 	// commands is the list of commands supported by this program.
@@ -206,6 +210,10 @@ type Command struct {
 	outWriter io.Writer
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
+
+	// flagCompletions is a map of flag to a function that returns a list of values to suggest during tab completion for
+	// this flag
+	flagCompletions map[*flag.Flag]DynamicFlagCompletion
 }
 
 // Context returns underlying command context. If command wasn't
@@ -750,6 +758,8 @@ func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
 
+const FlagCompletionEnvVar = "COBRA_FLAG_COMPLETION"
+
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
@@ -865,6 +875,90 @@ func (c *Command) execute(a []string) (err error) {
 	return nil
 }
 
+func (c *Command) complete(flagName string, a []string) (err error) {
+	if c == nil {
+		return fmt.Errorf("Called Execute() on a nil Command")
+	}
+
+	// initialize help and version flag at the last point possible to allow for user
+	// overriding
+	c.InitDefaultHelpFlag()
+	c.InitDefaultVersionFlag()
+
+	var flagToComplete *flag.Flag
+	var currentCompletionValue string
+
+	oldFlags := c.Flags()
+	c.flags = nil
+	oldFlags.VisitAll(func(f *flag.Flag) {
+		if f.Name == flagName {
+			flagToComplete = f
+		} else {
+			c.Flags().AddFlag(f)
+		}
+	})
+	if flagToComplete.Shorthand != "" {
+		c.Flags().StringVarP(&currentCompletionValue, flagName, flagToComplete.Shorthand, "", "")
+	} else {
+		c.Flags().StringVar(&currentCompletionValue, flagName, "", "")
+	}
+	c.Flag(flagName).NoOptDefVal = "_hack_"
+
+	err = c.ParseFlags(a)
+	if err != nil {
+		return c.FlagErrorFunc()(c, err)
+	}
+
+	c.preRun()
+
+	currentCommand := c
+	completionFunc := currentCommand.flagCompletions[flagToComplete]
+	for completionFunc == nil && currentCommand.HasParent() {
+		currentCommand = currentCommand.Parent()
+		completionFunc = currentCommand.flagCompletions[flagToComplete]
+	}
+	if completionFunc == nil {
+		return fmt.Errorf("%s does not have completions enabled", flagName)
+	}
+
+	if c.RunPreRunsDuringCompletion {
+		argWoFlags := c.Flags().Args()
+		if c.DisableFlagParsing {
+			argWoFlags = a
+		}
+
+		for p := c; p != nil; p = p.Parent() {
+			if p.PersistentPreRunE != nil {
+				if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
+					return err
+				}
+				break
+			} else if p.PersistentPreRun != nil {
+				p.PersistentPreRun(c, argWoFlags)
+				break
+			}
+		}
+		if c.PreRunE != nil {
+			if err := c.PreRunE(c, argWoFlags); err != nil {
+				return err
+			}
+		} else if c.PreRun != nil {
+			c.PreRun(c, argWoFlags)
+		}
+	}
+
+	values, err := completionFunc(currentCompletionValue)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range values {
+		c.Print(v + "\x00")
+	}
+
+	return nil
+}
+
 func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
@@ -934,6 +1028,16 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	cmd.commandCalledAs.called = true
 	if cmd.commandCalledAs.name == "" {
 		cmd.commandCalledAs.name = cmd.Name()
+	}
+
+	flagName, flagCompletionEnabled := os.LookupEnv(FlagCompletionEnvVar)
+	if flagCompletionEnabled {
+		err = cmd.complete(flagName, flags)
+		if err != nil {
+			c.Println("Error:", err.Error())
+		}
+
+		return cmd, err
 	}
 
 	// We have to pass global context to children command
