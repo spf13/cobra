@@ -80,6 +80,7 @@ function {{genZshFuncName .}} {
 #compdef _{{.Name}} {{.Name}}
 
 {{template "selectCmdTemplate" .}}
+compdef _{{.Name}} {{.Name}}
 {{end}}
 `
 )
