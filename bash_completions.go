@@ -15,6 +15,7 @@ import (
 const (
 	BashCompFilenameExt     = "cobra_annotation_bash_completion_filename_extensions"
 	BashCompCustom          = "cobra_annotation_bash_completion_custom"
+	BashCompDynamic         = "cobra_annotation_bash_completion_dynamic"
 	BashCompOneRequiredFlag = "cobra_annotation_bash_completion_one_required_flag"
 	BashCompSubdirsInDir    = "cobra_annotation_bash_completion_subdirs_in_dir"
 )
@@ -279,6 +280,29 @@ __%[1]s_handle_word()
     __%[1]s_handle_word
 }
 
+__%[1]s_handle_dynamic_flag_completion()
+{
+    export COBRA_FLAG_COMPLETION="$1"
+
+    local output
+    if ! output="$(mktemp)" ; then
+        return $?
+    fi
+
+    if ! error_message="$($COMP_LINE > "$output")" ; then
+        local st="$?"
+        echo "$error_message"
+        return "$st"
+    fi
+
+    while read -r -d '' line ; do
+        COMPREPLY+=("$line")
+    done < "$output"
+
+    unset COBRA_FLAG_COMPLETION
+    rm "$output"
+}
+
 `, name))
 }
 
@@ -354,6 +378,9 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 			} else {
 				buf.WriteString("    flags_completion+=(:)\n")
 			}
+		case BashCompDynamic:
+			buf.WriteString(fmt.Sprintf("    flags_with_completion+=(%q)\n", name))
+			buf.WriteString(fmt.Sprintf("    flags_completion+=(%q)\n", value[0]))
 		case BashCompSubdirsInDir:
 			buf.WriteString(fmt.Sprintf("    flags_with_completion+=(%q)\n", name))
 
@@ -526,6 +553,12 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 
 // GenBashCompletion generates bash completion file and writes to the passed writer.
 func (c *Command) GenBashCompletion(w io.Writer) error {
+	visitAllFlagsWithCompletions(c, func(f *pflag.Flag) {
+		if f.Annotations == nil {
+			f.Annotations = make(map[string][]string)
+		}
+		f.Annotations[BashCompDynamic] = []string{"__" + c.Root().Name() + "_handle_dynamic_flag_completion " + f.Name}
+	})
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
 	if len(c.BashCompletionFunction) > 0 {

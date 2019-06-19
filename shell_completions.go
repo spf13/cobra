@@ -93,7 +93,7 @@ type DynamicFlagCompletion func(currentValue string) (suggestedValues []string, 
 // RunPreRunsDuringCompletion is set to true. All flags other than the flag currently being completed will be parsed
 // according to their type. The flag being completed is parsed as a raw string with no format requirements
 //
-// Shell Completion compatibility matrix: zsh
+// Shell Completion compatibility matrix: bash, zsh
 func (c *Command) MarkDynamicFlagCompletion(name string, completion DynamicFlagCompletion) error {
 	flag := c.Flag(name)
 	if flag == nil {
@@ -107,9 +107,6 @@ func (c *Command) MarkDynamicFlagCompletion(name string, completion DynamicFlagC
 		c.flagCompletions = make(map[*pflag.Flag]DynamicFlagCompletion)
 	}
 	c.flagCompletions[flag] = completion
-	if flag.Annotations == nil {
-		flag.Annotations = map[string][]string{}
-	}
-	flag.Annotations[zshCompDynamicCompletion] = []string{zshCompGenFlagCompletionFuncName(c)}
+
 	return nil
 }

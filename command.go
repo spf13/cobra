@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -897,6 +898,10 @@ func (c *Command) complete(flagName string, a []string) (err error) {
 			c.Flags().AddFlag(f)
 		}
 	})
+	if flagToComplete == nil {
+		log.Panicln(flagName, "is not a known flag")
+	}
+
 	if flagToComplete.Shorthand != "" {
 		c.Flags().StringVarP(&currentCompletionValue, flagName, flagToComplete.Shorthand, "", "")
 	} else {
@@ -953,7 +958,7 @@ func (c *Command) complete(flagName string, a []string) (err error) {
 	}
 
 	for _, v := range values {
-		c.Print(v + "\x00")
+		fmt.Print(v + "\x00")
 	}
 
 	return nil
@@ -1734,4 +1739,17 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+func visitAllFlagsWithCompletions(c *Command, fn func(*flag.Flag)) {
+	filterFunc := func(f *flag.Flag) {
+		if _, ok := c.flagCompletions[f]; ok {
+			fn(f)
+		}
+	}
+	c.Flags().VisitAll(filterFunc)
+	c.PersistentFlags().VisitAll(filterFunc)
+	for _, sc := range c.Commands() {
+		visitAllFlagsWithCompletions(sc, fn)
+	}
 }
