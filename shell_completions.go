@@ -103,10 +103,10 @@ func (c *Command) MarkDynamicFlagCompletion(name string, completion DynamicFlagC
 		return fmt.Errorf("%s takes no parameters", name)
 	}
 
-	if c.flagCompletions == nil {
-		c.flagCompletions = make(map[*pflag.Flag]DynamicFlagCompletion)
+	if c.dynamicFlagCompletions == nil {
+		c.dynamicFlagCompletions = make(map[*pflag.Flag]DynamicFlagCompletion)
 	}
-	c.flagCompletions[flag] = completion
+	c.dynamicFlagCompletions[flag] = completion
 
 	return nil
 }

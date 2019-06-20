@@ -280,7 +280,12 @@ __%[1]s_handle_word()
     __%[1]s_handle_word
 }
 
-__%[1]s_handle_dynamic_flag_completion()
+`, name))
+}
+
+func writeDynamicFlagCompletionFunction(buf *bytes.Buffer, dynamicFlagCompletionFunc string) {
+	buf.WriteString(fmt.Sprintf(`
+%s()
 {
     export COBRA_FLAG_COMPLETION="$1"
 
@@ -289,7 +294,7 @@ __%[1]s_handle_dynamic_flag_completion()
         return $?
     fi
 
-    if ! error_message="$($COMP_LINE > "$output")" ; then
+    if ! error_message="$("${COMP_WORDS[@]}" > "$output")" ; then
         local st="$?"
         echo "$error_message"
         return "$st"
@@ -303,7 +308,7 @@ __%[1]s_handle_dynamic_flag_completion()
     rm "$output"
 }
 
-`, name))
+`, dynamicFlagCompletionFunc))
 }
 
 func writePostscript(buf *bytes.Buffer, name string) {
@@ -553,16 +558,18 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 
 // GenBashCompletion generates bash completion file and writes to the passed writer.
 func (c *Command) GenBashCompletion(w io.Writer) error {
-	visitAllFlagsWithCompletions(c, func(f *pflag.Flag) {
-		if f.Annotations == nil {
-			f.Annotations = make(map[string][]string)
-		}
-		f.Annotations[BashCompDynamic] = []string{"__" + c.Root().Name() + "_handle_dynamic_flag_completion " + f.Name}
+	dynamicFlagCompletionFunc := "__" + c.Root().Name() + "_handle_dynamic_flag_completion"
+	c.Root().visitAllFlagsWithCompletions(func(f *pflag.Flag) {
+		f.Annotations[BashCompDynamic] = []string{dynamicFlagCompletionFunc + " " + f.Name}
 	})
+
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
 	if len(c.BashCompletionFunction) > 0 {
 		buf.WriteString(c.BashCompletionFunction + "\n")
+	}
+	if c.HasDynamicCompletions() {
+		writeDynamicFlagCompletionFunction(buf, dynamicFlagCompletionFunc)
 	}
 	gen(buf, c)
 	writePostscript(buf, c.Name())

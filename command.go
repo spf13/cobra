@@ -212,9 +212,9 @@ type Command struct {
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
 
-	// flagCompletions is a map of flag to a function that returns a list of values to suggest during tab completion for
-	// this flag
-	flagCompletions map[*flag.Flag]DynamicFlagCompletion
+	// dynamicFlagCompletions is a map of flag to a function that returns a list of values to suggest during tab
+	// completion for this flag
+	dynamicFlagCompletions map[*flag.Flag]DynamicFlagCompletion
 }
 
 // Context returns underlying command context. If command wasn't
@@ -907,7 +907,6 @@ func (c *Command) complete(flagName string, a []string) (err error) {
 	} else {
 		c.Flags().StringVar(&currentCompletionValue, flagName, "", "")
 	}
-	c.Flag(flagName).NoOptDefVal = "_hack_"
 
 	err = c.ParseFlags(a)
 	if err != nil {
@@ -917,10 +916,10 @@ func (c *Command) complete(flagName string, a []string) (err error) {
 	c.preRun()
 
 	currentCommand := c
-	completionFunc := currentCommand.flagCompletions[flagToComplete]
+	completionFunc := currentCommand.dynamicFlagCompletions[flagToComplete]
 	for completionFunc == nil && currentCommand.HasParent() {
 		currentCommand = currentCommand.Parent()
-		completionFunc = currentCommand.flagCompletions[flagToComplete]
+		completionFunc = currentCommand.dynamicFlagCompletions[flagToComplete]
 	}
 	if completionFunc == nil {
 		return fmt.Errorf("%s does not have completions enabled", flagName)
@@ -958,6 +957,7 @@ func (c *Command) complete(flagName string, a []string) (err error) {
 	}
 
 	for _, v := range values {
+		c.OutOrStdout()
 		fmt.Print(v + "\x00")
 	}
 
@@ -1741,15 +1741,26 @@ func (c *Command) updateParentsPflags() {
 	})
 }
 
-func visitAllFlagsWithCompletions(c *Command, fn func(*flag.Flag)) {
+func (c *Command) HasDynamicCompletions() bool {
+	hasCompletions := false
+	c.visitAllFlagsWithCompletions(func(*flag.Flag) { hasCompletions = true })
+	return hasCompletions
+}
+
+// visitAllFlagsWithCompletions recursively visits all flags and persistent flags that have dynamic completions enabled.
+// Initializes the flag's Annotations map if nil before calling fn
+func (c Command) visitAllFlagsWithCompletions(fn func(*flag.Flag)) {
 	filterFunc := func(f *flag.Flag) {
-		if _, ok := c.flagCompletions[f]; ok {
+		if _, ok := c.dynamicFlagCompletions[f]; ok {
+			if f.Annotations == nil {
+				f.Annotations = make(map[string][]string)
+			}
 			fn(f)
 		}
 	}
 	c.Flags().VisitAll(filterFunc)
 	c.PersistentFlags().VisitAll(filterFunc)
 	for _, sc := range c.Commands() {
-		visitAllFlagsWithCompletions(sc, fn)
+		sc.visitAllFlagsWithCompletions(fn)
 	}
 }
