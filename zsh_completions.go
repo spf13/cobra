@@ -91,7 +91,7 @@ function {{genZshFlagDynamicCompletionFuncName .}} {
     return $?
   fi
 
-  if ! error_message="$("${tokens[@]}" 2>&1 > "$output")" ; then
+  if ! error_message="$($tokens 2>&1 > "$output")" ; then
     local st="$?"
     _message "Exception occurred during completion: $error_message"
     return "$st"
@@ -102,7 +102,7 @@ function {{genZshFlagDynamicCompletionFuncName .}} {
     args+="$line"
   done < "$output"
 
-  _values "$1" "$args[@]"
+  _values "$1" $args
 
   unset COBRA_FLAG_COMPLETION
   rm "$output"
