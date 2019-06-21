@@ -17,6 +17,7 @@ package cobra
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -143,8 +144,10 @@ type Command struct {
 	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
 
-	//FParseErrWhitelist flag parse errors to be ignored
+	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
+
+	ctx context.Context
 
 	// commands is the list of commands supported by this program.
 	commands []*Command
@@ -203,6 +206,12 @@ type Command struct {
 	outWriter io.Writer
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
+}
+
+// Context returns underlying command context. If command wasn't
+// executed with ExecuteContext the returned context will be nil.
+func (c *Command) Context() context.Context {
+	return c.ctx
 }
 
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
@@ -860,6 +869,13 @@ func (c *Command) preRun() {
 	}
 }
 
+// ExecuteContext is the same as Execute(), but sets the ctx on the command.
+// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle functions.
+func (c *Command) ExecuteContext(ctx context.Context) error {
+	c.ctx = ctx
+	return c.Execute()
+}
+
 // Execute uses the args (os.Args[1:] by default)
 // and run through the command tree finding appropriate matches
 // for commands and then corresponding flags.
@@ -912,6 +928,12 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	cmd.commandCalledAs.called = true
 	if cmd.commandCalledAs.name == "" {
 		cmd.commandCalledAs.name = cmd.Name()
+	}
+
+	// We have to pass global context to children command
+	// if context is present on the parent command.
+	if cmd.ctx == nil {
+		cmd.ctx = c.ctx
 	}
 
 	err = cmd.execute(flags)
@@ -1558,7 +1580,7 @@ func (c *Command) ParseFlags(args []string) error {
 	beforeErrorBufLen := c.flagErrorBuf.Len()
 	c.mergePersistentFlags()
 
-	//do it here after merging all flags and just before parse
+	// do it here after merging all flags and just before parse
 	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
 
 	err := c.Flags().Parse(args)
