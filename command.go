@@ -348,7 +348,7 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 		c.mergePersistentFlags()
 		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
 		if err != nil {
-			c.Println(err)
+			c.PrintErrln(err)
 		}
 		return err
 	}
@@ -374,7 +374,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		c.mergePersistentFlags()
 		err := tmpl(c.OutOrStderr(), c.HelpTemplate(), c)
 		if err != nil {
-			c.Println(err)
+			c.PrintErrln(err)
 		}
 	}
 }
@@ -903,8 +903,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.Println("Error:", err.Error())
-			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+			c.PrintErrln("Error:", err.Error())
+			c.PrintErr(fmt.Sprintf("Run '%v --help' for usage.\n", c.CommandPath()))
 		}
 		return c, err
 	}
@@ -934,7 +934,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			c.PrintErrln("Error:", err.Error())
 		}
 
 		// If root command has SilentUsage flagged,
