@@ -90,12 +90,7 @@ func ExactArgs(n int) PositionalArgs {
 // there are not exactly N positional args OR
 // there are any positional args that are not in the `ValidArgs` field of `Command`
 func ExactValidArgs(n int) PositionalArgs {
-	return func(cmd *Command, args []string) error {
-		if err := ExactArgs(n)(cmd, args); err != nil {
-			return err
-		}
-		return OnlyValidArgs(cmd, args)
-	}
+	return ComposedArgs(ExactArgs(n), OnlyValidArgs)
 }
 
 // RangeArgs returns an error if the number of args is not within the expected range.
@@ -103,6 +98,18 @@ func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < min || len(args) > max {
 			return fmt.Errorf("accepts between %d and %d arg(s), received %d", min, max, len(args))
+		}
+		return nil
+	}
+}
+
+// ComposedArgs allows combining several PositionalArgs to work in concert.
+func ComposedArgs(pargs ...PositionalArgs) PositionalArgs {
+	return func(cmd *Command, args []string) error {
+		for _, parg := range pargs {
+			if err := parg(cmd, args); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
