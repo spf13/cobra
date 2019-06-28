@@ -430,6 +430,7 @@ of `Command`. The following validators are built in:
 - `MaximumNArgs(int)` - report an error if more than N positional args are provided.
 - `ExactArgs(int)` - report an error if there are not exactly N positional args.
 - `RangeArgs(min, max)` - report an error if the number of args is not between `min` and `max`.
+- `MatchAll(pargs ...PositionalArgs)` - enables combining existing checks with arbitrary other checks (e.g. you want to check the ExactArgs length along with other qualities).
 
 If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 

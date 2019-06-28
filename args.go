@@ -96,6 +96,18 @@ func RangeArgs(min int, max int) PositionalArgs {
 	}
 }
 
+// MatchAll allows combining several PositionalArgs to work in concert.
+func MatchAll(pargs ...PositionalArgs) PositionalArgs {
+	return func(cmd *Command, args []string) error {
+		for _, parg := range pargs {
+			if err := parg(cmd, args); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 // ExactValidArgs returns an error if there are not exactly N positional args OR
 // there are any positional args that are not in the `ValidArgs` field of `Command`
 //
