@@ -315,6 +315,7 @@ The following validators are built in:
 - `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
 - `ExactValidArgs(int)` - the command will report an error if there are not exactly N positional args OR if there are any positional args that are not in the `ValidArgs` field of `Command`
 - `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
+- `MatchAll(pargs ...PositionalArgs)` - enables combining existing checks with arbitrary other checks (e.g. you want to check the ExactArgs length along with other qualities).
 
 An example of setting the custom validator:
 

@@ -1,6 +1,7 @@
 package cobra
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -283,5 +284,53 @@ func TestChildTakesArgs(t *testing.T) {
 	_, err := executeCommand(rootCmd, "child", "legal", "args")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+func TestComposedArgs(t *testing.T) {
+	// Somewhat contrived example check that ensures there are exactly 3
+	// arguments, and each argument is exactly 2 bytes long.
+	pargs := ComposedArgs(
+		ExactArgs(3),
+		func(cmd *Command, args []string) error {
+			for _, arg := range args {
+				if len([]byte(arg)) != 2 {
+					return fmt.Errorf("expected to be exactly 2 bytes long")
+				}
+			}
+			return nil
+		},
+	)
+
+	testCases := map[string]struct {
+		args []string
+		fail bool
+	}{
+		"happy path": {
+			[]string{"aa", "bb", "cc"},
+			false,
+		},
+		"incorrect number of args": {
+			[]string{"aa", "bb", "cc", "dd"},
+			true,
+		},
+		"incorrect number of bytes in one arg": {
+			[]string{"aa", "bb", "abc"},
+			true,
+		},
+	}
+
+	rootCmd := &Command{Use: "root", Args: pargs, Run: emptyRun}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			_, err := executeCommand(rootCmd, tc.args...)
+			if err != nil && !tc.fail {
+				t.Errorf("unexpected: %v\n", err)
+			}
+			if err == nil && tc.fail {
+				t.Errorf("expected error")
+			}
+		})
 	}
 }
