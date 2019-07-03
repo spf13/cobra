@@ -287,10 +287,10 @@ func TestChildTakesArgs(t *testing.T) {
 	}
 }
 
-func TestComposedArgs(t *testing.T) {
+func TestMatchAll(t *testing.T) {
 	// Somewhat contrived example check that ensures there are exactly 3
 	// arguments, and each argument is exactly 2 bytes long.
-	pargs := ComposedArgs(
+	pargs := MatchAll(
 		ExactArgs(3),
 		func(cmd *Command, args []string) error {
 			for _, arg := range args {
