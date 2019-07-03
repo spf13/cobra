@@ -147,7 +147,7 @@ func TestSubcommandExecuteC(t *testing.T) {
 }
 
 func TestExecuteContext(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	ctxRun := func(cmd *Command, args []string) {
 		if cmd.Context() != ctx {
@@ -171,6 +171,33 @@ func TestExecuteContext(t *testing.T) {
 	}
 
 	if _, err := executeCommandWithContext(ctx, rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
+	}
+}
+
+func TestExecute_NoContext(t *testing.T) {
+	run := func(cmd *Command, args []string) {
+		if cmd.Context() != context.Background() {
+			t.Errorf("Command %s must have background context", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: run, PreRun: run}
+	childCmd := &Command{Use: "child", Run: run, PreRun: run}
+	granchildCmd := &Command{Use: "grandchild", Run: run, PreRun: run}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommand(rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child", "grandchild"); err != nil {
 		t.Errorf("Command child must not fail: %+v", err)
 	}
 }

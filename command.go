@@ -209,7 +209,7 @@ type Command struct {
 }
 
 // Context returns underlying command context. If command wasn't
-// executed with ExecuteContext the returned context will be nil.
+// executed with ExecuteContext Context returns Background context.
 func (c *Command) Context() context.Context {
 	return c.ctx
 }
@@ -886,6 +886,10 @@ func (c *Command) Execute() error {
 
 // ExecuteC executes the command.
 func (c *Command) ExecuteC() (cmd *Command, err error) {
+	if c.ctx == nil {
+		c.ctx = context.Background()
+	}
+
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
 		return c.Root().ExecuteC()
