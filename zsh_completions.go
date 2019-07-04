@@ -332,5 +332,7 @@ func zshCompFlagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
 }
 
 func zshCompQuoteFlagDescription(s string) string {
-	return strings.Replace(s, "'", `'\''`, -1)
+	return strings.NewReplacer("'", `'\''`,
+		"[", `\[`,
+		"]", `\]`).Replace(s)
 }

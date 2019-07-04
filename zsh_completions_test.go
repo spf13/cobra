@@ -158,6 +158,17 @@ func TestGenZshCompletion(t *testing.T) {
 			},
 		},
 		{
+			name: "flag description with brackets ([]) shouldn't break the completion file",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				r.Flags().Bool("level", false, "[ALERT]")
+				return r
+			}(),
+			expectedExpressions: []string{
+				`--level[\[ALERT\]]`,
+			},
+		},
+		{
 			name: "argument completion for file with and without patterns",
 			root: func() *Command {
 				r := genTestCommand("root", true)
