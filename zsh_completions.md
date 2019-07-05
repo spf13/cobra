@@ -30,10 +30,10 @@ The generated completion script should be put somewhere in your `$fpath` named
     specified for 2nd) and the command has `ValidArgs` it will be used as
     completion options for 1st argument.
   * Argument completions only offered for commands with no subcommands.
+  * Arbitary completion for a command. Using
+    `cobra_annotations_zsh_completion_default_function` annotation you can
+    specify a function for the first argument to a command to complete to.
 
 ### What's not yet Supported
 
-* Custom completion scripts are not supported yet (We should probably create zsh
-  specific one, doesn't make sense to re-use the bash one as the functions will
-  be different).
 * Whatever other feature you're looking for and doesn't exist :)

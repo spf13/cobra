@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	zshCompArgumentDefaultComp  = "cobra_annotations_zsh_completion_default_function"
 	zshCompArgumentAnnotation   = "cobra_annotations_zsh_completion_argument_annotation"
 	zshCompArgumentFilenameComp = "cobra_annotations_zsh_completion_argument_file_completion"
 	zshCompArgumentWordComp     = "cobra_annotations_zsh_completion_argument_word_completion"
@@ -25,6 +26,7 @@ var (
 		"extractFlags":                zshCompExtractFlag,
 		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
 		"extractArgsCompletions":      zshCompExtractArgumentCompletionHintsForRendering,
+		"extractDefaultCompletion":    zshCompExtractCommandDefaultCompletion,
 	}
 	zshCompletionText = `
 {{/* should accept Command (that contains subcommands) as parameter */}}
@@ -64,7 +66,7 @@ function {{genZshFuncName .}} {
 {{"  _arguments"}}{{range extractFlags .}} \
     {{genFlagEntryForZshArguments . -}}
 {{end}}{{range extractArgsCompletions .}} \
-    {{.}}{{end}}
+    {{.}}{{end}}{{extractDefaultCompletion .}}
 }
 {{end}}
 
@@ -163,6 +165,14 @@ func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...s
 		Options: words,
 	}
 	return c.zshCompSetArgsAnnotations(annotation)
+}
+
+func zshCompExtractCommandDefaultCompletion(c *Command) string {
+	annotationString, ok := c.Annotations[zshCompArgumentDefaultComp]
+	if !ok {
+		return ""
+	}
+	return fmt.Sprintf(" \\ \n    '1: :%s'", annotationString)
 }
 
 func zshCompExtractArgumentCompletionHintsForRendering(c *Command) ([]string, error) {

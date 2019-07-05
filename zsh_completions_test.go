@@ -203,6 +203,19 @@ func TestGenZshCompletion(t *testing.T) {
 			},
 		},
 		{
+			name: "argument completion when we have a default completion action.",
+			root: func() *Command {
+				r := genTestCommand("root", true)
+				var annotations = make(map[string]string)
+				annotations[zshCompArgumentDefaultComp] = "DEFAULT_COMPLETION_FUNCTION"
+				r.Annotations = annotations
+				return r
+			}(),
+			expectedExpressions: []string{
+				`'1: :DEFAULT_COMPLETION_FUNCTION'`,
+			},
+		},
+		{
 			name: "argument completion when command has ValidArgs and no annotation for argument at argPosition 1",
 			root: func() *Command {
 				r := genTestCommand("root", true)
