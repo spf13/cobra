@@ -379,6 +379,8 @@ when a flag has not been set, mark it as required:
 ```go
 rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkFlagRequired("region")
+rootCmd.PersistentFlags().StringVarP(&Database, "database", "d", "Database IP")
+rootCmd.MarkPersistentFlagRequired("database")
 ```
 
 ## Positional and Custom Arguments
