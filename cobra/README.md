@@ -16,11 +16,23 @@ for you. It is a very powerful application that will populate your program with
 the right structure so you can immediately enjoy all the benefits of Cobra. It
 will also automatically apply the license you specify to your application.
 
-Cobra init is pretty smart. You can provide it a full path, or simply a path
-similar to what is expected in the import.
+Cobra init is pretty smart. You can either run it in your current application directory
+or you can specify a relative path to an existing project. If the directory does not exist, it will be created for you.
+
+Updates to the Cobra generator have now decoupled it from the GOPATH.
+As such `--pkg-name` is required.
+
+**Note:** init will no longer fail on non-empty directories.
 
 ```
-cobra init github.com/spf13/newApp
+mkdir -p newApp && cd newApp
+cobra init --pkg-name github.com/spf13/newApp
+```
+
+or
+
+```
+cobra init --pkg-name github.com/spf13/newApp path/to/newApp
 ```
 
 ### cobra add
