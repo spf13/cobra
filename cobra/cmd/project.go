@@ -132,7 +132,7 @@ func (p *Project) CmdPath() string {
 	return p.cmdPath
 }
 
-// findCmdSuffix return the cmd dir start with file path separator
+// findCmdSuffix returns the cmd dir start with file path separator.
 func findCmdSuffix(cmdDir string) string {
 	if filepathHasPrefix(cmdDir, string(os.PathSeparator)) {
 		return cmdDir
