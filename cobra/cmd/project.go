@@ -93,8 +93,7 @@ func NewProjectFromPath(absPath string) *Project {
 
 	p := new(Project)
 
-	cmdDir := findCmdDir(absPath)
-	p.absPath = strings.TrimSuffix(absPath, findCmdSuffix(cmdDir))
+	p.absPath = findCmdSuffix(absPath)
 	p.name = filepath.ToSlash(trimSrcPath(p.absPath, p.SrcPath()))
 	return p
 }
@@ -133,11 +132,12 @@ func (p *Project) CmdPath() string {
 }
 
 // findCmdSuffix returns the cmd dir start with file path separator.
-func findCmdSuffix(cmdDir string) string {
+func findCmdSuffix(path string) string {
+	cmdDir := findCmdDir(path)
 	if filepathHasPrefix(cmdDir, string(os.PathSeparator)) {
-		return cmdDir
+		return strings.TrimSuffix(path, cmdDir)
 	}
-	return string(os.PathSeparator) + cmdDir
+	return return strings.TrimSuffix(path, string(os.PathSeparator) + cmdDir)
 }
 
 // findCmdDir checks if base of absPath is cmd dir and returns it or
