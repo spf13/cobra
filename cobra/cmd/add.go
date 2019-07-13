@@ -64,7 +64,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				er(err)
 			}
 
-			fmt.Printf("%s created at %s", command.CmdName, command.AbsolutePath)
+			fmt.Printf("%s created at %s\n", command.CmdName, command.AbsolutePath)
 		},
 	}
 )
