@@ -16,7 +16,7 @@ for you. It is a very powerful application that will populate your program with
 the right structure so you can immediately enjoy all the benefits of Cobra. It
 will also automatically apply the license you specify to your application.
 
-Cobra init is pretty smart. You can provide it a full path, or simply a path
+Cobra init is pretty stupid and this doesn't work at all. You can provide it a full path, or simply a path
 similar to what is expected in the import.
 
 ```
