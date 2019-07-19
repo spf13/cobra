@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra/cobra/tpl"
 	"os"
 	"text/template"
+
+	"github.com/spf13/cobra/cobra/tpl"
 )
 
 // Project contains name, license and paths to projects.
