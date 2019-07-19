@@ -318,7 +318,7 @@ func zshCompGenFlagEntryExtras(f *pflag.Flag) string {
 		case BashCompFilenameExt:
 			extras = ":filename:_files"
 			for _, pattern := range values {
-				extras = extras + fmt.Sprintf(` -g "%s"`, pattern)
+				extras += ` -g "` + pattern + `"`
 			}
 		}
 	}
