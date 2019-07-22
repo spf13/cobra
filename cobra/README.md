@@ -20,7 +20,7 @@ Cobra init is pretty smart. You can provide it a full path, or simply a path
 similar to what is expected in the import.
 
 ```
-cobra init github.com/spf13/newApp
+cobra init --pkg-name github.com/spf13/newApp
 ```
 
 ### cobra add
