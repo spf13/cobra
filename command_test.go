@@ -836,8 +836,8 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+	if err != NotRunnable {
+		t.Errorf("Expected error")
 	}
 
 	checkStringContains(t, output, childCmd.Long)
