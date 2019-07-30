@@ -1,5 +1,6 @@
 package tpl
 
+// MainTemplate defines main template string
 func MainTemplate() []byte {
 	return []byte(`/*
 {{ .Copyright }}
@@ -15,6 +16,7 @@ func main() {
 `)
 }
 
+// RootTemplate defines root template string
 func RootTemplate() []byte {
 	return []byte(`/*
 {{ .Copyright }}
@@ -108,6 +110,7 @@ func initConfig() {
 `)
 }
 
+// AddCommandTemplate defines add command template string
 func AddCommandTemplate() []byte {
 	return []byte(`/*
 {{ .Project.Copyright }}

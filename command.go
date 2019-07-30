@@ -28,8 +28,8 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// NotRunnable defines subcommand error
-var NotRunnable = errors.New("subcommand is required")
+// ErrSubCommandRequired defines subcommand error
+var ErrSubCommandRequired = errors.New("subcommand is required")
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
@@ -232,7 +232,7 @@ func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
 }
 
-// SetOut sets the source for input data
+// SetIn sets the source for input data
 // If newIn is nil, os.Stdin is used.
 func (c *Command) SetIn(newIn io.Reader) {
 	c.inReader = newIn
@@ -301,7 +301,7 @@ func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
-// ErrOrStderr returns output to stderr
+// InOrStdin returns output to stderr
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
@@ -790,7 +790,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return NotRunnable
+		return ErrSubCommandRequired
 	}
 
 	c.preRun()
@@ -927,7 +927,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If command wasn't runnable, show full help, but do return the error.
 		// This will result in apps by default returning a non-success exit code, but also gives them the option to
 		// handle specially.
-		if err == NotRunnable {
+		if err == ErrSubCommandRequired {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, err
 		}
@@ -947,6 +947,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	return cmd, err
 }
 
+// ValidateArgs validates arguments
 func (c *Command) ValidateArgs(args []string) error {
 	if c.Args == nil {
 		return nil

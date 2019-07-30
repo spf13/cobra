@@ -836,7 +836,7 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child")
-	if err != NotRunnable {
+	if err != ErrSubCommandRequired {
 		t.Errorf("Expected error")
 	}
 
