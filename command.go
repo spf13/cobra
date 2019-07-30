@@ -17,6 +17,7 @@ package cobra
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -26,6 +27,9 @@ import (
 
 	flag "github.com/spf13/pflag"
 )
+
+// NotRunnable defines subcommand error
+var NotRunnable = errors.New("subcommand is required")
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
@@ -369,7 +373,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
+		err := tmpl(c.OutOrStderr(), c.HelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
@@ -786,7 +790,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return flag.ErrHelp
+		return NotRunnable
 	}
 
 	c.preRun()
@@ -918,6 +922,14 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if err == flag.ErrHelp {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
+		}
+
+		// If command wasn't runnable, show full help, but do return the error.
+		// This will result in apps by default returning a non-success exit code, but also gives them the option to
+		// handle specially.
+		if err == NotRunnable {
+			cmd.HelpFunc()(cmd, args)
+			return cmd, err
 		}
 
 		// If root command has SilentErrors flagged,
