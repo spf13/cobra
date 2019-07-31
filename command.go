@@ -228,7 +228,7 @@ func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
 }
 
-// SetOut sets the source for input data
+// SetIn sets the source for input data
 // If newIn is nil, os.Stdin is used.
 func (c *Command) SetIn(newIn io.Reader) {
 	c.inReader = newIn
@@ -297,7 +297,7 @@ func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
-// ErrOrStderr returns output to stderr
+// InOrStdin returns input to stdin
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
@@ -935,6 +935,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	return cmd, err
 }
 
+// ValidateArgs validate args
 func (c *Command) ValidateArgs(args []string) error {
 	if c.Args == nil {
 		return nil
