@@ -28,7 +28,6 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// ErrSubCommandRequired defines subcommand error
 var ErrSubCommandRequired = errors.New("subcommand is required")
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
@@ -947,7 +946,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	return cmd, err
 }
 
-// ValidateArgs validates arguments
 func (c *Command) ValidateArgs(args []string) error {
 	if c.Args == nil {
 		return nil

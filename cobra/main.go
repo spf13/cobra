@@ -20,11 +20,7 @@ import (
 )
 
 func main() {
-	if err := runMain(); err != nil {
+	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
-}
-
-func runMain() error {
-	return cmd.Execute()
 }
