@@ -218,6 +218,8 @@ import (
   "github.com/spf13/viper"
 )
 
+var cfgFile string
+
 func init() {
   cobra.OnInitialize(initConfig)
   rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
