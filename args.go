@@ -4,7 +4,6 @@ import (
 	"fmt"
 )
 
-// PositionalArgs defines positional arguments callback
 type PositionalArgs func(cmd *Command, args []string) error
 
 // Legacy arg validation has the following behaviour:
