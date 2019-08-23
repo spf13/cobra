@@ -2,21 +2,29 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func getProject() *Project {
-	wd, _ := os.Getwd()
 	return &Project{
-		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
+		AbsolutePath: fmt.Sprintf("%s/testproject", mustTempDir()),
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
 		AppName:      "testproject",
 		PkgName:      "github.com/spf13/testproject",
 		Viper:        true,
 	}
+}
+
+func mustTempDir() string {
+	dir, err := ioutil.TempDir("", "cobra_cli_test_")
+	if err != nil {
+		panic(err)
+	}
+	return dir
 }
 
 func TestGoldenInitCmd(t *testing.T) {
