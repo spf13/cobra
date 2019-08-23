@@ -32,7 +32,7 @@ Session.vim
 tags
 
 *.exe
-cobra
+/cobra/cobra
 cobra.test
 
 .idea/
