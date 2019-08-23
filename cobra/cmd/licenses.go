@@ -36,9 +36,11 @@ type License struct {
 	Header          string   // License header for source files
 }
 
+var noLicense = License{"None", []string{"none", "false"}, "", ""}
+
 func init() {
 	// Allows a user to not use a license.
-	Licenses["none"] = License{"None", []string{"none", "false"}, "", ""}
+	Licenses["none"] = noLicense
 
 	initApache2()
 	initMit()

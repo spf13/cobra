@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 )
 
@@ -43,5 +46,48 @@ func TestGoldenInitCmd(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestInitNoLicense(t *testing.T) {
+	project := getProject()
+	project.Legal = noLicense
+	defer os.RemoveAll(project.AbsolutePath)
+
+	err := project.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	root := project.AbsolutePath
+
+	want := []string{"main.go", "cmd/root.go"}
+	var got []string
+	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		relpath, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		got = append(got, relpath)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking path %q: %v", root, err)
+	}
+	sort.StringSlice(got).Sort()
+	sort.StringSlice(want).Sort()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf(
+			"In %s, found:\n  %s\nwant:\n  %s",
+			root,
+			strings.Join(got, ", "),
+			strings.Join(want, ", "),
+		)
 	}
 }

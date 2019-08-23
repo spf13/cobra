@@ -64,6 +64,9 @@ func (p *Project) Create() error {
 	}
 
 	// create license
+	if p.Legal.Name == noLicense.Name {
+		return nil
+	}
 	return p.createLicenseFile()
 }
 
