@@ -32,6 +32,7 @@ Session.vim
 tags
 
 *.exe
+/cobra/cobra
 cobra.test
 bin
 
