@@ -100,7 +100,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		sort.Sort(byName(children))
 
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
+			if !child.IsAvailableCommand() {
 				continue
 			}
 			cname := name + " " + child.Name()
