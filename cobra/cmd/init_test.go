@@ -19,16 +19,16 @@ func TestGoldenInitCmd(t *testing.T) {
 		AppName:      "testproject",
 	}
 
-	err := project.Create()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	defer func() {
 		if _, err := os.Stat(project.AbsolutePath); err == nil {
 			os.RemoveAll(project.AbsolutePath)
 		}
 	}()
+
+	err := project.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	expectedFiles := []string{"LICENSE", "main.go", "cmd/root.go"}
 	for _, f := range expectedFiles {
