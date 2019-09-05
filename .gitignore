@@ -33,6 +33,7 @@ tags
 
 *.exe
 cobra
+!cobra/
 cobra.test
 
 .idea/
