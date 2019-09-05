@@ -37,3 +37,6 @@ cobra.test
 
 .idea/
 *.iml
+
+# test-generated files
+cobra/cmd/testproject
