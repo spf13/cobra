@@ -12,19 +12,17 @@ func TestGoldenInitCmd(t *testing.T) {
 	wd, _ := os.Getwd()
 	project := &Project{
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
-		PkgName:      "github.com/spf13/testproject",
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
-		Viper:        true,
-		AppName:      "testproject",
+
+		// required to init
+		AppName: "testproject",
+		PkgName: "github.com/spf13/testproject",
+		Viper:   true,
 	}
+	defer os.RemoveAll(project.AbsolutePath)
 
-	defer func() {
-		if _, err := os.Stat(project.AbsolutePath); err == nil {
-			os.RemoveAll(project.AbsolutePath)
-		}
-	}()
-
+	// init project first
 	err := project.Create()
 	if err != nil {
 		t.Fatal(err)
