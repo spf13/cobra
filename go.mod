@@ -11,3 +11,5 @@ require (
 	github.com/spf13/viper v1.3.2
 	gopkg.in/yaml.v2 v2.2.2
 )
+
+replace github.com/spf13/pflag => github.com/cfromknecht/pflag v1.0.5-0.20190917203635-14457a6779e3
