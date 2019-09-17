@@ -7,25 +7,13 @@ import (
 )
 
 func TestGoldenAddCmd(t *testing.T) {
-
-	wd, _ := os.Getwd()
 	command := &Command{
 		CmdName:   "test",
 		CmdParent: parentName,
-		Project: &Project{
-			AbsolutePath: fmt.Sprintf("%s/testproject", wd),
-			Legal:        getLicense(),
-			Copyright:    copyrightLine(),
-
-			// required to init
-			AppName: "testproject",
-			PkgName: "github.com/spf13/testproject",
-			Viper:   true,
-		},
+		Project:   getProject(),
 	}
 	defer os.RemoveAll(command.AbsolutePath)
 
-	// init project first
 	command.Project.Create()
 	if err := command.Create(); err != nil {
 		t.Fatal(err)

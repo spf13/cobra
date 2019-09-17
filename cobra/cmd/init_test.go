@@ -7,24 +7,23 @@ import (
 	"testing"
 )
 
-func TestGoldenInitCmd(t *testing.T) {
-
+func getProject() *Project {
 	wd, _ := os.Getwd()
-	project := &Project{
+	return &Project{
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
-
-		// required to init
-		AppName: "testproject",
-		PkgName: "github.com/spf13/testproject",
-		Viper:   true,
+		AppName:      "testproject",
+		PkgName:      "github.com/spf13/testproject",
+		Viper:        true,
 	}
+}
+
+func TestGoldenInitCmd(t *testing.T) {
+	project := getProject()
 	defer os.RemoveAll(project.AbsolutePath)
 
-	// init project first
-	err := project.Create()
-	if err != nil {
+	if err := project.Create(); err != nil {
 		t.Fatal(err)
 	}
 
