@@ -7,28 +7,25 @@ import (
 	"testing"
 )
 
-func TestGoldenInitCmd(t *testing.T) {
-
+func getProject() *Project {
 	wd, _ := os.Getwd()
-	project := &Project{
+	return &Project{
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
-		PkgName:      "github.com/spf13/testproject",
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
-		Viper:        true,
 		AppName:      "testproject",
+		PkgName:      "github.com/spf13/testproject",
+		Viper:        true,
 	}
+}
 
-	err := project.Create()
-	if err != nil {
+func TestGoldenInitCmd(t *testing.T) {
+	project := getProject()
+	defer os.RemoveAll(project.AbsolutePath)
+
+	if err := project.Create(); err != nil {
 		t.Fatal(err)
 	}
-
-	defer func() {
-		if _, err := os.Stat(project.AbsolutePath); err == nil {
-			os.RemoveAll(project.AbsolutePath)
-		}
-	}()
 
 	expectedFiles := []string{"LICENSE", "main.go", "cmd/root.go"}
 	for _, f := range expectedFiles {
