@@ -160,6 +160,19 @@ func TestRootUnknownCommandCustomHandler(t *testing.T) {
 	}
 }
 
+func TestRootUnknownCommandCustomHandlerWithSilencedErrors(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, SilenceErrors: true}
+	rootCmd.OnCommandNotFound = func(cmd *Command, args []string) {
+		cmd.Println("Command not found. Sorry buddy :(")
+	}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, _ := executeCommand(rootCmd, "unknown")
+	if output != "Command not found. Sorry buddy :(\n" {
+		t.Errorf("Expected custom output message, because of custom CommandNotFound handler.\nGot:\n %q\n", output)
+	}
+}
+
 func TestCommandAlias(t *testing.T) {
 	var timesCmdArgs []string
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
