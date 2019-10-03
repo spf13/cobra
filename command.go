@@ -68,6 +68,11 @@ type Command struct {
 	// but accepted if entered manually.
 	ArgAliases []string
 
+	// ArgDescriptionForUseLine will be appended to the usage line of a command
+	// line of a command when printing help or generating docs
+	// to allow you to describe the meaning of the arguments the command takes.
+	ArgDescriptionForUseLine string
+
 	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
 	BashCompletionFunction string
 
@@ -1179,6 +1184,9 @@ func (c *Command) UseLine() string {
 	}
 	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
 		useline += " [flags]"
+	}
+	if c.ArgDescriptionForUseLine != "" {
+		useline += " " + c.ArgDescriptionForUseLine
 	}
 	return useline
 }

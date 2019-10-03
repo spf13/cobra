@@ -830,6 +830,16 @@ func TestFlagsInUsage(t *testing.T) {
 	checkStringContains(t, output, "[flags]")
 }
 
+func TestArgsInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, ArgDescriptionForUseLine: "name [arg...]", Run: func(*Command, []string) {}}
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "[flags] name [arg...]")
+}
+
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description"}
