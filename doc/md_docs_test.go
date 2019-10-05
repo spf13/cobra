@@ -81,6 +81,35 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
+func TestGenTreeWithAdditionalHelpTopics(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenMarkdownTree(rootCmd, tmpdir); err != nil {
+		t.Fatal(err)
+	}
+
+	filesToTest := []string{"root.md", "root_print.md", "root_subject.md"}
+	for _, f := range filesToTest {
+		if _, err := os.Stat(filepath.Join(tmpdir, f)); err != nil {
+			t.Fatalf("Expected file '%s' to exist", f)
+		}
+	}
+}
+
+func TestGenMdWithAdditionalHelpTopics(t *testing.T) {
+	buf := new(bytes.Buffer)
+	if err := GenMarkdown(rootCmd, buf); err != nil {
+		t.Fatal(err)
+	}
+
+	output := buf.String()
+	checkStringContains(t, output, "Help on subject")
+}
+
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
