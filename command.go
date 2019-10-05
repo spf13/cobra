@@ -892,7 +892,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 
 	var flags []string
-	if c.TraverseChildren {
+	if c.Runnable() {
+		cmd = c
+		flags = args
+	} else if c.TraverseChildren {
 		cmd, flags, err = c.Traverse(args)
 	} else {
 		cmd, flags, err = c.Find(args)
