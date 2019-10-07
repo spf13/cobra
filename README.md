@@ -482,7 +482,7 @@ For many years people have printed back to the screen.`,
 Echo works a lot like print, except it has a child command.`,
     Args: cobra.MinimumNArgs(1),
     Run: func(cmd *cobra.Command, args []string) {
-      fmt.Println("Print: " + strings.Join(args, " "))
+      fmt.Println("Echo: " + strings.Join(args, " "))
     },
   }
 
