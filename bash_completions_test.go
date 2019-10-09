@@ -40,10 +40,9 @@ func checkRegex(t *testing.T, found, pattern string) {
 }
 
 func runShellCheck(s string) error {
-	excluded := []string{
+	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e",
 		"SC2034", // PREFIX appears unused. Verify it or export it.
-	}
-	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e", strings.Join(excluded, ","))
+	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
