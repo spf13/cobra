@@ -1150,12 +1150,12 @@ func (c *Command) PrintErr(i ...interface{}) {
 
 // PrintErrln is a convenience method to Println to the defined Err output, fallback to Stderr if not set.
 func (c *Command) PrintErrln(i ...interface{}) {
-	c.Print(fmt.Sprintln(i...))
+	c.PrintErr(fmt.Sprintln(i...))
 }
 
 // PrintErrf is a convenience method to Printf to the defined Err output, fallback to Stderr if not set.
 func (c *Command) PrintErrf(format string, i ...interface{}) {
-	c.Print(fmt.Sprintf(format, i...))
+	c.PrintErr(fmt.Sprintf(format, i...))
 }
 
 // CommandPath returns the full path to this command.
