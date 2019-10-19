@@ -18,5 +18,5 @@ package main
 import "github.com/spf13/testproject/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }
