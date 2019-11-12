@@ -240,6 +240,25 @@ func TestGenZshCompletion(t *testing.T) {
 				`--ptest\[ptest]:filename:_files -g "-\(/\)"`,
 			},
 		},
+		{
+			name: "escape text in subcommand description",
+			root: func() *Command {
+				r := &Command{
+					Use:  "rootcmd",
+					Long: "Long rootcmd description",
+				}
+				d := &Command{
+					Use:   "subcmd1",
+					Short: "$(echo foo)",
+					Run:   emptyRun,
+				}
+				r.AddCommand(d)
+				return r
+			}(),
+			expectedExpressions: []string{
+				`\$\(echo foo\)`,
+			},
+		},
 	}
 
 	for _, tc := range tcs {

@@ -25,6 +25,7 @@ var (
 		"extractFlags":                zshCompExtractFlag,
 		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
 		"extractArgsCompletions":      zshCompExtractArgumentCompletionHintsForRendering,
+		"escapeText":                  zshCompQuoteFlagDescription,
 	}
 	zshCompletionText = `
 {{/* should accept Command (that contains subcommands) as parameter */}}
@@ -41,7 +42,7 @@ function {{$cmdPath}} {
   case $state in
   cmnds)
     commands=({{range .Commands}}{{if not .Hidden}}
-      "{{.Name}}:{{.Short}}"{{end}}{{end}}
+      "{{.Name}}:{{.Short | escapeText}}"{{end}}{{end}}
     )
     _describe "command" commands
     ;;
@@ -334,5 +335,7 @@ func zshCompFlagCouldBeSpecifiedMoreThenOnce(f *pflag.Flag) bool {
 func zshCompQuoteFlagDescription(s string) string {
 	return strings.NewReplacer("'", `'\''`,
 		"[", `\[`,
-		"]", `\]`).Replace(s)
+		"]", `\]`,
+		"$(", `\$(`,
+	).Replace(s)
 }
