@@ -61,6 +61,7 @@ __%[1]s_contains_word()
 __%[1]s_handle_reply()
 {
     __%[1]s_debug "${FUNCNAME[0]}"
+    local comp
     case $cur in
         -*)
             if [[ $(type -t compopt) = "builtin" ]]; then
@@ -72,8 +73,8 @@ __%[1]s_handle_reply()
             else
                 allflags=("${flags[*]} ${two_word_flags[*]}")
             fi
-            while IFS='' read -r c; do
-                COMPREPLY+=("$c")
+            while IFS='' read -r comp; do
+                COMPREPLY+=("$comp")
             done < <(compgen -W "${allflags[*]}" -- "$cur")
             if [[ $(type -t compopt) = "builtin" ]]; then
                 [[ "${COMPREPLY[0]}" == *= ]] || compopt +o nospace
@@ -124,13 +125,13 @@ __%[1]s_handle_reply()
     if [[ ${#must_have_one_flag[@]} -ne 0 ]]; then
         completions+=("${must_have_one_flag[@]}")
     fi
-    while IFS='' read -r c; do
-        COMPREPLY+=("$c")
+    while IFS='' read -r comp; do
+        COMPREPLY+=("$comp")
     done < <(compgen -W "${completions[*]}" -- "$cur")
 
     if [[ ${#COMPREPLY[@]} -eq 0 && ${#noun_aliases[@]} -gt 0 && ${#must_have_one_noun[@]} -ne 0 ]]; then
-        while IFS='' read -r c; do
-            COMPREPLY+=("$c")
+        while IFS='' read -r comp; do
+            COMPREPLY+=("$comp")
         done < <(compgen -W "${noun_aliases[*]}" -- "$cur")
     fi
 
