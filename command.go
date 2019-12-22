@@ -372,7 +372,9 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.HelpTemplate(), c)
+		// The help should be sent to stdout
+		// See https://github.com/spf13/cobra/issues/1002
+		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
