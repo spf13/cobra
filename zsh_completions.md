@@ -4,6 +4,14 @@ Cobra supports native Zsh completion generated from the root `cobra.Command`.
 The generated completion script should be put somewhere in your `$fpath` named
 `_<YOUR COMMAND>`.
 
+```go
+// Output to given io.Writer
+rootCmd.GenZshCompletion(os.Stdout)
+
+// Output to given file
+rootCmd.GenZshCompletionFile("/path/to/fpath/_your_command")
+```
+
 ### What's Supported
 
 * Completion for all non-hidden subcommands using their `.Short` description.
