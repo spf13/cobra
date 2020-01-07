@@ -23,6 +23,7 @@ var (
 	zshCompFuncMap = template.FuncMap{
 		"genZshFuncName":              zshCompGenFuncName,
 		"extractFlags":                zshCompExtractFlag,
+		"genAliases":                  zshGenAliases,
 		"genFlagEntryForZshArguments": zshCompGenFlagEntryForArguments,
 		"extractArgsCompletions":      zshCompExtractArgumentCompletionHintsForRendering,
 	}
@@ -48,7 +49,7 @@ function {{$cmdPath}} {
   esac
 
   case "$words[1]" in {{- range .Commands}}{{if not .Hidden}}
-  {{.Name}})
+  {{.Name}}{{genAliases .}})
     {{$cmdPath}}_{{.Name}}
     ;;{{end}}{{end}}
   esac
@@ -248,6 +249,15 @@ func zshCompGenFuncName(c *Command) string {
 		return zshCompGenFuncName(c.Parent()) + "_" + c.Name()
 	}
 	return "_" + c.Name()
+}
+
+func zshGenAliases(c *Command) string {
+	sort.Sort(sort.StringSlice(c.Aliases))
+	ret := ""
+	for _, value := range c.Aliases {
+		ret += fmt.Sprintf("|%s", value)
+	}
+	return ret
 }
 
 func zshCompExtractFlag(c *Command) []*pflag.Flag {

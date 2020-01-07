@@ -7,6 +7,38 @@ import (
 	"testing"
 )
 
+func TestGenZshAliases(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	echoCmd := &Command{
+		Use:     "echo",
+		Aliases: []string{"say", "tell"},
+		Args:    NoArgs,
+		Run:     emptyRun,
+	}
+	timesCmd := &Command{
+		Use:  "times",
+		Args: ExactArgs(2),
+		Run:  emptyRun,
+	}
+	echoCmd.AddCommand(timesCmd)
+	rootCmd.AddCommand(echoCmd)
+
+	rootCmd.Execute()
+	buf := new(bytes.Buffer)
+	if err := rootCmd.GenZshCompletion(buf); err != nil {
+		t.Error(err)
+	}
+	output := buf.Bytes()
+	expr := `echo|say|tell\)$`
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		t.Errorf("error compiling expression (%s): %v", expr, err)
+	}
+	if !rgx.Match(output) {
+		t.Errorf("expected completion (%s) to match '%s'", buf.String(), expr)
+	}
+}
+
 func TestGenZshCompletion(t *testing.T) {
 	var debug bool
 	var option string
