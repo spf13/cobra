@@ -796,6 +796,11 @@ func (c *Command) execute(a []string) (err error) {
 
 	c.preRun()
 
+	err = c.preRunE()
+	if err != nil {
+		return err
+	}
+
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
 		argWoFlags = a
@@ -860,6 +865,17 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+func (c *Command) preRunE() error {
+	for _, x := range initializersWithError {
+		err := x()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Execute uses the args (os.Args[1:] by default)
