@@ -1629,11 +1629,7 @@ func (c *Command) ask() bool {
 	c.Println(c.Question)
 	reader := bufio.NewReader(c.getIn(os.Stdin))
 	for {
-		answer, err := reader.ReadString('\n')
-		if err != nil {
-			c.PrintErrf("Read string failed, err: %v\n", err)
-			break
-		}
+		answer, _ := reader.ReadString('\n')
 		answer = strings.ToLower(strings.TrimSpace(answer))
 		if answer == "y" || answer == "yes" {
 			return true

@@ -95,25 +95,37 @@ func TestChildCommand(t *testing.T) {
 	}
 }
 
+func TestCommandWithAsk(t *testing.T) {
+	done := make(chan bool)
+	defer func() {
+		done <- true
+	}()
 
-func TestCommandWithAskQuestionAndAnswerNo(t *testing.T) {
-	msg := "hello, world"
+	outBuf, inBuf1, inBuf2 := new(bytes.Buffer), new(bytes.Buffer), new(bytes.Buffer)
+	go func() {
+		for {
+			select {
+			case <-done:
+				break
+			default:
+				inBuf1.WriteString("no\r\n")
+				inBuf2.WriteString("Y\r\n")
+			}
+		}
+	}()
+
 	rootCmd := &Command{
-		Use:  "root",
-		Ask:  true,
-		Run:  func(c *Command, args []string) {
-			c.Print(msg)
+		Use: "root",
+		Ask: true,
+		Run: func(c *Command, args []string) {
+			c.Print("hello,world")
 		},
+		outWriter: outBuf,
 	}
 
-	outBuf,inBuf := new(bytes.Buffer),new(bytes.Buffer)
-	rootCmd.SetOut(outBuf)
-	rootCmd.SetIn(inBuf)
-
-	go func() {
-		inBuf.WriteString("n\n")
-	}()
-	_, err := rootCmd.ExecuteC()
+	var err error
+	rootCmd.SetIn(inBuf1)
+	_, err = rootCmd.ExecuteC()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -122,31 +134,15 @@ func TestCommandWithAskQuestionAndAnswerNo(t *testing.T) {
 	if got != expected {
 		t.Errorf("expected: %q, got: %q", expected, got)
 	}
-}
 
-func TestCommandWithAskQuestionAndAnswerYes(t *testing.T) {
-	msg := "hello,world"
-	rootCmd := &Command{
-		Use:  "root",
-		Ask:  true,
-		Run:  func(c *Command, args []string) {
-			c.Print(msg)
-		},
-	}
-
-	outBuf,inBuf := new(bytes.Buffer),new(bytes.Buffer)
-	rootCmd.SetOut(outBuf)
-	rootCmd.SetIn(inBuf)
-
-	go func() {
-		inBuf.WriteString("y\n")
-	}()
-	_, err := rootCmd.ExecuteC()
+	outBuf.Reset()
+	rootCmd.SetIn(inBuf2)
+	_, err = rootCmd.ExecuteC()
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	got := outBuf.String()
-	expected := "continue? [Y/N]\nhello,world"
+	got = outBuf.String()
+	expected = "continue? [Y/N]\nhello,world"
 	if got != expected {
 		t.Errorf("expected: %q, got: %q", expected, got)
 	}
