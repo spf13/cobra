@@ -3,12 +3,11 @@ package cobra
 import (
 	"bytes"
 	"fmt"
+	"github.com/spf13/pflag"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/pflag"
 )
 
 func emptyRun(*Command, []string) {}
@@ -20,7 +19,7 @@ func executeCommand(root *Command, args ...string) (output string, err error) {
 
 func executeCommandC(root *Command, args ...string) (c *Command, output string, err error) {
 	buf := new(bytes.Buffer)
-	root.SetOutput(buf)
+	root.SetOut(buf)
 	root.SetArgs(args)
 
 	c, err = root.ExecuteC()
@@ -93,6 +92,63 @@ func TestChildCommand(t *testing.T) {
 	expected := "one two"
 	if got != expected {
 		t.Errorf("child1CmdArgs expected: %q, got: %q", expected, got)
+	}
+}
+
+
+func TestCommandWithAskQuestionAndAnswerNo(t *testing.T) {
+	msg := "hello, world"
+	rootCmd := &Command{
+		Use:  "root",
+		Ask:  true,
+		Run:  func(c *Command, args []string) {
+			c.Print(msg)
+		},
+	}
+
+	outBuf,inBuf := new(bytes.Buffer),new(bytes.Buffer)
+	rootCmd.SetOut(outBuf)
+	rootCmd.SetIn(inBuf)
+
+	go func() {
+		inBuf.WriteString("n\n")
+	}()
+	_, err := rootCmd.ExecuteC()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	got := outBuf.String()
+	expected := "continue? [Y/N]\ncanceled...\n"
+	if got != expected {
+		t.Errorf("expected: %q, got: %q", expected, got)
+	}
+}
+
+func TestCommandWithAskQuestionAndAnswerYes(t *testing.T) {
+	msg := "hello,world"
+	rootCmd := &Command{
+		Use:  "root",
+		Ask:  true,
+		Run:  func(c *Command, args []string) {
+			c.Print(msg)
+		},
+	}
+
+	outBuf,inBuf := new(bytes.Buffer),new(bytes.Buffer)
+	rootCmd.SetOut(outBuf)
+	rootCmd.SetIn(inBuf)
+
+	go func() {
+		inBuf.WriteString("y\n")
+	}()
+	_, err := rootCmd.ExecuteC()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	got := outBuf.String()
+	expected := "continue? [Y/N]\nhello,world"
+	if got != expected {
+		t.Errorf("expected: %q, got: %q", expected, got)
 	}
 }
 

@@ -16,6 +16,7 @@
 package cobra
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -41,6 +42,9 @@ type Command struct {
 	// Use is the one-line usage message.
 	Use string
 
+	// Toggle ask prompt.
+	Ask bool
+
 	// Aliases is an array of aliases that can be used instead of the first word in Use.
 	Aliases []string
 
@@ -53,6 +57,9 @@ type Command struct {
 
 	// Long is the long message shown in the 'help <this-command>' output.
 	Long string
+
+	// Custom prompt.
+	Question string
 
 	// Example is examples of how to use the command.
 	Example string
@@ -792,6 +799,13 @@ func (c *Command) execute(a []string) (err error) {
 
 	if !c.Runnable() {
 		return ErrSubCommandRequired
+	}
+
+	if c.Ask {
+		if !c.ask() {
+			c.Println("canceled...")
+			return nil
+		}
 	}
 
 	c.preRun()
@@ -1604,4 +1618,30 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+func (c *Command) ask() bool {
+	if c.Question == "" {
+		c.Question = "continue? [Y/N]"
+	} else {
+		c.Question = strings.TrimRight(c.Question, "[Y/N]") + "[Y/N]"
+	}
+	c.Println(c.Question)
+	reader := bufio.NewReader(c.getIn(os.Stdin))
+	for {
+		answer, err := reader.ReadString('\n')
+		if err != nil {
+			c.PrintErrf("Read string failed, err: %v\n", err)
+			break
+		}
+		answer = strings.ToLower(strings.TrimSpace(answer))
+		if answer == "y" || answer == "yes" {
+			return true
+		} else if answer == "n" || answer == "no" {
+			break
+		} else {
+			continue
+		}
+	}
+	return false
 }
