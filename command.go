@@ -1418,6 +1418,13 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	addToLocal := func(f *flag.Flag) {
 		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
 			c.lflags.AddFlag(f)
+
+			// If `f` has already been changed, re-add its value to the flag set,
+			// otherwise `c.lflags` has no record of the flags value.
+			if f.Changed {
+				f.Changed = false
+				c.lflags.Set(f.Name, f.Value.String())
+			}
 		}
 	}
 	c.Flags().VisitAll(addToLocal)
