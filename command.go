@@ -408,6 +408,11 @@ func (c *Command) UsageString() string {
 	return bb.String()
 }
 
+// UsageHintString returns a string that describes how to obtain usage instructions
+func (c *Command) UsageHintString() string {
+	return fmt.Sprintf("Run '%v --help' for usage.\n", c.CommandPath())
+}
+
 // FlagErrorFunc returns either the function set by SetFlagErrorFunc for this
 // command or a parent, or it returns a function which returns the original
 // error.
@@ -906,7 +911,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.Println("Error:", err.Error())
-			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+			c.Printf(cmd.UsageHintString())
 		}
 		return c, err
 	}
@@ -943,6 +948,9 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// all subcommands should respect it
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
+		} else if !cmd.SilenceErrors && !c.SilenceErrors {
+			// if SilenceUsage && !SilenceErrors, we should be consistent with the unknown sub-command case and output a hint
+			c.Printf(cmd.UsageHintString())
 		}
 	}
 	return cmd, err
