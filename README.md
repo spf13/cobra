@@ -214,6 +214,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -253,6 +254,11 @@ func init() {
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
+}
+
+func er(msg interface{}) {
+	fmt.Println("Error:", msg)
+	os.Exit(1)
 }
 
 func initConfig() {
