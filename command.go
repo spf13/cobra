@@ -309,7 +309,7 @@ func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
-// InOrStdin returns output to stderr
+// InOrStdin returns input to stdin
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
