@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -16,6 +17,16 @@ func emptyRun(*Command, []string) {}
 func executeCommand(root *Command, args ...string) (output string, err error) {
 	_, output, err = executeCommandC(root, args...)
 	return output, err
+}
+
+func executeCommandWithContext(ctx context.Context, root *Command, args ...string) (output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOutput(buf)
+	root.SetArgs(args)
+
+	err = root.ExecuteContext(ctx)
+
+	return buf.String(), err
 }
 
 func executeCommandC(root *Command, args ...string) (c *Command, output string, err error) {
@@ -132,6 +143,62 @@ func TestSubcommandExecuteC(t *testing.T) {
 
 	if c.Name() != "child" {
 		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got %q`, c.Name())
+	}
+}
+
+func TestExecuteContext(t *testing.T) {
+	ctx := context.TODO()
+
+	ctxRun := func(cmd *Command, args []string) {
+		if cmd.Context() != ctx {
+			t.Errorf("Command %q must have context when called with ExecuteContext", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: ctxRun, PreRun: ctxRun}
+	childCmd := &Command{Use: "child", Run: ctxRun, PreRun: ctxRun}
+	granchildCmd := &Command{Use: "grandchild", Run: ctxRun, PreRun: ctxRun}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
+	}
+}
+
+func TestExecute_NoContext(t *testing.T) {
+	run := func(cmd *Command, args []string) {
+		if cmd.Context() != context.Background() {
+			t.Errorf("Command %s must have background context", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: run, PreRun: run}
+	childCmd := &Command{Use: "child", Run: run, PreRun: run}
+	granchildCmd := &Command{Use: "grandchild", Run: run, PreRun: run}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommand(rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
 	}
 }
 
