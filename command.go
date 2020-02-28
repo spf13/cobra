@@ -84,7 +84,8 @@ type Command struct {
 
 	// Version defines the version for this command. If this value is non-empty and the command does not
 	// define a "version" flag, a "version" boolean flag will be added to the command and, if specified,
-	// will print content of the "Version" variable.
+	// will print content of the "Version" variable. A shorthand "v" flag will also be added if the
+	// command does not define one.
 	Version string
 
 	// The *Run functions are executed in the following order:
@@ -1033,7 +1034,11 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().Bool("version", false, usage)
+		if c.Flags().ShorthandLookup("v") == nil {
+			c.Flags().BoolP("version", "v", false, usage)
+		} else {
+			c.Flags().Bool("version", false, usage)
+		}
 	}
 }
 

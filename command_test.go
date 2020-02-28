@@ -921,11 +921,69 @@ func TestVersionFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+func TestVersionFlagExecutedWithNoName(t *testing.T) {
+	rootCmd := &Command{Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "version 1.0.0")
+}
+
+func TestShortAndLongVersionFlagInHelp(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "-v, --version")
+}
+
+func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.Flags().StringP("foo", "v", "", "not a version flag")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "-v, --version")
+	checkStringContains(t, output, "--version")
+}
+
+func TestShorthandVersionFlagExecuted(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "-v", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
 func TestVersionTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "customized version: 1.0.0")
+}
+
+func TestShorthandVersionTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
+
+	output, err := executeCommand(rootCmd, "-v", "arg1")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -945,6 +1003,18 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0"}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "-v", "sub")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
 func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -957,6 +1027,18 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown flag: --version")
 }
 
+func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	_, err := executeCommand(rootCmd, "sub", "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+}
+
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
@@ -965,6 +1047,39 @@ func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 		t.Errorf("Expected error")
 	}
 	checkStringContains(t, err.Error(), "unknown flag: --version")
+}
+
+func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+}
+
+func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
+	rootCmd.Flags().StringP("notversion", "v", "", "not a version flag")
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	check(t, rootCmd.Flags().ShorthandLookup("v").Name, "notversion")
+	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
+}
+
+func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
+	rootCmd.Flags().Bool("version", false, "a different kind of version flag")
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
 func TestUsageIsNotPrintedTwice(t *testing.T) {
