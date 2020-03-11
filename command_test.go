@@ -1955,3 +1955,28 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	}
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
+
+func TestHelpDisplaysRootCommandNameWithEscapedSpace(t *testing.T) {
+	rootCmd := &Command{Use: "kubectl\\ myplugin", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "kubectl myplugin [command]")
+}
+
+func TestSubcommandHelpDisplaysRootCommandNameWithEscapedSpace(t *testing.T) {
+	rootCmd := &Command{Use: "kubectl\\ myplugin", Run: emptyRun}
+	childCmd := &Command{Use: "child", Long: "Long description", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	output, err := executeCommand(rootCmd, "help", "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "kubectl myplugin child [flags]")
+}

@@ -1203,9 +1203,9 @@ func (c *Command) CommandPath() string {
 func (c *Command) UseLine() string {
 	var useline string
 	if c.HasParent() {
-		useline = c.parent.CommandPath() + " " + c.Use
+		useline = c.parent.CommandPath() + " " + replaceEscapedSpaces(c.Use)
 	} else {
-		useline = c.Use
+		useline = replaceEscapedSpaces(c.Use)
 	}
 	if c.DisableFlagsInUseLine {
 		return useline
@@ -1260,11 +1260,29 @@ func (c *Command) DebugFlags() {
 // Name returns the command's name: the first word in the use line.
 func (c *Command) Name() string {
 	name := c.Use
-	i := strings.Index(name, " ")
+	i := getIndexOfFirstNonEscapedSpace(name)
 	if i >= 0 {
 		name = name[:i]
 	}
-	return name
+	return replaceEscapedSpaces(name)
+}
+
+func getIndexOfFirstNonEscapedSpace(s string) int {
+	i := 0
+	for i < len(s) {
+		switch s[i] {
+		case '\\':
+			i++ // The next character is escaped, so advance another position to skip over it
+		case ' ':
+			return i
+		}
+		i++
+	}
+	return -1
+}
+
+func replaceEscapedSpaces(s string) string {
+	return strings.Replace(s, "\\ ", " ", -1)
 }
 
 // HasAlias determines if a given string is an alias of the command.
