@@ -801,7 +801,11 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		return ErrSubCommandRequired
+		if c.IsAdditionalHelpTopicCommand() {
+			return flag.ErrHelp
+		} else {
+			return ErrSubCommandRequired
+		}
 	}
 
 	c.preRun()

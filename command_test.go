@@ -897,10 +897,35 @@ func TestFlagsInUsage(t *testing.T) {
 	checkStringContains(t, output, "[flags]")
 }
 
-func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
+func TestHelpExecutedOnAdditionalHelpTopicCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description"}
+
 	rootCmd.AddCommand(childCmd)
+
+	if !childCmd.IsAdditionalHelpTopicCommand() {
+		t.Errorf("child should be an additional help topic command")
+	}
+
+	output, err := executeCommand(rootCmd, "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, childCmd.Long)
+}
+
+func TestHelpExecutedOnNonRunnableChildWithGrandchild(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Long: "Long description"}
+	granchildCmd := &Command{Use: "grandchild", Run: emptyRun}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if childCmd.IsAdditionalHelpTopicCommand() {
+		t.Errorf("child should not be an additional help topic command")
+	}
 
 	output, err := executeCommand(rootCmd, "child")
 	if err != ErrSubCommandRequired {
