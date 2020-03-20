@@ -1100,11 +1100,11 @@ func (c *Command) Commands() []*Command {
 
 // AddCommand adds one or more commands to this parent command.
 func (c *Command) AddCommand(cmds ...*Command) {
-	for i, x := range cmds {
-		if cmds[i] == c {
+	for _, x := range cmds {
+		if x == c {
 			panic("Command can't be a child of itself")
 		}
-		cmds[i].parent = c
+		x.parent = c
 		// update max lengths
 		usageLen := len(x.Use)
 		if usageLen > c.commandsMaxUseLen {
