@@ -5,4 +5,8 @@
 "area/lib": ./*.go
 
 # changes to the zsh completion
-"area/*sh completion": ./zsh*
+"area/*sh completion":
+  - ./zsh_*
+  - ./shell_*
+  - ./powershell_*
+  - ./bash_*
