@@ -1,0 +1,8 @@
+# changes to documentation
+"area/documentation": doc/**/*
+
+# changes to the core lib package
+"area/lib": ./*.go
+
+# changes to the zsh completion
+"area/*sh completion": ./zsh*
