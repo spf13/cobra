@@ -17,3 +17,5 @@ jobs:
         stale-pr-message: 'This PR is being marked as stale due to a long period of inactivity'
         stale-issue-label: 'kind/stale'
         stale-pr-label: 'kind/stale'
+        exempt-issue-label: 'kind/stale'
+        exempt-pr-label: 'kind/stale'
