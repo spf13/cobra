@@ -1557,14 +1557,6 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = true
 }
 
-func TestSetOutput(t *testing.T) {
-	c := &Command{}
-	c.SetOutput(nil)
-	if out := c.OutOrStdout(); out != os.Stdout {
-		t.Errorf("Expected setting output to nil to revert back to stdout")
-	}
-}
-
 func TestSetOut(t *testing.T) {
 	c := &Command{}
 	c.SetOut(nil)
@@ -1814,7 +1806,8 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	parent.SetArgs(tc.args)
 
 	output := new(bytes.Buffer)
-	parent.SetOutput(output)
+	parent.SetOut(output)
+	parent.SetErr(output)
 
 	parent.Execute()
 
