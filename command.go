@@ -218,7 +218,6 @@ func (c *Command) SetArgs(a []string) {
 	c.args = a
 }
 
-
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
 func (c *Command) SetOut(newOut io.Writer) {
