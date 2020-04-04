@@ -115,6 +115,8 @@ in this example again instead of the replication controllers.
 
 In some cases it is not possible to provide a list of possible completions in advance.  Instead, the list of completions must be determined at execution-time.  Cobra provides two ways of defining such dynamic completion of nouns. Note that both these methods can be used along-side each other as long as they are not both used for the same command.
 
+**Note**: *Custom Completions written in Go* will automatically work for other shell-completion scripts (e.g., Fish shell), while *Custom Completions written in Bash* will only work for Bash shell-completion.  It is therefore recommended to use *Custom Completions written in Go*.
+
 #### 1. Custom completions of nouns written in Go
 
 In a similar fashion as for static completions, you can use the `ValidArgsFunction` field to provide a Go function that Cobra will execute when it needs the list of completion choices for the nouns of a command.  Note that either `ValidArgs` or `ValidArgsFunction` can be used for a single cobra command, but not both.
@@ -300,6 +302,8 @@ So while there are many other files in the CWD it only shows me subdirs and thos
 # Specify custom flag completion
 
 As for nouns, Cobra provides two ways of defining dynamic completion of flags.  Note that both these methods can be used along-side each other as long as they are not both used for the same flag.
+
+**Note**: *Custom Completions written in Go* will automatically work for other shell-completion scripts (e.g., Fish shell), while *Custom Completions written in Bash* will only work for Bash shell-completion.  It is therefore recommended to use *Custom Completions written in Go*.
 
 ## 1. Custom completions of flags written in Go
 

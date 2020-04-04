@@ -9,9 +9,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// ShellCompRequestCmd is the name of the hidden command that is used to request
-// completion results from the program.  It is used by the shell completion script.
-const ShellCompRequestCmd = "__complete"
+const (
+	// ShellCompRequestCmd is the name of the hidden command that is used to request
+	// completion results from the program.  It is used by the shell completion scripts.
+	ShellCompRequestCmd = "__complete"
+	// ShellCompNoDescRequestCmd is the name of the hidden command that is used to request
+	// completion results without their description.  It is used by the shell completion scripts.
+	ShellCompNoDescRequestCmd = "__completeNoDesc"
+)
 
 // Global map of flag completion functions.
 var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
@@ -77,6 +82,7 @@ func (d ShellCompDirective) string() string {
 func (c *Command) initCompleteCmd(args []string) {
 	completeCmd := &Command{
 		Use:                   fmt.Sprintf("%s [command-line]", ShellCompRequestCmd),
+		Aliases:               []string{ShellCompNoDescRequestCmd},
 		DisableFlagsInUseLine: true,
 		Hidden:                true,
 		DisableFlagParsing:    true,
@@ -93,7 +99,12 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
+			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
 			for _, comp := range completions {
+				if noDescriptions {
+					// Remove any description that may be included following a tab character.
+					comp = strings.Split(comp, "\t")[0]
+				}
 				// Print each possible completion to stdout for the completion script to consume.
 				fmt.Fprintln(finalCmd.OutOrStdout(), comp)
 			}
@@ -139,6 +150,27 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		return c, completions, ShellCompDirectiveDefault, fmt.Errorf("Unable to find a command for arguments: %v", trimmedArgs)
 	}
 
+	// When doing completion of a flag name, as soon as an argument starts with
+	// a '-' we know it is a flag.  We cannot use isFlagArg() here as it requires
+	// the flag to be complete
+	if len(toComplete) > 0 && toComplete[0] == '-' && !strings.Contains(toComplete, "=") {
+		// We are completing a flag name
+		finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+			completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
+		})
+		finalCmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+			completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
+		})
+
+		directive := ShellCompDirectiveDefault
+		if len(completions) > 0 {
+			if strings.HasSuffix(completions[0], "=") {
+				directive = ShellCompDirectiveNoSpace
+			}
+		}
+		return finalCmd, completions, directive, nil
+	}
+
 	var flag *pflag.Flag
 	if !finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
@@ -148,6 +180,33 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			// Error while attempting to parse flags
 			return finalCmd, completions, ShellCompDirectiveDefault, err
 		}
+	}
+
+	if flag == nil {
+		// Complete subcommand names
+		for _, subCmd := range finalCmd.Commands() {
+			if subCmd.IsAvailableCommand() && strings.HasPrefix(subCmd.Name(), toComplete) {
+				completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+			}
+		}
+
+		if len(finalCmd.ValidArgs) > 0 {
+			// Always complete ValidArgs, even if we are completing a subcommand name.
+			// This is for commands that have both subcommands and ValidArgs.
+			for _, validArg := range finalCmd.ValidArgs {
+				if strings.HasPrefix(validArg, toComplete) {
+					completions = append(completions, validArg)
+				}
+			}
+
+			// If there are ValidArgs specified (even if they don't match), we stop completion.
+			// Only one of ValidArgs or ValidArgsFunction can be used for a single command.
+			return finalCmd, completions, ShellCompDirectiveNoFileComp, nil
+		}
+
+		// Always let the logic continue so as to add any ValidArgsFunction completions,
+		// even if we already found sub-commands.
+		// This is for commands that have subcommands but also specify a ValidArgsFunction.
 	}
 
 	// Parse the flags and extract the arguments to prepare for calling the completion function
@@ -177,6 +236,32 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	comps, directive := completionFn(finalCmd, finalArgs, toComplete)
 	completions = append(completions, comps...)
 	return finalCmd, completions, directive, nil
+}
+
+func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
+	if nonCompletableFlag(flag) {
+		return []string{}
+	}
+
+	var completions []string
+	flagName := "--" + flag.Name
+	if strings.HasPrefix(flagName, toComplete) {
+		// Flag without the =
+		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+
+		if len(flag.NoOptDefVal) == 0 {
+			// Flag requires a value, so it can be suffixed with =
+			flagName += "="
+			completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+		}
+	}
+
+	flagName = "-" + flag.Shorthand
+	if len(flag.Shorthand) > 0 && strings.HasPrefix(flagName, toComplete) {
+		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+	}
+
+	return completions
 }
 
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
