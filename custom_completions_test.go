@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, BashCompDirective) {
+func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	if len(args) != 0 {
-		return nil, BashCompDirectiveNoFileComp
+		return nil, ShellCompDirectiveNoFileComp
 	}
 
 	var completions []string
@@ -17,12 +17,12 @@ func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, Ba
 			completions = append(completions, comp)
 		}
 	}
-	return completions, BashCompDirectiveDefault
+	return completions, ShellCompDirectiveDefault
 }
 
-func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, BashCompDirective) {
+func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	if len(args) != 0 {
-		return nil, BashCompDirectiveNoFileComp
+		return nil, ShellCompDirectiveNoFileComp
 	}
 
 	var completions []string
@@ -31,7 +31,7 @@ func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, B
 			completions = append(completions, comp)
 		}
 	}
-	return completions, BashCompDirectiveDefault
+	return completions, ShellCompDirectiveDefault
 }
 
 func TestValidArgsFuncSingleCmd(t *testing.T) {
@@ -42,7 +42,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	}
 
 	// Test completing an empty string
-	output, err := executeCommand(rootCmd, CompRequestCmd, "")
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -51,14 +51,14 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 		"one",
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, CompRequestCmd, "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	expected = strings.Join([]string{
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
@@ -86,14 +86,14 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err := executeCommand(rootCmd, CompRequestCmd, "unexpectedArg", "t")
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	expected := strings.Join([]string{
 		":4",
-		"Completion ended with directive: BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
@@ -115,7 +115,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	// Test completion of first sub-command with empty argument
-	output, err := executeCommand(rootCmd, CompRequestCmd, "child1", "")
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -124,14 +124,14 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 		"one",
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Test completion of first sub-command with a prefix to complete
-	output, err = executeCommand(rootCmd, CompRequestCmd, "child1", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child1", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -139,28 +139,28 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	expected = strings.Join([]string{
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, CompRequestCmd, "child1", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child1", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	expected = strings.Join([]string{
 		":4",
-		"Completion ended with directive: BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Test completion of second sub-command with empty argument
-	output, err = executeCommand(rootCmd, CompRequestCmd, "child2", "")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -169,13 +169,13 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 		"three",
 		"four",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, CompRequestCmd, "child2", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -183,21 +183,21 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	expected = strings.Join([]string{
 		"three",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, CompRequestCmd, "child2", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	expected = strings.Join([]string{
 		":4",
-		"Completion ended with directive: BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
@@ -215,7 +215,7 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	// Test completion of first sub-command with empty argument
-	output, err := executeCommand(rootCmd, CompRequestCmd, "son", "")
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "son", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -224,14 +224,14 @@ func TestValidArgsFuncAliases(t *testing.T) {
 		"one",
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Test completion of first sub-command with a prefix to complete
-	output, err = executeCommand(rootCmd, CompRequestCmd, "daughter", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "daughter", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -239,21 +239,21 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	expected = strings.Join([]string{
 		"two",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, CompRequestCmd, "son", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "son", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	expected = strings.Join([]string{
 		":4",
-		"Completion ended with directive: BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
@@ -297,28 +297,28 @@ func TestFlagCompletionInGo(t *testing.T) {
 		Run: emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
-	rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, BashCompDirective) {
+	rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"1", "2", "10"} {
 			if strings.HasPrefix(comp, toComplete) {
 				completions = append(completions, comp)
 			}
 		}
-		return completions, BashCompDirectiveDefault
+		return completions, ShellCompDirectiveDefault
 	})
 	rootCmd.Flags().String("filename", "", "Enter a filename")
-	rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, BashCompDirective) {
+	rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"file.yaml", "myfile.json", "file.xml"} {
 			if strings.HasPrefix(comp, toComplete) {
 				completions = append(completions, comp)
 			}
 		}
-		return completions, BashCompDirectiveNoSpace | BashCompDirectiveNoFileComp
+		return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
 	})
 
 	// Test completing an empty string
-	output, err := executeCommand(rootCmd, CompRequestCmd, "--introot", "")
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -328,14 +328,14 @@ func TestFlagCompletionInGo(t *testing.T) {
 		"2",
 		"10",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, CompRequestCmd, "--introot", "1")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "1")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -344,14 +344,14 @@ func TestFlagCompletionInGo(t *testing.T) {
 		"1",
 		"10",
 		":0",
-		"Completion ended with directive: BashCompDirectiveDefault", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Test completing an empty string
-	output, err = executeCommand(rootCmd, CompRequestCmd, "--filename", "")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--filename", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -361,14 +361,14 @@ func TestFlagCompletionInGo(t *testing.T) {
 		"myfile.json",
 		"file.xml",
 		":6",
-		"Completion ended with directive: BashCompDirectiveNoSpace, BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, CompRequestCmd, "--filename", "f")
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--filename", "f")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -377,7 +377,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 		"file.yaml",
 		"file.xml",
 		":6",
-		"Completion ended with directive: BashCompDirectiveNoSpace, BashCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)

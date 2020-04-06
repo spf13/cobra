@@ -344,7 +344,7 @@ __%[1]s_handle_word()
     __%[1]s_handle_word
 }
 
-`, name, CompRequestCmd, BashCompDirectiveError, BashCompDirectiveNoSpace, BashCompDirectiveNoFileComp))
+`, name, ShellCompRequestCmd, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp))
 }
 
 func writePostscript(buf *bytes.Buffer, name string) {
