@@ -1814,7 +1814,8 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	parent.SetArgs(tc.args)
 
 	output := new(bytes.Buffer)
-	parent.SetOutput(output)
+	parent.SetOut(output)
+	parent.SetErr(output)
 
 	parent.Execute()
 
