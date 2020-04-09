@@ -67,7 +67,7 @@ Init will not use an existing directory with contents.`,
 				er(err)
 			}
 
-			fmt.Printf("Your Cobra applicaton is ready at\n%s\n", project.AbsolutePath)
+			fmt.Printf("Your Cobra application is ready at\n%s\n", project.AbsolutePath)
 		},
 	}
 )
