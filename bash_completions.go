@@ -344,7 +344,7 @@ __%[1]s_handle_word()
     __%[1]s_handle_word
 }
 
-`, name, ShellCompRequestCmd, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp))
+`, name, ShellCompNoDescRequestCmd, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp))
 }
 
 func writePostscript(buf *bytes.Buffer, name string) {
@@ -548,6 +548,9 @@ func writeRequiredNouns(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    must_have_one_noun=()\n")
 	sort.Sort(sort.StringSlice(cmd.ValidArgs))
 	for _, value := range cmd.ValidArgs {
+		// Remove any description that may be included following a tab character.
+		// Descriptions are not supported by bash completion.
+		value = strings.Split(value, "\t")[0]
 		buf.WriteString(fmt.Sprintf("    must_have_one_noun+=(%q)\n", value))
 	}
 	if cmd.ValidArgsFunction != nil {
