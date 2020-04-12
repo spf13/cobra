@@ -25,5 +25,15 @@ matrix:
       go: 1.13.x
       script: make cobra_generator
 
-script: 
- - make test
+script:
+  - make test
+
+deploy:
+  provider: releases
+  api_key:
+    secure: $YOUR_API_KEY_ENCRYPTED
+  file_glob: true
+  file: ./bin/*
+  skip_cleanup: true
+  on:
+    tags: true
