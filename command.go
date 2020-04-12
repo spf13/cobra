@@ -904,7 +904,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.PrintErrln("Error:", err.Error())
-			c.PrintErr(fmt.Sprintf("Run '%v --help' for usage.\n", c.CommandPath()))
+			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
 	}
