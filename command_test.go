@@ -785,6 +785,37 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	}
 }
 
+func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
+	// Make sure a required persistent flag does not break
+	// commands that disable flag parsing
+
+	parent := &Command{Use: "parent", Run: emptyRun}
+	parent.PersistentFlags().Bool("foo", false, "")
+	flag := parent.PersistentFlags().Lookup("foo")
+	parent.MarkPersistentFlagRequired("foo")
+
+	child := &Command{Use: "child", Run: emptyRun}
+	child.DisableFlagParsing = true
+
+	parent.AddCommand(child)
+
+	if _, err := executeCommand(parent, "--foo", "child"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Reset the flag or else it will remember the state from the previous command
+	flag.Changed = false
+	if _, err := executeCommand(parent, "child", "--foo"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Reset the flag or else it will remember the state from the previous command
+	flag.Changed = false
+	if _, err := executeCommand(parent, "child"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
 	rootCmd := &Command{Use: "root"}
