@@ -5,6 +5,7 @@ func MainTemplate() []byte {
 {{ .Copyright }}
 {{ if .Legal.Header }}{{ .Legal.Header }}{{ end }}
 */
+
 package main
 
 import "{{ .PkgName }}/cmd"
@@ -20,6 +21,7 @@ func RootTemplate() []byte {
 {{ .Copyright }}
 {{ if .Legal.Header }}{{ .Legal.Header }}{{ end }}
 */
+
 package cmd
 
 import (
@@ -112,6 +114,7 @@ func AddCommandTemplate() []byte {
 {{ .Project.Copyright }}
 {{ if .Legal.Header }}{{ .Legal.Header }}{{ end }}
 */
+
 package cmd
 
 import (
