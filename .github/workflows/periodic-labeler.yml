@@ -1,0 +1,14 @@
+---
+name: Pull request labeler
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+jobs:
+  labeler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: paulfantom/periodic-labeler@v0.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          LABEL_MAPPINGS_FILE: .github/labeler.yml
