@@ -34,6 +34,1106 @@ func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, S
 	return completions, ShellCompDirectiveDefault
 }
 
+func TestCmdNameCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd1 := &Command{
+		Use:   "firstChild",
+		Short: "First command",
+		Run:   emptyRun,
+	}
+	childCmd2 := &Command{
+		Use: "secondChild",
+		Run: emptyRun,
+	}
+	hiddenCmd := &Command{
+		Use:    "testHidden",
+		Hidden: true, // Not completed
+		Run:    emptyRun,
+	}
+	deprecatedCmd := &Command{
+		Use:        "testDeprecated",
+		Deprecated: "deprecated", // Not completed
+		Run:        emptyRun,
+	}
+	aliasedCmd := &Command{
+		Use:     "aliased",
+		Short:   "A command with aliases",
+		Aliases: []string{"testAlias", "testSynonym"}, // Not completed
+		Run:     emptyRun,
+	}
+
+	rootCmd.AddCommand(childCmd1, childCmd2, hiddenCmd, deprecatedCmd, aliasedCmd)
+
+	// Test that sub-command names are completed
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"aliased",
+		"firstChild",
+		"help",
+		"secondChild",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are completed with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "s")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"secondChild",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that even with no valid sub-command matches, hidden, deprecated and
+	// aliases are not completed
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are completed with description
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"aliased\tA command with aliases",
+		"firstChild\tFirst command",
+		"help\tHelp about any command",
+		"secondChild",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestNoCmdNameCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd1 := &Command{
+		Use:   "childCmd1",
+		Short: "First command",
+		Args:  MinimumNArgs(0),
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd1)
+	childCmd1.PersistentFlags().StringP("persistent", "p", "", "persistent flag")
+	persistentFlag := childCmd1.PersistentFlags().Lookup("persistent")
+	childCmd1.Flags().StringP("nonPersistent", "n", "", "non-persistent flag")
+	nonPersistentFlag := childCmd1.Flags().Lookup("nonPersistent")
+
+	childCmd2 := &Command{
+		Use: "childCmd2",
+		Run: emptyRun,
+	}
+	childCmd1.AddCommand(childCmd2)
+
+	// Test that sub-command names are not completed if there is an argument already
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "arg1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are not completed if a local non-persistent flag is present
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "--nonPersistent", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	nonPersistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are not completed if a local non-persistent short flag is present
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "-n", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	nonPersistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are completed with a persistent flag
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "--persistent", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	persistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"childCmd2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are completed with a persistent short flag
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "-p", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	persistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"childCmd2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestValidArgsCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use:       "root",
+		ValidArgs: []string{"one", "two", "three"},
+		Args:      MinimumNArgs(1),
+	}
+
+	// Test that validArgs are completed
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"one",
+		"two",
+		"three",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that validArgs are completed with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "o")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"one",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that validArgs don't repeat
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "one", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use:       "root",
+		ValidArgs: []string{"one", "two"},
+		Run:       emptyRun,
+	}
+
+	childCmd := &Command{
+		Use: "thechild",
+		Run: emptyRun,
+	}
+
+	rootCmd.AddCommand(childCmd)
+
+	// Test that both sub-commands and validArgs are completed
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"help",
+		"thechild",
+		"one",
+		"two",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that both sub-commands and validArgs are completed with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"thechild",
+		"two",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use:               "root",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
+	}
+
+	childCmd := &Command{
+		Use:   "thechild",
+		Short: "The child command",
+		Run:   emptyRun,
+	}
+
+	rootCmd.AddCommand(childCmd)
+
+	// Test that both sub-commands and validArgsFunction are completed
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"help",
+		"thechild",
+		"one",
+		"two",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that both sub-commands and validArgs are completed with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"thechild",
+		"two",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that both sub-commands and validArgs are completed with description
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "t")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"thechild\tThe child command",
+		"two\tThe second",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagNameCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use: "childCmd",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	rootCmd.PersistentFlags().BoolP("second", "s", false, "second flag")
+	childCmd.Flags().String("subFlag", "", "sub flag")
+
+	// Test that flag names are not shown if the user has not given the '-' prefix
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"childCmd",
+		"help",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--first",
+		"-f",
+		"--second",
+		"-s",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed when a prefix is given
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--f")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--first",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed in a sub-cmd
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--second",
+		"-s",
+		"--subFlag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use:   "childCmd",
+		Short: "first command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	rootCmd.PersistentFlags().BoolP("second", "s", false, "second flag")
+	childCmd.Flags().String("subFlag", "", "sub flag")
+
+	// Test that flag names are not shown if the user has not given the '-' prefix
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"childCmd\tfirst command",
+		"help\tHelp about any command",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--first\tfirst flag",
+		"-f\tfirst flag",
+		"--second\tsecond flag",
+		"-s\tsecond flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed when a prefix is given
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--f")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--first\tfirst flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are completed in a sub-cmd
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "childCmd", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--second\tsecond flag",
+		"-s\tsecond flag",
+		"--subFlag\tsub flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagNameCompletionRepeat(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use:   "childCmd",
+		Short: "first command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	firstFlag := rootCmd.Flags().Lookup("first")
+	rootCmd.Flags().BoolP("second", "s", false, "second flag")
+	secondFlag := rootCmd.Flags().Lookup("second")
+	rootCmd.Flags().StringArrayP("array", "a", nil, "array flag")
+	arrayFlag := rootCmd.Flags().Lookup("array")
+	rootCmd.Flags().IntSliceP("slice", "l", nil, "slice flag")
+	sliceFlag := rootCmd.Flags().Lookup("slice")
+	rootCmd.Flags().BoolSliceP("bslice", "b", nil, "bool slice flag")
+	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+
+	expected := strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--second",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+	secondFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	bsliceFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--first",
+		"--second",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"-a",
+		"--bslice",
+		"-b",
+		"--first",
+		"-f",
+		"--second",
+		"-s",
+		"--slice",
+		"-l",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"-a",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestRequiredFlagNameCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use:       "root",
+		ValidArgs: []string{"realArg"},
+		Run:       emptyRun,
+	}
+	childCmd := &Command{
+		Use: "childCmd",
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"subArg"}, ShellCompDirectiveNoFileComp
+		},
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("requiredFlag", "r", -1, "required flag")
+	rootCmd.MarkFlagRequired("requiredFlag")
+	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
+
+	rootCmd.PersistentFlags().IntP("requiredPersistent", "p", -1, "required persistent")
+	rootCmd.MarkPersistentFlagRequired("requiredPersistent")
+	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
+
+	rootCmd.Flags().StringP("release", "R", "", "Release name")
+
+	childCmd.Flags().BoolP("subRequired", "s", false, "sub required flag")
+	childCmd.MarkFlagRequired("subRequired")
+	childCmd.Flags().BoolP("subNotRequired", "n", false, "sub not required flag")
+
+	// Test that a required flag is suggested even without the - prefix
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"childCmd",
+		"help",
+		"--requiredFlag",
+		"-r",
+		"--requiredPersistent",
+		"-p",
+		"realArg",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that a required flag is suggested without other flags when using the '-' prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--requiredFlag",
+		"-r",
+		"--requiredPersistent",
+		"-p",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that if no required flag matches, the normal flags are suggested
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--relea")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--release",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test required flags for sub-commands
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--requiredPersistent",
+		"-p",
+		"--subRequired",
+		"-s",
+		"subArg",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--requiredPersistent",
+		"-p",
+		"--subRequired",
+		"-s",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "--subNot")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--subNotRequired",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that when a required flag is present, it is not suggested anymore
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	requiredFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--requiredPersistent",
+		"-p",
+		"realArg",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that when a persistent required flag is present, it is not suggested anymore
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	requiredPersistent.Changed = false
+
+	expected = strings.Join([]string{
+		"childCmd",
+		"help",
+		"--requiredFlag",
+		"-r",
+		"realArg",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that when all required flags are present, normal completion is done
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flags for the next command
+	requiredFlag.Changed = false
+	requiredPersistent.Changed = false
+
+	expected = strings.Join([]string{
+		"realArg",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	// No extensions.  Should be ignored.
+	rootCmd.Flags().StringP("file", "f", "", "file flag")
+	rootCmd.MarkFlagFilename("file")
+
+	// Single extension
+	rootCmd.Flags().StringP("log", "l", "", "log flag")
+	rootCmd.MarkFlagFilename("log", "log")
+
+	// Multiple extensions
+	rootCmd.Flags().StringP("yaml", "y", "", "yaml flag")
+	rootCmd.MarkFlagFilename("yaml", "yaml", "yml")
+
+	// Directly using annotation
+	rootCmd.Flags().StringP("text", "t", "", "text flag")
+	rootCmd.Flags().SetAnnotation("text", BashCompFilenameExt, []string{"txt"})
+
+	// Test that the completion logic returns the proper info for the completion
+	// script to handle the file filtering
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--file", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--log", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"log",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--yaml", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"yaml", "yml",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--yaml=")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"yaml", "yml",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-y", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"yaml", "yml",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-y=")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"yaml", "yml",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--text", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"txt",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagDirFilterCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	// Filter directories
+	rootCmd.Flags().StringP("dir", "d", "", "dir flag")
+	rootCmd.MarkFlagDirname("dir")
+
+	// Filter directories within a directory
+	rootCmd.Flags().StringP("subdir", "s", "", "subdir")
+	rootCmd.Flags().SetAnnotation("subdir", BashCompSubdirsInDir, []string{"themes"})
+
+	// Multiple directory specification get ignored
+	rootCmd.Flags().StringP("manydir", "m", "", "manydir")
+	rootCmd.Flags().SetAnnotation("manydir", BashCompSubdirsInDir, []string{"themes", "colors"})
+
+	// Test that the completion logic returns the proper info for the completion
+	// script to handle the directory filtering
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--dir", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-d", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--subdir", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--subdir=")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s=")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--manydir", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestValidArgsFuncSingleCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:               "root",
@@ -340,6 +1440,39 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	checkOmit(t, output, ShellCompNoDescRequestCmd)
 }
 
+func TestCompleteNoDesCmdInZshScript(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(child)
+
+	buf := new(bytes.Buffer)
+	rootCmd.GenZshCompletionNoDesc(buf)
+	output := buf.String()
+
+	check(t, output, ShellCompNoDescRequestCmd)
+}
+
+func TestCompleteCmdInZshScript(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(child)
+
+	buf := new(bytes.Buffer)
+	rootCmd.GenZshCompletion(buf)
+	output := buf.String()
+
+	check(t, output, ShellCompRequestCmd)
+	checkOmit(t, output, ShellCompNoDescRequestCmd)
+}
+
 func TestFlagCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -630,6 +1763,107 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	}
 }
 
+func TestValidArgsNotValidArgsFunc(t *testing.T) {
+	rootCmd := &Command{
+		Use:       "root",
+		ValidArgs: []string{"one", "two"},
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"three", "four"}, ShellCompDirectiveNoFileComp
+		},
+		Run: emptyRun,
+	}
+
+	// Test that if both ValidArgs and ValidArgsFunction are present
+	// only ValidArgs is considered
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"one",
+		"two",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check completing with a prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"two",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestArgAliasesCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use:        "root",
+		Args:       OnlyValidArgs,
+		ValidArgs:  []string{"one", "two", "three"},
+		ArgAliases: []string{"un", "deux", "trois"},
+		Run:        emptyRun,
+	}
+
+	// Test that argaliases are not completed when there are validargs that match
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"one",
+		"two",
+		"three",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that argaliases are not completed when there are validargs that match using a prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"two",
+		"three",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that argaliases are completed when there are no validargs that match
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "tr")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"trois",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestCompleteHelp(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child1Cmd := &Command{
@@ -658,8 +1892,8 @@ func TestCompleteHelp(t *testing.T) {
 		"child1",
 		"child2",
 		"help",
-		":0",
-		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)

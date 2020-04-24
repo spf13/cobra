@@ -37,6 +37,12 @@ function __%[1]s_perform_completion
     end
     __%[1]s_debug "emptyArg: $emptyArg"
 
+    if not type -q "$args[1]"
+        # This can happen when "complete --do-complete %[1]s" is called when running this script.
+        __%[1]s_debug "Cannot find $args[1]. No completions."
+        return
+    end
+
     set requestComp "$args[1] %[2]s $args[2..-1] $emptyArg"
     __%[1]s_debug "Calling $requestComp"
 
@@ -71,7 +77,8 @@ function __%[1]s_prepare_completions
 
     # Check if the command-line is already provided.  This is useful for testing.
     if not set --query __%[1]s_comp_commandLine
-        set __%[1]s_comp_commandLine (commandline)
+        # Use the -c flag to allow for completion in the middle of the line
+        set __%[1]s_comp_commandLine (commandline -c)
     end
     __%[1]s_debug "commandLine is: $__%[1]s_comp_commandLine"
 
@@ -83,7 +90,7 @@ function __%[1]s_prepare_completions
         __%[1]s_debug "No completion, probably due to a failure"
         # Might as well do file completion, in case it helps
         set --global __%[1]s_comp_do_file_comp 1
-        return 0
+        return 1
     end
 
     set directive (string sub --start 2 $results[-1])
@@ -92,20 +99,35 @@ function __%[1]s_prepare_completions
     __%[1]s_debug "Completions are: $__%[1]s_comp_results"
     __%[1]s_debug "Directive is: $directive"
 
+    set shellCompDirectiveError %[3]d
+    set shellCompDirectiveNoSpace %[4]d
+    set shellCompDirectiveNoFileComp %[5]d
+    set shellCompDirectiveFilterFileExt %[6]d
+    set shellCompDirectiveFilterDirs %[7]d
+
     if test -z "$directive"
         set directive 0
     end
 
-    set compErr (math (math --scale 0 $directive / %[3]d) %% 2)
+    set compErr (math (math --scale 0 $directive / $shellCompDirectiveError) %% 2)
     if test $compErr -eq 1
         __%[1]s_debug "Received error directive: aborting."
         # Might as well do file completion, in case it helps
         set --global __%[1]s_comp_do_file_comp 1
-        return 0
+        return 1
     end
 
-    set nospace (math (math --scale 0 $directive / %[4]d) %% 2)
-    set nofiles (math (math --scale 0 $directive / %[5]d) %% 2)
+    set filefilter (math (math --scale 0 $directive / $shellCompDirectiveFilterFileExt) %% 2)
+    set dirfilter (math (math --scale 0 $directive / $shellCompDirectiveFilterDirs) %% 2)
+    if test $filefilter -eq 1; or test $dirfilter -eq 1
+        __%[1]s_debug "File extension filtering or directory filtering not supported"
+        # Do full file completion instead
+        set --global __%[1]s_comp_do_file_comp 1
+        return 1
+    end
+
+    set nospace (math (math --scale 0 $directive / $shellCompDirectiveNoSpace) %% 2)
+    set nofiles (math (math --scale 0 $directive / $shellCompDirectiveNoFileComp) %% 2)
 
     __%[1]s_debug "nospace: $nospace, nofiles: $nofiles"
 
@@ -132,9 +154,13 @@ function __%[1]s_prepare_completions
     return (not set --query __%[1]s_comp_do_file_comp)
 end
 
-# Remove any pre-existing completions for the program since we will be handling all of them
-# TODO this cleanup is not sufficient.  Fish completions are only loaded once the user triggers
-# them, so the below deletion will not work as it is run too early.  What else can we do?
+# Since Fish completions are only loaded once the user triggers them, we trigger them ourselves
+# so we can properly delete any completions provided by another script.
+# The space after the the program name is essential to trigger completion for the program
+# and not completion of the program name itself.
+complete --do-complete "%[1]s " &> /dev/null
+
+# Remove any pre-existing completions for the program since we will be handling all of them.
 complete -c %[1]s -e
 
 # The order in which the below two lines are defined is very important so that __%[1]s_prepare_completions
@@ -149,7 +175,9 @@ complete -c %[1]s -n 'set --query __%[1]s_comp_do_file_comp'
 # It provides the program's completion choices.
 complete -c %[1]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 
-`, name, compCmd, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp))
+`, name, compCmd,
+		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
 }
 
 // GenFishCompletion generates fish completion file and writes to the passed writer.
