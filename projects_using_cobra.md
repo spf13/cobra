@@ -8,6 +8,7 @@
 - [Giant Swarm's gsctl](https://github.com/giantswarm/gsctl)
 - [Github CLI](https://github.com/cli/cli)
 - [GopherJS](http://www.gopherjs.org/)
+- [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
 - [Istio](https://istio.io)
 - [Kubernetes](http://kubernetes.io/)
