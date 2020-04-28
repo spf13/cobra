@@ -88,12 +88,17 @@ author: Steve Francia <spf@spf13.com>
 license: MIT
 ```
 
+You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
+**AGPL**, **MIT**, **2-Clause BSD** or **3-Clause BSD**.
+
 You can specify no license by setting `license` to `none` or you can specify
 a custom license:
 
 ```yaml
+author: Steve Francia <spf@spf13.com>
+year: 2020
 license:
-  header: This file is part of {{ .appName }}.
+  header: This file is part of CLI application foo.
   text: |
     {{ .copyright }}
 
@@ -102,5 +107,23 @@ license:
     master my life.
 ```
 
-You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
-**AGPL**, **MIT**, **2-Clause BSD** or **3-Clause BSD**.
+In the above custom license configuration the `copyright` line in the License
+text is generated from the `author` and `year` properties. The content of the
+`LICENSE` file is
+
+```
+Copyright © 2020 Steve Francia <spf@spf13.com>
+
+This is my license. There are many like it, but this one is mine.
+My license is my best friend. It is my life. I must master it as I must
+master my life.
+```
+
+The `header` property is used as the license header files. No interpolation is
+done. This is the example of the go file header.
+```
+/*
+Copyright © 2020 Steve Francia <spf@spf13.com>
+This file is part of CLI application foo.
+*/
+```
