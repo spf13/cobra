@@ -1,7 +1,7 @@
 # Cobra Changelog
 
 ## Pending
-* Fix man page documentation won't have auto generated tag when `cmd.DisableAutoGenTag = true` @jpmcb
+* Fix man page doc generation - no auto generated tag when `cmd.DisableAutoGenTag = true` @jpmcb
 
 ## v1.0.0
 Announcing v1.0.0 of Cobra. 🎉
