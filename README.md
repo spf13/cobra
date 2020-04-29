@@ -718,11 +718,7 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Cobra can generate documentation based on subcommands, flags, etc. in the following formats:
-
-- [Markdown](doc/md_docs.md)
-- [ReStructured Text](doc/rest_docs.md)
-- [Man Page](doc/man_docs.md)
+Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
 
 ## Generating bash completions
 
