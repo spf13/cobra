@@ -7,6 +7,9 @@ jobs:
   labeler:
     runs-on: ubuntu-latest
     steps:
+      # if we are to change the labeler version from v0.0.2
+      # we must review the code for that version
+      # to make sure there are no leaks or exploits
       - uses: paulfantom/periodic-labeler@v0.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
