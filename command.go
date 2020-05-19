@@ -949,9 +949,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// We have to pass global context to children command
 	// if context is present on the parent command.
-	if cmd.ctx == nil {
-		cmd.ctx = c.ctx
-	}
+	cmd.ctx = c.ctx
 
 	err = cmd.execute(flags)
 	if err != nil {
