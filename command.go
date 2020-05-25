@@ -816,17 +816,28 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
+	// By default PersistentPostRun* functions override their parent functions.
+	// Disabling EnablePersistentHookOverride runs all PersistentPostRun* functions from root to child
+	chain := []*Command{}
 	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPreRunE != nil {
-			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
-				return err
+		if p.PersistentPreRunE != nil || p.PersistentPreRun != nil {
+			chain = append(chain, p)
+			if EnablePersistentHookOverride {
+				break
 			}
-			break
-		} else if p.PersistentPreRun != nil {
-			p.PersistentPreRun(c, argWoFlags)
-			break
 		}
 	}
+	for i := len(chain) - 1; i >= 0; i-- {
+		cc := chain[i]
+		if cc.PersistentPreRunE != nil {
+			if err := cc.PersistentPreRunE(c, argWoFlags); err != nil {
+				return err
+			}
+		} else if cc.PersistentPreRun != nil {
+			cc.PersistentPreRun(c, argWoFlags)
+		}
+	}
+
 	if c.PreRunE != nil {
 		if err := c.PreRunE(c, argWoFlags); err != nil {
 			return err
@@ -852,15 +863,22 @@ func (c *Command) execute(a []string) (err error) {
 	} else if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
 	}
+
+	// By default PersistentPostRun* functions override their parent functions.
+	// Disabling EnablePersistentHookOverride runs all PersistentPostRun* functions from child to root
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPostRunE != nil {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
 				return err
 			}
-			break
+			if EnablePersistentHookOverride {
+				break
+			}
 		} else if p.PersistentPostRun != nil {
 			p.PersistentPostRun(c, argWoFlags)
-			break
+			if EnablePersistentHookOverride {
+				break
+			}
 		}
 	}
 

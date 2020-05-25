@@ -48,6 +48,10 @@ var EnablePrefixMatching = false
 // To disable sorting, set it to false.
 var EnableCommandSorting = true
 
+// EnablePersistentHookOverride controls if PersistentPreRun* and PersistentPostRun* hooks
+// should override their parents. When set to true only the final hooks are executed (default).
+var EnablePersistentHookOverride = true
+
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.
 // To disable the mousetrap, just set this variable to blank string ("").

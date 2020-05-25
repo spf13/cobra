@@ -1379,11 +1379,10 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	// TODO: currently PersistenPreRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPreRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPreArgs != "" {
+	if !EnablePersistentHookOverride && parentPersPreArgs != "one two" {
+		t.Errorf("Expected parentPersPreArgs %q, got %q", "one two", parentPersPreArgs)
+	}
+	if EnablePersistentHookOverride && parentPersPreArgs != "" {
 		t.Errorf("Expected blank parentPersPreArgs, got %q", parentPersPreArgs)
 	}
 	if parentPreArgs != "" {
@@ -1395,14 +1394,12 @@ func TestPersistentHooks(t *testing.T) {
 	if parentPostArgs != "" {
 		t.Errorf("Expected blank parentPostArgs, got %q", parentPostArgs)
 	}
-	// TODO: currently PersistenPostRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPostRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPostArgs != "" {
+	if !EnablePersistentHookOverride && parentPersPostArgs != "one two" {
+		t.Errorf("Expected parentPersPostArgs %q, got %q", "one two", parentPersPostArgs)
+	}
+	if EnablePersistentHookOverride && parentPersPostArgs != "" {
 		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
 	}
-
 	if childPersPreArgs != "one two" {
 		t.Errorf("Expected childPersPreArgs %q, got %q", "one two", childPersPreArgs)
 	}
@@ -1418,6 +1415,12 @@ func TestPersistentHooks(t *testing.T) {
 	if childPersPostArgs != "one two" {
 		t.Errorf("Expected childPersPostArgs %q, got %q", "one two", childPersPostArgs)
 	}
+}
+
+func TestPersistentHooksNotOverriding(t *testing.T) {
+	EnablePersistentHookOverride = false
+	TestPersistentHooks(t)
+	EnablePersistentHookOverride = true
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.

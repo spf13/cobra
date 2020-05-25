@@ -601,7 +601,9 @@ It is possible to run functions before or after the main `Run` function of your 
 - `PostRun`
 - `PersistentPostRun`
 
-An example of two commands which use all of these features is below.  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`:
+By default `Persistent*Run` functions declared within children will override their parents.  Setting `cobra.EnablePersistentHookOverride` to false changes this behavior to also run the parent `Persistent*Run` functions.
+
+An example of two commands is below.  When the subcommand is executed, it will run the root command's `PersistentPreRun` but not the root command's `PersistentPostRun`:
 
 ```go
 package main
