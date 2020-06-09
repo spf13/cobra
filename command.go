@@ -1056,7 +1056,25 @@ func (c *Command) InitDefaultHelpCmd() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
 Simply type ` + c.Name() + ` help [path to command] for full details.`,
-
+			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+				var completions []string
+				cmd, _, e := c.Root().Find(args)
+				if e != nil {
+					return nil, ShellCompDirectiveNoFileComp
+				}
+				if cmd == nil {
+					// Root help command.
+					cmd = c.Root()
+				}
+				for _, subCmd := range cmd.Commands() {
+					if subCmd.IsAvailableCommand() || subCmd == cmd.helpCommand {
+						if strings.HasPrefix(subCmd.Name(), toComplete) {
+							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+						}
+					}
+				}
+				return completions, ShellCompDirectiveNoFileComp
+			},
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
