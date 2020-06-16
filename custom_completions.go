@@ -183,10 +183,12 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	}
 
 	if flag == nil {
-		// Complete subcommand names
+		// Complete subcommand names, including the help command
 		for _, subCmd := range finalCmd.Commands() {
-			if subCmd.IsAvailableCommand() && strings.HasPrefix(subCmd.Name(), toComplete) {
-				completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+			if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
+				if strings.HasPrefix(subCmd.Name(), toComplete) {
+					completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+				}
 			}
 		}
 

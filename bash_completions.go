@@ -389,7 +389,7 @@ fi
 func writeCommands(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    commands=()\n")
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c == cmd.helpCommand {
+		if !c.IsAvailableCommand() && c != cmd.helpCommand {
 			continue
 		}
 		buf.WriteString(fmt.Sprintf("    commands+=(%q)\n", c.Name()))
@@ -582,7 +582,7 @@ func writeArgAliases(buf *bytes.Buffer, cmd *Command) {
 
 func gen(buf *bytes.Buffer, cmd *Command) {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c == cmd.helpCommand {
+		if !c.IsAvailableCommand() && c != cmd.helpCommand {
 			continue
 		}
 		gen(buf, c)

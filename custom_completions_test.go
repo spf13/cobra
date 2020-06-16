@@ -629,3 +629,71 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 }
+
+func TestCompleteHelp(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child1Cmd := &Command{
+		Use: "child1",
+		Run: emptyRun,
+	}
+	child2Cmd := &Command{
+		Use: "child2",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(child1Cmd, child2Cmd)
+
+	child3Cmd := &Command{
+		Use: "child3",
+		Run: emptyRun,
+	}
+	child1Cmd.AddCommand(child3Cmd)
+
+	// Test that completion includes the help command
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"child1",
+		"child2",
+		"help",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test sub-commands are completed on first level of help command
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "help", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"child1",
+		"child2",
+		"help", // "<program> help help" is a valid command, so should be completed
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test sub-commands are completed on first level of help command
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "help", "child1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"child3",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
