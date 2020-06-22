@@ -1332,6 +1332,23 @@ func TestPersistentHooks(t *testing.T) {
 		childPersPostArgs string
 	)
 
+	var (
+		persParentPersPreArgs  string
+		persParentPreArgs      string
+		persParentRunArgs      string
+		persParentPostArgs     string
+		persParentPersPostArgs string
+	)
+
+	var (
+		persChildPersPreArgs  string
+		persChildPreArgs      string
+		persChildPreArgs2     string
+		persChildRunArgs      string
+		persChildPostArgs     string
+		persChildPersPostArgs string
+	)
+
 	parentCmd := &Command{
 		Use: "parent",
 		PersistentPreRun: func(_ *Command, args []string) {
@@ -1371,6 +1388,52 @@ func TestPersistentHooks(t *testing.T) {
 	}
 	parentCmd.AddCommand(childCmd)
 
+	parentCmd.OnPersistentPreRun(func(_ *Command, args []string) error {
+		persParentPersPreArgs = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnPreRun(func(_ *Command, args []string) error {
+		persParentPreArgs = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnRun(func(_ *Command, args []string) error {
+		persParentRunArgs = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnPostRun(func(_ *Command, args []string) error {
+		persParentPostArgs = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnPersistentPostRun(func(_ *Command, args []string) error {
+		persParentPersPostArgs = strings.Join(args, " ")
+		return nil
+	})
+
+	childCmd.OnPersistentPreRun(func(_ *Command, args []string) error {
+		persChildPersPreArgs = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnPreRun(func(_ *Command, args []string) error {
+		persChildPreArgs = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnPreRun(func(_ *Command, args []string) error {
+		persChildPreArgs2 = strings.Join(args, " ") + " three"
+		return nil
+	})
+	childCmd.OnRun(func(_ *Command, args []string) error {
+		persChildRunArgs = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnPostRun(func(_ *Command, args []string) error {
+		persChildPostArgs = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnPersistentPostRun(func(_ *Command, args []string) error {
+		persChildPersPostArgs = strings.Join(args, " ")
+		return nil
+	})
+
 	output, err := executeCommand(parentCmd, "child", "one", "two")
 	if output != "" {
 		t.Errorf("Unexpected output: %v", output)
@@ -1378,13 +1441,11 @@ func TestPersistentHooks(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-
-	// TODO: currently PersistenPreRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPreRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPreArgs != "" {
+	if EnablePersistentRunOverride && parentPersPreArgs != "" {
 		t.Errorf("Expected blank parentPersPreArgs, got %q", parentPersPreArgs)
+	}
+	if !EnablePersistentRunOverride && parentPersPreArgs != "one two" {
+		t.Errorf("Expected parentPersPreArgs %q, got %q", "one two", parentPersPreArgs)
 	}
 	if parentPreArgs != "" {
 		t.Errorf("Expected blank parentPreArgs, got %q", parentPreArgs)
@@ -1395,14 +1456,12 @@ func TestPersistentHooks(t *testing.T) {
 	if parentPostArgs != "" {
 		t.Errorf("Expected blank parentPostArgs, got %q", parentPostArgs)
 	}
-	// TODO: currently PersistenPostRun* defined in parent does not
-	// run if the matchin child subcommand has PersistenPostRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-	// this test must be fixed.
-	if parentPersPostArgs != "" {
+	if EnablePersistentRunOverride && parentPersPostArgs != "" {
 		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
 	}
-
+	if !EnablePersistentRunOverride && parentPersPostArgs != "one two" {
+		t.Errorf("Expected parentPersPostArgs %q, got %q", "one two", parentPersPostArgs)
+	}
 	if childPersPreArgs != "one two" {
 		t.Errorf("Expected childPersPreArgs %q, got %q", "one two", childPersPreArgs)
 	}
@@ -1418,6 +1477,49 @@ func TestPersistentHooks(t *testing.T) {
 	if childPersPostArgs != "one two" {
 		t.Errorf("Expected childPersPostArgs %q, got %q", "one two", childPersPostArgs)
 	}
+
+	// Test On*Run hooks
+
+	if persParentPersPreArgs != "one two" {
+		t.Errorf("Expected persParentPersPreArgs %q, got %q", "one two", persParentPersPreArgs)
+	}
+	if persParentPreArgs != "" {
+		t.Errorf("Expected persParentPreArgs %q, got %q", "one two", persParentPreArgs)
+	}
+	if persParentRunArgs != "" {
+		t.Errorf("Expected persParentRunArgs %q, got %q", "one two", persParentRunArgs)
+	}
+	if persParentPostArgs != "" {
+		t.Errorf("Expected persParentPostArgs %q, got %q", "one two", persParentPostArgs)
+	}
+	if persParentPersPostArgs != "one two" {
+		t.Errorf("Expected persParentPersPostArgs %q, got %q", "one two", persParentPersPostArgs)
+	}
+
+	if persChildPersPreArgs != "one two" {
+		t.Errorf("Expected persChildPersPreArgs %q, got %q", "one two", persChildPersPreArgs)
+	}
+	if persChildPreArgs != "one two" {
+		t.Errorf("Expected persChildPreArgs %q, got %q", "one two", persChildPreArgs)
+	}
+	if persChildPreArgs2 != "one two three" {
+		t.Errorf("Expected persChildPreArgs %q, got %q", "one two three", persChildPreArgs2)
+	}
+	if persChildRunArgs != "one two" {
+		t.Errorf("Expected persChildRunArgs %q, got %q", "one two", persChildRunArgs)
+	}
+	if persChildPostArgs != "one two" {
+		t.Errorf("Expected persChildPostArgs %q, got %q", "one two", persChildPostArgs)
+	}
+	if persChildPersPostArgs != "one two" {
+		t.Errorf("Expected persChildPersPostArgs %q, got %q", "one two", persChildPersPostArgs)
+	}
+}
+
+func TestPersistentHooksWoOverride(t *testing.T) {
+	EnablePersistentRunOverride = false
+	TestPersistentHooks(t)
+	EnablePersistentRunOverride = true
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.

@@ -39,6 +39,9 @@ var templateFuncs = template.FuncMap{
 
 var initializers []func()
 
+// EnablePersistentRunOverride ensures Persistent*Run* functions in childs override their parents
+var EnablePersistentRunOverride = true
+
 // EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
