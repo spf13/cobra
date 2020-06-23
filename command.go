@@ -869,37 +869,33 @@ func (c *Command) execute(a []string) (err error) {
 	// Find and merge the Persistent*Run functions into the persistent*Run slices.
 	// If EnablePersistentRunOverride is set Persistent*Run from childs will override their parents.
 	// Any hooks registered through OnPersistent*Run will always be executed and cannot be overriden.
-	hasLegacyPersistentPreRun := false
-	hasLegacyPersistentPostRun := false
+	hasPersistentPreRunFromStruct := false
+	hasPersistentPostRunFromStruct := false
 	for p := c; p != nil; p = p.Parent() {
-		if !hasLegacyPersistentPreRun || !EnablePersistentRunOverride {
+		if !hasPersistentPreRunFromStruct || !EnablePersistentRunOverride {
 			if p.PersistentPreRunE != nil {
-				persistentPreRunHooks = append([]func(cmd *Command, args []string) error{
-					p.PersistentPreRunE,
-				}, persistentPreRunHooks...)
-				hasLegacyPersistentPreRun = true
+				persistentPreRunHooks = prependHook(&persistentPreRunHooks, p.PersistentPreRunE)
+				hasPersistentPreRunFromStruct = true
 			} else if p.PersistentPreRun != nil {
 				persistentPreRunHook := p.PersistentPreRun
-				persistentPreRunHooks = append([]func(cmd *Command, args []string) error{
-					func(cmd *Command, args []string) error {
-						persistentPreRunHook(cmd, args)
-						return nil
-					},
-				}, persistentPreRunHooks...)
-				hasLegacyPersistentPreRun = true
+				persistentPreRunHooks = prependHook(&persistentPreRunHooks, func(cmd *Command, args []string) error {
+					persistentPreRunHook(cmd, args)
+					return nil
+				})
+				hasPersistentPreRunFromStruct = true
 			}
 		}
-		if !hasLegacyPersistentPostRun || !EnablePersistentRunOverride {
+		if !hasPersistentPostRunFromStruct || !EnablePersistentRunOverride {
 			if p.PersistentPostRunE != nil {
 				persistentPostRunHooks = append(persistentPostRunHooks, p.PersistentPostRunE)
-				hasLegacyPersistentPostRun = true
+				hasPersistentPostRunFromStruct = true
 			} else if p.PersistentPostRun != nil {
 				persistentPostRunHook := p.PersistentPostRun
 				persistentPostRunHooks = append(persistentPostRunHooks, func(cmd *Command, args []string) error {
 					persistentPostRunHook(cmd, args)
 					return nil
 				})
-				hasLegacyPersistentPostRun = true
+				hasPersistentPostRunFromStruct = true
 			}
 		}
 
@@ -944,6 +940,11 @@ func (c *Command) executeHooks(hooks *[]func(cmd *Command, args []string) error,
 		}
 	}
 	return nil
+}
+
+// prepend a hook onto the slice of hooks
+func prependHook(hooks *[]func(cmd *Command, args []string) error, hook ...func(cmd *Command, args []string) error) []func(cmd *Command, args []string) error {
+	return append(hook, *hooks...)
 }
 
 // OnPersistentPreRun registers one or more hooks on the command to be executed
