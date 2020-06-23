@@ -1484,13 +1484,13 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Expected persParentPersPreArgs %q, got %q", "one two", persParentPersPreArgs)
 	}
 	if persParentPreArgs != "" {
-		t.Errorf("Expected persParentPreArgs %q, got %q", "one two", persParentPreArgs)
+		t.Errorf("Expected blank persParentPreArgs, got %q", persParentPreArgs)
 	}
 	if persParentRunArgs != "" {
-		t.Errorf("Expected persParentRunArgs %q, got %q", "one two", persParentRunArgs)
+		t.Errorf("Expected blank persParentRunArgs, got %q", persParentRunArgs)
 	}
 	if persParentPostArgs != "" {
-		t.Errorf("Expected persParentPostArgs %q, got %q", "one two", persParentPostArgs)
+		t.Errorf("Expected blank persParentPostArg, got %q", persParentPostArgs)
 	}
 	if persParentPersPostArgs != "one two" {
 		t.Errorf("Expected persParentPersPostArgs %q, got %q", "one two", persParentPersPostArgs)
