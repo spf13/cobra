@@ -1653,6 +1653,28 @@ func TestFlagErrorFunc(t *testing.T) {
 	}
 }
 
+func TestUnknownCommandErrorFunc(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	subCmd := &Command{
+		Use: "type",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(subCmd)
+
+	expectedFmt := "unknown command: %v"
+	rootCmd.SetUnknownCommandErrorFunc(func(_ *Command, arg string) error {
+		return fmt.Errorf(expectedFmt, arg)
+	})
+
+	_, err := executeCommand(rootCmd, "typo")
+
+	got := err.Error()
+	expected := "unknown command: typo"
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.
