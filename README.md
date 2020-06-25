@@ -716,6 +716,19 @@ Did you mean this?
 Run 'kubectl help' for usage.
 ```
 
+If you wish to customize the error message which is shown for unknown commands, you can set a custom error handler:
+
+```go
+cmd.SuggestionsMinimumDistance = 2 // this won't automatically be set if you override the default function
+cmd.SetUnknownCommandErrorFunc(func(c *cobra.Command, arg string) error {
+  suggestionsString := ""
+  if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
+    suggestionsString += fmt.Sprintf(" Did you mean %q?", suggestions[0])
+  }
+  return fmt.Errorf("Unknown command %q.%s", arg, suggestionsString)
+})
+```
+
 ## Generating documentation for your command
 
 Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
