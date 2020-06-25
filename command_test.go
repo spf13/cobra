@@ -1205,9 +1205,8 @@ func TestSuggestions(t *testing.T) {
 func TestSuggestionsTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	timesCmd := &Command{
-		Use:        "times",
-		SuggestFor: []string{"counts"},
-		Run:        emptyRun,
+		Use: "times",
+		Run: emptyRun,
 	}
 	rootCmd.AddCommand(timesCmd)
 	rootCmd.SetSuggestionsTemplate(`
@@ -1215,6 +1214,27 @@ customized suggestions: {{range .}}{{.}}{{end}}`)
 
 	output, _ := executeCommand(rootCmd, "time")
 	expected := "Error: unknown command \"time\" for \"root\"\ncustomized suggestions: times\nRun 'root --help' for usage.\n"
+
+	if output != expected {
+		t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expected, output)
+	}
+}
+
+func TestDefaultSuggestionsTemplateMultiLine(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	timeCmd := &Command{
+		Use: "time",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(timeCmd)
+	timesCmd := &Command{
+		Use: "times",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(timesCmd)
+
+	output, _ := executeCommand(rootCmd, "tim")
+	expected := "Error: unknown command \"tim\" for \"root\"\n\nDid you mean this?\n\ttime\n\ttimes\n\nRun 'root --help' for usage.\n"
 
 	if output != expected {
 		t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expected, output)

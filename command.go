@@ -546,8 +546,7 @@ func (c *Command) SuggestionsTemplate() string {
 	return `
 
 Did you mean this?
-{{range .}}{{print "\t" .}}{{end}}
-`
+{{range .}}{{print "\t" . "\n"}}{{end}}`
 }
 
 func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
