@@ -443,7 +443,7 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 }
 
 // UnknownCommandErrorFunc returns either the function set by SetUnknownCommandErrorFunc for this
-// command or a parent, or it returns a function which returns the original error.
+// command or a parent, or it returns a function which returns the default implementation.
 func (c *Command) UnknownCommandErrorFunc() (f func(*Command, string) error) {
 	if c.unknownCommandErrorFunc != nil {
 		return c.unknownCommandErrorFunc
