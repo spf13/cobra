@@ -28,8 +28,7 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
   * [PreRun and PostRun Hooks](#prerun-and-postrun-hooks)
   * [Suggestions when "unknown command" happens](#suggestions-when-unknown-command-happens)
   * [Generating documentation for your command](#generating-documentation-for-your-command)
-  * [Generating bash completions](#generating-bash-completions)
-  * [Generating zsh completions](#generating-zsh-completions)
+  * [Generating shell completions](#generating-shell-completions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -50,7 +49,7 @@ Cobra provides:
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic help flag recognition of `-h`, `--help`, etc.
-* Automatically generated bash autocomplete for your application
+* Automatically generated shell autocomplete for your application (bash, zsh, fish, powershell)
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
 * The flexibility to define your own help, usage, etc.
@@ -720,14 +719,9 @@ Run 'kubectl help' for usage.
 
 Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
 
-## Generating bash completions
+## Generating shell completions
 
-Cobra can generate a bash-completion file. If you add more information to your command, these completions can be amazingly powerful and flexible.  Read more about it in [Bash Completions](bash_completions.md).
-
-## Generating zsh completions
-
-Cobra can generate zsh-completion file. Read more about it in
-[Zsh Completions](zsh_completions.md).
+Cobra can generate a shell-completion file for the following shells: Bash, Zsh, Fish, Powershell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
 
 # Contributing
 
