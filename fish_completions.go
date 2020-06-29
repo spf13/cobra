@@ -5,9 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 func genFishComp(buf *bytes.Buffer, name string, includeDesc bool) {
+	// Variables should not contain a '-' or ':' character
+	nameForVar := name
+	nameForVar = strings.Replace(nameForVar, "-", "_", -1)
+	nameForVar = strings.Replace(nameForVar, ":", "_", -1)
+
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
@@ -38,12 +44,12 @@ function __%[1]s_perform_completion
     __%[1]s_debug "emptyArg: $emptyArg"
 
     if not type -q "$args[1]"
-        # This can happen when "complete --do-complete %[1]s" is called when running this script.
+        # This can happen when "complete --do-complete %[2]s" is called when running this script.
         __%[1]s_debug "Cannot find $args[1]. No completions."
         return
     end
 
-    set requestComp "$args[1] %[2]s $args[2..-1] $emptyArg"
+    set requestComp "$args[1] %[3]s $args[2..-1] $emptyArg"
     __%[1]s_debug "Calling $requestComp"
 
     set results (eval $requestComp 2> /dev/null)
@@ -99,11 +105,11 @@ function __%[1]s_prepare_completions
     __%[1]s_debug "Completions are: $__%[1]s_comp_results"
     __%[1]s_debug "Directive is: $directive"
 
-    set shellCompDirectiveError %[3]d
-    set shellCompDirectiveNoSpace %[4]d
-    set shellCompDirectiveNoFileComp %[5]d
-    set shellCompDirectiveFilterFileExt %[6]d
-    set shellCompDirectiveFilterDirs %[7]d
+    set shellCompDirectiveError %[4]d
+    set shellCompDirectiveNoSpace %[5]d
+    set shellCompDirectiveNoFileComp %[6]d
+    set shellCompDirectiveFilterFileExt %[7]d
+    set shellCompDirectiveFilterDirs %[8]d
 
     if test -z "$directive"
         set directive 0
@@ -158,24 +164,24 @@ end
 # so we can properly delete any completions provided by another script.
 # The space after the the program name is essential to trigger completion for the program
 # and not completion of the program name itself.
-complete --do-complete "%[1]s " &> /dev/null
+complete --do-complete "%[2]s " &> /dev/null
 
 # Remove any pre-existing completions for the program since we will be handling all of them.
-complete -c %[1]s -e
+complete -c %[2]s -e
 
 # The order in which the below two lines are defined is very important so that __%[1]s_prepare_completions
 # is called first.  It is __%[1]s_prepare_completions that sets up the __%[1]s_comp_do_file_comp variable.
 #
 # This completion will be run second as complete commands are added FILO.
 # It triggers file completion choices when __%[1]s_comp_do_file_comp is set.
-complete -c %[1]s -n 'set --query __%[1]s_comp_do_file_comp'
+complete -c %[2]s -n 'set --query __%[1]s_comp_do_file_comp'
 
 # This completion will be run first as complete commands are added FILO.
-# The call to __%[1]s_prepare_completions will setup both __%[1]s_comp_results abd __%[1]s_comp_do_file_comp.
+# The call to __%[1]s_prepare_completions will setup both __%[1]s_comp_results and __%[1]s_comp_do_file_comp.
 # It provides the program's completion choices.
-complete -c %[1]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
+complete -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 
-`, name, compCmd,
+`, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
 }

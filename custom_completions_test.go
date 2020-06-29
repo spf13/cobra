@@ -1407,39 +1407,6 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	check(t, output, ShellCompNoDescRequestCmd)
 }
 
-func TestCompleteNoDesCmdInFishScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	child := &Command{
-		Use:               "child",
-		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
-	}
-	rootCmd.AddCommand(child)
-
-	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, false)
-	output := buf.String()
-
-	check(t, output, ShellCompNoDescRequestCmd)
-}
-
-func TestCompleteCmdInFishScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	child := &Command{
-		Use:               "child",
-		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
-	}
-	rootCmd.AddCommand(child)
-
-	buf := new(bytes.Buffer)
-	rootCmd.GenFishCompletion(buf, true)
-	output := buf.String()
-
-	check(t, output, ShellCompRequestCmd)
-	checkOmit(t, output, ShellCompNoDescRequestCmd)
-}
-
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
