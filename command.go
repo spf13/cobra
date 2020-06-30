@@ -827,80 +827,83 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
-	var persistentPreRunHooks []func(cmd *Command, args []string) error
-	preRunHooks := c.preRunHooks
-	runHooks := c.runHooks
-	postRunHooks := c.postRunHooks
-	var persistentPostRunHooks []func(cmd *Command, args []string) error
+	// Allocate the hooks execution chain for the current command
+	var hooks []func(cmd *Command, args []string) error
 
-	// Merge the PreRun* functions into the preRunHooks array
+	// First append the PreRun* hooks
+	hooks = append(hooks, c.preRunHooks...)
 	if c.PreRunE != nil {
-		preRunHooks = append(preRunHooks, c.PreRunE)
+		hooks = append(hooks, c.PreRunE)
 	} else if c.PreRun != nil {
-		preRunHooks = append(preRunHooks, wrapVoidHook(c.PreRun))
+		hooks = append(hooks, wrapVoidHook(c.PreRun))
 	}
 
-	// Merge the Run* functions into the runHooks array
+	// Include the validateRequiredFlags() logic as a hook
+	// to be executed before running the main Run hooks.
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		if err := cmd.validateRequiredFlags(); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	// Append the main Run* hooks
+	hooks = append(hooks, c.runHooks...)
 	if c.RunE != nil {
-		runHooks = append(runHooks, c.RunE)
+		hooks = append(hooks, c.RunE)
 	} else if c.Run != nil {
-		runHooks = append(runHooks, wrapVoidHook(c.Run))
+		hooks = append(hooks, wrapVoidHook(c.Run))
 	}
 
-	// Merge the PostRun* functions into the runHooks array
+	// Append the PostRun* hooks
+	hooks = append(hooks, c.postRunHooks...)
 	if c.PostRunE != nil {
-		postRunHooks = append(postRunHooks, c.PostRunE)
+		hooks = append(hooks, c.PostRunE)
 	} else if c.PostRun != nil {
-		postRunHooks = append(postRunHooks, wrapVoidHook(c.PostRun))
+		hooks = append(hooks, wrapVoidHook(c.PostRun))
 	}
 
-	// Find and merge the Persistent*Run functions into the persistent*Run array.
-	// If EnablePersistentRunOverride is set Persistent*Run from childs will override their parents.
-	// Any hooks registered through OnPersistent*Run will always be executed and cannot be overriden.
+	// Lastly find and append/prepend the Persistent*Run hooks.
+	// Setting EnablePersistentRunOverride to true (default) preserves
+	// the previous behavior/concern where childs should override their parents.
+	// Any hooks registered through OnPersistent*Run will always
+	// be executed and cannot be overriden.
 	hasPersistentPreRunFromStruct := false
 	hasPersistentPostRunFromStruct := false
 	for p := c; p != nil; p = p.Parent() {
+		// Find and prepend the PersistentPreRun* hooks as defined on the commands
 		if !hasPersistentPreRunFromStruct || !EnablePersistentRunOverride {
 			if p.PersistentPreRunE != nil {
-				persistentPreRunHooks = prependHook(&persistentPreRunHooks, p.PersistentPreRunE)
+				hooks = prependHook(&hooks, p.PersistentPreRunE)
 				hasPersistentPreRunFromStruct = true
 			} else if p.PersistentPreRun != nil {
-				persistentPreRunHooks = prependHook(&persistentPreRunHooks, wrapVoidHook(p.PersistentPreRun))
+				hooks = prependHook(&hooks, wrapVoidHook(p.PersistentPreRun))
 				hasPersistentPreRunFromStruct = true
 			}
 		}
+		// Find and append the PersistentPostRun* hooks as defined on the commands
 		if !hasPersistentPostRunFromStruct || !EnablePersistentRunOverride {
 			if p.PersistentPostRunE != nil {
-				persistentPostRunHooks = append(persistentPostRunHooks, p.PersistentPostRunE)
+				hooks = append(hooks, p.PersistentPostRunE)
 				hasPersistentPostRunFromStruct = true
 			} else if p.PersistentPostRun != nil {
-				persistentPostRunHooks = append(persistentPostRunHooks, wrapVoidHook(p.PersistentPostRun))
+				hooks = append(hooks, wrapVoidHook(p.PersistentPostRun))
 				hasPersistentPostRunFromStruct = true
 			}
 		}
 
-		persistentPreRunHooks = append(p.persistentPreRunHooks, persistentPreRunHooks...)
-		persistentPostRunHooks = append(persistentPostRunHooks, p.persistentPostRunHooks...)
+		// Hooks registered through OnPersistent*Run should always be executed
+		// Prepend the PersistentPreRun* hooks
+		hooks = append(p.persistentPreRunHooks, hooks...)
+		// Append the PersistentPostRun* hooks
+		hooks = append(hooks, p.persistentPostRunHooks...)
 	}
 
-	// Execute the hooks:
-	if err := c.executeHooks(&persistentPreRunHooks, argWoFlags); err != nil {
-		return err
-	}
-	if err := c.executeHooks(&preRunHooks, argWoFlags); err != nil {
-		return err
-	}
-	if err := c.validateRequiredFlags(); err != nil {
-		return err
-	}
-	if err := c.executeHooks(&runHooks, argWoFlags); err != nil {
-		return err
-	}
-	if err := c.executeHooks(&postRunHooks, argWoFlags); err != nil {
-		return err
-	}
-	if err := c.executeHooks(&persistentPostRunHooks, argWoFlags); err != nil {
-		return err
+	// Execute the hooks execution chain:
+	for _, x := range hooks {
+		if err := x(c, argWoFlags); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -910,16 +913,6 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
-}
-
-// executeHooks executes the hooks
-func (c *Command) executeHooks(hooks *[]func(cmd *Command, args []string) error, args []string) error {
-	for _, x := range *hooks {
-		if err := x(c, args); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // prependHook prepends a hook onto the array of hooks
