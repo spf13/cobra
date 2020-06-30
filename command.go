@@ -833,28 +833,28 @@ func (c *Command) execute(a []string) (err error) {
 	postRunHooks := c.postRunHooks
 	var persistentPostRunHooks []func(cmd *Command, args []string) error
 
-	// Merge the PreRun functions into the preRunHooks slice
+	// Merge the PreRun* functions into the preRunHooks array
 	if c.PreRunE != nil {
 		preRunHooks = append(preRunHooks, c.PreRunE)
 	} else if c.PreRun != nil {
 		preRunHooks = append(preRunHooks, wrapVoidHook(c.PreRun))
 	}
 
-	// Merge the Run functions into the runHooks slice
+	// Merge the Run* functions into the runHooks array
 	if c.RunE != nil {
 		runHooks = append(runHooks, c.RunE)
 	} else if c.Run != nil {
 		runHooks = append(runHooks, wrapVoidHook(c.Run))
 	}
 
-	// Merge the PostRun functions into the runHooks slice
+	// Merge the PostRun* functions into the runHooks array
 	if c.PostRunE != nil {
 		postRunHooks = append(postRunHooks, c.PostRunE)
 	} else if c.PostRun != nil {
 		postRunHooks = append(postRunHooks, wrapVoidHook(c.PostRun))
 	}
 
-	// Find and merge the Persistent*Run functions into the persistent*Run slices.
+	// Find and merge the Persistent*Run functions into the persistent*Run array.
 	// If EnablePersistentRunOverride is set Persistent*Run from childs will override their parents.
 	// Any hooks registered through OnPersistent*Run will always be executed and cannot be overriden.
 	hasPersistentPreRunFromStruct := false
@@ -912,7 +912,7 @@ func (c *Command) preRun() {
 	}
 }
 
-// executeHooks executes a slice of hooks
+// executeHooks executes the hooks
 func (c *Command) executeHooks(hooks *[]func(cmd *Command, args []string) error, args []string) error {
 	for _, x := range *hooks {
 		if err := x(c, args); err != nil {
@@ -922,11 +922,12 @@ func (c *Command) executeHooks(hooks *[]func(cmd *Command, args []string) error,
 	return nil
 }
 
-// prepend a hook onto the slice of hooks
+// prependHook prepends a hook onto the array of hooks
 func prependHook(hooks *[]func(cmd *Command, args []string) error, hook ...func(cmd *Command, args []string) error) []func(cmd *Command, args []string) error {
 	return append(hook, *hooks...)
 }
 
+// wrapVoidHook wraps a void hook into a function having the return error signature
 func wrapVoidHook(hook func(cmd *Command, args []string)) func(cmd *Command, args []string) error {
 	return func(cmd *Command, args []string) error {
 		hook(cmd, args)
