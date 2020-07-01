@@ -8,6 +8,7 @@
 - [Gardener](https://github.com/gardener/gardenctl)
 - [Giant Swarm's gsctl](https://github.com/giantswarm/gsctl)
 - [Github CLI](https://github.com/cli/cli)
+- [Golangci-lint](https://golangci-lint.run)
 - [GopherJS](http://www.gopherjs.org/)
 - [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
