@@ -68,7 +68,7 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	}
 	basename := strings.Replace(cmd.CommandPath(), " ", separator, -1)
 	filename := filepath.Join(opts.Path, basename+"."+section)
-	f, err := os.Create(filename)
+	f, err := docFs.Create(filename)
 	if err != nil {
 		return err
 	}

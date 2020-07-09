@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/spf13/afero"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,6 +16,43 @@ import (
 
 func translate(in string) string {
 	return strings.Replace(in, "-", "\\-", -1)
+}
+
+func TestAferoFs(t *testing.T) {
+	oldDocFs := GetFS()
+	defer func() {
+		SetFS(oldDocFs)
+	}()
+	SetFS(&afero.Afero{Fs: afero.NewMemMapFs()})
+
+	err := docFs.MkdirAll("/__cobra-tests/manpages", os.ModeDir)
+	if err != nil {
+		t.Errorf("Expected no error, but got: %s", err)
+	}
+
+	f, err := docFs.Create("/__cobra-tests/manpages/page.3")
+	if err != nil {
+		t.Errorf("Expected to create file /__cobra-tests/manpages/page.3 without error, but got: %s", err)
+	}
+	defer f.Close()
+
+	writeCount, err := f.WriteString("manpage content")
+	if err != nil {
+		t.Errorf("Expected to write to file /__cobra-tests/manpages/page.3 without error, but got: %s", err)
+	}
+
+	if writeCount != len("manpage content") {
+		t.Errorf("Expected to write %d bytes in file, but %d really written", len("manpage content"), writeCount)
+	}
+
+	if _, err := docFs.Stat("/__cobra-tests/manpages"); os.IsNotExist(err) {
+		t.Errorf("Exprected /__cobra-tests/manpages to exists")
+	}
+
+	SetFS(oldDocFs)
+	if _, err := docFs.Stat("/__cobra-tests/manpages"); !os.IsNotExist(err) {
+		t.Errorf("Exprected /__cobra-tests/manpages to not exists anymore")
+	}
 }
 
 func TestGenManDoc(t *testing.T) {
