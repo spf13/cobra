@@ -312,6 +312,37 @@ var versionCmd = &cobra.Command{
 }
 ```
 
+### Returning and handling errors
+
+If you wish to return an error to the caller of a command, `RunE` can be used.
+
+```go
+package cmd
+
+import (
+  "fmt"
+
+  "github.com/spf13/cobra"
+)
+
+func init() {
+  rootCmd.AddCommand(tryCmd)
+}
+
+var tryCmd = &cobra.Command{
+  Use:   "try",
+  Short: "Try and possibly fail at something",
+  RunE: func(cmd *cobra.Command, args []string) error {
+    err := someFunc()
+    if err := nil {
+	return err
+    }
+  },
+}
+```
+
+The error can then be caught at the execute function call.
+
 ## Working with Flags
 
 Flags provide modifiers to control how the action command operates.
