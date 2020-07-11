@@ -3,7 +3,7 @@ package cmd
 func initAgpl() {
 	Licenses["agpl"] = License{
 		Name:            "GNU Affero General Public License",
-		PossibleMatches: []string{"agpl", "affero gpl", "gnu agpl"},
+		PossibleMatches: []string{"AGPL-3.0", "agpl", "affero gpl", "gnu agpl"},
 		Header: `
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
