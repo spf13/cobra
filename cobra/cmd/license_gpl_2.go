@@ -20,18 +20,18 @@ func initGpl2() {
 		Name:            "GNU General Public License 2.0",
 		PossibleMatches: []string{"gpl2", "gnu gpl2", "gplv2"},
 		Header: `
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.`,
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.`,
 		Text: `                    GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
@@ -347,13 +347,13 @@ If the program is interactive, make it output a short notice like this
 when it starts in an interactive mode:
 
     Gnomovision version 69, Copyright (C) year name of author
-    Gnomovision comes with ABSOLUTELY NO WARRANTY; for details type 'show w'.
+    Gnomovision comes with ABSOLUTELY NO WARRANTY; for details type ` + "`" + `show w'.
     This is free software, and you are welcome to redistribute it
-    under certain conditions; type 'show c' for details.
+    under certain conditions; type ` + "`" + `show c' for details.
 
-The hypothetical commands 'show w' and 'show c' should show the appropriate
+The hypothetical commands ` + "`" + `show w' and ` + "`" + `show c' should show the appropriate
 parts of the General Public License.  Of course, the commands you use may
-be called something other than 'show w' and 'show c'; they could even be
+be called something other than ` + "`" + `show w' and ` + "`" + `show c'; they could even be
 mouse-clicks or menu items--whatever suits your program.
 
 You should also get your employer (if you work as a programmer) or your
@@ -361,7 +361,7 @@ school, if any, to sign a "copyright disclaimer" for the program, if
 necessary.  Here is a sample; alter the names:
 
   Yoyodyne, Inc., hereby disclaims all copyright interest in the program
-  'Gnomovision' (which makes passes at compilers) written by James Hacker.
+  ` + "`" + `Gnomovision' (which makes passes at compilers) written by James Hacker.
 
   <signature of Ty Coon>, 1 April 1989
   Ty Coon, President of Vice
