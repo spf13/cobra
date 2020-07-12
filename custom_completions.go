@@ -132,6 +132,12 @@ func (c *Command) initCompleteCmd(args []string) {
 					comp = strings.Split(comp, "\t")[0]
 				}
 
+				// Make sure we only write the first line to the output.
+				// This is needed if a description contains a linebreak.
+				// Otherwise the shell scripts will interpret the other lines as new flags
+				// and could therefore provide a wrong completion.
+				comp = strings.Split(comp, "\n")[0]
+
 				// Finally trim the completion.  This is especially important to get rid
 				// of a trailing tab when there are no description following it.
 				// For example, a sub-command without a description should not be completed
