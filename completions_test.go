@@ -2543,3 +2543,64 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 }
+
+func TestCompleteWithDisableFlagParsing(t *testing.T) {
+
+	flagValidArgs := func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return []string{"--flag", "-f"}, ShellCompDirectiveNoFileComp
+	}
+
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	childCmd := &Command{
+		Use:                "child",
+		Run:                emptyRun,
+		DisableFlagParsing: true,
+		ValidArgsFunction:  flagValidArgs,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.PersistentFlags().StringP("persistent", "p", "", "persistent flag")
+	childCmd.Flags().StringP("nonPersistent", "n", "", "non-persistent flag")
+
+	// Test that when DisableFlagParsing==true, ValidArgsFunction is called to complete flag names,
+	// after Cobra tried to complete the flags it knows about.
+	childCmd.DisableFlagParsing = true
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"--persistent",
+		"-p",
+		"--nonPersistent",
+		"-n",
+		"--flag",
+		"-f",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that when DisableFlagParsing==false, Cobra completes the flags itself and ValidArgsFunction is not called
+	childCmd.DisableFlagParsing = false
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Cobra was not told of any flags, so it returns nothing
+	expected = strings.Join([]string{
+		"--persistent",
+		"-p",
+		"--nonPersistent",
+		"-n",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
