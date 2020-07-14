@@ -833,6 +833,8 @@ func (c *Command) execute(a []string) (err error) {
 
 	c.preRun()
 
+	defer c.postRun()
+
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
 		argWoFlags = a
@@ -899,6 +901,12 @@ func (c *Command) execute(a []string) (err error) {
 
 func (c *Command) preRun() {
 	for _, x := range initializers {
+		x()
+	}
+}
+
+func (c *Command) postRun() {
+	for _, x := range finalizers {
 		x()
 	}
 }
