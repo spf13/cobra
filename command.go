@@ -836,7 +836,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.validateRequiredFlags(); err != nil {
-		return err
+		return c.FlagErrorFunc()(c, err)
 	}
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
