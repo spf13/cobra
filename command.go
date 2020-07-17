@@ -767,11 +767,11 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if c.AdditionalSetupE != nil {
-		if err := c.AdditionalSetupE(c, c.Flags().Args()); err != nil {
+		if err := c.AdditionalSetupE(c, a); err != nil {
 			return err
 		}
 	} else if c.AdditionalSetup != nil {
-		c.AdditionalSetup(c, c.flags.Args())
+		c.AdditionalSetup(c, a)
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
