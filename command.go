@@ -90,6 +90,7 @@ type Command struct {
 	Version string
 
 	// The *Run functions are executed in the following order:
+	//   * AdditionalSetup()
 	//   * PersistentPreRun()
 	//   * PreRun()
 	//   * Run()
@@ -97,6 +98,10 @@ type Command struct {
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name.
 	//
+	// AdditionalSetup: If you require any additional setup on the command prior to flag parsing
+	AdditionalSetup func(cmd *Command, args []string)
+	// AdditionalSetupE: AdditionalSetup but returns an error
+	AdditionalSetupE func(cmd *Command, args []string) error
 	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
 	// PersistentPreRunE: PersistentPreRun but returns an error.
@@ -759,6 +764,14 @@ func (c *Command) execute(a []string) (err error) {
 
 	if len(c.Deprecated) > 0 {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+	}
+
+	if c.AdditionalSetupE != nil {
+		if err := c.AdditionalSetupE(c, c.Flags().Args()); err != nil {
+			return err
+		}
+	} else if c.AdditionalSetup != nil {
+		c.AdditionalSetup(c, c.flags.Args())
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
