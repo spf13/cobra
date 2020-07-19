@@ -495,12 +495,14 @@ func writeFlag(buf *bytes.Buffer, flag *pflag.Flag, cmd *Command) {
 
 func writeLocalNonPersistentFlag(buf *bytes.Buffer, flag *pflag.Flag) {
 	name := flag.Name
-	format := "    local_nonpersistent_flags+=(\"--%s"
+	format := "    local_nonpersistent_flags+=(\"--%[1]s\")\n"
 	if len(flag.NoOptDefVal) == 0 {
-		format += "="
+		format += "    local_nonpersistent_flags+=(\"--%[1]s=\")\n"
 	}
-	format += "\")\n"
 	buf.WriteString(fmt.Sprintf(format, name))
+	if len(flag.Shorthand) > 0 {
+		buf.WriteString(fmt.Sprintf("    local_nonpersistent_flags+=(\"-%s\")\n", flag.Shorthand))
+	}
 }
 
 // Setup annotations for go completions for registered flags
@@ -535,7 +537,9 @@ func writeFlags(buf *bytes.Buffer, cmd *Command) {
 		if len(flag.Shorthand) > 0 {
 			writeShortFlag(buf, flag, cmd)
 		}
-		if localNonPersistentFlags.Lookup(flag.Name) != nil {
+		// localNonPersistentFlags are used to stop the completion of subcommands when one is set
+		// if TraverseChildren is true we should allow to complete subcommands
+		if localNonPersistentFlags.Lookup(flag.Name) != nil && !cmd.Root().TraverseChildren {
 			writeLocalNonPersistentFlag(buf, flag)
 		}
 	})
