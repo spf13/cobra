@@ -10,6 +10,7 @@
 - [Git Bump](https://github.com/erdaltsksn/git-bump)
 - [Github CLI](https://github.com/cli/cli)
 - [GitHub Labeler](https://github.com/erdaltsksn/gh-label)
+- [Golangci-lint](https://golangci-lint.run)
 - [GopherJS](http://www.gopherjs.org/)
 - [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
@@ -27,3 +28,4 @@
 - [Random](https://github.com/erdaltsksn/random)
 - [Rclone](https://rclone.org/)
 - [Skaffold](https://skaffold.dev/)
+- [Werf](https://werf.io/)

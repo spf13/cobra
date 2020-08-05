@@ -9,6 +9,7 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
 [![Build Status](https://travis-ci.org/spf13/cobra.svg "Travis CI status")](https://travis-ci.org/spf13/cobra)
 [![GoDoc](https://godoc.org/github.com/spf13/cobra?status.svg)](https://godoc.org/github.com/spf13/cobra)
 [![Go Report Card](https://goreportcard.com/badge/github.com/spf13/cobra)](https://goreportcard.com/report/github.com/spf13/cobra)
+[![Slack](https://img.shields.io/badge/Slack-cobra-brightgreen)](https://gophers.slack.com/archives/CD3LP1199)
 
 # Table of Contents
 
@@ -28,8 +29,7 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
   * [PreRun and PostRun Hooks](#prerun-and-postrun-hooks)
   * [Suggestions when "unknown command" happens](#suggestions-when-unknown-command-happens)
   * [Generating documentation for your command](#generating-documentation-for-your-command)
-  * [Generating bash completions](#generating-bash-completions)
-  * [Generating zsh completions](#generating-zsh-completions)
+  * [Generating shell completions](#generating-shell-completions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -50,7 +50,7 @@ Cobra provides:
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic help flag recognition of `-h`, `--help`, etc.
-* Automatically generated bash autocomplete for your application
+* Automatically generated shell autocomplete for your application (bash, zsh, fish, powershell)
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
 * The flexibility to define your own help, usage, etc.
@@ -312,6 +312,37 @@ var versionCmd = &cobra.Command{
   },
 }
 ```
+
+### Returning and handling errors
+
+If you wish to return an error to the caller of a command, `RunE` can be used.
+
+```go
+package cmd
+
+import (
+  "fmt"
+
+  "github.com/spf13/cobra"
+)
+
+func init() {
+  rootCmd.AddCommand(tryCmd)
+}
+
+var tryCmd = &cobra.Command{
+  Use:   "try",
+  Short: "Try and possibly fail at something",
+  RunE: func(cmd *cobra.Command, args []string) error {
+    err := someFunc()
+    if err := nil {
+	return err
+    }
+  },
+}
+```
+
+The error can then be caught at the execute function call.
 
 ## Working with Flags
 
@@ -720,14 +751,9 @@ Run 'kubectl help' for usage.
 
 Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
 
-## Generating bash completions
+## Generating shell completions
 
-Cobra can generate a bash-completion file. If you add more information to your command, these completions can be amazingly powerful and flexible.  Read more about it in [Bash Completions](bash_completions.md).
-
-## Generating zsh completions
-
-Cobra can generate zsh-completion file. Read more about it in
-[Zsh Completions](zsh_completions.md).
+Cobra can generate a shell-completion file for the following shells: Bash, Zsh, Fish, Powershell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
 
 # Contributing
 
