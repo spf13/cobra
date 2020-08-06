@@ -753,7 +753,9 @@ Cobra can generate documentation based on subcommands, flags, etc. Read more abo
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: Bash, Zsh, Fish, Powershell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Cobra can generate a shell-completion file for the following shells: Bash, Zsh, Fish, Powershell. Custom, dynamic completions are supported too. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+
+*Note: For generating **custom** shell completions for `zsh`, [use the master branch](https://stackoverflow.com/a/56410071/9606036) in your `.mod` file.*
 
 # Contributing
 
