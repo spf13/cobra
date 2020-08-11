@@ -334,10 +334,10 @@ var tryCmd = &cobra.Command{
   Use:   "try",
   Short: "Try and possibly fail at something",
   RunE: func(cmd *cobra.Command, args []string) error {
-    err := someFunc()
-    if err := nil {
+    if err := someFunc(); err != nil {
 	return err
     }
+    return nil
   },
 }
 ```
