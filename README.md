@@ -30,7 +30,7 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
   * [Suggestions when "unknown command" happens](#suggestions-when-unknown-command-happens)
   * [Generating documentation for your command](#generating-documentation-for-your-command)
   * [Generating shell completions](#generating-shell-completions)
-- [Contributing](#contributing)
+- [Contributing](CONTRIBUTING.md)
 - [License](#license)
 
 # Overview
@@ -754,16 +754,6 @@ Cobra can generate documentation based on subcommands, flags, etc. Read more abo
 ## Generating shell completions
 
 Cobra can generate a shell-completion file for the following shells: Bash, Zsh, Fish, Powershell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
-
-# Contributing
-
-1. Fork it
-2. Download your fork to your PC (`git clone https://github.com/your_username/cobra && cd cobra`)
-3. Create your feature branch (`git checkout -b my-new-feature`)
-4. Make changes and add them (`git add .`)
-5. Commit your changes (`git commit -m 'Add some feature'`)
-6. Push to the branch (`git push origin my-new-feature`)
-7. Create new pull request
 
 # License
 
