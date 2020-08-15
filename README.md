@@ -131,20 +131,6 @@ application will follow the following organizational structure:
       main.go
 ```
 
-In a Cobra app, typically the main.go file is very bare. It serves one purpose: initializing Cobra.
-
-```go
-package main
-
-import (
-  "{pathToYourApp}/cmd"
-)
-
-func main() {
-  cmd.Execute()
-}
-```
-
 ## Using the Cobra Generator
 
 Cobra provides its own program that will create your application and add any
