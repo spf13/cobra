@@ -57,6 +57,17 @@ func TestGenYamlTree(t *testing.T) {
 	}
 }
 
+func TestGenYamlDocRunnable(t *testing.T) {
+	// Testing a runnable command: should contain the "usage" field
+	buf := new(bytes.Buffer)
+	if err := GenYaml(rootCmd, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, "usage: "+rootCmd.Use)
+}
+
 func BenchmarkGenYamlToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
