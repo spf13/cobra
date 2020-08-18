@@ -37,6 +37,14 @@ type FParseErrWhitelist flag.ParseErrorsWhitelist
 // definition to ensure usability.
 type Command struct {
 	// Use is the one-line usage message.
+	// Recommended syntax is as follow:
+	//   [ ] identifies an optional argument. Arguments that are not enclosed in brackets are required.
+	//   ... indicates that you can specify multiple values for the previous argument.
+	//   |   indicates mutually exclusive information. You can use the argument to the left of the separator or the
+	//       argument to the right of the separator. You cannot use both arguments in a single use of the command.
+	//   { } delimits a set of mutually exclusive arguments when one of the arguments is required. If the arguments are
+	//       optional, they are enclosed in brackets ([ ]).
+	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
 
 	// Aliases is an array of aliases that can be used instead of the first word in Use.
