@@ -843,7 +843,7 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
-	if err := c.validateRequiredFlags(); err != nil {
+	if err := c.ValidateRequiredFlags(); err != nil {
 		return err
 	}
 	if c.RunE != nil {
@@ -986,7 +986,7 @@ func (c *Command) ValidateArgs(args []string) error {
 	return c.Args(c, args)
 }
 
-func (c *Command) validateRequiredFlags() error {
+func (c *Command) ValidateRequiredFlags() error {
 	if c.DisableFlagParsing {
 		return nil
 	}
