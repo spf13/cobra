@@ -49,6 +49,14 @@ $ yourprogram completion fish | source
 
 # To load completions for each session, execute once:
 $ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
+
+Powershell:
+
+PS> yourprogram completion powershell | Out-String | Invoke-Expression
+
+# To load completions for every new session, run:
+PS> yourprogram completion powershell > yourprogram.ps1
+# and source this file from your powershell profile.
 `,
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
@@ -316,7 +324,7 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string,
 ```
 ### Descriptions for completions
 
-Both `zsh` and `fish` allow for descriptions to annotate completion choices.  For commands and flags, Cobra will provide the descriptions automatically, based on usage information.  For example, using zsh:
+`zsh`, `fish` and `powershell` allow for descriptions to annotate completion choices.  For commands and flags, Cobra will provide the descriptions automatically, based on usage information.  For example, using zsh:
 ```
 $ helm s[tab]
 search  -- search for a keyword in charts
@@ -390,7 +398,7 @@ search  show  status
 ### Limitations
 
 * Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `zsh` (including the use of the `BashCompCustom` flag annotation).
-  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`).
+  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
 * The function `MarkFlagCustom()` is not supported and will be ignored for `zsh`.
   * You should instead use `RegisterFlagCompletionFunc()`.
 
@@ -416,7 +424,7 @@ search  show  status
 ### Limitations
 
 * Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `fish` (including the use of the `BashCompCustom` flag annotation).
-  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`).
+  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
 * The function `MarkFlagCustom()` is not supported and will be ignored for `fish`.
   * You should instead use `RegisterFlagCompletionFunc()`.
 * The following flag completion annotations are not supported and will be ignored for `fish`:
@@ -431,4 +439,46 @@ search  show  status
 
 ## PowerShell completions
 
-Please refer to [PowerShell Completions](powershell_completions.md) for details.
+Cobra supports native PowerShell completions generated from the root `cobra.Command`. You can use the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions. To include descriptions use `command.GenPowerShellCompletionWithDesc()` and `command.GenPowerShellCompletionFileWithDesc()`. Cobra will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
+
+The script is designed to support all three Powershell completion modes:
+
+* TabCompleteNext (default windows style - on each key press the next option is displayed)
+* Complete (works like bash)
+* MenuComplete (works like zsh)
+
+You set the mode with `Set-PSReadLineKeyHandler -Key Tab -Function <mode>`. Descriptions are only displayed when using the `Complete` or `MenuComplete` mode.
+
+Users need PowerShell version 5.0 or above, which comes with Windows 10 and can be downloaded separately for Windows 7 or 8.1. They can then write the completions to a file and source this file from their PowerShell profile, which is referenced by the `$Profile` environment variable. See `Get-Help about_Profiles` for more info about PowerShell profiles.
+
+```
+# With descriptions and Mode 'Complete'
+$ helm s[tab]
+search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
+
+# With descriptions and Mode 'MenuComplete' The description of the current selected value will be displayed below the suggestions.
+$ helm s[tab]
+search    show     status  
+
+search for a keyword in charts
+
+# Without descriptions
+$ helm s[tab]
+search  show  status
+```
+
+### Limitations
+
+* Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `powershell` (including the use of the `BashCompCustom` flag annotation).
+  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
+* The function `MarkFlagCustom()` is not supported and will be ignored for `powershell`.
+  * You should instead use `RegisterFlagCompletionFunc()`.
+* The following flag completion annotations are not supported and will be ignored for `powershell`:
+  * `BashCompFilenameExt` (filtering by file extension)
+  * `BashCompSubdirsInDir` (filtering by directory)
+* The functions corresponding to the above annotations are consequently not supported and will be ignored for `powershell`:
+  * `MarkFlagFilename()` and `MarkPersistentFlagFilename()` (filtering by file extension)
+  * `MarkFlagDirname()` and `MarkPersistentFlagDirname()` (filtering by directory)
+* Similarly, the following completion directives are not supported and will be ignored for `powershell`:
+  * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
+  * `ShellCompDirectiveFilterDirs` (filtering by directory)
