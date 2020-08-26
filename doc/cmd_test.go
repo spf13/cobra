@@ -27,7 +27,7 @@ func init() {
 	printCmd.Flags().BoolP("boolthree", "b", true, "help message for flag boolthree")
 
 	echoCmd.AddCommand(timesCmd, echoSubCmd, deprecatedCmd)
-	rootCmd.AddCommand(printCmd, echoCmd)
+	rootCmd.AddCommand(printCmd, echoCmd, dummyCmd)
 }
 
 var rootCmd = &cobra.Command{
@@ -71,6 +71,11 @@ var printCmd = &cobra.Command{
 	Use:   "print [string to print]",
 	Short: "Print anything to the screen",
 	Long:  `an absolutely utterly useless command for testing.`,
+}
+
+var dummyCmd = &cobra.Command{
+	Use:   "dummy [action]",
+	Short: "Performs a dummy action",
 }
 
 func checkStringContains(t *testing.T, got, expected string) {
