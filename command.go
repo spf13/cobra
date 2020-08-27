@@ -144,6 +144,10 @@ type Command struct {
 	// line of a command when printing help or generating docs
 	DisableFlagsInUseLine bool
 
+	// DisableArgsInUseLine will disable the addition of [args] to the usage
+	// line of a command when printing help or generating docs
+	DisableArgsInUseLine bool
+
 	// DisableSuggestions disables the suggestions based on Levenshtein distance
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
@@ -1233,11 +1237,11 @@ func (c *Command) UseLine() string {
 	} else {
 		useline = c.Use
 	}
-	if c.DisableFlagsInUseLine {
-		return useline
-	}
-	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
+	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") && !c.DisableFlagsInUseLine {
 		useline += " [flags]"
+	}
+	if c.HasAvailableArgs() && !strings.Contains(useline, "[args]") && !c.DisableArgsInUseLine {
+		useline += " [args]"
 	}
 	return useline
 }
@@ -1579,6 +1583,11 @@ func (c *Command) HasAvailableLocalFlags() bool {
 // not hidden or deprecated.
 func (c *Command) HasAvailableInheritedFlags() bool {
 	return c.InheritedFlags().HasAvailableFlags()
+}
+
+// HasAvailableArgs checks if the command has non-nil Args.
+func (c *Command) HasAvailableArgs() bool {
+	return c.Args != nil
 }
 
 // Flag climbs up the command tree looking for matching flag.
