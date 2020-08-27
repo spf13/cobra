@@ -175,10 +175,6 @@ func (c *Command) initCompleteCmd(args []string) {
 				fmt.Fprintln(finalCmd.OutOrStdout(), comp)
 			}
 
-			if directive >= shellCompDirectiveMaxValue {
-				directive = ShellCompDirectiveDefault
-			}
-
 			// As the last printout, print the completion directive for the completion script to parse.
 			// The directive integer must be that last character following a single colon (:).
 			// The completion script expects :<directive>
