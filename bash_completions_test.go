@@ -235,3 +235,29 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
 	}
 }
+
+func TestBashCompletionDisableDefaultValuesSet(t *testing.T) {
+	c := &Command{Run: emptyRun, DisableBashCompletionDefaultValues: true}
+
+	buf := new(bytes.Buffer)
+	c.GenBashCompletion(buf)
+	output := buf.String()
+
+	const defaultOutput = "-o default"
+	if strings.Contains(output, defaultOutput) {
+		t.Errorf("expected completion to not include %q flag: Got %v", defaultOutput, output)
+	}
+}
+
+func TestBashCompletionDisableDefaultValuesUnset(t *testing.T) {
+	c := &Command{Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	c.GenBashCompletion(buf)
+	output := buf.String()
+
+	const defaultOutput = "-o default"
+	if !strings.Contains(output, defaultOutput) {
+		t.Errorf("expected completion to include %q flag: Got %v", defaultOutput, output)
+	}
+}

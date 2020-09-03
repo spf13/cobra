@@ -380,7 +380,7 @@ __%[1]s_handle_word()
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
 }
 
-func writePostscript(buf *bytes.Buffer, name string) {
+func writePostscript(buf *bytes.Buffer, name string, disableDefaultValues bool) {
 	name = strings.Replace(name, ":", "__", -1)
 	buf.WriteString(fmt.Sprintf("__start_%s()\n", name))
 	buf.WriteString(fmt.Sprintf(`{
@@ -410,13 +410,19 @@ func writePostscript(buf *bytes.Buffer, name string) {
 }
 
 `, name))
+
+	defaultsValue := "-o default"
+	if disableDefaultValues == true {
+		defaultsValue = ""
+	}
+
 	buf.WriteString(fmt.Sprintf(`if [[ $(type -t compopt) = "builtin" ]]; then
-    complete -o default -F __start_%s %s
+    complete %s -F __start_%s %s
 else
-    complete -o default -o nospace -F __start_%s %s
+    complete %s -o nospace -F __start_%s %s
 fi
 
-`, name, name, name, name))
+`, defaultsValue, name, name, defaultsValue, name, name))
 	buf.WriteString("# ex: ts=4 sw=4 et filetype=sh\n")
 }
 
@@ -652,7 +658,7 @@ func (c *Command) GenBashCompletion(w io.Writer) error {
 		buf.WriteString(c.BashCompletionFunction + "\n")
 	}
 	gen(buf, c)
-	writePostscript(buf, c.Name())
+	writePostscript(buf, c.Name(), c.DisableBashCompletionDefaultValues)
 
 	_, err := buf.WriteTo(w)
 	return err
