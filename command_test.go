@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -1633,6 +1634,47 @@ func TestUsageStringRedirected(t *testing.T) {
 	expected := "[stdout1][stderr2][stdout3]"
 	if got := c.UsageString(); got != expected {
 		t.Errorf("Expected usage string to consider both stdout and stderr")
+	}
+}
+
+func TestCommandPrintRedirection(t *testing.T) {
+	errBuff, outBuff := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
+	root := &Command{
+		Run: func(cmd *Command, args []string) {
+
+			cmd.PrintErr("PrintErr")
+			cmd.PrintErrln("PrintErr", "line")
+			cmd.PrintErrf("PrintEr%s", "r")
+
+			cmd.Print("Print")
+			cmd.Println("Print", "line")
+			cmd.Printf("Prin%s", "t")
+		},
+	}
+
+	root.SetErr(errBuff)
+	root.SetOut(outBuff)
+
+	if err := root.Execute(); err != nil {
+		t.Error(err)
+	}
+
+	gotErrBytes, err := ioutil.ReadAll(errBuff)
+	if err != nil {
+		t.Error(err)
+	}
+
+	gotOutBytes, err := ioutil.ReadAll(outBuff)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if wantErr := []byte("PrintErrPrintErr line\nPrintErr"); !bytes.Equal(gotErrBytes, wantErr) {
+		t.Errorf("got: '%s' want: '%s'", gotErrBytes, wantErr)
+	}
+
+	if wantOut := []byte("PrintPrint line\nPrint"); !bytes.Equal(gotOutBytes, wantOut) {
+		t.Errorf("got: '%s' want: '%s'", gotOutBytes, wantOut)
 	}
 }
 
