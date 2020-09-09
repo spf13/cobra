@@ -561,7 +561,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd)
 
-	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	rootCmd.Flags().IntP("first", "f", -1, "first flag\nlonger description for flag")
 	rootCmd.PersistentFlags().BoolP("second", "s", false, "second flag")
 	childCmd.Flags().String("subFlag", "", "sub flag")
 
