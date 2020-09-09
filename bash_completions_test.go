@@ -193,6 +193,13 @@ func TestBashCompletions(t *testing.T) {
 	checkOmit(t, output, `two_word_flags+=("--two-w-default")`)
 	checkOmit(t, output, `two_word_flags+=("-T")`)
 
+	// check local nonpersistent flag
+	check(t, output, `local_nonpersistent_flags+=("--two")`)
+	check(t, output, `local_nonpersistent_flags+=("--two=")`)
+	check(t, output, `local_nonpersistent_flags+=("-t")`)
+	check(t, output, `local_nonpersistent_flags+=("--two-w-default")`)
+	check(t, output, `local_nonpersistent_flags+=("-T")`)
+
 	checkOmit(t, output, deprecatedCmd.Name())
 
 	// If available, run shellcheck against the script.
@@ -234,4 +241,22 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 	if strings.Contains(output, flagName) {
 		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
 	}
+}
+
+func TestBashCompletionTraverseChildren(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun, TraverseChildren: true}
+
+	c.Flags().StringP("string-flag", "s", "", "string flag")
+	c.Flags().BoolP("bool-flag", "b", false, "bool flag")
+
+	buf := new(bytes.Buffer)
+	c.GenBashCompletion(buf)
+	output := buf.String()
+
+	// check that local nonpersistent flag are not set since we have TraverseChildren set to true
+	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag=")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("-s")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("--bool-flag")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("-b")`)
 }

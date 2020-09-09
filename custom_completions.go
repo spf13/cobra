@@ -175,8 +175,16 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	toComplete := args[len(args)-1]
 	trimmedArgs := args[:len(args)-1]
 
+	var finalCmd *Command
+	var finalArgs []string
+	var err error
 	// Find the real command for which completion must be performed
-	finalCmd, finalArgs, err := c.Root().Find(trimmedArgs)
+	// check if we need to traverse here to parse local flags on parent commands
+	if c.Root().TraverseChildren {
+		finalCmd, finalArgs, err = c.Root().Traverse(trimmedArgs)
+	} else {
+		finalCmd, finalArgs, err = c.Root().Find(trimmedArgs)
+	}
 	if err != nil {
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
 		return c, []string{}, ShellCompDirectiveDefault, fmt.Errorf("Unable to find a command for arguments: %v", trimmedArgs)
@@ -271,20 +279,24 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	var completions []string
 	directive := ShellCompDirectiveDefault
 	if flag == nil {
-		// Check if there are any local, non-persistent flags on the command-line
 		foundLocalNonPersistentFlag := false
-		localNonPersistentFlags := finalCmd.LocalNonPersistentFlags()
-		finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
-			if localNonPersistentFlags.Lookup(flag.Name) != nil && flag.Changed {
-				foundLocalNonPersistentFlag = true
-			}
-		})
+		// If TraverseChildren is true on the root command we don't check for
+		// local flags because we can use a local flag on a parent command
+		if !finalCmd.Root().TraverseChildren {
+			// Check if there are any local, non-persistent flags on the command-line
+			localNonPersistentFlags := finalCmd.LocalNonPersistentFlags()
+			finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+				if localNonPersistentFlags.Lookup(flag.Name) != nil && flag.Changed {
+					foundLocalNonPersistentFlag = true
+				}
+			})
+		}
 
 		// Complete subcommand names, including the help command
 		if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
 			// We only complete sub-commands if:
 			// - there are no arguments on the command-line and
-			// - there are no local, non-peristent flag on the command-line
+			// - there are no local, non-peristent flag on the command-line or TraverseChildren is true
 			for _, subCmd := range finalCmd.Commands() {
 				if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
 					if strings.HasPrefix(subCmd.Name(), toComplete) {

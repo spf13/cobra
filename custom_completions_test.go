@@ -139,6 +139,8 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		Use: "root",
 		Run: emptyRun,
 	}
+	rootCmd.Flags().String("localroot", "", "local root flag")
+
 	childCmd1 := &Command{
 		Use:   "childCmd1",
 		Short: "First command",
@@ -178,6 +180,64 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 	// Reset the flag for the next command
 	nonPersistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names are completed if a local non-persistent flag is present and TraverseChildren is set to true
+	// set TraverseChildren to true on the root cmd
+	rootCmd.TraverseChildren = true
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset TraverseChildren for next command
+	rootCmd.TraverseChildren = false
+
+	expected = strings.Join([]string{
+		"childCmd1",
+		"help",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that sub-command names from a child cmd are completed if a local non-persistent flag is present
+	// and TraverseChildren is set to true on the root cmd
+	rootCmd.TraverseChildren = true
+
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "--nonPersistent", "value", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset TraverseChildren for next command
+	rootCmd.TraverseChildren = false
+	// Reset the flag for the next command
+	nonPersistentFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"childCmd2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that we don't use Traverse when we shouldn't.
+	// This command should not return a completion since the command line is invalid without TraverseChildren.
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	expected = strings.Join([]string{
 		":0",
