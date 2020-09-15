@@ -1,5 +1,6 @@
 ## Projects using Cobra
 
+- [Arduino CLI](https://github.com/arduino/arduino-cli)
 - [Bleve](http://www.blevesearch.com/)
 - [CockroachDB](http://www.cockroachlabs.com/)
 - [Delve](https://github.com/derekparker/delve)
