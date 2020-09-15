@@ -16,6 +16,7 @@
 - [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
 - [Istio](https://istio.io)
+- [Kool](https://github.com/kool-dev/kool)
 - [Kubernetes](http://kubernetes.io/)
 - [Linkerd](https://linkerd.io/)
 - [Mattermost-server](https://github.com/mattermost/mattermost-server)
