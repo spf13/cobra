@@ -52,7 +52,7 @@ cobra add config
 cobra add create -p 'configCmd'
 ```
 
-*Note: Use camelCase (not snake_case/snake-case) for command names.
+*Note: Use camelCase (not snake_case/kebab-case) for command names.
 Otherwise, you will encounter errors.
 For example, `cobra add add-user` is incorrect, but `cobra add addUser` is valid.*
 
