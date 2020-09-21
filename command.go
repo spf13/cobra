@@ -28,6 +28,24 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// CmdErrorType command error type
+type CmdErrorType int
+
+const (
+	// ErrHelp is like flag.ErrHelp
+	ErrHelp CmdErrorType = iota
+	// RunError error returned during a Run function
+	RunError
+	// CommandError error during cmd execution or flag parsing
+	CommandError
+)
+
+// CmdError command executed error type
+type CmdError struct {
+	error
+	CmdErrorType
+}
+
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
@@ -131,6 +149,9 @@ type Command struct {
 
 	// SilenceUsage is an option to silence usage when an error occurs.
 	SilenceUsage bool
+
+	// ShowRunErrorUsage is an option to show usage when an error is returned by a RunE function.
+	ShowRunErrorUsage bool
 
 	// DisableFlagParsing disables the flag parsing.
 	// If this is true all flags will be passed to the command as arguments.
@@ -760,9 +781,9 @@ func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
 
-func (c *Command) execute(a []string) (err error) {
+func (c *Command) execute(a []string) error {
 	if c == nil {
-		return fmt.Errorf("Called Execute() on a nil Command")
+		return &CmdError{fmt.Errorf("Called Execute() on a nil Command"), CommandError}
 	}
 
 	if len(c.Deprecated) > 0 {
@@ -774,9 +795,9 @@ func (c *Command) execute(a []string) (err error) {
 	c.InitDefaultHelpFlag()
 	c.InitDefaultVersionFlag()
 
-	err = c.ParseFlags(a)
+	err := c.ParseFlags(a)
 	if err != nil {
-		return c.FlagErrorFunc()(c, err)
+		return &CmdError{c.FlagErrorFunc()(c, err), CommandError}
 	}
 
 	// If help is called, regardless of other flags, return we want help.
@@ -786,11 +807,11 @@ func (c *Command) execute(a []string) (err error) {
 		// should be impossible to get here as we always declare a help
 		// flag in InitDefaultHelpFlag()
 		c.Println("\"help\" flag declared as non-bool. Please correct your code")
-		return err
+		return &CmdError{err, CommandError}
 	}
 
 	if helpVal {
-		return flag.ErrHelp
+		return &CmdError{flag.ErrHelp, ErrHelp}
 	}
 
 	// for back-compat, only add version flag behavior if version is defined
@@ -798,19 +819,19 @@ func (c *Command) execute(a []string) (err error) {
 		versionVal, err := c.Flags().GetBool("version")
 		if err != nil {
 			c.Println("\"version\" flag declared as non-bool. Please correct your code")
-			return err
+			return &CmdError{err, CommandError}
 		}
 		if versionVal {
 			err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
 			if err != nil {
 				c.Println(err)
 			}
-			return err
+			return nil
 		}
 	}
 
 	if !c.Runnable() {
-		return flag.ErrHelp
+		return &CmdError{flag.ErrHelp, ErrHelp}
 	}
 
 	c.preRun()
@@ -821,13 +842,13 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
-		return err
+		return &CmdError{err, CommandError}
 	}
 
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
-				return err
+				return &CmdError{err, RunError}
 			}
 			break
 		} else if p.PersistentPreRun != nil {
@@ -837,25 +858,25 @@ func (c *Command) execute(a []string) (err error) {
 	}
 	if c.PreRunE != nil {
 		if err := c.PreRunE(c, argWoFlags); err != nil {
-			return err
+			return &CmdError{err, RunError}
 		}
 	} else if c.PreRun != nil {
 		c.PreRun(c, argWoFlags)
 	}
 
 	if err := c.validateRequiredFlags(); err != nil {
-		return err
+		return &CmdError{err, CommandError}
 	}
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
-			return err
+			return &CmdError{err, RunError}
 		}
 	} else {
 		c.Run(c, argWoFlags)
 	}
 	if c.PostRunE != nil {
 		if err := c.PostRunE(c, argWoFlags); err != nil {
-			return err
+			return &CmdError{err, RunError}
 		}
 	} else if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
@@ -863,7 +884,7 @@ func (c *Command) execute(a []string) (err error) {
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPostRunE != nil {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
-				return err
+				return &CmdError{err, RunError}
 			}
 			break
 		} else if p.PersistentPostRun != nil {
@@ -957,17 +978,25 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	err = cmd.execute(flags)
 	if err != nil {
-		// Always show help if requested, even if SilenceErrors is in
-		// effect
-		if err == flag.ErrHelp {
-			cmd.HelpFunc()(cmd, args)
-			return cmd, nil
+
+		cmdErr, ok := err.(*CmdError)
+		if ok {
+			// Always show help if requested, even if SilenceErrors is in
+			// effect
+			if cmdErr.CmdErrorType == ErrHelp {
+				cmd.HelpFunc()(cmd, args)
+				return cmd, nil
+			}
+
+			if cmdErr.CmdErrorType == RunError && (!cmd.ShowRunErrorUsage && !c.ShowRunErrorUsage) {
+				return cmd, err
+			}
 		}
 
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Error:", err.Error())
+			c.Println("Error:", err)
 		}
 
 		// If root command has SilentUsage flagged,
