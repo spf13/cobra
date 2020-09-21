@@ -47,6 +47,30 @@ type Group struct {
 	Title string
 }
 
+// TerminalColor is a type used for the names of the different
+// colors in the terminal
+type TerminalColor int
+
+// Colors represents the different colors one can use in the terminal
+const (
+	ColorBlack TerminalColor = iota + 30
+	ColorRed
+	ColorGreen
+	ColorYellow
+	ColorBlue
+	ColorMagenta
+	ColorCyan
+	ColorLightGray
+	ColorDarkGray
+	ColorLightRed
+	ColorLightGreen
+	ColorLightYellow
+	ColorLightBlue
+	ColorLightMagenta
+	ColorLightCyan
+	ColorWhite
+)
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -62,6 +86,9 @@ type Command struct {
 	//       optional, they are enclosed in brackets ([ ]).
 	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
+
+	// Color represents the color to use to print the command in the terminal
+	Color TerminalColor
 
 	// Aliases is an array of aliases that can be used instead of the first word in Use.
 	Aliases []string
@@ -1547,6 +1574,14 @@ func (c *Command) Name() string {
 	return name
 }
 
+// ColoredName returns the command's Name in the correct color if specified
+func (c *Command) ColoredName() string {
+	if c.Color != 0 {
+		return fmt.Sprintf("\033[%dm%s\033[0m", c.Color, c.Name())
+	}
+	return c.Name()
+}
+
 // HasAlias determines if a given string is an alias of the command.
 func (c *Command) HasAlias(s string) bool {
 	for _, a := range c.Aliases {
@@ -1950,13 +1985,13 @@ Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
 Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
 {{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
 Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}

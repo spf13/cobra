@@ -2952,3 +2952,30 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestColoredName(t *testing.T) {
+	c := &Command{
+		Use: "cmd",
+	}
+	if c.Name() != "cmd" {
+		t.Error("Unexpected name with simple Command")
+	}
+	// If no color is specified, the ColoredName should equal the Name
+	if c.Name() != c.ColoredName() {
+		t.Error("Name and ColoredName should give the same result")
+	}
+	c = &Command{
+		Use:   "cmd",
+		Color: ColorRed,
+	}
+	if c.Name() != "cmd" {
+		t.Errorf("Unexpected name with Colored Command: %s\n", c.Name())
+	}
+	// If a color is specified, the ColoredName and the Name should be different
+	if c.Name() == c.ColoredName() {
+		t.Error("Name and ColoredName should not give the same result")
+	}
+	if c.ColoredName() != "\033[31m"+c.Name()+"\033[0m" {
+		t.Error("ColoredName should only add color to the name")
+	}
+}
