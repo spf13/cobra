@@ -125,6 +125,8 @@ type Command struct {
 	PersistentPostRun func(cmd *Command, args []string)
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
+	// OnCommandNotFound: custom CommandNotFound handler
+	OnCommandNotFound func(cmd *Command, args []string)
 
 	// SilenceErrors is an option to quiet errors down stream.
 	SilenceErrors bool
@@ -937,9 +939,15 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if cmd != nil {
 			c = cmd
 		}
-		if !c.SilenceErrors {
-			c.Println("Error:", err.Error())
-			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+
+		if c.OnCommandNotFound != nil {
+			c.OnCommandNotFound(c, args)
+			return c, nil
+		} else {
+			if !c.SilenceErrors {
+				c.Println("Error:", err.Error())
+				c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
+			}
 		}
 		return c, err
 	}
