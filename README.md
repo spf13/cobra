@@ -104,11 +104,11 @@ library](https://github.com/spf13/pflag), a fork of the flag standard library
 which maintains the same interface while adding POSIX compliance.
 
 # Installing
-Using Cobra is easy. First, use `go get` to install the latest version
+Using Cobra is easy. First, use `go get` to install the latest released version
 of the library. This command will install the `cobra` generator executable
 along with the library and its dependencies:
 
-    go get -u github.com/spf13/cobra
+    go get -u github.com/spf13/cobra@v1.0.0
 
 Next, include Cobra in your application:
 
