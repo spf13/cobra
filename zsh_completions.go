@@ -229,6 +229,11 @@ _%[1]s()
         _describe "completions" completions $(echo $flagPrefix)
     fi
 }
+
+# don't run the completion function when being source-ed or eval-ed
+if [ "$funcstack[1]" = "_%[1]s" ]; then
+	_%[1]s
+fi
 `, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
