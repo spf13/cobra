@@ -1,12 +1,48 @@
-## Generating Zsh Completion For Your cobra.Command
+---
+weight: 14
+---
 
-Please refer to [Shell Completions](_index.md) for details.
+# Zsh completions
+
+Cobra supports native zsh completion generated from the root `cobra.Command`.
+The generated completion script should be put somewhere in your `$fpath` and be named
+`_<yourProgram>`.  You will need to start a new shell for the completions to become available.
+
+Zsh supports descriptions for completions. Cobra will provide the description automatically,
+based on usage information. Cobra provides a way to completely disable such descriptions by
+using `GenZshCompletionNoDesc()` or `GenZshCompletionFileNoDesc()`. You can choose to make
+this a configurable option to your users.
+```
+# With descriptions
+$ helm s[tab]
+search  -- search for a keyword in charts
+show    -- show information of a chart
+status  -- displays the status of the named release
+
+# Without descriptions
+$ helm s[tab]
+search  show  status
+```
+*Note*: Because of backward-compatibility requirements, we were forced to have a different API to disable completion descriptions between `zsh` and `fish`.
+
+## Limitations
+
+* Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `zsh` (including the use of the `BashCompCustom` flag annotation).
+  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
+* The function `MarkFlagCustom()` is not supported and will be ignored for `zsh`.
+  * You should instead use `RegisterFlagCompletionFunc()`.
+
+## Zsh completions standardization
+
+Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backward-compatible, some small changes in behavior were introduced.
+Please refer to [Zsh Completions](zsh.md) for details.
+
 
 ## Zsh completions standardization
 
 Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backwards-compatible, some small changes in behavior were introduced.
 
-### Deprecation summary
+## Deprecation summary
 
 See further below for more details on these deprecations.
 
@@ -16,9 +52,10 @@ See further below for more details on these deprecations.
 * `cmd.MarkZshCompPositionalArgumentWords()` is **deprecated** and silently ignored.
   * Instead use `ValidArgsFunction`.
 
-### Behavioral changes
+## Behavioral changes
 
-**Noun completion**
+### Noun completion*
+
 |Old behavior|New behavior|
 |---|---|
 |No file completion by default (opposite of bash)|File completion by default; use `ValidArgsFunction` with `ShellCompDirectiveNoFileComp` to turn off file completion on a per-argument basis|
@@ -27,7 +64,7 @@ See further below for more details on these deprecations.
 |`cmd.MarkZshCompPositionalArgumentFile(pos, glob[])` used to turn on file completion **with glob filtering** on a per-argument position basis (zsh-specific)|`cmd.MarkZshCompPositionalArgumentFile()` is **deprecated** and silently ignored; use `ValidArgsFunction` with `ShellCompDirectiveFilterFileExt` for file **extension** filtering (not full glob filtering)|
 |`cmd.MarkZshCompPositionalArgumentWords(pos, words[])` used to provide completion choices on a per-argument position basis (zsh-specific)|`cmd.MarkZshCompPositionalArgumentWords()` is **deprecated** and silently ignored; use `ValidArgsFunction` to achieve the same behavior|
 
-**Flag-value completion**
+### Flag-value completion
 
 |Old behavior|New behavior|
 |---|---|
@@ -38,7 +75,7 @@ See further below for more details on these deprecations.
 |Completion of a flag name does not repeat, unless flag is of type `*Array` or `*Slice` (not supported by bash)|Retained for `zsh` and added to `fish`|
 |Completion of a flag name does not provide the `=` form (unlike bash)|Retained for `zsh` and added to `fish`|
 
-**Improvements**
+## Improvements
 
 * Custom completion support (`ValidArgsFunction` and `RegisterFlagCompletionFunc()`)
 * File completion by default if no other completions found

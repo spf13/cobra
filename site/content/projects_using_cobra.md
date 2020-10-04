@@ -1,3 +1,7 @@
+---
+weight: 32
+---
+
 # Projects using Cobra
 
 - [Allero](https://github.com/allero-io/allero)
