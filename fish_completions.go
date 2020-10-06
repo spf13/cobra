@@ -164,7 +164,8 @@ end
 # so we can properly delete any completions provided by another script.
 # The space after the the program name is essential to trigger completion for the program
 # and not completion of the program name itself.
-complete --do-complete "%[2]s " &> /dev/null
+complete --do-complete "%[2]s " > /dev/null 2>&1
+# Using '> /dev/null 2>&1' since '&>' is not supported in older versions of fish.
 
 # Remove any pre-existing completions for the program since we will be handling all of them.
 complete -c %[2]s -e
