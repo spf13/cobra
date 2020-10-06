@@ -2,7 +2,9 @@ package cobra
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -18,9 +20,21 @@ func executeCommand(root *Command, args ...string) (output string, err error) {
 	return output, err
 }
 
+func executeCommandWithContext(ctx context.Context, root *Command, args ...string) (output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs(args)
+
+	err = root.ExecuteContext(ctx)
+
+	return buf.String(), err
+}
+
 func executeCommandC(root *Command, args ...string) (c *Command, output string, err error) {
 	buf := new(bytes.Buffer)
-	root.SetOutput(buf)
+	root.SetOut(buf)
+	root.SetErr(buf)
 	root.SetArgs(args)
 
 	c, err = root.ExecuteC()
@@ -132,6 +146,62 @@ func TestSubcommandExecuteC(t *testing.T) {
 
 	if c.Name() != "child" {
 		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got %q`, c.Name())
+	}
+}
+
+func TestExecuteContext(t *testing.T) {
+	ctx := context.TODO()
+
+	ctxRun := func(cmd *Command, args []string) {
+		if cmd.Context() != ctx {
+			t.Errorf("Command %q must have context when called with ExecuteContext", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: ctxRun, PreRun: ctxRun}
+	childCmd := &Command{Use: "child", Run: ctxRun, PreRun: ctxRun}
+	granchildCmd := &Command{Use: "grandchild", Run: ctxRun, PreRun: ctxRun}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, err := executeCommandWithContext(ctx, rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
+	}
+}
+
+func TestExecute_NoContext(t *testing.T) {
+	run := func(cmd *Command, args []string) {
+		if cmd.Context() != context.Background() {
+			t.Errorf("Command %s must have background context", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: run, PreRun: run}
+	childCmd := &Command{Use: "child", Run: run, PreRun: run}
+	granchildCmd := &Command{Use: "grandchild", Run: run, PreRun: run}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommand(rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, err := executeCommand(rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
 	}
 }
 
@@ -716,6 +786,37 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	}
 }
 
+func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
+	// Make sure a required persistent flag does not break
+	// commands that disable flag parsing
+
+	parent := &Command{Use: "parent", Run: emptyRun}
+	parent.PersistentFlags().Bool("foo", false, "")
+	flag := parent.PersistentFlags().Lookup("foo")
+	parent.MarkPersistentFlagRequired("foo")
+
+	child := &Command{Use: "child", Run: emptyRun}
+	child.DisableFlagParsing = true
+
+	parent.AddCommand(child)
+
+	if _, err := executeCommand(parent, "--foo", "child"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Reset the flag or else it will remember the state from the previous command
+	flag.Changed = false
+	if _, err := executeCommand(parent, "child", "--foo"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Reset the flag or else it will remember the state from the previous command
+	flag.Changed = false
+	if _, err := executeCommand(parent, "child"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
 	rootCmd := &Command{Use: "root"}
@@ -854,11 +955,69 @@ func TestVersionFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+func TestVersionFlagExecutedWithNoName(t *testing.T) {
+	rootCmd := &Command{Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "version 1.0.0")
+}
+
+func TestShortAndLongVersionFlagInHelp(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "-v, --version")
+}
+
+func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.Flags().StringP("foo", "v", "", "not a version flag")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "-v, --version")
+	checkStringContains(t, output, "--version")
+}
+
+func TestShorthandVersionFlagExecuted(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+
+	output, err := executeCommand(rootCmd, "-v", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
 func TestVersionTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "customized version: 1.0.0")
+}
+
+func TestShorthandVersionTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
+
+	output, err := executeCommand(rootCmd, "-v", "arg1")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -878,6 +1037,18 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0"}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "-v", "sub")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "root version 1.0.0")
+}
+
 func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -890,6 +1061,18 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown flag: --version")
 }
 
+func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	_, err := executeCommand(rootCmd, "sub", "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+}
+
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
@@ -898,6 +1081,39 @@ func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 		t.Errorf("Expected error")
 	}
 	checkStringContains(t, err.Error(), "unknown flag: --version")
+}
+
+func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+}
+
+func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
+	rootCmd.Flags().StringP("notversion", "v", "", "not a version flag")
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	check(t, rootCmd.Flags().ShorthandLookup("v").Name, "notversion")
+	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
+}
+
+func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
+	rootCmd.Flags().Bool("version", false, "a different kind of version flag")
+
+	_, err := executeCommand(rootCmd, "-v")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
 func TestUsageIsNotPrintedTwice(t *testing.T) {
@@ -1381,6 +1597,87 @@ func TestSetOutput(t *testing.T) {
 	}
 }
 
+func TestSetOut(t *testing.T) {
+	c := &Command{}
+	c.SetOut(nil)
+	if out := c.OutOrStdout(); out != os.Stdout {
+		t.Errorf("Expected setting output to nil to revert back to stdout")
+	}
+}
+
+func TestSetErr(t *testing.T) {
+	c := &Command{}
+	c.SetErr(nil)
+	if out := c.ErrOrStderr(); out != os.Stderr {
+		t.Errorf("Expected setting error to nil to revert back to stderr")
+	}
+}
+
+func TestSetIn(t *testing.T) {
+	c := &Command{}
+	c.SetIn(nil)
+	if out := c.InOrStdin(); out != os.Stdin {
+		t.Errorf("Expected setting input to nil to revert back to stdin")
+	}
+}
+
+func TestUsageStringRedirected(t *testing.T) {
+	c := &Command{}
+
+	c.usageFunc = func(cmd *Command) error {
+		cmd.Print("[stdout1]")
+		cmd.PrintErr("[stderr2]")
+		cmd.Print("[stdout3]")
+		return nil
+	}
+
+	expected := "[stdout1][stderr2][stdout3]"
+	if got := c.UsageString(); got != expected {
+		t.Errorf("Expected usage string to consider both stdout and stderr")
+	}
+}
+
+func TestCommandPrintRedirection(t *testing.T) {
+	errBuff, outBuff := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
+	root := &Command{
+		Run: func(cmd *Command, args []string) {
+
+			cmd.PrintErr("PrintErr")
+			cmd.PrintErrln("PrintErr", "line")
+			cmd.PrintErrf("PrintEr%s", "r")
+
+			cmd.Print("Print")
+			cmd.Println("Print", "line")
+			cmd.Printf("Prin%s", "t")
+		},
+	}
+
+	root.SetErr(errBuff)
+	root.SetOut(outBuff)
+
+	if err := root.Execute(); err != nil {
+		t.Error(err)
+	}
+
+	gotErrBytes, err := ioutil.ReadAll(errBuff)
+	if err != nil {
+		t.Error(err)
+	}
+
+	gotOutBytes, err := ioutil.ReadAll(outBuff)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if wantErr := []byte("PrintErrPrintErr line\nPrintErr"); !bytes.Equal(gotErrBytes, wantErr) {
+		t.Errorf("got: '%s' want: '%s'", gotErrBytes, wantErr)
+	}
+
+	if wantOut := []byte("PrintPrint line\nPrint"); !bytes.Equal(gotOutBytes, wantOut) {
+		t.Errorf("got: '%s' want: '%s'", gotOutBytes, wantOut)
+	}
+}
+
 func TestFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -1590,7 +1887,8 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	parent.SetArgs(tc.args)
 
 	output := new(bytes.Buffer)
-	parent.SetOutput(output)
+	parent.SetOut(output)
+	parent.SetErr(output)
 
 	parent.Execute()
 

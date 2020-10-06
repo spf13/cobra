@@ -16,11 +16,23 @@ for you. It is a very powerful application that will populate your program with
 the right structure so you can immediately enjoy all the benefits of Cobra. It
 will also automatically apply the license you specify to your application.
 
-Cobra init is pretty smart. You can provide it a full path, or simply a path
-similar to what is expected in the import.
+Cobra init is pretty smart. You can either run it in your current application directory
+or you can specify a relative path to an existing project. If the directory does not exist, it will be created for you.
+
+Updates to the Cobra generator have now decoupled it from the GOPATH.
+As such `--pkg-name` is required.
+
+**Note:** init will no longer fail on non-empty directories.
 
 ```
-cobra init github.com/spf13/newApp
+mkdir -p newApp && cd newApp
+cobra init --pkg-name github.com/spf13/newApp
+```
+
+or
+
+```
+cobra init --pkg-name github.com/spf13/newApp path/to/newApp
 ```
 
 ### cobra add
@@ -40,7 +52,7 @@ cobra add config
 cobra add create -p 'configCmd'
 ```
 
-*Note: Use camelCase (not snake_case/snake-case) for command names.
+*Note: Use camelCase (not snake_case/kebab-case) for command names.
 Otherwise, you will encounter errors.
 For example, `cobra add add-user` is incorrect, but `cobra add addUser` is valid.*
 
@@ -76,12 +88,17 @@ author: Steve Francia <spf@spf13.com>
 license: MIT
 ```
 
+You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
+**AGPL**, **MIT**, **2-Clause BSD** or **3-Clause BSD**.
+
 You can specify no license by setting `license` to `none` or you can specify
 a custom license:
 
 ```yaml
+author: Steve Francia <spf@spf13.com>
+year: 2020
 license:
-  header: This file is part of {{ .appName }}.
+  header: This file is part of CLI application foo.
   text: |
     {{ .copyright }}
 
@@ -90,5 +107,23 @@ license:
     master my life.
 ```
 
-You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
-**AGPL**, **MIT**, **2-Clause BSD** or **3-Clause BSD**.
+In the above custom license configuration the `copyright` line in the License
+text is generated from the `author` and `year` properties. The content of the
+`LICENSE` file is
+
+```
+Copyright © 2020 Steve Francia <spf@spf13.com>
+
+This is my license. There are many like it, but this one is mine.
+My license is my best friend. It is my life. I must master it as I must
+master my life.
+```
+
+The `header` property is used as the license header files. No interpolation is
+done. This is the example of the go file header.
+```
+/*
+Copyright © 2020 Steve Francia <spf@spf13.com>
+This file is part of CLI application foo.
+*/
+```

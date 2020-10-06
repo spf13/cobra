@@ -13,8 +13,10 @@ var update = flag.Bool("update", false, "update .golden files")
 
 func init() {
 	// Mute commands.
-	addCmd.SetOutput(new(bytes.Buffer))
-	initCmd.SetOutput(new(bytes.Buffer))
+	addCmd.SetOut(new(bytes.Buffer))
+	addCmd.SetErr(new(bytes.Buffer))
+	initCmd.SetOut(new(bytes.Buffer))
+	initCmd.SetErr(new(bytes.Buffer))
 }
 
 // ensureLF converts any \r\n to \n

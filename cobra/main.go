@@ -13,8 +13,14 @@
 
 package main
 
-import "github.com/spf13/cobra/cobra/cmd"
+import (
+	"os"
+
+	"github.com/spf13/cobra/cobra/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

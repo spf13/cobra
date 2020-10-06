@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra/cobra/tpl"
 	"os"
 	"text/template"
+
+	"github.com/spf13/cobra/cobra/tpl"
 )
 
 // Project contains name, license and paths to projects.
@@ -25,7 +26,6 @@ type Command struct {
 }
 
 func (p *Project) Create() error {
-
 	// check if AbsolutePath exists
 	if _, err := os.Stat(p.AbsolutePath); os.IsNotExist(err) {
 		// create directory
@@ -75,6 +75,7 @@ func (p *Project) createLicenseFile() error {
 	if err != nil {
 		return err
 	}
+	defer licenseFile.Close()
 
 	licenseTemplate := template.Must(template.New("license").Parse(p.Legal.Text))
 	return licenseTemplate.Execute(licenseFile, data)
