@@ -102,6 +102,21 @@ type Command struct {
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name.
 	//
+	// When TraverseChildrenHooks is set, PersistentPreRun and
+	// PersistentPostRun are chained together so that each child
+	// PersistentPreRun is ran, and the PersistentPostRun are ran in reverse
+	// order. For example:
+	//
+	// Commands: root -> subcommand-a -> subcommand-b
+	//
+	// root - PersistentPreRun
+	// subcommand-a - PersistentPreRun
+	// subcommand-b - PersistentPreRun
+	// subcommand-b - Run
+	// subcommand-b - PersistentPostRun
+	// subcommand-a - PersistentPostRun
+	// root - PersistentPostRun
+	//
 	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
 	// PersistentPreRunE: PersistentPreRun but returns an error.
@@ -192,6 +207,11 @@ type Command struct {
 
 	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
+
+	// TraverseChildrenHooks will have each subcommand's PersistentPreRun and
+	// PersistentPostRun instead of overriding. It should be set on the root
+	// command.
+	TraverseChildrenHooks bool
 
 	// Hidden defines, if this command is hidden and should NOT show up in the list of available commands.
 	Hidden bool
@@ -829,55 +849,130 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPreRunE != nil {
-			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
-				return err
-			}
-			break
-		} else if p.PersistentPreRun != nil {
-			p.PersistentPreRun(c, argWoFlags)
-			break
-		}
-	}
-	if c.PreRunE != nil {
-		if err := c.PreRunE(c, argWoFlags); err != nil {
-			return err
-		}
-	} else if c.PreRun != nil {
-		c.PreRun(c, argWoFlags)
-	}
-
-	if err := c.validateRequiredFlags(); err != nil {
+	// Look to see if TraverseChildrenHooks is set on the root command.
+	if _, err := c.runTree(c, argWoFlags, c.traverseChildrenHooks()); err != nil {
 		return err
-	}
-	if c.RunE != nil {
-		if err := c.RunE(c, argWoFlags); err != nil {
-			return err
-		}
-	} else {
-		c.Run(c, argWoFlags)
-	}
-	if c.PostRunE != nil {
-		if err := c.PostRunE(c, argWoFlags); err != nil {
-			return err
-		}
-	} else if c.PostRun != nil {
-		c.PostRun(c, argWoFlags)
-	}
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPostRunE != nil {
-			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
-				return err
-			}
-			break
-		} else if p.PersistentPostRun != nil {
-			p.PersistentPostRun(c, argWoFlags)
-			break
-		}
 	}
 
 	return nil
+}
+
+func (c *Command) traverseChildrenHooks() bool {
+	if c.HasParent() {
+		return c.Parent().traverseChildrenHooks()
+	}
+
+	return c.TraverseChildrenHooks
+}
+
+func (c *Command) runTree(
+	cmd *Command,
+	args []string,
+	traverseChildrenHooks bool,
+) (
+	persistentPostRunEs []func(cmd *Command, args []string) error,
+	err error,
+) {
+	if c == nil {
+		return nil, nil
+	}
+
+	// Traverse command tree and save the PersistentPostRun{,E} functions.
+	persistentPostRunEs, err = c.Parent().runTree(cmd, args, traverseChildrenHooks)
+	if err != nil {
+		return nil, err
+	}
+
+	if traverseChildrenHooks || c == cmd {
+		// PersistentPreRun/PersistentPreRunE
+		switch {
+		case c.PersistentPreRun != nil:
+			c.PersistentPreRun(cmd, args)
+		case c.PersistentPreRunE != nil:
+			if err := c.PersistentPreRunE(cmd, args); err != nil {
+				return nil, err
+			}
+		default:
+			// Doesn't have a registered PersistentPreRun{,E}. Move on...
+		}
+
+		// PersistentPostRun/PersistentPostRunE
+		switch {
+		case c.PersistentPostRun != nil:
+			persistentPostRunEs = append(
+				persistentPostRunEs,
+				func(cmd *Command, args []string) error {
+					c.PersistentPostRun(cmd, args)
+					return nil
+				},
+			)
+		case c.PersistentPostRunE != nil:
+			persistentPostRunEs = append(
+				persistentPostRunEs,
+				c.PersistentPostRunE,
+			)
+		default:
+			// Doesn't have a registered PersistentPostRun{,E}. Move on...
+		}
+	}
+
+	if c != cmd {
+		// Don't run a parent command.
+		return persistentPostRunEs, nil
+	}
+
+	// PreRun/PreRunE
+	switch {
+	case c.PreRun != nil:
+		c.PreRun(cmd, args)
+	case c.PreRunE != nil:
+		if err := c.PreRunE(cmd, args); err != nil {
+			return nil, err
+		}
+	default:
+		// Doesn't have a registered PreRun{,E}. Move on...
+	}
+
+	if err := c.validateRequiredFlags(); err != nil {
+		return nil, err
+	}
+
+	// Run/RunE
+	switch {
+	case c.RunE != nil:
+		if err := c.RunE(cmd, args); err != nil {
+			return nil, err
+		}
+	case c.Run != nil:
+		c.Run(cmd, args)
+	default:
+		// Both RunE and Run are nil...
+		panic(fmt.Sprintf("command %q does not have a non-nil RunE or Run function", c.Use))
+	}
+
+	// PostRun/PostRunE
+	switch {
+	case c.PostRun != nil:
+		c.PostRun(cmd, args)
+	case c.PostRunE != nil:
+		if err := c.PostRunE(cmd, args); err != nil {
+			return nil, err
+		}
+	default:
+		// Doesn't have a registered PostRun{,E}. Move on...
+	}
+
+	// PersistentPostRun/PersistentPostRunE
+	// Iterate through the list in reverse order. Similar to a defer, allow
+	// the topmost commands to cleanup first.
+	for i := range persistentPostRunEs {
+		r := persistentPostRunEs[len(persistentPostRunEs)-1-i]
+		if err := r(cmd, args); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
 func (c *Command) preRun() {

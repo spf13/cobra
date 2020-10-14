@@ -28,7 +28,7 @@ linters:
     - ineffassign
     - interfacer
     #- lll
-    - maligned
+    # - maligned
     - megacheck
     #- misspell
     #- nakedret
