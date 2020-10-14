@@ -419,6 +419,12 @@ rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkFlagRequired("region")
 ```
 
+Or, for persistent flags:
+```go
+rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.MarkPersistentFlagRequired("region")
+```
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field
