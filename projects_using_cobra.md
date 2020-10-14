@@ -3,6 +3,7 @@
 - [Arduino CLI](https://github.com/arduino/arduino-cli)
 - [Bleve](http://www.blevesearch.com/)
 - [CockroachDB](http://www.cockroachlabs.com/)
+- [Cosmos SDK](https://github.com/cosmos/cosmos-sdk)
 - [Delve](https://github.com/derekparker/delve)
 - [Docker (distribution)](https://github.com/docker/distribution)
 - [Etcd](https://etcd.io/)
@@ -30,4 +31,5 @@
 - [Random](https://github.com/erdaltsksn/random)
 - [Rclone](https://rclone.org/)
 - [Skaffold](https://skaffold.dev/)
+- [Tendermint](https://github.com/tendermint/tendermint)
 - [Werf](https://werf.io/)
