@@ -145,9 +145,7 @@ func manPreamble(buf *bytes.Buffer, header *GenManHeader, cmd *cobra.Command, da
 		description = cmd.Short
 	}
 
-	buf.WriteString(fmt.Sprintf(`%% %s(%s)%s
-%% %s
-%% %s
+	buf.WriteString(fmt.Sprintf(`%% "%s" "%s" "%s" "%s" "%s"
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual))
 	buf.WriteString(fmt.Sprintf("%s \\- %s\n\n", dashedName, cmd.Short))
