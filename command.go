@@ -61,7 +61,11 @@ const (
 	ColorMagenta
 	ColorCyan
 	ColorLightGray
-	ColorDarkGray
+)
+
+// This sequence starts at 90, so we reset iota
+const (
+	ColorDarkGray = iota + 90
 	ColorLightRed
 	ColorLightGreen
 	ColorLightYellow
@@ -608,10 +612,18 @@ const minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
+	additionalPadding := c.additionalNamePadding()
 	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
-		return minNamePadding
+		return minNamePadding + additionalPadding
 	}
-	return c.parent.commandsMaxNameLen
+	return c.parent.commandsMaxNameLen + additionalPadding
+}
+
+func (c *Command) additionalNamePadding() int {
+	// additionalPadding is used to pad non visible characters
+	// This happens for example when using colors, where \033[31m isn't seen
+	// but still is counted towards the padding
+	return len(c.ColoredName()) - len(c.Name())
 }
 
 // UsageTemplate returns usage template for the command.
