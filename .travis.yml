@@ -26,6 +26,8 @@ matrix:
     - stage: build
       go: 1.13.x
       script: make cobra_generator
+      script: 
+ - make test
 # power support 
     - stage: diff
       go: 1.13.x
@@ -35,6 +37,12 @@ matrix:
       go: 1.13.x
       arch: ppc64le
       script: make cobra_generator
-
+      script: 
+ - make test
+# Disable version Go 1.12.x
+jobs:
+  exclude:
+    - arch: ppc64le
+     go: 1.12.x
 script: 
  - make test
