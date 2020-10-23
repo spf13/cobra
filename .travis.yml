@@ -26,6 +26,15 @@ matrix:
     - stage: build
       go: 1.13.x
       script: make cobra_generator
+# power support 
+    - stage: diff
+      go: 1.13.x
+      arch : ppc64le
+      script: make fmt
+    - stage: build
+      go: 1.13.x
+      arch: ppc64le
+      script: make cobra_generator
 
 script: 
  - make test
