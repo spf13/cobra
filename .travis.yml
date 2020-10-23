@@ -1,5 +1,7 @@
 language: go
-
+arch: 
+ - amd64
+ - ppc64le
 stages:
   - diff
   - test
