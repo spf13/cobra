@@ -25,10 +25,7 @@ matrix:
       script: make fmt
     - stage: build
       go: 1.13.x
-      script: make cobra_generator
-      script:  
-    - make test
-      
+      script: make cobra_generator  
 # power support 
     - stage: diff
       go: 1.13.x
