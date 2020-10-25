@@ -887,7 +887,8 @@ func (c *Command) preRun() {
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.
-// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle functions.
+// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle or ValidArgs
+// functions.
 func (c *Command) ExecuteContext(ctx context.Context) error {
 	c.ctx = ctx
 	return c.Execute()
@@ -899,6 +900,14 @@ func (c *Command) ExecuteContext(ctx context.Context) error {
 func (c *Command) Execute() error {
 	_, err := c.ExecuteC()
 	return err
+}
+
+// ExecuteContextC is the same as ExecuteC(), but sets the ctx on the command.
+// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle or ValidArgs
+// functions.
+func (c *Command) ExecuteContextC(ctx context.Context) (*Command, error) {
+	c.ctx = ctx
+	return c.ExecuteC()
 }
 
 // ExecuteC executes the command.

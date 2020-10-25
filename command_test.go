@@ -42,6 +42,17 @@ func executeCommandC(root *Command, args ...string) (c *Command, output string, 
 	return c, buf.String(), err
 }
 
+func executeCommandWithContextC(ctx context.Context, root *Command, args ...string) (c *Command, output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs(args)
+
+	c, err = root.ExecuteContextC(ctx)
+
+	return c, buf.String(), err
+}
+
 func resetCommandLineFlagSet() {
 	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 }
@@ -174,6 +185,35 @@ func TestExecuteContext(t *testing.T) {
 	}
 
 	if _, err := executeCommandWithContext(ctx, rootCmd, "child", "grandchild"); err != nil {
+		t.Errorf("Command child must not fail: %+v", err)
+	}
+}
+
+func TestExecuteContextC(t *testing.T) {
+	ctx := context.TODO()
+
+	ctxRun := func(cmd *Command, args []string) {
+		if cmd.Context() != ctx {
+			t.Errorf("Command %q must have context when called with ExecuteContext", cmd.Use)
+		}
+	}
+
+	rootCmd := &Command{Use: "root", Run: ctxRun, PreRun: ctxRun}
+	childCmd := &Command{Use: "child", Run: ctxRun, PreRun: ctxRun}
+	granchildCmd := &Command{Use: "grandchild", Run: ctxRun, PreRun: ctxRun}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	if _, _, err := executeCommandWithContextC(ctx, rootCmd, ""); err != nil {
+		t.Errorf("Root command must not fail: %+v", err)
+	}
+
+	if _, _, err := executeCommandWithContextC(ctx, rootCmd, "child"); err != nil {
+		t.Errorf("Subcommand must not fail: %+v", err)
+	}
+
+	if _, _, err := executeCommandWithContextC(ctx, rootCmd, "child", "grandchild"); err != nil {
 		t.Errorf("Command child must not fail: %+v", err)
 	}
 }
