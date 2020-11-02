@@ -122,17 +122,17 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 func GenMarkdownTree(cmd *cobra.Command, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
-	return GenMarkdownTreeCustom(cmd, dir, emptyStr, identity)
+	return GenMarkdownTreeCustom(cmd, dir, emptyStr, emptyStr, identity)
 }
 
 // GenMarkdownTreeCustom is the the same as GenMarkdownTree, but
-// with custom filePrepender and linkHandler.
-func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
+// with custom filePrepender, filePostpender, and linkHandler.
+func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, filePostpender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
-		if err := GenMarkdownTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := GenMarkdownTreeCustom(c, dir, filePrepender, filePostpender, linkHandler); err != nil {
 			return err
 		}
 	}
@@ -149,6 +149,9 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 		return err
 	}
 	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(f, filePostpender(filename)); err != nil {
 		return err
 	}
 	return nil
