@@ -33,3 +33,5 @@
 - [Skaffold](https://skaffold.dev/)
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Werf](https://werf.io/)
+- [ORY Hydra](https://github.com/ory/hydra)
+- [ORY Kratos](https://github.com/ory/kratos)
