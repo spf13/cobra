@@ -964,13 +964,13 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			return cmd, nil
 		}
 
-		// If root command has SilentErrors flagged,
+		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
 			c.PrintErrln("Error:", err.Error())
 		}
 
-		// If root command has SilentUsage flagged,
+		// If root command has SilenceUsage flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceUsage && !c.SilenceUsage {
 			c.Println(cmd.UsageString())
