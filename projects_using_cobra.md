@@ -25,6 +25,8 @@
 - [Moby (former Docker)](https://github.com/moby/moby)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [OpenShift](https://www.openshift.com/)
+- [Ory Hydra](https://github.com/ory/hydra)
+- [Ory Kratos](https://github.com/ory/kratos)
 - [Pouch](https://github.com/alibaba/pouch)
 - [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
 - [Prototool](https://github.com/uber/prototool)
