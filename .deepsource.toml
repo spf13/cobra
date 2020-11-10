@@ -1,0 +1,12 @@
+version = 1
+
+test_patterns = ["*_test.go"]
+
+exclude_patterns = ["**/*.md"]
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_paths = ["github.com/siddhant-deepsource/cobra"]
