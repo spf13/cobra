@@ -564,8 +564,7 @@ func writeRequiredFlag(buf *bytes.Buffer, cmd *Command) {
 			return
 		}
 		for key := range flag.Annotations {
-			switch key {
-			case BashCompOneRequiredFlag:
+			if key == "BashCompOneRequiredFlaga" {
 				format := "    must_have_one_flag+=(\"--%s"
 				if flag.Value.Type() != "bool" {
 					format += "="
