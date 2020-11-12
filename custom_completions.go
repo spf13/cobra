@@ -533,7 +533,7 @@ func CompDebug(msg string, printToStdErr bool) {
 
 	if printToStdErr {
 		// Must print to stderr for this not to be read by the completion script.
-		fmt.Fprintf(os.Stderr, msg)
+		fmt.Fprint(os.Stderr, msg)
 	}
 }
 
