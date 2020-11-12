@@ -470,7 +470,7 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 func writeShortFlag(buf *bytes.Buffer, flag *pflag.Flag, cmd *Command) {
 	name := flag.Shorthand
 	format := "    "
-	if len(flag.NoOptDefVal) == 0 {
+	if flag.NoOptDefVal == "" {
 		format += "two_word_"
 	}
 	format += "flags+=(\"-%s\")\n"
@@ -481,12 +481,12 @@ func writeShortFlag(buf *bytes.Buffer, flag *pflag.Flag, cmd *Command) {
 func writeFlag(buf *bytes.Buffer, flag *pflag.Flag, cmd *Command) {
 	name := flag.Name
 	format := "    flags+=(\"--%s"
-	if len(flag.NoOptDefVal) == 0 {
+	if flag.NoOptDefVal == "" {
 		format += "="
 	}
 	format += "\")\n"
 	buf.WriteString(fmt.Sprintf(format, name))
-	if len(flag.NoOptDefVal) == 0 {
+	if flag.NoOptDefVal == "" {
 		format = "    two_word_flags+=(\"--%s\")\n"
 		buf.WriteString(fmt.Sprintf(format, name))
 	}
@@ -496,7 +496,7 @@ func writeFlag(buf *bytes.Buffer, flag *pflag.Flag, cmd *Command) {
 func writeLocalNonPersistentFlag(buf *bytes.Buffer, flag *pflag.Flag) {
 	name := flag.Name
 	format := "    local_nonpersistent_flags+=(\"--%[1]s\")\n"
-	if len(flag.NoOptDefVal) == 0 {
+	if flag.NoOptDefVal == "" {
 		format += "    local_nonpersistent_flags+=(\"--%[1]s=\")\n"
 	}
 	buf.WriteString(fmt.Sprintf(format, name))

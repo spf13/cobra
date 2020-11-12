@@ -544,7 +544,7 @@ func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 }
 
 func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	if len(name) == 0 {
+	if name == "" {
 		return false
 	}
 
@@ -1351,7 +1351,7 @@ func (c *Command) HasSubCommands() bool {
 // IsAvailableCommand determines if a command is available as a non-help command
 // (this includes all non deprecated/hidden commands).
 func (c *Command) IsAvailableCommand() bool {
-	if len(c.Deprecated) != 0 || c.Hidden {
+	if c.Deprecated != "" || c.Hidden {
 		return false
 	}
 
@@ -1373,7 +1373,7 @@ func (c *Command) IsAvailableCommand() bool {
 // Concrete example: https://github.com/spf13/cobra/issues/393#issuecomment-282741924.
 func (c *Command) IsAdditionalHelpTopicCommand() bool {
 	// if a command is runnable, deprecated, or hidden it is not a 'help' command
-	if c.Runnable() || len(c.Deprecated) != 0 || c.Hidden {
+	if c.Runnable() || c.Deprecated != "" || c.Hidden {
 		return false
 	}
 

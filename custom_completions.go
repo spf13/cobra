@@ -451,7 +451,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 		}
 	}
 
-	if len(flagName) == 0 {
+	if flagName == "" {
 		if len(args) > 0 {
 			prevArg := args[len(args)-1]
 			if isFlagArg(prevArg) {
@@ -469,7 +469,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 		}
 	}
 
-	if len(flagName) == 0 {
+	if flagName == "" {
 		// Not doing flag completion
 		return nil, trimmedArgs, lastArg, nil
 	}
@@ -482,7 +482,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	}
 
 	if !flagWithEqual {
-		if len(flag.NoOptDefVal) != 0 {
+		if flag.NoOptDefVal != "" {
 			// We had assumed dealing with a two-word flag but the flag is a boolean flag.
 			// In that case, there is no value following it, so we are not really doing flag completion.
 			// Reset everything to do noun completion.
