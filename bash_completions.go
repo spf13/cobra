@@ -381,7 +381,7 @@ __%[1]s_handle_word()
 }
 
 func writePostscript(buf *bytes.Buffer, name string) {
-	name = strings.Replace(name, ":", "__", -1)
+	name = strings.ReplaceAll(name, ":", "__")
 	buf.WriteString(fmt.Sprintf("__start_%s()\n", name))
 	buf.WriteString(fmt.Sprintf(`{
     local cur prev words cword
@@ -625,8 +625,8 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 		gen(buf, c)
 	}
 	commandName := cmd.CommandPath()
-	commandName = strings.Replace(commandName, " ", "_", -1)
-	commandName = strings.Replace(commandName, ":", "__", -1)
+	commandName = strings.ReplaceAll(commandName, " ", "_")
+	commandName = strings.ReplaceAll(commandName, ":", "__")
 
 	if cmd.Root() == cmd {
 		buf.WriteString(fmt.Sprintf("_%s_root_command()\n{\n", commandName))

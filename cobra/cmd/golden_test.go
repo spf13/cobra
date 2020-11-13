@@ -21,7 +21,7 @@ func init() {
 
 // ensureLF converts any \r\n to \n
 func ensureLF(content []byte) []byte {
-	return bytes.Replace(content, []byte("\r\n"), []byte("\n"), -1)
+	return bytes.ReplaceAll(content, []byte("\r\n"), []byte("\n"))
 }
 
 // compareFiles compares the content of files with pathA and pathB.

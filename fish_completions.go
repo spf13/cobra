@@ -12,7 +12,7 @@ func genFishComp(buf *bytes.Buffer, name string, includeDesc bool) {
 	// Variables should not contain a '-' or ':' character
 	nameForVar := name
 	nameForVar = strings.Replace(nameForVar, "-", "_", -1)
-	nameForVar = strings.Replace(nameForVar, ":", "_", -1)
+	nameForVar = strings.ReplaceAll(nameForVar, ":", "_")
 
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {

@@ -66,7 +66,7 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	if opts.CommandSeparator != "" {
 		separator = opts.CommandSeparator
 	}
-	basename := strings.Replace(cmd.CommandPath(), " ", separator, -1)
+	basename := strings.ReplaceAll(cmd.CommandPath(), " ", separator)
 	filename := filepath.Join(opts.Path, basename+"."+section)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -116,7 +116,7 @@ func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
 
 func fillHeader(header *GenManHeader, name string, disableAutoGen bool) error {
 	if header.Title == "" {
-		header.Title = strings.ToUpper(strings.Replace(name, " ", "\\-", -1))
+		header.Title = strings.ToUpper(strings.ReplaceAll(name, " ", "\\-"))
 	}
 	if header.Section == "" {
 		header.Section = "1"
@@ -203,7 +203,7 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 	cmd.InitDefaultHelpFlag()
 
 	// something like `rootcmd-subcmd1-subcmd2`
-	dashCommandName := strings.Replace(cmd.CommandPath(), " ", "-", -1)
+	dashCommandName := strings.ReplaceAll(cmd.CommandPath(), " ", "-")
 
 	buf := new(bytes.Buffer)
 

@@ -73,7 +73,7 @@ func generatePowerShellSubcommandCases(out io.Writer, cmd *Command, previousComm
 }
 
 func escapeStringForPowerShell(s string) string {
-	return strings.Replace(s, "'", "''", -1)
+	return strings.ReplaceAll(s, "'", "''")
 }
 
 // GenPowerShellCompletion generates PowerShell completion file and writes to the passed writer.
