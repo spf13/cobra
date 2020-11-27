@@ -53,6 +53,19 @@ function __%[1]s_perform_completion
     __%[1]s_debug "Calling $requestComp"
 
     set results (eval $requestComp 2> /dev/null)
+
+    # Some programs may output extra empty lines after the directive.
+    # Let's ignore them or else it will break completion.
+    # Ref: https://github.com/spf13/cobra/issues/1279
+    for line in $results[-1..1]
+        if test (string trim -- $line) = ""
+            # Found an empty line, remove it
+            set results $results[1..-2]
+        else
+            # Found non-empty line, we have our proper output
+            break
+        end
+    end
     set comps $results[1..-2]
     set directiveLine $results[-1]
 
