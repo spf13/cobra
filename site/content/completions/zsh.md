@@ -1,12 +1,16 @@
-## Generating Zsh Completion For Your cobra.Command
+---
+weight: 14
+---
+
+## Zsh completions
 
 Please refer to [Shell Completions](shell_completions.md) for details.
 
-## Zsh completions standardization
+### Zsh completions standardization
 
 Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backwards-compatible, some small changes in behavior were introduced.
 
-### Deprecation summary
+#### Deprecation summary
 
 See further below for more details on these deprecations.
 
@@ -16,9 +20,10 @@ See further below for more details on these deprecations.
 * `cmd.MarkZshCompPositionalArgumentWords()` is **deprecated** and silently ignored.
   * Instead use `ValidArgsFunction`.
 
-### Behavioral changes
+#### Behavioral changes
 
-**Noun completion**
+##### Noun completion*
+
 |Old behavior|New behavior|
 |---|---|
 |No file completion by default (opposite of bash)|File completion by default; use `ValidArgsFunction` with `ShellCompDirectiveNoFileComp` to turn off file completion on a per-argument basis|
@@ -27,7 +32,7 @@ See further below for more details on these deprecations.
 |`cmd.MarkZshCompPositionalArgumentFile(pos, glob[])` used to turn on file completion **with glob filtering** on a per-argument position basis (zsh-specific)|`cmd.MarkZshCompPositionalArgumentFile()` is **deprecated** and silently ignored; use `ValidArgsFunction` with `ShellCompDirectiveFilterFileExt` for file **extension** filtering (not full glob filtering)|
 |`cmd.MarkZshCompPositionalArgumentWords(pos, words[])` used to provide completion choices on a per-argument position basis (zsh-specific)|`cmd.MarkZshCompPositionalArgumentWords()` is **deprecated** and silently ignored; use `ValidArgsFunction` to achieve the same behavior|
 
-**Flag-value completion**
+##### Flag-value completion
 
 |Old behavior|New behavior|
 |---|---|
@@ -38,7 +43,7 @@ See further below for more details on these deprecations.
 |Completion of a flag name does not repeat, unless flag is of type `*Array` or `*Slice` (not supported by bash)|Retained for `zsh` and added to `fish`|
 |Completion of a flag name does not provide the `=` form (unlike bash)|Retained for `zsh` and added to `fish`|
 
-**Improvements**
+##### Improvements
 
 * Custom completion support (`ValidArgsFunction` and `RegisterFlagCompletionFunc()`)
 * File completion by default if no other completions found

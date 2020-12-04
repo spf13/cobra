@@ -1,0 +1,32 @@
+// Overrides
+
+// BACKGROUND COLORS
+////////////////////
+$nav-bg:#254E70 !default;
+$examples-bg: #002642  !default;
+
+
+// FONTS
+////////////////////
+@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700&display=swap");
+
+$font-default-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
+// FLEX SIDEBAR
+////////////////////
+
+.toc-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+#toc {
+    flex-grow: 1;
+}
+
+.toc-wrapper .toc-footer {
+    margin-top: .5em;
+    li {
+        text-align: center;
+    }
+}

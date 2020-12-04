@@ -1,4 +1,8 @@
-# Generating shell completions
+---
+weight: 10
+---
+
+# Shell completions
 
 Cobra can generate shell completions for multiple shells.
 The currently supported shells are:
@@ -70,13 +74,13 @@ $ yourprogram completion fish > ~/.config/fish/completions/yourprogram.fish
 
 **Note:** The cobra generator may include messages printed to stdout for example if the config file is loaded, this will break the auto complete script so must be removed.
 
-# Customizing completions
+## Customizing completions
 
 The generated completion scripts will automatically handle completing commands and flags.  However, you can make your completions much more powerful by providing information to complete your program's nouns and flag values.
 
-## Completion of nouns
+### Completion of nouns
 
-### Static completion of nouns
+#### Static completion of nouns
 
 Cobra allows you to provide a pre-defined list of completion choices for your nouns using the `ValidArgs` field.
 For example, if you want `kubectl get [tab][tab]` to show a list of valid "nouns" you have to set them.
@@ -105,7 +109,7 @@ $ kubectl get [tab][tab]
 node   pod   replicationcontroller   service
 ```
 
-#### Aliases for nouns
+##### Aliases for nouns
 
 If your nouns have aliases, you can define them alongside `ValidArgs` using `ArgAliases`:
 
@@ -130,7 +134,7 @@ backend        frontend       database
 Note that without declaring `rc` as an alias, the completion algorithm would not know to show the list of
 replication controllers following `rc`.
 
-### Dynamic completion of nouns
+#### Dynamic completion of nouns
 
 In some cases it is not possible to provide a list of completions in advance.  Instead, the list of completions must be determined at execution-time. In a similar fashion as for static completions, you can use the `ValidArgsFunction` field to provide a Go function that Cobra will execute when it needs the list of completion choices for the nouns of a command.  Note that either `ValidArgs` or `ValidArgsFunction` can be used for a single cobra command, but not both.
 Simplified code from `helm status` looks like:
@@ -198,7 +202,7 @@ ShellCompDirectiveFilterDirs
 
 ***Note***: When using the `ValidArgsFunction`, Cobra will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Cobra will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
 
-#### Debugging
+##### Debugging
 
 Cobra achieves dynamic completion through the use of a hidden command called by the completion script.  To debug your Go completion code, you can call this hidden command directly:
 ```bash
@@ -231,9 +235,9 @@ cobra.CompErrorln(msg string)
 ```
 ***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the cobra-provided debugging traces functions mentioned above.
 
-## Completions for flags
+### Completions for flags
 
-### Mark flags as required
+#### Mark flags as required
 
 Most of the time completions will only show sub-commands. But if a flag is required to make a sub-command work, you probably want it to show up when the user types [tab][tab].  You can mark a flag as 'Required' like so:
 
@@ -249,7 +253,7 @@ $ kubectl exec [tab][tab]
 -c            --container=  -p            --pod=  
 ```
 
-### Specify dynamic flag completion
+#### Specify dynamic flag completion
 
 As for nouns, Cobra provides a way of defining dynamic completion of flags.  To provide a Go function that Cobra will execute when it needs the list of completion choices for a flag, you must register the function using the `command.RegisterFlagCompletionFunc()` function.
 
@@ -266,7 +270,7 @@ $ helm status --output [tab][tab]
 json table yaml
 ```
 
-#### Debugging
+##### Debugging
 
 You can also easily debug your Go completion code for flags:
 ```bash
@@ -279,7 +283,7 @@ Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stder
 ```
 ***Important:*** You should **not** leave traces that print to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the cobra-provided debugging traces functions mentioned further above.
 
-### Specify valid filename extensions for flags that take a filename
+#### Specify valid filename extensions for flags that take a filename
 
 To limit completions of flag values to file names with certain extensions you can either use the different `MarkFlagFilename()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
 ```go
@@ -293,7 +297,7 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string,
 	return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt})
 ```
 
-### Limit flag completions to directory names
+#### Limit flag completions to directory names
 
 To limit completions of flag values to directory names you can either use the `MarkFlagDirname()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
 ```go
@@ -314,7 +318,7 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string,
 	return []string{"themes"}, cobra.ShellCompDirectiveFilterDirs
 })
 ```
-### Descriptions for completions
+#### Descriptions for completions
 
 Both `zsh` and `fish` allow for descriptions to annotate completion choices.  For commands and flags, Cobra will provide the descriptions automatically, based on usage information.  For example, using zsh:
 ```
@@ -339,13 +343,13 @@ or
 ```go
 ValidArgs: []string{"bash\tCompletions for bash", "zsh\tCompletions for zsh"}
 ```
-## Bash completions
+### Bash
 
-### Dependencies
+#### Dependencies
 
 The bash completion script generated by Cobra requires the `bash_completion` package. You should update the help text of your completion command to show how to install the `bash_completion` package ([Kubectl docs](https://kubernetes.io/docs/tasks/tools/install-kubectl/#enabling-shell-autocompletion))
 
-### Aliases
+#### Aliases
 
 You can also configure `bash` aliases for your program and they will also support completions.
 
@@ -359,12 +363,12 @@ complete -o default -F __start_origcommand aliasname
 $ aliasname <tab><tab>
 completion     firstcommand   secondcommand
 ```
-### Bash legacy dynamic completions
+#### Bash legacy dynamic completions
 
 For backwards-compatibility, Cobra still supports its bash legacy dynamic completion solution.
 Please refer to [Bash Completions](bash_completions.md) for details.
 
-## Zsh completions
+### Zsh
 
 Cobra supports native Zsh completion generated from the root `cobra.Command`.
 The generated completion script should be put somewhere in your `$fpath` and be named
@@ -387,19 +391,19 @@ search  show  status
 ```
 *Note*: Because of backwards-compatibility requirements, we were forced to have a different API to disable completion descriptions between `Zsh` and `Fish`.
 
-### Limitations
+#### Limitations
 
 * Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `zsh` (including the use of the `BashCompCustom` flag annotation).
   * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`).
 * The function `MarkFlagCustom()` is not supported and will be ignored for `zsh`.
   * You should instead use `RegisterFlagCompletionFunc()`.
 
-### Zsh completions standardization
+#### Zsh completions standardization
 
 Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backwards-compatible, some small changes in behavior were introduced.
 Please refer to [Zsh Completions](zsh_completions.md) for details.
 
-## Fish completions
+### Fish
 
 Cobra supports native Fish completions generated from the root `cobra.Command`.  You can use the `command.GenFishCompletion()` or `command.GenFishCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
 ```
@@ -413,7 +417,7 @@ search  show  status
 ```
 *Note*: Because of backwards-compatibility requirements, we were forced to have a different API to disable completion descriptions between `Zsh` and `Fish`.
 
-### Limitations
+#### Limitations
 
 * Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `fish` (including the use of the `BashCompCustom` flag annotation).
   * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`).
@@ -429,6 +433,6 @@ search  show  status
   * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
   * `ShellCompDirectiveFilterDirs` (filtering by directory)
 
-## PowerShell completions
+### PowerShell
 
 Please refer to [PowerShell Completions](powershell_completions.md) for details.

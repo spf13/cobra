@@ -1,3 +1,7 @@
+---
+weight: 30
+---
+
 # Contributing to Cobra
 
 Thank you so much for contributing to Cobra. We appreciate your time and help.

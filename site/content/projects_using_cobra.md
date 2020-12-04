@@ -1,4 +1,8 @@
-## Projects using Cobra
+---
+weight: 32
+---
+
+# Projects using Cobra
 
 - [Arduino CLI](https://github.com/arduino/arduino-cli)
 - [Bleve](http://www.blevesearch.com/)

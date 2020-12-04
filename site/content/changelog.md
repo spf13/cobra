@@ -1,11 +1,19 @@
+---
+weight: 31
+---
+
 # Cobra Changelog
 
 ## Pending
+
 * Fix man page doc generation - no auto generated tag when `cmd.DisableAutoGenTag = true` @jpmcb
 
 ## v1.0.0
+
 Announcing v1.0.0 of Cobra. 🎉
-**Notable Changes**
+
+### Notable Changes
+
 * Fish completion (including support for Go custom completion) @marckhouzam
 * API (urgent): Rename BashCompDirectives to ShellCompDirectives @marckhouzam
 * Remove/replace SetOutput on Command - deprecated @jpmcb

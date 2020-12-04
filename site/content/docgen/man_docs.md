@@ -1,4 +1,8 @@
-# Generating Man Pages For Your Own cobra.Command
+---
+weight: 21
+---
+
+## Man Pages
 
 Generating man pages from a cobra command is incredibly easy. An example is as follows:
 
