@@ -62,8 +62,8 @@ Cobra is built on a structure of commands, arguments & flags.
 
 **Commands** represent actions, **Args** are things and **Flags** are modifiers for those actions.
 
-The best applications will read like sentences when used. Users will know how
-to use the application because they will natively understand how to use it.
+The best applications read like sentences when used, and as a result, users
+intuitively know how to interact with them.
 
 The pattern to follow is
 `APPNAME VERB NOUN --ADJECTIVE.`
@@ -268,7 +268,7 @@ func initConfig() {
 With the root command you need to have your main function execute it.
 Execute should be run on the root for clarity, though it can be called on any command.
 
-In a Cobra app, typically the main.go file is very bare. It serves, one purpose, to initialize Cobra.
+In a Cobra app, typically the main.go file is very bare. It serves one purpose: to initialize Cobra.
 
 ```go
 package main
@@ -363,7 +363,7 @@ There are two different approaches to assign a flag.
 
 ### Persistent Flags
 
-A flag can be 'persistent' meaning that this flag will be available to the
+A flag can be 'persistent', meaning that this flag will be available to the
 command it's assigned to as well as every command under that command. For
 global flags, assign a flag as a persistent flag on the root.
 
@@ -373,7 +373,7 @@ rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose out
 
 ### Local Flags
 
-A flag can also be assigned locally which will only apply to that specific command.
+A flag can also be assigned locally, which will only apply to that specific command.
 
 ```go
 localCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
@@ -381,8 +381,8 @@ localCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to rea
 
 ### Local Flag on Parent Commands
 
-By default Cobra only parses local flags on the target command, any local flags on
-parent commands are ignored. By enabling `Command.TraverseChildren` Cobra will
+By default, Cobra only parses local flags on the target command, and any local flags on
+parent commands are ignored. By enabling `Command.TraverseChildren`, Cobra will
 parse local flags on each command before executing the target command.
 
 ```go
@@ -404,8 +404,8 @@ func init() {
 }
 ```
 
-In this example the persistent flag `author` is bound with `viper`.
-**Note**, that the variable `author` will not be set to the value from config,
+In this example, the persistent flag `author` is bound with `viper`.
+**Note**: the variable `author` will not be set to the value from config,
 when the `--author` flag is not provided by user.
 
 More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
@@ -465,7 +465,7 @@ var cmd = &cobra.Command{
 
 In the example below, we have defined three commands. Two are at the top level
 and one (cmdTimes) is a child of one of the top commands. In this case the root
-is not executable meaning that a subcommand is required. This is accomplished
+is not executable, meaning that a subcommand is required. This is accomplished
 by not providing a 'Run' for the 'rootCmd'.
 
 We have only defined one flag for a single command.
