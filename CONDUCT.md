@@ -30,8 +30,8 @@ Examples of breaking changes include:
 There may, at times, need to be exceptions where breaking changes are allowed in release branches. These are at the discretion of the project's maintainers, and must be carefully considered before merging.
 
 ### CI Testing
-Maintainers will ensure the the Cobra test suite utilizes the current supported versions of Golang.
+Maintainers will ensure the Cobra test suite utilizes the current supported versions of Golang.
 
 ### Disclaimer
-Changes to this document and the contents therin are at the discretion of the maintainers.
+Changes to this document and the contents therein are at the discretion of the maintainers.
 None of the contents of this document are legally binding in any way to the maintainers or the users.
