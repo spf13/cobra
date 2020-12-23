@@ -91,6 +91,9 @@ type Command struct {
 	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
 
+	// DisableColors is a boolean used to disable the coloring in the command line
+	DisableColors bool
+
 	// Color represents the color to use to print the command in the terminal
 	Color TerminalColor
 
@@ -1586,9 +1589,20 @@ func (c *Command) Name() string {
 	return name
 }
 
+// isColoringEnabled will be queried to know whether or not we should enable
+// the coloring on a command. This will usually be called on the Root command
+// and applied for every command.
+func (c *Command) isColoringEnabled() bool {
+	_, noColorEnv := os.LookupEnv("NO_COLOR")
+	if c.DisableColors || noColorEnv {
+		return false
+	}
+	return true
+}
+
 // ColoredName returns the command's Name in the correct color if specified
 func (c *Command) ColoredName() string {
-	if c.Color != 0 {
+	if c.Color != 0 && c.Root().isColoringEnabled() {
 		return fmt.Sprintf("\033[%dm%s\033[0m", c.Color, c.Name())
 	}
 	return c.Name()
