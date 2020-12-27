@@ -30,7 +30,7 @@ end
 function __%[1]s_perform_completion
     __%[1]s_debug "Starting __%[1]s_perform_completion"
 
-    set args (string split -- " " (commandline -c))
+    set args (string split -- " " (string trim -l (commandline -c)))
     set lastArg "$args[-1]"
 
     __%[1]s_debug "args: $args"
