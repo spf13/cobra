@@ -43,16 +43,13 @@ function __%[1]s_perform_completion
     end
     __%[1]s_debug "emptyArg: $emptyArg"
 
-    if not type -q "$args[1]"
-        # This can happen when "complete --do-complete %[2]s" is called when running this script.
-        __%[1]s_debug "Cannot find $args[1]. No completions."
-        return
-    end
-
     set requestComp "$args[1] %[3]s $args[2..-1] $emptyArg"
     __%[1]s_debug "Calling $requestComp"
 
-    set results (eval $requestComp 2> /dev/null)
+    # Call the command as a sub-shell so that we can redirect any errors
+    # For example, if $requestComp has an unmatched quote
+    # https://github.com/spf13/cobra/issues/1214
+    set results (fish -c "$requestComp" 2> /dev/null)
 
     # Some programs may output extra empty lines after the directive.
     # Let's ignore them or else it will break completion.
@@ -66,6 +63,7 @@ function __%[1]s_perform_completion
             break
         end
     end
+
     set comps $results[1..-2]
     set directiveLine $results[-1]
 
