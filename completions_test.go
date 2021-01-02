@@ -1749,6 +1749,228 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	}
 }
 
+func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{
+		Use: "child",
+		Run: emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
+		},
+	}
+	childCmd2 := &Command{
+		Use:       "child2",
+		Run:       emptyRun,
+		ValidArgs: []string{"arg1", "arg2"},
+	}
+	rootCmd.AddCommand(childCmd, childCmd2)
+	childCmd.Flags().Bool("bool", false, "test bool flag")
+	childCmd.Flags().String("string", "", "test string flag")
+	_ = childCmd.RegisterFlagCompletionFunc("string", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return []string{"myval"}, ShellCompDirectiveDefault
+	})
+
+	// Test flag completion with no argument
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"--bool\ttest bool flag",
+		"--string\ttest string flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that no flags are completed after the -- arg
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that no flags are completed after the -- arg with a flag set
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--bool", "--", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// set Interspersed to false which means that no flags should be completed after the first arg
+	childCmd.Flags().SetInterspersed(false)
+
+	// Test that no flags are completed after the first arg
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "arg", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that no flags are completed after the fist arg with a flag set
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--string", "t", "arg", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that args are still completed after --
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that args are still completed even if flagname with ValidArgsFunction exists
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--string", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that args are still completed even if flagname with ValidArgsFunction exists
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "--", "a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"arg1",
+		"arg2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that --validarg is not parsed as flag after --
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that --validarg is not parsed as flag after an arg
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "arg", "--validarg", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"test",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that --validarg is added to args for the ValidArgsFunction
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return args, ShellCompDirectiveDefault
+	}
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Check that --validarg is added to args for the ValidArgsFunction and toComplete is also set correctly
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return append(args, toComplete), ShellCompDirectiveDefault
+	}
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "--toComp=ab")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--validarg",
+		"--toComp=ab",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
