@@ -693,8 +693,8 @@ func main() {
   rootCmd.SetArgs([]string{""})
   rootCmd.Execute()
   fmt.Println()
-  rootCmd.SetArgs([]string{"sub", "arg1", "arg2"})
-  rootCmd.Execute()
+  subCmd.SetArgs([]string{"sub", "arg1", "arg2"})
+  subCmd.Execute()
 }
 ```
 
