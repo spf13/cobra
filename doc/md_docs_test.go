@@ -95,37 +95,6 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
-func TestGenMdTreeCustom(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
-	if err != nil {
-		t.Fatalf("Failed to create tmpdir: %v", err)
-	}
-	defer os.RemoveAll(tmpdir)
-
-	prepender := func(s string) string { return "Prepended" }
-	postpender := func(s string) string { return "Postpended" }
-	identity := func(s string) string { return s }
-
-	if err := GenMarkdownTreeCustom(rootCmd, tmpdir, prepender, postpender, identity); err != nil {
-		t.Fatalf("GenMarkdownTree failed: %v", err)
-	}
-
-	gotRoot := fileContents(t, tmpdir, "root.md")
-	checkStringContains(t, gotRoot, "Prepended")
-	checkStringContains(t, gotRoot, rootCmd.Long)
-	checkStringContains(t, gotRoot, "Postpended")
-
-	gotEcho := fileContents(t, tmpdir, "root_echo.md")
-	checkStringContains(t, gotEcho, "Prepended")
-	checkStringContains(t, gotEcho, echoCmd.Long)
-	checkStringContains(t, gotEcho, "Postpended")
-
-	gotEchoSub := fileContents(t, tmpdir, "root_echo_echosub.md")
-	checkStringContains(t, gotEchoSub, "Prepended")
-	checkStringContains(t, gotEchoSub, echoSubCmd.Long)
-	checkStringContains(t, gotEchoSub, "Postpended")
-}
-
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
@@ -140,12 +109,4 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-}
-
-func fileContents(t *testing.T, dir, filename string) string {
-	contents, err := ioutil.ReadFile(filepath.Join(dir, filename))
-	if err != nil {
-		t.Fatalf("Error loading file %q: %v ", filename, err)
-	}
-	return string(contents)
 }
