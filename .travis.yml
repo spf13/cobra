@@ -6,8 +6,8 @@ stages:
   - build
 
 go:
-  - 1.12.x
-  - 1.13.x
+  - 1.14.x
+  - 1.15.x
   - tip
 
 before_install:
@@ -19,10 +19,10 @@ matrix:
     - go: tip
   include:
     - stage: diff
-      go: 1.13.x
+      go: 1.14.x
       script: make fmt
     - stage: build
-      go: 1.13.x
+      go: 1.14.x
       script: make cobra_generator
 
 script: 
