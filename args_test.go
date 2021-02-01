@@ -71,6 +71,13 @@ func TestArgs_No(t *testing.T) {
 		"Valid | Valid": {"unknown", NoArgs, true, []string{"one"}},
 	})
 }
+func TestArgs_Nil(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":     {"", nil, false, []string{"a", "b"}},
+		"Valid | Valid":   {"", nil, true, []string{"one", "two"}},
+		"Valid | Invalid": {"invalid", nil, true, []string{"a"}},
+	})
+}
 func TestArgs_Arbitrary(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
 		"      | Arb":     {"", ArbitraryArgs, false, []string{"a", "b"}},
