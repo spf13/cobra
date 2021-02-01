@@ -1011,14 +1011,15 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	return cmd, err
 }
 
-// ValidateArgs returns an error if any positional args are not in
-// the `ValidArgs` field of `Command`
+// ValidateArgs returns an error if any positional args are not in the
+// `ValidArgs` field of `Command`. Then, run the `Args` validator, if
+// specified.
 func (c *Command) ValidateArgs(args []string) error {
-	if c.Args == nil {
-		return ArbitraryArgs(c, args)
-	}
 	if err := validateArgs(c, args); err != nil {
 		return err
+	}
+	if c.Args == nil {
+		return ArbitraryArgs(c, args)
 	}
 	return c.Args(c, args)
 }
