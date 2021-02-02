@@ -1,0 +1,80 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+env:
+  GO111MODULE: on
+
+jobs:
+
+
+  test-unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - { icon: 🐧, os: ubuntu }
+        - { icon: 🍎, os: macOS }
+        go:
+        - 1.14.x
+        - 1.15.x
+    name: '${{ matrix.platform.icon }} ${{ matrix.go }}'
+    runs-on: ${{ matrix.platform.os }}-latest
+    steps:
+
+    - name: '⚙️ Setup go'
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+
+    - name: '⚙️ Install deps'
+      run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        go install github.com/kyoh86/richgo
+        go install github.com/mitchellh/gox
+
+    - name: '🚧 Run tests'
+      run: PATH=$HOME/go/bin/:$PATH make
+
+
+  test-win:
+    name: '🟪 MINGW64'
+    defaults:
+      run:
+        shell: msys2 {0}
+    runs-on: windows-latest
+    steps:
+
+    - name: '⚙️ Git config'
+      shell: bash
+      run: git config --global core.autocrlf input
+
+    - name: '🟪 Setup MSYS2'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >
+          git
+          make
+          unzip
+          mingw-w64-x86_64-go
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+
+    - name: '⚙️ Install deps'
+      run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        go install github.com/kyoh86/richgo
+        go install github.com/mitchellh/gox
+
+    - name: '🚧 Run tests'
+      run: PATH=$HOME/go/bin:$PATH make
