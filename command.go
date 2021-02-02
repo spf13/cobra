@@ -126,6 +126,17 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 
+	// persistentPreRunHooks are executed before the command or one of its children are executed
+	persistentPreRunHooks []func(cmd *Command, args []string) error
+	// preRunHooks are executed before the command is executed
+	preRunHooks []func(cmd *Command, args []string) error
+	// runHooks are executed when the command is executed
+	runHooks []func(cmd *Command, args []string) error
+	// postRunHooks are executed after the command has executed
+	postRunHooks []func(cmd *Command, args []string) error
+	// persistentPostRunHooks are executed after the command or one of its children have executed
+	persistentPostRunHooks []func(cmd *Command, args []string) error
+
 	// SilenceErrors is an option to quiet errors down stream.
 	SilenceErrors bool
 
@@ -824,51 +835,82 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPreRunE != nil {
-			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
-				return err
-			}
-			break
-		} else if p.PersistentPreRun != nil {
-			p.PersistentPreRun(c, argWoFlags)
-			break
-		}
-	}
+	// Allocate the hooks execution chain for the current command
+	var hooks []func(cmd *Command, args []string) error
+
+	// First append the PreRun* hooks
+	hooks = append(hooks, c.preRunHooks...)
 	if c.PreRunE != nil {
-		if err := c.PreRunE(c, argWoFlags); err != nil {
-			return err
-		}
+		hooks = append(hooks, c.PreRunE)
 	} else if c.PreRun != nil {
-		c.PreRun(c, argWoFlags)
+		hooks = append(hooks, wrapVoidHook(c.PreRun))
 	}
 
-	if err := c.validateRequiredFlags(); err != nil {
-		return err
-	}
+	// Include the validateRequiredFlags() logic as a hook
+	// to be executed before running the main Run hooks.
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		if err := cmd.validateRequiredFlags(); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	// Append the main Run* hooks
+	hooks = append(hooks, c.runHooks...)
 	if c.RunE != nil {
-		if err := c.RunE(c, argWoFlags); err != nil {
-			return err
-		}
-	} else {
-		c.Run(c, argWoFlags)
+		hooks = append(hooks, c.RunE)
+	} else if c.Run != nil {
+		hooks = append(hooks, wrapVoidHook(c.Run))
 	}
+
+	// Append the PostRun* hooks
+	hooks = append(hooks, c.postRunHooks...)
 	if c.PostRunE != nil {
-		if err := c.PostRunE(c, argWoFlags); err != nil {
-			return err
-		}
+		hooks = append(hooks, c.PostRunE)
 	} else if c.PostRun != nil {
-		c.PostRun(c, argWoFlags)
+		hooks = append(hooks, wrapVoidHook(c.PostRun))
 	}
+
+	// Lastly find and append/prepend the Persistent*Run hooks.
+	// Setting EnablePersistentRunOverride to true (default) preserves
+	// the previous behavior/concern where childs should override their parents.
+	// Any hooks registered through OnPersistent*Run will always
+	// be executed and cannot be overriden.
+	hasPersistentPreRunFromStruct := false
+	hasPersistentPostRunFromStruct := false
 	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPostRunE != nil {
-			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
-				return err
+		// Find and prepend the PersistentPreRun* hooks as defined on the commands
+		if !hasPersistentPreRunFromStruct || !EnablePersistentRunOverride {
+			if p.PersistentPreRunE != nil {
+				hooks = prependHook(&hooks, p.PersistentPreRunE)
+				hasPersistentPreRunFromStruct = true
+			} else if p.PersistentPreRun != nil {
+				hooks = prependHook(&hooks, wrapVoidHook(p.PersistentPreRun))
+				hasPersistentPreRunFromStruct = true
 			}
-			break
-		} else if p.PersistentPostRun != nil {
-			p.PersistentPostRun(c, argWoFlags)
-			break
+		}
+		// Find and append the PersistentPostRun* hooks as defined on the commands
+		if !hasPersistentPostRunFromStruct || !EnablePersistentRunOverride {
+			if p.PersistentPostRunE != nil {
+				hooks = append(hooks, p.PersistentPostRunE)
+				hasPersistentPostRunFromStruct = true
+			} else if p.PersistentPostRun != nil {
+				hooks = append(hooks, wrapVoidHook(p.PersistentPostRun))
+				hasPersistentPostRunFromStruct = true
+			}
+		}
+
+		// Hooks registered through OnPersistent*Run should always be executed
+		// Prepend the PersistentPreRun* hooks
+		hooks = append(p.persistentPreRunHooks, hooks...)
+		// Append the PersistentPostRun* hooks
+		hooks = append(hooks, p.persistentPostRunHooks...)
+	}
+
+	// Execute the hooks execution chain:
+	for _, x := range hooks {
+		if err := x(c, argWoFlags); err != nil {
+			return err
 		}
 	}
 
@@ -879,6 +921,46 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+// prependHook prepends a hook onto the array of hooks
+func prependHook(hooks *[]func(cmd *Command, args []string) error, hook ...func(cmd *Command, args []string) error) []func(cmd *Command, args []string) error {
+	return append(hook, *hooks...)
+}
+
+// wrapVoidHook wraps a void hook into a function having the return error signature
+func wrapVoidHook(hook func(cmd *Command, args []string)) func(cmd *Command, args []string) error {
+	return func(cmd *Command, args []string) error {
+		hook(cmd, args)
+		return nil
+	}
+}
+
+// OnPersistentPreRun registers one or more hooks on the command to be executed
+// before the command or one of its children are executed
+func (c *Command) OnPersistentPreRun(f ...func(cmd *Command, args []string) error) {
+	c.persistentPreRunHooks = append(c.persistentPreRunHooks, f...)
+}
+
+// OnPreRun registers one or more hooks on the command to be executed before the command is executed
+func (c *Command) OnPreRun(f ...func(cmd *Command, args []string) error) {
+	c.preRunHooks = append(c.preRunHooks, f...)
+}
+
+// OnRun registers one or more hooks on the command to be executed when the command is executed
+func (c *Command) OnRun(f ...func(cmd *Command, args []string) error) {
+	c.runHooks = append(c.runHooks, f...)
+}
+
+// OnPostRun registers one or more hooks on the command to be executed after the command has executed
+func (c *Command) OnPostRun(f ...func(cmd *Command, args []string) error) {
+	c.postRunHooks = append(c.postRunHooks, f...)
+}
+
+// OnPersistentPostRun register one or more hooks on the command to be executed
+// after the command or one of its children have executed
+func (c *Command) OnPersistentPostRun(f ...func(cmd *Command, args []string) error) {
+	c.persistentPostRunHooks = append(c.persistentPostRunHooks, f...)
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.
