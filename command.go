@@ -998,7 +998,7 @@ func (c *Command) validateRequiredFlags() error {
 		if !found {
 			return
 		}
-		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+		if (requiredAnnotation[0] == "true") && !pflag.Changed && pflag.DefValue == "" {
 			missingFlagNames = append(missingFlagNames, pflag.Name)
 		}
 	})
