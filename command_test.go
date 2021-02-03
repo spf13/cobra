@@ -749,6 +749,10 @@ func TestRequiredFlags(t *testing.T) {
 	c.MarkFlagRequired("foo1")
 	c.Flags().String("foo2", "", "")
 	c.MarkFlagRequired("foo2")
+	c.Flags().String("foo3", "default", "")
+	c.MarkFlagRequired("foo3")
+	c.Flags().Int("foo4", 28, "")
+	c.MarkFlagRequired("foo4")
 	c.Flags().String("bar", "", "")
 
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
