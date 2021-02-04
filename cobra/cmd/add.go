@@ -21,9 +21,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultShortDesc = "A brief description of your command"
+	defaultLongDesc  = `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`
+)
+
 var (
 	packageName string
 	parentName  string
+	shortDesc   string
+	longDesc    string
 
 	addCmd = &cobra.Command{
 		Use:     "add [command name]",
@@ -48,10 +60,22 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				er(err)
 			}
 
+			effectiveLongDesc := defaultLongDesc
+			if longDesc != "" {
+				effectiveLongDesc = longDesc
+			}
+
+			effectiveShortDesc := defaultShortDesc
+			if shortDesc != "" {
+				effectiveShortDesc = shortDesc
+			}
+
 			commandName := validateCmdName(args[0])
 			command := &Command{
-				CmdName:   commandName,
-				CmdParent: parentName,
+				CmdName:      commandName,
+				CmdParent:    parentName,
+				CmdShortDesc: effectiveShortDesc,
+				CmdLongDesc:  effectiveLongDesc,
 				Project: &Project{
 					AbsolutePath: wd,
 					Legal:        getLicense(),
@@ -72,6 +96,8 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
+	addCmd.Flags().StringVarP(&shortDesc, "shortdesc", "", "", "short description for this command")
+	addCmd.Flags().StringVarP(&longDesc, "longdesc", "", "", "long description for this command")
 	addCmd.Flags().MarkDeprecated("package", "this operation has been removed.")
 }
 

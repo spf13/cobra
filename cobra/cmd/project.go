@@ -3,15 +3,18 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra/cobra/tpl"
 )
 
-// Project contains name, license and paths to projects.
+// Project contains name, license, descriptions, and paths to projects.
 type Project struct {
 	// v2
 	PkgName      string
+	PkgShortDesc string
+	PkgLongDesc  string
 	Copyright    string
 	AbsolutePath string
 	Legal        License
@@ -19,12 +22,16 @@ type Project struct {
 	AppName      string
 }
 
+// Command contains name, parent command, and descriptions for commands
 type Command struct {
-	CmdName   string
-	CmdParent string
+	CmdName      string
+	CmdParent    string
+	CmdShortDesc string
+	CmdLongDesc  string
 	*Project
 }
 
+// Create will create a new project
 func (p *Project) Create() error {
 	// check if AbsolutePath exists
 	if _, err := os.Stat(p.AbsolutePath); os.IsNotExist(err) {
@@ -81,8 +88,14 @@ func (p *Project) createLicenseFile() error {
 	return licenseTemplate.Execute(licenseFile, data)
 }
 
+// Create will create a new command for a project
 func (c *Command) Create() error {
-	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdName))
+	cmdFileName := c.CmdName
+	if c.CmdParent != "rootCmd" {
+
+		cmdFileName = fmt.Sprintf("%s_%s", strings.Replace(validateCmdName(c.CmdParent), "Cmd", "", -1), c.CmdName)
+	}
+	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, cmdFileName))
 	if err != nil {
 		return err
 	}
