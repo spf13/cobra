@@ -1,0 +1,38 @@
+name: "Build and test"
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.14', '1.15' ]
+    name: Go ${{ matrix.go }}
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.go }}-
+      - name: Install deps
+        run: |
+          go get -u github.com/kyoh86/richgo
+          go get -u github.com/mitchellh/gox
+
+      - name: Diff
+        run: |
+          make fmt
+
+      - name: Generator
+        run: |
+          make cobra_generator
+
+      - name: Test
+        run: |
+          make test
+
