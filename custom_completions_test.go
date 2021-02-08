@@ -780,17 +780,17 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	rootCmd.Flags().IntP("requiredFlag", "r", -1, "required flag")
-	rootCmd.MarkFlagRequired("requiredFlag")
+	assertNoErr(t, rootCmd.MarkFlagRequired("requiredFlag"))
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
 	rootCmd.PersistentFlags().IntP("requiredPersistent", "p", -1, "required persistent")
-	rootCmd.MarkPersistentFlagRequired("requiredPersistent")
+	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("requiredPersistent"))
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
 
 	rootCmd.Flags().StringP("release", "R", "", "Release name")
 
 	childCmd.Flags().BoolP("subRequired", "s", false, "sub required flag")
-	childCmd.MarkFlagRequired("subRequired")
+	assertNoErr(t, childCmd.MarkFlagRequired("subRequired"))
 	childCmd.Flags().BoolP("subNotRequired", "n", false, "sub not required flag")
 
 	// Test that a required flag is suggested even without the - prefix
@@ -964,19 +964,19 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 
 	// No extensions.  Should be ignored.
 	rootCmd.Flags().StringP("file", "f", "", "file flag")
-	rootCmd.MarkFlagFilename("file")
+	assertNoErr(t, rootCmd.MarkFlagFilename("file"))
 
 	// Single extension
 	rootCmd.Flags().StringP("log", "l", "", "log flag")
-	rootCmd.MarkFlagFilename("log", "log")
+	assertNoErr(t, rootCmd.MarkFlagFilename("log", "log"))
 
 	// Multiple extensions
 	rootCmd.Flags().StringP("yaml", "y", "", "yaml flag")
-	rootCmd.MarkFlagFilename("yaml", "yaml", "yml")
+	assertNoErr(t, rootCmd.MarkFlagFilename("yaml", "yaml", "yml"))
 
 	// Directly using annotation
 	rootCmd.Flags().StringP("text", "t", "", "text flag")
-	rootCmd.Flags().SetAnnotation("text", BashCompFilenameExt, []string{"txt"})
+	assertNoErr(t, rootCmd.Flags().SetAnnotation("text", BashCompFilenameExt, []string{"txt"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the file filtering
@@ -1086,15 +1086,15 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 
 	// Filter directories
 	rootCmd.Flags().StringP("dir", "d", "", "dir flag")
-	rootCmd.MarkFlagDirname("dir")
+	assertNoErr(t, rootCmd.MarkFlagDirname("dir"))
 
 	// Filter directories within a directory
 	rootCmd.Flags().StringP("subdir", "s", "", "subdir")
-	rootCmd.Flags().SetAnnotation("subdir", BashCompSubdirsInDir, []string{"themes"})
+	assertNoErr(t, rootCmd.Flags().SetAnnotation("subdir", BashCompSubdirsInDir, []string{"themes"}))
 
 	// Multiple directory specification get ignored
 	rootCmd.Flags().StringP("manydir", "m", "", "manydir")
-	rootCmd.Flags().SetAnnotation("manydir", BashCompSubdirsInDir, []string{"themes", "colors"})
+	assertNoErr(t, rootCmd.Flags().SetAnnotation("manydir", BashCompSubdirsInDir, []string{"themes", "colors"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the directory filtering
@@ -1430,7 +1430,7 @@ func TestValidArgsFuncInBashScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenBashCompletion(buf)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
 	output := buf.String()
 
 	check(t, output, "has_completion_function=1")
@@ -1445,7 +1445,7 @@ func TestNoValidArgsFuncInBashScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenBashCompletion(buf)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
 	output := buf.String()
 
 	checkOmit(t, output, "has_completion_function=1")
@@ -1461,7 +1461,7 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenBashCompletion(buf)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
 	output := buf.String()
 
 	check(t, output, ShellCompNoDescRequestCmd)
@@ -1477,7 +1477,7 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenZshCompletionNoDesc(buf)
+	assertNoErr(t, rootCmd.GenZshCompletionNoDesc(buf))
 	output := buf.String()
 
 	check(t, output, ShellCompNoDescRequestCmd)
@@ -1493,7 +1493,7 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenZshCompletion(buf)
+	assertNoErr(t, rootCmd.GenZshCompletion(buf))
 	output := buf.String()
 
 	check(t, output, ShellCompRequestCmd)
@@ -1506,7 +1506,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 		Run: emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
-	rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 			if strings.HasPrefix(comp, toComplete) {
@@ -1514,9 +1514,9 @@ func TestFlagCompletionInGo(t *testing.T) {
 			}
 		}
 		return completions, ShellCompDirectiveDefault
-	})
+	}))
 	rootCmd.Flags().String("filename", "", "Enter a filename")
-	rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 			if strings.HasPrefix(comp, toComplete) {
@@ -1524,7 +1524,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 			}
 		}
 		return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
-	})
+	}))
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--introot", "")
@@ -1703,7 +1703,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		Run: emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
-	rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 			if strings.HasPrefix(comp, toComplete) {
@@ -1711,9 +1711,9 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 			}
 		}
 		return completions, ShellCompDirectiveDefault
-	})
+	}))
 	rootCmd.Flags().String("filename", "", "Enter a filename")
-	rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		completions := []string{}
 		for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 			if strings.HasPrefix(comp, toComplete) {
@@ -1721,7 +1721,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 			}
 		}
 		return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
-	})
+	}))
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "")

@@ -13,6 +13,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func assertNoErr(t *testing.T, e error) {
+	if e != nil {
+		t.Error(e)
+	}
+}
+
 func translate(in string) string {
 	return strings.Replace(in, "-", "\\-", -1)
 }
@@ -133,7 +139,7 @@ func TestGenManSeeAlso(t *testing.T) {
 func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
 	c := &cobra.Command{}
 	c.Flags().StringP("foo", "f", "default", "Foo flag")
-	c.Flags().MarkShorthandDeprecated("foo", "don't use it no more")
+	assertNoErr(t, c.Flags().MarkShorthandDeprecated("foo", "don't use it no more"))
 
 	buf := new(bytes.Buffer)
 	manPrintFlags(buf, c.Flags())

@@ -40,13 +40,11 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				er("add needs a name for the command")
+				cobra.CheckErr(fmt.Errorf("add needs a name for the command"))
 			}
 
 			wd, err := os.Getwd()
-			if err != nil {
-				er(err)
-			}
+			cobra.CheckErr(err)
 
 			commandName := validateCmdName(args[0])
 			command := &Command{
@@ -59,10 +57,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 				},
 			}
 
-			err = command.Create()
-			if err != nil {
-				er(err)
-			}
+			cobra.CheckErr(command.Create())
 
 			fmt.Printf("%s created at %s\n", command.CmdName, command.AbsolutePath)
 		},
@@ -72,7 +67,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 func init() {
 	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
 	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
-	addCmd.Flags().MarkDeprecated("package", "this operation has been removed.")
+	cobra.CheckErr(addCmd.Flags().MarkDeprecated("package", "this operation has been removed."))
 }
 
 // validateCmdName returns source without any dashes and underscore.

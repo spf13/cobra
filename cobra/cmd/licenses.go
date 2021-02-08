@@ -16,9 +16,11 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -92,7 +94,7 @@ func copyrightLine() string {
 func findLicense(name string) License {
 	found := matchLicense(name)
 	if found == "" {
-		er("unknown license: " + name)
+		cobra.CheckErr(fmt.Errorf("unknown license: " + name))
 	}
 	return Licenses[found]
 }
