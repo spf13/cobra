@@ -181,7 +181,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         # store temporay because switch will overwrite $_
         $comp = $_
 
-        # Powershell supports three different completion modes
+        # PowerShell supports three different completion modes
         # - TabCompleteNext (default windows style - on each key press the next option is displayed)
         # - Complete (works like bash)
         # - MenuComplete (works like zsh)
