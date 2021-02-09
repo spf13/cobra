@@ -1,0 +1,83 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+env:
+  GO111MODULE: on
+
+jobs:
+
+
+  test-unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - ubuntu
+        - macOS
+        go:
+        - 1.14.x
+        - 1.15.x
+    name: '${{ matrix.platform }} | ${{ matrix.go }}'
+    runs-on: ${{ matrix.platform }}-latest
+    steps:
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: ${{ runner.os }}-${{ matrix.go }}-
+
+    - run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        go install github.com/kyoh86/richgo
+        go install github.com/mitchellh/gox
+
+    - run: PATH=$HOME/go/bin/:$PATH make
+
+
+  test-win:
+    name: MINGW64
+    defaults:
+      run:
+        shell: msys2 {0}
+    runs-on: windows-latest
+    steps:
+
+    - shell: bash
+      run: git config --global core.autocrlf input
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >
+          git
+          make
+          unzip
+          mingw-w64-x86_64-go
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: ${{ runner.os }}-${{ matrix.go }}-
+
+    - run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        go install github.com/kyoh86/richgo
+        go install github.com/mitchellh/gox
+
+    - run: PATH=$HOME/go/bin:$PATH make
