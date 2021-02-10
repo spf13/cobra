@@ -5,8 +5,8 @@ stages:
   - build
 
 go:
-  - 1.14.x
-  - 1.15.x
+  - 1.12.x
+  - 1.13.x
   - tip
 
 env: GO111MODULE=on
@@ -21,7 +21,7 @@ matrix:
     - go: tip
   include:
     - stage: build
-      go: 1.14.x
+      go: 1.13.x
       script: make cobra_generator
 
 script:

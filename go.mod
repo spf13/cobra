@@ -1,6 +1,6 @@
 module github.com/spf13/cobra
 
-go 1.14
+go 1.12
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0
