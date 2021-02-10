@@ -1,5 +1,9 @@
 # Cobra Changelog
 
+## v1.1.3
+
+* **Fix:** release-branch.cobra1.1 only: Revert "Deprecate Go < 1.14" that was to maintain backward compatibility
+
 ## v1.1.2
 
 ### Notable Changes
