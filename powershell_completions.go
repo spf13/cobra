@@ -86,7 +86,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         # We add an extra empty parameter so we can indicate this to the go method.
         __%[1]s_debug "Adding extra empty parameter"
 `+"        # We need to use `\"`\" to pass an empty argument a \"\" or '' does not work!!!"+`
-`+"        $RequestComp=\"$RequestComp\" + ' `\"`\"' "+`
+`+"        $RequestComp=\"$RequestComp\" + ' `\"`\"'"+`
     }
 
     __%[1]s_debug "Calling $RequestComp"
