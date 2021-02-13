@@ -178,7 +178,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
 
     $Values | ForEach-Object {
 
-        # store temporay because switch will overwrite $_
+        # store temporary because switch will overwrite $_
         $comp = $_
 
         # PowerShell supports three different completion modes
