@@ -24,7 +24,7 @@ func writePreamble(buf io.StringWriter, name string) {
 	WriteStringAndCheck(buf, fmt.Sprintf(`
 __%[1]s_debug()
 {
-    if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
+    if [[ -n ${BASH_COMP_DEBUG_FILE-} ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }
@@ -187,7 +187,7 @@ __%[1]s_handle_reply()
                     PREFIX=""
                     cur="${cur#*=}"
                     ${flags_completion[${index}]}
-                    if [ -n "${ZSH_VERSION}" ]; then
+                    if [ -n "${ZSH_VERSION-}" ]; then
                         # zsh completion needs --flag= prefix
                         eval "COMPREPLY=( \"\${COMPREPLY[@]/#/${flag}=}\" )"
                     fi
@@ -214,7 +214,7 @@ __%[1]s_handle_reply()
     completions=("${commands[@]}")
     if [[ ${#must_have_one_noun[@]} -ne 0 ]]; then
         completions+=("${must_have_one_noun[@]}")
-    elif [[ -n "${has_completion_function}" ]]; then
+    elif [[ -n "${has_completion_function-}" ]]; then
         # if a go completion function is provided, defer to that function
         __%[1]s_handle_go_custom_completion
     fi
@@ -292,7 +292,7 @@ __%[1]s_handle_flag()
     # keep flag value with flagname as flaghash
     # flaghash variable is an associative array which is only supported in bash > 3.
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
-        if [ -n "${flagvalue}" ] ; then
+        if [ -n "${flagvalue-}" ] ; then
             flaghash[${flagname}]=${flagvalue}
         elif [ -n "${words[ $((c+1)) ]}" ] ; then
             flaghash[${flagname}]=${words[ $((c+1)) ]}
@@ -334,7 +334,7 @@ __%[1]s_handle_command()
     __%[1]s_debug "${FUNCNAME[0]}: c is $c words[c] is ${words[c]}"
 
     local next_command
-    if [[ -n ${last_command} ]]; then
+    if [[ -n ${last_command-} ]]; then
         next_command="_${last_command}_${words[c]//:/__}"
     else
         if [[ $c -eq 0 ]]; then
