@@ -1,10 +1,16 @@
-# changes to documentation
-"area/documentation": doc/**/*
+# changes to documentation generation
+"area/doc-gen": doc/**/*
 
-# changes to the core lib package
+# changes to the core Go cobra lib package
 "area/lib": ./*.go
 
-# changes to the shell completion
+# changes to the Cobra CLI
+"area/cli": cobra/**/*
+
+# changes to Github workflows
+"area/github": .github/**/*
+
+# changes to shell completions
 "area/*sh completion":
   - ./*completions*
 
