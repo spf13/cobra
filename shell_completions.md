@@ -7,6 +7,15 @@ The currently supported shells are:
 - fish
 - PowerShell
 
+Cobra will automatically provide your program with a fully functional `completion` command,
+similarly to how it provides the `help` command.
+
+## Creating your own completion command
+
+If you do not wish to use the default `completion` command, you can choose to
+provide your own, which will take precedence over the default one. (This also provides
+backwards-compatibility with programs that already have their own `completion` command.)
+
 If you are using the generator, you can create a completion command by running
 
 ```bash
@@ -70,13 +79,33 @@ PowerShell:
 		case "fish":
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
-			cmd.Root().GenPowerShellCompletion(os.Stdout)
+			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
 		}
 	},
 }
 ```
 
 **Note:** The cobra generator may include messages printed to stdout, for example, if the config file is loaded; this will break the auto-completion script so must be removed.
+
+## Adapting the default completion command
+
+Cobra provides a few options for the default `completion` command.  To configure such options you must set
+the `CompletionOptions` field on the *root* command.
+
+To tell Cobra *not* to provide the default `completion` command:
+```
+rootCmd.CompletionOptions.DisableDefaultCmd = true
+```
+
+To tell Cobra *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:
+```
+rootCmd.CompletionOptions.DisableNoDescFlag = true
+```
+
+To tell Cobra to completely disable descriptions for completions:
+```
+rootCmd.CompletionOptions.DisableDescriptions = true
+```
 
 # Customizing completions
 

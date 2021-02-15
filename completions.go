@@ -63,6 +63,32 @@ const (
 	ShellCompDirectiveDefault ShellCompDirective = 0
 )
 
+const (
+	// Constants for the completion command
+	compCmdName              = "completion"
+	compCmdNoDescFlagName    = "no-descriptions"
+	compCmdNoDescFlagDesc    = "disable completion descriptions"
+	compCmdNoDescFlagDefault = false
+)
+
+// CompletionOptions are the options to control shell completion
+type CompletionOptions struct {
+	// DisableDefaultCmd prevents Cobra from creating a default 'completion' command
+	DisableDefaultCmd bool
+	// DisableNoDescFlag prevents Cobra from creating the '--no-descriptions' flag
+	// for shells that support completion descriptions
+	DisableNoDescFlag bool
+	// DisableDescriptions turns off all completion descriptions for shells
+	// that support them
+	DisableDescriptions bool
+}
+
+// NoFileCompletions can be used to disable file completion for commands that should
+// not trigger file completions.
+func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	return nil, ShellCompDirectiveNoFileComp
+}
+
 // RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
 func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)) error {
 	flag := c.Flag(flagName)
@@ -492,6 +518,150 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	}
 
 	return flag, trimmedArgs, lastArg, nil
+}
+
+// initDefaultCompletionCmd adds a default 'completion' command to c.
+// This function will do nothing if any of the following is true:
+// 1- the feature has been explicitly disabled by the program,
+// 2- c has no subcommands (to avoid creating one),
+// 3- c already has a 'completion' command provided by the program.
+func (c *Command) initDefaultCompletionCmd() {
+	if c.CompletionOptions.DisableDefaultCmd || !c.HasSubCommands() {
+		return
+	}
+
+	for _, cmd := range c.commands {
+		if cmd.Name() == compCmdName || cmd.HasAlias(compCmdName) {
+			// A completion command is already available
+			return
+		}
+	}
+
+	haveNoDescFlag := !c.CompletionOptions.DisableNoDescFlag && !c.CompletionOptions.DisableDescriptions
+
+	completionCmd := &Command{
+		Use:   compCmdName,
+		Short: "generate the autocompletion script for the specified shell",
+		Long: fmt.Sprintf(`
+Generate the autocompletion script for %[1]s for the specified shell.
+See each sub-command's help for details on how to use the generated script.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+	}
+	c.AddCommand(completionCmd)
+
+	out := c.OutOrStdout()
+	noDesc := c.CompletionOptions.DisableDescriptions
+	shortDesc := "generate the autocompletion script for %s"
+	bash := &Command{
+		Use:   "bash",
+		Short: fmt.Sprintf(shortDesc, "bash"),
+		Long: fmt.Sprintf(`
+Generate the autocompletion script for the bash shell.
+
+This script depends on the 'bash-completion' package.
+If it is not installed already, you can install it via your OS's package manager.
+
+To load completions in your current shell session:
+$ source <(%[1]s completion bash)
+
+To load completions for every new session, execute once:
+Linux:
+  $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
+MacOS:
+  $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+
+You will need to start a new shell for this setup to take effect.
+  `, c.Root().Name()),
+		Args:                  NoArgs,
+		DisableFlagsInUseLine: true,
+		ValidArgsFunction:     NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenBashCompletion(out)
+		},
+	}
+
+	zsh := &Command{
+		Use:   "zsh",
+		Short: fmt.Sprintf(shortDesc, "zsh"),
+		Long: fmt.Sprintf(`
+Generate the autocompletion script for the zsh shell.
+
+If shell completion is not already enabled in your environment you will need
+to enable it.  You can execute the following once:
+
+$ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+To load completions for every new session, execute once:
+$ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+
+You will need to start a new shell for this setup to take effect.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			if noDesc {
+				return cmd.Root().GenZshCompletionNoDesc(out)
+			}
+			return cmd.Root().GenZshCompletion(out)
+		},
+	}
+	if haveNoDescFlag {
+		zsh.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	fish := &Command{
+		Use:   "fish",
+		Short: fmt.Sprintf(shortDesc, "fish"),
+		Long: fmt.Sprintf(`
+Generate the autocompletion script for the fish shell.
+
+To load completions in your current shell session:
+$ %[1]s completion fish | source
+
+To load completions for every new session, execute once:
+$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+
+You will need to start a new shell for this setup to take effect.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenFishCompletion(out, !noDesc)
+		},
+	}
+	if haveNoDescFlag {
+		fish.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	powershell := &Command{
+		Use:   "powershell",
+		Short: fmt.Sprintf(shortDesc, "powershell"),
+		Long: fmt.Sprintf(`
+Generate the autocompletion script for powershell.
+
+To load completions in your current shell session:
+PS C:\> %[1]s completion powershell | Out-String | Invoke-Expression
+
+To load completions for every new session, add the output of the above command
+to your powershell profile.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			if noDesc {
+				return cmd.Root().GenPowerShellCompletion(out)
+			}
+			return cmd.Root().GenPowerShellCompletionWithDesc(out)
+
+		},
+	}
+	if haveNoDescFlag {
+		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	completionCmd.AddCommand(bash, zsh, fish, powershell)
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {

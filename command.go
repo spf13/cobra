@@ -168,6 +168,9 @@ type Command struct {
 	//FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
 
+	// CompletionOptions is a set of options to control the handling of shell completion
+	CompletionOptions CompletionOptions
+
 	// commandsAreSorted defines, if command slice are sorted or not.
 	commandsAreSorted bool
 	// commandCalledAs is the name or alias value used to call this command.
@@ -914,9 +917,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		preExecHookFn(c)
 	}
 
-	// initialize help as the last point possible to allow for user
-	// overriding
+	// initialize help at the last point to allow for user overriding
 	c.InitDefaultHelpCmd()
+	// initialize completion at the last point to allow for user overriding
+	c.initDefaultCompletionCmd()
 
 	args := c.args
 
