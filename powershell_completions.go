@@ -165,7 +165,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         # filter the result
         $_.Name -like "$WordToComplete*"
 
-        # Join the flag back if we have a equal sign flag
+        # Join the flag back if we have an equal sign flag
         if ( $IsEqualFlag ) {
             __%[1]s_debug "Join the equal sign flag back to the completion value"
             $_.Name = $Flag + "=" + $_.Name

@@ -49,7 +49,7 @@ func TestGoldenInitCmd(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name:      "returns error when passing an relative path for project",
+			name:      "returns error when passing a relative path for project",
 			args:      []string{"github.com/spf13/testproject"},
 			pkgName:   "github.com/spf13/testproject",
 			expectErr: true,
