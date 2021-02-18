@@ -154,6 +154,8 @@ __%[1]s_handle_standard_completion_case() {
     while IFS='' read -r comp; do
         # Strip any description before checking the length
         comp=${comp%%%%$tab*}
+        # Only consider the completions that match
+        comp=$(compgen -W "$comp" -- "$cur")
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
