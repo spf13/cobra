@@ -83,7 +83,14 @@ func (p *Project) createLicenseFile() error {
 }
 
 func (c *Command) Create() error {
-	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdName))
+	fileName := fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdName)
+
+	// check if Command exists
+	if _, err := os.Stat(fileName); err == nil {
+		return fmt.Errorf("command '%s' already exists", c.CmdName)
+	}
+
+	cmdFile, err := os.Create(fileName)
 	if err != nil {
 		return err
 	}
