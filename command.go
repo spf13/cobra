@@ -145,6 +145,9 @@ type Command struct {
 	usageFunc func(*Command) error
 	// usageTemplate is usage template defined by user.
 	usageTemplate string
+	// flagParseFunc is func defined by user and it's called when the command is
+	// parsing the flags.
+	flagParseFunc func(*Command, []string) error
 	// flagErrorFunc is func defined by user and it's called when the parsing of
 	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
@@ -269,6 +272,11 @@ func (c *Command) SetUsageFunc(f func(*Command) error) {
 // SetUsageTemplate sets usage template. Can be defined by Application.
 func (c *Command) SetUsageTemplate(s string) {
 	c.usageTemplate = s
+}
+
+// SetFlagParseFunc sets a function to parse flags.
+func (c *Command) SetFlagParseFunc(f func(*Command, []string) error) {
+	c.flagParseFunc = f
 }
 
 // SetFlagErrorFunc sets a function to generate an error when flag parsing
@@ -430,6 +438,22 @@ func (c *Command) UsageString() string {
 	c.errWriter = tmpErr
 
 	return bb.String()
+}
+
+// FlagParseFunc returns either the function set by SetFlagParseFunc for this
+// command or a parent, or it returns a function which calls the original
+// flag parse function.
+func (c *Command) FlagParseFunc() (f func(*Command, []string) error) {
+	if c.flagParseFunc != nil {
+		return c.flagParseFunc
+	}
+
+	if c.HasParent() {
+		return c.parent.FlagParseFunc()
+	}
+	return func(c *Command, args []string) error {
+		return c.Flags().Parse(args)
+	}
 }
 
 // FlagErrorFunc returns either the function set by SetFlagErrorFunc for this
@@ -1626,7 +1650,7 @@ func (c *Command) ParseFlags(args []string) error {
 	// do it here after merging all flags and just before parse
 	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
 
-	err := c.Flags().Parse(args)
+	err := c.FlagParseFunc()(c, args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
 		c.Print(c.flagErrorBuf.String())
