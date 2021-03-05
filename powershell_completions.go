@@ -140,19 +140,6 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         $Space = ""
     }
 
-    if (($Directive -band $ShellCompDirectiveNoFileComp) -ne 0 ) {
-        __%[1]s_debug "ShellCompDirectiveNoFileComp is called"
-
-        if ($Values.Length -eq 0) {
-            # Just print an empty string here so the
-            # shell does not start to complete paths.
-            # We cannot use CompletionResult here because
-            # it does not accept an empty string as argument.
-            ""
-            return
-        }
-    }
-
     if ((($Directive -band $ShellCompDirectiveFilterFileExt) -ne 0 ) -or
        (($Directive -band $ShellCompDirectiveFilterDirs) -ne 0 ))  {
         __%[1]s_debug "ShellCompDirectiveFilterFileExt ShellCompDirectiveFilterDirs are not supported"
@@ -169,6 +156,19 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         if ( $IsEqualFlag ) {
             __%[1]s_debug "Join the equal sign flag back to the completion value"
             $_.Name = $Flag + "=" + $_.Name
+        }
+    }
+
+    if (($Directive -band $ShellCompDirectiveNoFileComp) -ne 0 ) {
+        __%[1]s_debug "ShellCompDirectiveNoFileComp is called"
+
+        if ($Values.Length -eq 0) {
+            # Just print an empty string here so the
+            # shell does not start to complete paths.
+            # We cannot use CompletionResult here because
+            # it does not accept an empty string as argument.
+            ""
+            return
         }
     }
 
