@@ -592,8 +592,11 @@ You will need to start a new shell for this setup to take effect.
 		DisableFlagsInUseLine: true,
 		ValidArgsFunction:     NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenBashCompletion(out)
+			return cmd.Root().GenBashCompletionV2(out, !noDesc)
 		},
+	}
+	if haveNoDescFlag {
+		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	zsh := &Command{

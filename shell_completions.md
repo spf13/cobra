@@ -429,7 +429,7 @@ show    (show information of a chart)
 $ helm s[tab][tab]
 search  show  status
 ```
-
+**Note**: Cobra's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command. 
 ## Zsh completions
 
 Cobra supports native zsh completion generated from the root `cobra.Command`.
