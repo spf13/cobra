@@ -76,8 +76,8 @@ jobs:
 
     - run: |
         export GOBIN=$HOME/go/bin
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
         go get github.com/kyoh86/richgo
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
         go install github.com/mitchellh/gox
 
     - run: PATH=$HOME/go/bin:$PATH make
