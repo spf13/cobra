@@ -32,6 +32,7 @@
 - [Pouch](https://github.com/alibaba/pouch)
 - [ProjectAtomic (enterprise)](http://www.projectatomic.io/)
 - [Prototool](https://github.com/uber/prototool)
+- [QRcp](https://github.com/claudiodangelis/qrcp)
 - [Random](https://github.com/erdaltsksn/random)
 - [Rclone](https://rclone.org/)
 - [Scaleway CLI](https://github.com/scaleway/scaleway-cli)
