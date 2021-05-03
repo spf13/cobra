@@ -469,7 +469,16 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	if len(lastArg) > 0 && lastArg[0] == '-' {
 		if index := strings.Index(lastArg, "="); index >= 0 {
 			// Flag with an =
-			flagName = strings.TrimLeft(lastArg[:index], "-")
+			if strings.HasPrefix(lastArg[:index], "--") {
+				// Flag has full name
+				flagName = lastArg[2:index]
+			} else {
+				// Flag is shorthand
+				// We have to get the last shorthand flag name
+				// e.g. `-asd` => d to provide the correct completion
+				// https://github.com/spf13/cobra/issues/1257
+				flagName = lastArg[index-1 : index]
+			}
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
 		} else {
@@ -486,8 +495,16 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 				// If the flag contains an = it means it has already been fully processed,
 				// so we don't need to deal with it here.
 				if index := strings.Index(prevArg, "="); index < 0 {
-					flagName = strings.TrimLeft(prevArg, "-")
-
+					if strings.HasPrefix(prevArg, "--") {
+						// Flag has full name
+						flagName = prevArg[2:]
+					} else {
+						// Flag is shorthand
+						// We have to get the last shorthand flag name
+						// e.g. `-asd` => d to provide the correct completion
+						// https://github.com/spf13/cobra/issues/1257
+						flagName = prevArg[len(prevArg)-1:]
+					}
 					// Remove the uncompleted flag or else there could be an error created
 					// for an invalid value for that flag
 					trimmedArgs = args[:len(args)-1]
