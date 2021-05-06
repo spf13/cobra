@@ -927,10 +927,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		preExecHookFn(c)
 	}
 
-	// initialize help at the last point to allow for user overriding
-	c.InitDefaultHelpCmd()
 	// initialize completion at the last point to allow for user overriding
 	c.initDefaultCompletionCmd()
+	// initialize help at the last point to allow for user overriding
+	c.InitDefaultHelpCmd()
 
 	args := c.args
 

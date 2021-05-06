@@ -95,6 +95,9 @@ type CompletionOptions struct {
 	DisableDescriptions bool
 	// HiddenDefaultCmd makes the default 'completion' command hidden
 	HiddenDefaultCmd bool
+	// InitDefaultEvenIfHasNoSubCommands causes the default 'completion' command to be created
+	// even if there are no other commands defined
+	InitDefaultEvenIfHasNoSubCommands bool
 }
 
 // NoFileCompletions can be used to disable file completion for commands that should
@@ -583,10 +586,10 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 // initDefaultCompletionCmd adds a default 'completion' command to c.
 // This function will do nothing if any of the following is true:
 // 1- the feature has been explicitly disabled by the program,
-// 2- c has no subcommands (to avoid creating one),
+// 2- c has no subcommands (to avoid creating one) and not overridden with the InitDefaultEvenIfHasNoSubCommands completion option,
 // 3- c already has a 'completion' command provided by the program.
 func (c *Command) initDefaultCompletionCmd() {
-	if c.CompletionOptions.DisableDefaultCmd || !c.HasSubCommands() {
+	if c.CompletionOptions.DisableDefaultCmd || (!c.CompletionOptions.InitDefaultEvenIfHasNoSubCommands && !c.HasSubCommands()) {
 		return
 	}
 
