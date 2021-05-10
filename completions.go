@@ -325,7 +325,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
 			// We only complete sub-commands if:
 			// - there are no arguments on the command-line and
-			// - there are no local, non-peristent flag on the command-line or TraverseChildren is true
+			// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
 			for _, subCmd := range finalCmd.Commands() {
 				if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
 					if strings.HasPrefix(subCmd.Name(), toComplete) {

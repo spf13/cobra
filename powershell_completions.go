@@ -152,7 +152,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
         # filter the result
         $_.Name -like "$WordToComplete*"
 
-        # Join the flag back if we have a equal sign flag
+        # Join the flag back if we have an equal sign flag
         if ( $IsEqualFlag ) {
             __%[1]s_debug "Join the equal sign flag back to the completion value"
             $_.Name = $Flag + "=" + $_.Name
@@ -178,7 +178,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
 
     $Values | ForEach-Object {
 
-        # store temporay because switch will overwrite $_
+        # store temporary because switch will overwrite $_
         $comp = $_
 
         # PowerShell supports three different completion modes
