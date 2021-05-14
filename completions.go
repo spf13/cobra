@@ -175,10 +175,6 @@ func (c *Command) initCompleteCmd(args []string) {
 				fmt.Fprintln(finalCmd.OutOrStdout(), comp)
 			}
 
-			if directive >= shellCompDirectiveMaxValue {
-				directive = ShellCompDirectiveDefault
-			}
-
 			// As the last printout, print the completion directive for the completion script to parse.
 			// The directive integer must be that last character following a single colon (:).
 			// The completion script expects :<directive>
@@ -221,6 +217,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
 		return c, []string{}, ShellCompDirectiveDefault, fmt.Errorf("Unable to find a command for arguments: %v", trimmedArgs)
 	}
+	finalCmd.ctx = c.ctx
 
 	// Check if we are doing flag value completion before parsing the flags.
 	// This is important because if we are completing a flag value, we need to also
@@ -328,7 +325,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
 			// We only complete sub-commands if:
 			// - there are no arguments on the command-line and
-			// - there are no local, non-peristent flag on the command-line or TraverseChildren is true
+			// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
 			for _, subCmd := range finalCmd.Commands() {
 				if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
 					if strings.HasPrefix(subCmd.Name(), toComplete) {
@@ -468,7 +465,16 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	if len(lastArg) > 0 && lastArg[0] == '-' {
 		if index := strings.Index(lastArg, "="); index >= 0 {
 			// Flag with an =
-			flagName = strings.TrimLeft(lastArg[:index], "-")
+			if strings.HasPrefix(lastArg[:index], "--") {
+				// Flag has full name
+				flagName = lastArg[2:index]
+			} else {
+				// Flag is shorthand
+				// We have to get the last shorthand flag name
+				// e.g. `-asd` => d to provide the correct completion
+				// https://github.com/spf13/cobra/issues/1257
+				flagName = lastArg[index-1 : index]
+			}
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
 		} else {
@@ -485,8 +491,16 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 				// If the flag contains an = it means it has already been fully processed,
 				// so we don't need to deal with it here.
 				if index := strings.Index(prevArg, "="); index < 0 {
-					flagName = strings.TrimLeft(prevArg, "-")
-
+					if strings.HasPrefix(prevArg, "--") {
+						// Flag has full name
+						flagName = prevArg[2:]
+					} else {
+						// Flag is shorthand
+						// We have to get the last shorthand flag name
+						// e.g. `-asd` => d to provide the correct completion
+						// https://github.com/spf13/cobra/issues/1257
+						flagName = prevArg[len(prevArg)-1:]
+					}
 					// Remove the uncompleted flag or else there could be an error created
 					// for an invalid value for that flag
 					trimmedArgs = args[:len(args)-1]
