@@ -10,3 +10,5 @@ require (
 	github.com/spf13/viper v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/spf13/viper => github.com/spf13/viper v1.7.2-0.20210418203822-e48561e65c47
