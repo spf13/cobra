@@ -36,3 +36,4 @@
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
 - [Werf](https://werf.io/)
+- [Moldy](https://github.com/Moldy-Community/moldy)
