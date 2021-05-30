@@ -24,6 +24,7 @@
 - [Meroxa CLI](https://github.com/meroxa/cli)
 - [Metal Stack CLI](https://github.com/metal-stack/metalctl)
 - [Moby (former Docker)](https://github.com/moby/moby)
+- [Moldy](https://github.com/Moldy-Community/moldy)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [OpenShift](https://www.openshift.com/)
 - [Ory Hydra](https://github.com/ory/hydra)
