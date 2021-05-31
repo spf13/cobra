@@ -23,6 +23,7 @@
 - [Mattermost-server](https://github.com/mattermost/mattermost-server)
 - [Metal Stack CLI](https://github.com/metal-stack/metalctl)
 - [Moby (former Docker)](https://github.com/moby/moby)
+- [Moldy](https://github.com/Moldy-Community/moldy)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [OpenShift](https://www.openshift.com/)
 - [Ory Hydra](https://github.com/ory/hydra)
@@ -36,4 +37,4 @@
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
 - [Werf](https://werf.io/)
-- [Moldy](https://github.com/Moldy-Community/moldy)
+
