@@ -63,9 +63,9 @@ type Command struct {
 	// Example is examples of how to use the command.
 	Example string
 
-	// ValidArgs is list of all valid non-flag arguments that are accepted in bash completions
+	// ValidArgs is list of all valid non-flag arguments that are accepted in shell completions
 	ValidArgs []string
-	// ValidArgsFunction is an optional function that provides valid non-flag arguments for bash completion.
+	// ValidArgsFunction is an optional function that provides valid non-flag arguments for shell completion.
 	// It is a dynamic version of using ValidArgs.
 	// Only one of ValidArgs and ValidArgsFunction can be used for a command.
 	ValidArgsFunction func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
@@ -74,11 +74,12 @@ type Command struct {
 	Args PositionalArgs
 
 	// ArgAliases is List of aliases for ValidArgs.
-	// These are not suggested to the user in the bash completion,
+	// These are not suggested to the user in the shell completion,
 	// but accepted if entered manually.
 	ArgAliases []string
 
-	// BashCompletionFunction is custom functions used by the bash autocompletion generator.
+	// BashCompletionFunction is custom bash functions used by the legacy bash autocompletion generator.
+	// For portability with other shells, it is recommended to instead use ValidArgsFunction
 	BashCompletionFunction string
 
 	// Deprecated defines, if this command is deprecated and should print this string when used.
@@ -938,7 +939,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		args = os.Args[1:]
 	}
 
-	// initialize the hidden command to be used for bash completion
+	// initialize the hidden command to be used for shell completion
 	c.initCompleteCmd(args)
 
 	var flags []string

@@ -34,7 +34,6 @@ const (
 
 	// ShellCompDirectiveNoFileComp indicates that the shell should not provide
 	// file completion even when no completion is provided.
-	// This currently does not work for zsh or bash < 4
 	ShellCompDirectiveNoFileComp
 
 	// ShellCompDirectiveFilterFileExt indicates that the provided completions
