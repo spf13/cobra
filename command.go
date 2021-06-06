@@ -818,6 +818,10 @@ func (c *Command) execute(a []string) (err error) {
 		return flag.ErrHelp
 	}
 
+	if err := c.validateRequiredFlags(); err != nil {
+		return err
+	}
+
 	c.preRun()
 
 	argWoFlags := c.Flags().Args()
@@ -848,9 +852,6 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
-	if err := c.validateRequiredFlags(); err != nil {
-		return err
-	}
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
