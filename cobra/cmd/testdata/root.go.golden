@@ -73,6 +73,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".testproject" (without extension).
 		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
 		viper.SetConfigName(".testproject")
 	}
 
