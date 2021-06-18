@@ -568,13 +568,15 @@ around it. In fact, you can provide your own if you want.
 
 ### Defining your own help
 
-You can provide your own Help command or your own template for the default command to use
+You can provide your own Help command or your own template or help strings for the default command to use
 with following functions:
 
 ```go
 cmd.SetHelpCommand(cmd *Command)
 cmd.SetHelpFunc(f func(*Command, []string))
 cmd.SetHelpTemplate(s string)
+cmd.SetShortHelpString(s string)
+cmd.SetLongHelpString(s string)
 ```
 
 The latter two will also apply to any children commands.
