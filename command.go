@@ -148,6 +148,8 @@ type Command struct {
 	// flagErrorFunc is func defined by user and it's called when the parsing of
 	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
+	// unknownCommandErrorFunc is func defined by user, called when the typed command cannot be found
+	unknownCommandErrorFunc func(*Command, string) error
 	// helpTemplate is help template defined by user.
 	helpTemplate string
 	// helpFunc is help func defined by user.
@@ -275,6 +277,11 @@ func (c *Command) SetUsageTemplate(s string) {
 // fails.
 func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
 	c.flagErrorFunc = f
+}
+
+// SetUnknownCommandErrorFunc sets a function to generate an error when flag parsing fails.
+func (c *Command) SetUnknownCommandErrorFunc(f func(*Command, string) error) {
+	c.unknownCommandErrorFunc = f
 }
 
 // SetHelpFunc sets help function. Can be defined by Application.
@@ -445,6 +452,21 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 	}
 	return func(c *Command, err error) error {
 		return err
+	}
+}
+
+// UnknownCommandErrorFunc returns either the function set by SetUnknownCommandErrorFunc for this
+// command or a parent, or it returns a function which returns the default implementation.
+func (c *Command) UnknownCommandErrorFunc() (f func(*Command, string) error) {
+	if c.unknownCommandErrorFunc != nil {
+		return c.unknownCommandErrorFunc
+	}
+
+	if c.HasParent() {
+		return c.parent.unknownCommandErrorFunc
+	}
+	return func(c *Command, arg string) error {
+		return fmt.Errorf("unknown command %q for %q%s", arg, c.CommandPath(), c.findSuggestions(arg))
 	}
 }
 
