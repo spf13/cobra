@@ -1617,6 +1617,53 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = true
 }
 
+func TestUsageWithGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddCommand(&Command{Use: "cmd1", Group: "group1", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "cmd2", Group: "group2", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// help should be ungrouped here
+	checkStringContains(t, output, "\nAvailable Commands:\n  help")
+	checkStringContains(t, output, "\ngroup1\n  cmd1")
+	checkStringContains(t, output, "\ngroup2\n  cmd2")
+}
+
+func TestUsageHelpGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddCommand(&Command{Use: "xxx", Group: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroup("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// now help should be grouped under "group"
+	checkStringOmits(t, output, "\nAvailable Commands:\n  help")
+	checkStringContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
+}
+
+func TestAddGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{Group: "group", Title: "Test group"})
+	rootCmd.AddCommand(&Command{Use: "cmd", Group: "group", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "\nTest group\n  cmd")
+}
+
 func TestSetOutput(t *testing.T) {
 	c := &Command{}
 	c.SetOutput(nil)

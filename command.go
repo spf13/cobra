@@ -31,6 +31,12 @@ import (
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
+// Structure to manage groups for commands
+type Group struct {
+	Group string
+	Title string
+}
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -56,6 +62,9 @@ type Command struct {
 
 	// Short is the short description shown in the 'help' output.
 	Short string
+
+	// The group under which the command is grouped in the 'help' output.
+	Group string
 
 	// Long is the long message shown in the 'help <this-command>' output.
 	Long string
@@ -123,6 +132,9 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 
+	// groups for commands
+	commandgroups []*Group
+
 	// args is actual args parsed from flags.
 	args []string
 	// flagErrorBuf contains all error messages from pflag.
@@ -155,6 +167,9 @@ type Command struct {
 	// helpCommand is command with usage 'help'. If it's not defined by user,
 	// cobra uses default help command.
 	helpCommand *Command
+	// helpCommandGroup is the default group the helpCommand is in
+	helpCommandGroup string
+
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
 
@@ -285,6 +300,15 @@ func (c *Command) SetHelpFunc(f func(*Command, []string)) {
 // SetHelpCommand sets help command.
 func (c *Command) SetHelpCommand(cmd *Command) {
 	c.helpCommand = cmd
+}
+
+// SetHelpCommandGroup sets the group of the help command.
+func (c *Command) SetHelpCommandGroup(group string) {
+	if c.helpCommand != nil {
+		c.helpCommand.Group = group
+	}
+	// helpCommandGroup is used if no helpCommand is defined by the user
+	c.helpCommandGroup = group
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -495,10 +519,13 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+Available Commands:{{range $cmds}}{{if (and (eq .Group "") (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{range $group := .Groups}}
+
+{{.Title}}{{range $cmds}}{{if (and (eq .Group $group.Group) (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -1108,6 +1135,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					CheckErr(cmd.Help())
 				}
 			},
+			Group: c.helpCommandGroup,
 		}
 	}
 	c.RemoveCommand(c.helpCommand)
@@ -1146,6 +1174,10 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
+		// if Group is not defined generate a new one with same title
+		if x.Group != "" && !c.ContainsGroup(x.Group) {
+			c.AddGroup(&Group{Group: x.Group, Title: x.Group})
+		}
 		// update max lengths
 		usageLen := len(x.Use)
 		if usageLen > c.commandsMaxUseLen {
@@ -1166,6 +1198,26 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		c.commands = append(c.commands, x)
 		c.commandsAreSorted = false
 	}
+}
+
+// Groups returns a slice of child command groups.
+func (c *Command) Groups() []*Group {
+	return c.commandgroups
+}
+
+// ContainGroups return if group is in command groups.
+func (c *Command) ContainsGroup(group string) bool {
+	for _, x := range c.commandgroups {
+		if x.Group == group {
+			return true
+		}
+	}
+	return false
+}
+
+// AddGroup adds one or more command groups to this parent command.
+func (c *Command) AddGroup(groups ...*Group) {
+	c.commandgroups = append(c.commandgroups, groups...)
 }
 
 // RemoveCommand removes one or more commands from a parent command.

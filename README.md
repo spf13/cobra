@@ -566,6 +566,11 @@ command and flag definitions are needed.
 Help is just a command like any other. There is no special logic or behavior
 around it. In fact, you can provide your own if you want.
 
+### Grouping commands in help
+
+Cobra supports grouping of available commands. Groups can either be explicitly defined by `AddGroup` and set by
+the `Group` element of a subcommand. If Groups are not explicitly defined they are implicitly defined.
+
 ### Defining your own help
 
 You can provide your own Help command or your own template for the default command to use
