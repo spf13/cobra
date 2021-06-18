@@ -220,8 +220,7 @@ func Execute() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
+	initConfig()
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
@@ -230,9 +229,13 @@ func init() {
 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
+	viper.SetDefault("experimental", false)
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
+	if viper.GetBool("experimental")
+		rootCmd.AddCommand(experimentalCmd)
+	}
 }
 
 func initConfig() {
