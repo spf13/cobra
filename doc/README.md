@@ -4,6 +4,7 @@
 - [Markdown docs](./md_docs.md)
 - [Rest docs](./rest_docs.md)
 - [Yaml docs](./yaml_docs.md)
+- [Asciidoc docs](./adoc_docs.md)
 
 ## Options
 ### `DisableAutoGenTag`
