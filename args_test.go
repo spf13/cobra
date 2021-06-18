@@ -69,6 +69,46 @@ func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
 	}
 }
 
+func TestOnlySubCommandsArgs(t *testing.T) {
+	rootCmd := &Command{
+		Use:  "root",
+		Args: OnlySubCommands,
+		Run:  emptyRun,
+	}
+	subCmd := &Command{Use: "sub", Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+
+	output, err := executeCommand(rootCmd, "sub")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+func TestOnlySubCommandsArgsWithInvalidArgs(t *testing.T) {
+	rootCmd := &Command{
+		Use:  "root",
+		Args: OnlySubCommands,
+		Run:  emptyRun,
+	}
+	subCmd := &Command{Use: "sub", Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+
+	_, err := executeCommand(rootCmd, "notsub")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	got := err.Error()
+	expected := `unknown command "notsub" for "root"`
+	if got != expected {
+		t.Errorf("Expected: %q, got: %q", expected, got)
+	}
+}
+
 func TestArbitraryArgs(t *testing.T) {
 	c := &Command{Use: "c", Args: ArbitraryArgs, Run: emptyRun}
 	output, err := executeCommand(c, "a", "b")
