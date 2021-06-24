@@ -93,13 +93,14 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
 
-	if _, exists := c.Root().flagCompletionFunctions[flag]; exists {
+	root := c.Root()
+	if _, exists := root.flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
-	if c.Root().flagCompletionFunctions == nil {
-		c.Root().flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+	if root.flagCompletionFunctions == nil {
+		root.flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
 	}
-	c.Root().flagCompletionFunctions[flag] = f
+	root.flagCompletionFunctions[flag] = f
 	return nil
 }
 
