@@ -88,9 +88,6 @@ type Command struct {
 	// group commands.
 	Annotations map[string]string
 
-	//flagCompletionFunctions is map of flag completion functions.
-	flagCompletionFunctions map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
-
 	// Version defines the version for this command. If this value is non-empty and the command does not
 	// define a "version" flag, a "version" boolean flag will be added to the command and, if specified,
 	// will print content of the "Version" variable. A shorthand "v" flag will also be added if the
@@ -143,6 +140,9 @@ type Command struct {
 	// globNormFunc is the global normalization function
 	// that we can use on every pflag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
+
+	//flagCompletionFunctions is map of flag completion functions.
+	flagCompletionFunctions map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
