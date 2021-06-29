@@ -20,6 +20,7 @@ jobs:
         go:
         - 1.14.x
         - 1.15.x
+        - 1.16.x
     name: '${{ matrix.platform }} | ${{ matrix.go }}'
     runs-on: ${{ matrix.platform }}-latest
     steps:
@@ -39,8 +40,9 @@ jobs:
     - run: |
         export GOBIN=$HOME/go/bin
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
-        go install github.com/kyoh86/richgo
-        go install github.com/mitchellh/gox
+        [ "${{ matrix.go }}" = "1.16.x" ] && _version='@latest' || _version=''
+        go install github.com/kyoh86/richgo"${_version}"
+        go install github.com/mitchellh/gox"${_version}"
 
     - run: PATH=$HOME/go/bin/:$PATH make
 
