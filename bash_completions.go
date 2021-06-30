@@ -512,7 +512,7 @@ func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
 
 // Setup annotations for go completions for registered flags
 func prepareCustomAnnotationsForFlags(cmd *Command) {
-	for flag := range flagCompletionFunctions {
+	for flag := range cmd.Root().flagCompletionFunctions {
 		// Make sure the completion script calls the __*_go_custom_completion function for
 		// every registered flag.  We need to do this here (and not when the flag was registered
 		// for completion) so that we can know the root command name for the prefix

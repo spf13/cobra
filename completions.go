@@ -17,9 +17,6 @@ const (
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
 
-// Global map of flag completion functions.
-var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
-
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
 type ShellCompDirective int
@@ -94,10 +91,15 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
-	if _, exists := flagCompletionFunctions[flag]; exists {
+
+	root := c.Root()
+	if _, exists := root.flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
-	flagCompletionFunctions[flag] = f
+	if root.flagCompletionFunctions == nil {
+		root.flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+	}
+	root.flagCompletionFunctions[flag] = f
 	return nil
 }
 
@@ -374,7 +376,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil {
-		completionFn = flagCompletionFunctions[flag]
+		completionFn = c.Root().flagCompletionFunctions[flag]
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}
