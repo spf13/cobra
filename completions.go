@@ -34,7 +34,6 @@ const (
 
 	// ShellCompDirectiveNoFileComp indicates that the shell should not provide
 	// file completion even when no completion is provided.
-	// This currently does not work for zsh or bash < 4
 	ShellCompDirectiveNoFileComp
 
 	// ShellCompDirectiveFilterFileExt indicates that the provided completions
@@ -592,8 +591,11 @@ You will need to start a new shell for this setup to take effect.
 		DisableFlagsInUseLine: true,
 		ValidArgsFunction:     NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenBashCompletion(out)
+			return cmd.Root().GenBashCompletionV2(out, !noDesc)
 		},
+	}
+	if haveNoDescFlag {
+		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	zsh := &Command{

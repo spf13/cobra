@@ -400,6 +400,36 @@ completion     firstcommand   secondcommand
 For backward compatibility, Cobra still supports its bash legacy dynamic completion solution.
 Please refer to [Bash Completions](bash_completions.md) for details.
 
+### Bash completion V2
+
+Cobra provides two versions for bash completion.  The original bash completion (which started it all!) can be used by calling
+`GenBashCompletion()` or `GenBashCompletionFile()`.
+
+A new V2 bash completion version is also available.  This version can be used by calling `GenBashCompletionV2()` or
+`GenBashCompletionFileV2()`.  The V2 version does **not** support the legacy dynamic completion (see [Bash Completions]
+(bash_completions.md)) but instead works only with the Go dynamic completion solution described in this Readme.
+Unless your program already uses the legacy dynamic completion solution, it is recommended that you use the bash
+completion V2 solution which provides the following extra features:
+- Supports completion descriptions (like the other shells)
+- Small completion script of less than 300 lines (v1 generates scripts of thousands of lines; `kubectl` for example has a bash v1 completion script of over 13K lines)
+- Streamlined user experience thanks to a completion behavior aligned with the other shells 
+
+`Bash` completion V2 supports descriptions for completions. When calling `GenBashCompletionV2()` or `GenBashCompletionFileV2()`
+you must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra
+will provide the description automatically based on usage information.  You can choose to make this option configurable by
+your users.
+
+```
+# With descriptions
+$ helm s[tab][tab]
+search  (search for a keyword in charts)           status  (display the status of the named release)
+show    (show information of a chart)
+
+# Without descriptions
+$ helm s[tab][tab]
+search  show  status
+```
+**Note**: Cobra's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command. 
 ## Zsh completions
 
 Cobra supports native zsh completion generated from the root `cobra.Command`.

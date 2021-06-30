@@ -2097,22 +2097,14 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	removeCompCmd(rootCmd)
 
 	var compCmd *Command
-	// Test that the --no-descriptions flag is present for the relevant shells only
+	// Test that the --no-descriptions flag is present on all shells
 	assertNoErr(t, rootCmd.Execute())
-	for _, shell := range []string{"fish", "powershell", "zsh"} {
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
 		if compCmd, _, err = rootCmd.Find([]string{compCmdName, shell}); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
 		if flag := compCmd.Flags().Lookup(compCmdNoDescFlagName); flag == nil {
 			t.Errorf("Missing --%s flag for %s shell", compCmdNoDescFlagName, shell)
-		}
-	}
-	for _, shell := range []string{"bash"} {
-		if compCmd, _, err = rootCmd.Find([]string{compCmdName, shell}); err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
-		if flag := compCmd.Flags().Lookup(compCmdNoDescFlagName); flag != nil {
-			t.Errorf("Unexpected --%s flag for %s shell", compCmdNoDescFlagName, shell)
 		}
 	}
 	// Remove completion command for the next test
