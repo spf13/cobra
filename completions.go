@@ -638,7 +638,10 @@ to enable it.  You can execute the following once:
 $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 To load completions for every new session, execute once:
+# Linux:
 $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+# macOS:
+$ %[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
