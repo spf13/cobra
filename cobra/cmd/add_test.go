@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestGoldenAddCmd(t *testing.T) {
+	viper.Set("useViper", true)
 	command := &Command{
 		CmdName:   "test",
 		CmdParent: parentName,
