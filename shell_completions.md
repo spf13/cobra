@@ -352,7 +352,10 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string,
 ```
 ### Descriptions for completions
 
-`zsh`, `fish` and `powershell` allow for descriptions to annotate completion choices.  For commands and flags, Cobra will provide the descriptions automatically, based on usage information.  For example, using zsh:
+Cobra provides support for completion descriptions.  Such descriptions are supported for each shell
+(however, for bash, it is only available in the [completion V2 version](#bash-completion-v2)).
+For commands and flags, Cobra will provide the descriptions automatically, based on usage information.
+For example, using zsh:
 ```
 $ helm s[tab]
 search  -- search for a keyword in charts
@@ -365,7 +368,7 @@ $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
 ```
 
-Cobra allows you to add annotations to your own completions.  Simply add the annotation text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
+Cobra allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
 ```go
 ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return []string{"harbor\tAn image registry", "thanos\tLong-term metrics"}, cobra.ShellCompDirectiveNoFileComp
@@ -406,8 +409,9 @@ Cobra provides two versions for bash completion.  The original bash completion (
 `GenBashCompletion()` or `GenBashCompletionFile()`.
 
 A new V2 bash completion version is also available.  This version can be used by calling `GenBashCompletionV2()` or
-`GenBashCompletionFileV2()`.  The V2 version does **not** support the legacy dynamic completion (see [Bash Completions]
-(bash_completions.md)) but instead works only with the Go dynamic completion solution described in this Readme.
+`GenBashCompletionFileV2()`.  The V2 version does **not** support the legacy dynamic completion
+(see [Bash Completions](bash_completions.md)) but instead works only with the Go dynamic completion
+solution described in this document.
 Unless your program already uses the legacy dynamic completion solution, it is recommended that you use the bash
 completion V2 solution which provides the following extra features:
 - Supports completion descriptions (like the other shells)
