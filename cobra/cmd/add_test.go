@@ -10,6 +10,7 @@ import (
 
 func TestGoldenAddCmd(t *testing.T) {
 	viper.Set("useViper", true)
+	viper.Set("license", "apache")
 	command := &Command{
 		CmdName:   "test",
 		CmdParent: parentName,

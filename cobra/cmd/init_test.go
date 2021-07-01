@@ -61,6 +61,7 @@ func TestGoldenInitCmd(t *testing.T) {
 
 			assertNoErr(t, initCmd.Flags().Set("pkg-name", tt.pkgName))
 			viper.Set("useViper", true)
+			viper.Set("license", "apache")
 			projectPath, err := initializeProject(tt.args)
 			defer func() {
 				if projectPath != "" {
