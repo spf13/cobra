@@ -16,8 +16,8 @@ func getProject() *Project {
 		AbsolutePath: fmt.Sprintf("%s/testproject", wd),
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
-		AppName:      "testproject",
-		PkgName:      "github.com/spf13/testproject",
+		AppName:      "cmd",
+		PkgName:      "github.com/spf13/cobra/cobra/cmd/cmd",
 		Viper:        true,
 	}
 }
@@ -37,29 +37,16 @@ func TestGoldenInitCmd(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name:      "successfully creates a project with name",
+			name:      "successfully creates a project based on module",
 			args:      []string{"testproject"},
 			pkgName:   "github.com/spf13/testproject",
 			expectErr: false,
-		},
-		{
-			name:      "returns error when passing an absolute path for project",
-			args:      []string{dir},
-			pkgName:   "github.com/spf13/testproject",
-			expectErr: true,
-		},
-		{
-			name:      "returns error when passing a relative path for project",
-			args:      []string{"github.com/spf13/testproject"},
-			pkgName:   "github.com/spf13/testproject",
-			expectErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			assertNoErr(t, initCmd.Flags().Set("pkg-name", tt.pkgName))
 			viper.Set("useViper", true)
 			viper.Set("license", "apache")
 			projectPath, err := initializeProject(tt.args)
