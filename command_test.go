@@ -2058,3 +2058,44 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	}
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
+
+func TestLocalFlagsInChildRun(t *testing.T) {
+	root := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	root.Flags().BoolP("boola", "a", false, "a boolean flag")
+
+	var setFlags []string
+	var allFlags []string
+	c := &Command{
+		Use: "child",
+		Run: func(cmd *Command, args []string) {
+			cmd.LocalFlags().Visit(func(f *pflag.Flag) {
+				setFlags = append(setFlags, f.Name)
+			})
+			cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+				allFlags = append(allFlags, f.Name)
+			})
+		},
+	}
+	c.Flags().BoolP("boolb", "b", false, "a boolean flag")
+	c.Flags().BoolP("boolc", "c", false, "a boolean flag")
+
+	root.AddCommand(c)
+
+	_, err := executeCommand(root, "child", "--boolb")
+	if err != nil {
+		t.Fatal("unexpected error: ", err.Error())
+	}
+
+	if len(setFlags) != 1 || setFlags[0] != "boolb" {
+		t.Errorf(`expected setFlags to be ["boolb"], but was: %v`, setFlags)
+	}
+	expectedAllFlags := []string{"boolb", "boolc", "help"}
+	for i, f := range expectedAllFlags {
+		if allFlags[i] != f {
+			t.Errorf("Expected: %s, got: %s", f, allFlags[i])
+		}
+	}
+}
