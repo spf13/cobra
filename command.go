@@ -977,7 +977,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// effect
 		if err == flag.ErrHelp {
 			cmd.HelpFunc()(cmd, args)
-			return cmd, nil
+			return cmd, err
 		}
 
 		// If root command has SilenceErrors flagged,
