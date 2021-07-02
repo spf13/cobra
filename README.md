@@ -11,28 +11,6 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
 [![Go Report Card](https://goreportcard.com/badge/github.com/spf13/cobra)](https://goreportcard.com/report/github.com/spf13/cobra)
 [![Slack](https://img.shields.io/badge/Slack-cobra-brightgreen)](https://gophers.slack.com/archives/CD3LP1199)
 
-# Table of Contents
-
-- [Overview](#overview)
-- [Concepts](#concepts)
-  * [Commands](#commands)
-  * [Flags](#flags)
-- [Installing](#installing)
-- [Usage](#usage)
-  * [Using the Cobra Generator](user_guide.md#using-the-cobra-generator)
-  * [Using the Cobra Library](user_guide.md#using-the-cobra-library)
-  * [Working with Flags](user_guide.md#working-with-flags)
-  * [Positional and Custom Arguments](user_guide.md#positional-and-custom-arguments)
-  * [Example](user_guide.md#example)
-  * [Help Command](user_guide.md#help-command)
-  * [Usage Message](user_guide.md#usage-message)
-  * [PreRun and PostRun Hooks](user_guide.md#prerun-and-postrun-hooks)
-  * [Suggestions when "unknown command" happens](user_guide.md#suggestions-when-unknown-command-happens)
-  * [Generating documentation for your command](user_guide.md#generating-documentation-for-your-command)
-  * [Generating shell completions](user_guide.md#generating-shell-completions)
-- [Contributing](CONTRIBUTING.md)
-- [License](#license)
-
 # Overview
 
 Cobra is a library providing a simple interface to create powerful modern CLI
