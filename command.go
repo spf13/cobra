@@ -1020,7 +1020,10 @@ func (c *Command) validateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+		return fmt.Errorf(`required %s "%s" not set`,
+			pluralize("flag", len(missingFlagNames)),
+			strings.Join(missingFlagNames, `", "`),
+		)
 	}
 	return nil
 }
@@ -1677,4 +1680,12 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+func pluralize(name string, length int) string {
+	if length == 1 {
+		return name
+	}
+
+	return name + "s"
 }
