@@ -43,7 +43,7 @@ func compareFiles(pathA, pathB string) error {
 			// Don't execute diff if it can't be found.
 			return nil
 		}
-		diffCmd := exec.Command(diffPath, "-u", pathA, pathB)
+		diffCmd := exec.Command(diffPath, "-u", "--strip-trailing-cr", pathA, pathB)
 		diffCmd.Stdout = output
 		diffCmd.Stderr = output
 
