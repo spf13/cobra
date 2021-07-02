@@ -116,8 +116,7 @@ type CurDir struct {
 }
 
 func goGet(mod string) error {
-	cmd := exec.Command("go", "get", mod)
-	return cmd.Run()
+	return exec.Command("go", "get", mod).Run()
 }
 
 func modInfoJSON(args ...string) []byte {
