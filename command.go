@@ -31,6 +31,34 @@ import (
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
+// TerminalColor is a type used for the names of the different
+// colors in the terminal
+type TerminalColor int
+
+// Colors represents the different colors one can use in the terminal
+const (
+	ColorBlack TerminalColor = iota + 30
+	ColorRed
+	ColorGreen
+	ColorYellow
+	ColorBlue
+	ColorMagenta
+	ColorCyan
+	ColorLightGray
+)
+
+// This sequence starts at 90, so we reset iota
+const (
+	ColorDarkGray TerminalColor = iota + 90
+	ColorLightRed
+	ColorLightGreen
+	ColorLightYellow
+	ColorLightBlue
+	ColorLightMagenta
+	ColorLightCyan
+	ColorWhite
+)
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -46,6 +74,12 @@ type Command struct {
 	//       optional, they are enclosed in brackets ([ ]).
 	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
+
+	// DisableColors is a boolean used to disable the coloring in the command line
+	DisableColors bool
+
+	// Color represents the color to use to print the command in the terminal
+	Color TerminalColor
 
 	// Aliases is an array of aliases that can be used instead of the first word in Use.
 	Aliases []string
@@ -473,10 +507,18 @@ var minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
+	additionalPadding := c.additionalNamePadding()
 	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
-		return minNamePadding
+		return minNamePadding + additionalPadding
 	}
-	return c.parent.commandsMaxNameLen
+	return c.parent.commandsMaxNameLen + additionalPadding
+}
+
+func (c *Command) additionalNamePadding() int {
+	// additionalPadding is used to pad non visible characters
+	// This happens for example when using colors, where \033[31m isn't seen
+	// but still is counted towards the padding
+	return len(c.ColoredName()) - len(c.Name())
 }
 
 // UsageTemplate returns usage template for the command.
@@ -499,7 +541,7 @@ Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
 Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -1307,6 +1349,25 @@ func (c *Command) Name() string {
 		name = name[:i]
 	}
 	return name
+}
+
+// isColoringEnabled will be queried to know whether or not we should enable
+// the coloring on a command. This will usually be called on the Root command
+// and applied for every command.
+func (c *Command) isColoringEnabled() bool {
+	_, noColorEnv := os.LookupEnv("NO_COLOR")
+	if c.DisableColors || noColorEnv {
+		return false
+	}
+	return true
+}
+
+// ColoredName returns the command's Name in the correct color if specified
+func (c *Command) ColoredName() string {
+	if c.Color != 0 && c.Root().isColoringEnabled() {
+		return fmt.Sprintf("\033[%dm%s\033[0m", c.Color, c.Name())
+	}
+	return c.Name()
 }
 
 // HasAlias determines if a given string is an alias of the command.

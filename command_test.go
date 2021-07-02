@@ -3,6 +3,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -2057,4 +2058,77 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 		t.Error("expected unknown flag error")
 	}
 	checkStringContains(t, output, "unknown flag: --unknown")
+}
+
+func commandIsColoredRed(c *Command) error {
+	if c.Name() != "cmd" {
+		return fmt.Errorf("Unexpected name with Colored Command: %s", c.Name())
+	}
+	// If a color is specified, the ColoredName and the Name should be different
+	if c.Name() == c.ColoredName() {
+		return errors.New("Name and ColoredName should not give the same result")
+	}
+	if c.ColoredName() != "\033[31m"+c.Name()+"\033[0m" {
+		return errors.New("ColoredName should only add color to the name")
+	}
+	if c.additionalNamePadding() == 0 {
+		return errors.New("With a color, the additionalNamePadding should be more than 0")
+	}
+	return nil
+}
+
+func commandIsNotColored(c *Command) error {
+	if c.Name() != "cmd" {
+		return errors.New("Unexpected name with simple Command")
+	}
+	// If no color is specified, the ColoredName should equal the Name
+	if c.Name() != c.ColoredName() {
+		return errors.New("Name and ColoredName should give the same result")
+	}
+	if c.additionalNamePadding() != 0 {
+		return errors.New("With no color, the additionalNamePadding should be 0")
+	}
+	return nil
+}
+
+func TestColoredName(t *testing.T) {
+	c := &Command{
+		Use: "cmd",
+	}
+	err := commandIsNotColored(c)
+	if err != nil {
+		t.Error(err)
+	}
+	c = &Command{
+		Use:   "cmd",
+		Color: ColorRed,
+	}
+	err = commandIsColoredRed(c)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestColoredNameWithNoColorSetup(t *testing.T) {
+	c := &Command{
+		Use:   "cmd",
+		Color: ColorRed,
+	}
+	err := commandIsColoredRed(c)
+	if err != nil {
+		t.Error(err)
+	}
+
+	os.Setenv("NO_COLOR", "true")
+	err = commandIsNotColored(c)
+	if err != nil {
+		t.Error(err)
+	}
+	os.Unsetenv("NO_COLOR")
+
+	c.DisableColors = true
+	err = commandIsNotColored(c)
+	if err != nil {
+		t.Error(err)
+	}
 }
