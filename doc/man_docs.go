@@ -105,6 +105,14 @@ func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
+
+	if cmd.HasParent() {
+		cmd.VisitParents(func(c *cobra.Command) {
+			if c.DisableAutoGenTag {
+				cmd.DisableAutoGenTag = c.DisableAutoGenTag
+			}
+		})
+	}
 	if err := fillHeader(header, cmd.CommandPath(), cmd.DisableAutoGenTag); err != nil {
 		return err
 	}
