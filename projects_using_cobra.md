@@ -21,6 +21,7 @@
 - [Kubernetes](http://kubernetes.io/)
 - [Linkerd](https://linkerd.io/)
 - [Mattermost-server](https://github.com/mattermost/mattermost-server)
+- [Meroxa CLI](https://github.com/meroxa/cli)
 - [Metal Stack CLI](https://github.com/metal-stack/metalctl)
 - [Moby (former Docker)](https://github.com/moby/moby)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
