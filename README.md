@@ -4,7 +4,7 @@ Cobra is both a library for creating powerful modern CLI applications as well as
 
 Cobra is used in many Go projects such as [Kubernetes](http://kubernetes.io/),
 [Hugo](https://gohugo.io), and [Github CLI](https://github.com/cli/cli) to
-name a few. [This list](./projects_using_cobra.md) contains a more extensive list of projects using Cobra.
+name a few. [This list](site/content/projects_using_cobra.md) contains a more extensive list of projects using Cobra.
 
 [![](https://img.shields.io/github/workflow/status/spf13/cobra/Test?longCache=tru&label=Test&logo=github%20actions&logoColor=fff)](https://github.com/spf13/cobra/actions?query=workflow%3ATest)
 [![GoDoc](https://godoc.org/github.com/spf13/cobra?status.svg)](https://godoc.org/github.com/spf13/cobra)
@@ -19,17 +19,17 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
   * [Flags](#flags)
 - [Installing](#installing)
 - [Usage](#usage)
-  * [Using the Cobra Generator](user_guide.md#using-the-cobra-generator)
-  * [Using the Cobra Library](user_guide.md#using-the-cobra-library)
-  * [Working with Flags](user_guide.md#working-with-flags)
-  * [Positional and Custom Arguments](user_guide.md#positional-and-custom-arguments)
-  * [Example](user_guide.md#example)
-  * [Help Command](user_guide.md#help-command)
-  * [Usage Message](user_guide.md#usage-message)
-  * [PreRun and PostRun Hooks](user_guide.md#prerun-and-postrun-hooks)
-  * [Suggestions when "unknown command" happens](user_guide.md#suggestions-when-unknown-command-happens)
-  * [Generating documentation for your command](user_guide.md#generating-documentation-for-your-command)
-  * [Generating shell completions](user_guide.md#generating-shell-completions)
+  * [Using the Cobra Generator](site/content/user_guide.md#using-the-cobra-generator)
+  * [Using the Cobra Library](site/content/user_guide.md#using-the-cobra-library)
+  * [Working with Flags](site/content/user_guide.md#working-with-flags)
+  * [Positional and Custom Arguments](site/content/user_guide.md#positional-and-custom-arguments)
+  * [Example](site/content/user_guide.md#example)
+  * [Help Command](site/content/user_guide.md#help-command)
+  * [Usage Message](site/content/user_guide.md#usage-message)
+  * [PreRun and PostRun Hooks](site/content/user_guide.md#prerun-and-postrun-hooks)
+  * [Suggestions when "unknown command" happens](site/content/user_guide.md#suggestions-when-unknown-command-happens)
+  * [Generating documentation for your command](site/content/user_guide.md#generating-documentation-for-your-command)
+  * [Generating shell completions](site/content/user_guide.md#generating-shell-completions)
 - [Contributing](CONTRIBUTING.md)
 - [License](#license)
 
@@ -118,8 +118,8 @@ import "github.com/spf13/cobra"
 
 # Usage
 
-See [User Guide](user_guide.md).
+See [User Guide](site/content/user_guide.md).
 
 # License
 
-Cobra is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/spf13/cobra/blob/master/LICENSE.txt)
+Cobra is released under the Apache 2.0 license. See [LICENSE.txt](LICENSE.txt)

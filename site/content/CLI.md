@@ -1,4 +1,4 @@
-# Cobra Generator
+# Cobra Generator CLI tool
 
 Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
@@ -9,7 +9,7 @@ In order to use the cobra command, compile it using the following command:
 
 This will create the cobra executable under your `$GOPATH/bin` directory.
 
-### cobra init
+### `cobra init`
 
 The `cobra init [app]` command will create your initial application code
 for you. It is a very powerful application that will populate your program with
@@ -35,7 +35,7 @@ or
 cobra init --pkg-name github.com/spf13/newApp path/to/newApp
 ```
 
-### cobra add
+### `cobra add`
 
 Once an application is initialized, Cobra can create additional commands for you.
 Let's say you created an app and you wanted the following commands for it:

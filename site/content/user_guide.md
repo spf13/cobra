@@ -29,10 +29,10 @@ func main() {
 
 ## Using the Cobra Generator
 
-Cobra provides its own program that will create your application and add any
-commands you want. It's the easiest way to incorporate Cobra into your application.
+Cobra provides its own program that will create your application and add any commands you want.
+It's the easiest way to incorporate Cobra into your application.
 
-[Here](https://github.com/spf13/cobra/blob/master/cobra/README.md) you can find more information about it.
+[Here](CLI.md) you can find more information about it.
 
 ## Using the Cobra Library
 
@@ -630,8 +630,11 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
+Cobra can generate documentation based on subcommands, flags, etc.
+Read more about it in the [docs generation documentation](docgen/_index.md).
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
+If you add more information to your commands, these completions can be amazingly powerful and flexible.
+Read more about it in [Shell Completions](completions/_index.md).
