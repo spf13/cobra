@@ -848,6 +848,28 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	}
 }
 
+func TestPersistentRequiredFlagsValidateBeforePreRun(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(_ *Command, args []string) {},
+	}
+	var param string
+	rootCmd.Flags().StringVarP(&param, "param", "p", "", "a param")
+	if err := rootCmd.MarkFlagRequired("param"); err != nil {
+		t.Error("Required param")
+	}
+
+	OnInitialize(func() {
+		t.Errorf("Unexpected call preRun hooks")
+	})
+
+	expectedErrorStr := "required flag(s) \"param\" not set"
+	if _, err := executeCommand(rootCmd); err.Error() != expectedErrorStr {
+		t.Errorf("Uxpected error output, expected: %s\n Got:\n%s", expectedErrorStr, err.Error())
+	}
+	initializers = initializers[:len(initializers)-1]
+}
+
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
 	rootCmd := &Command{Use: "root"}
