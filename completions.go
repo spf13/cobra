@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/spf13/pflag"
 )
@@ -16,6 +17,12 @@ const (
 	// completion results without their description.  It is used by the shell completion scripts.
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
+
+// Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
+var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+
+// lock for reading and writing from flagCompletionFunctions
+var flagCompletionMutex = &sync.RWMutex{}
 
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
@@ -100,15 +107,13 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
+	flagCompletionMutex.Lock()
+	defer flagCompletionMutex.Unlock()
 
-	root := c.Root()
-	if _, exists := root.flagCompletionFunctions[flag]; exists {
+	if _, exists := flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
-	if root.flagCompletionFunctions == nil {
-		root.flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
-	}
-	root.flagCompletionFunctions[flag] = f
+	flagCompletionFunctions[flag] = f
 	return nil
 }
 
@@ -402,7 +407,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
-		completionFn = c.Root().flagCompletionFunctions[flag]
+		flagCompletionMutex.RLock()
+		completionFn = flagCompletionFunctions[flag]
+		flagCompletionMutex.RUnlock()
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}

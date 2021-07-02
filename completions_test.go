@@ -1971,6 +1971,41 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 }
 
+func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{
+		Use: "child",
+		Run: emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
+		},
+	}
+	childCmd.Flags().Bool("bool", false, "test bool flag")
+	childCmd.Flags().String("string", "", "test string flag")
+	_ = childCmd.RegisterFlagCompletionFunc("string", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return []string{"myval"}, ShellCompDirectiveDefault
+	})
+
+	// Important: This is a test for https://github.com/spf13/cobra/issues/1437
+	// Only add the subcommand after RegisterFlagCompletionFunc was called, do not change this order!
+	rootCmd.AddCommand(childCmd)
+
+	// Test that flag completion works for the subcmd
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "--string", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"myval",
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
