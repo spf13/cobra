@@ -32,67 +32,7 @@ func main() {
 Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
-Install the cobra generator with the command `go install github.com/spf13/cobra/cobra`. 
-Go will automatically install it in your $GOPATH/bin directory which should be in your $PATH. 
-
-Once installed you should have the `cobra` command available. Confirm by typing `cobra` at a 
-command line. 
-
-There are only two operations currently supported by Cobra generator. 
-
-### 1. Initializing a new project
-
-The Cobra generator works from within a Go module. 
-
-If you haven't yet setup your project as a Go module: 
-
- 1. Create a new directory 
- 2. `cd` into that directory
- 3. run `go mod init <MODNAME>`
-
-From within a Go module run `cobra init`. This will create a new barebones project
-for you to edit. 
-
-You should be able to run you new application immediately. Try it with 
-`go run main.go`. 
-
-You will want to open up and edit 'cmd/root.go' and provide your own description and logic. 
-
-#### Optional flags:
-You can provide it your author name with the `--author` flag. 
-e.g. `cobra init --author "Steve Francia spf@spf13.com"`
-
-You can provide a license to use with `--license` 
-e.g. `cobra init --license apache`
-
-Use the `--viper` flag to automatically setup [viper](https://github.com/spf13/viper)
-
-Viper is a companion to Cobra intended to provide easy handling of environment variables and config files
-and seamlessly connecting them to the application flags.
-
-### 2. Add a command to a project
-
-Once a cobra application is initialized you can continue to use cobra generator to 
-add additional commands to your application. The command to do this is `cobra add`. 
-
-As an example, if I was designing a todo application I would want to have my base `todo` command list the items. 
-I would then add additional commands to display, create, mark complete and delete items.
-
-To add a command to an existing application, make sure you are in the directory with the main.go file and run:
-`cobra add <cmdname>`. 
-
-#### Optional flags: 
-
-`cobra add` supports all the same optional flags as `cobra init` does.
-
-Additionally you can provide a parent command for your new command. This defaults to rootCmd if not provided.
-If you want to place your command under a different command, just provide the name of the command.
-
-A todo is a bit too simple to really need a sub sub command. So let's use git as an example. 
-
-If I wanted to create a new git stash command I would do the following:
-`cobra add stash`
-`cobra add pop --parent=stash`
+For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
 
 ## Using the Cobra Library
 
