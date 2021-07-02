@@ -230,6 +230,12 @@ func (c *Command) Context() context.Context {
 	return c.ctx
 }
 
+// SetContext replaces the underlying command context so that parent
+// commands can pass down values to their subcommands.
+func (c *Command) SetContext(ctx context.Context) {
+	c.ctx = ctx
+}
+
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
@@ -967,9 +973,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// We have to pass global context to children command
 	// if context is present on the parent command.
-	if cmd.ctx == nil {
-		cmd.ctx = c.ctx
-	}
+	cmd.ctx = c.ctx
 
 	err = cmd.execute(flags)
 	if err != nil {
