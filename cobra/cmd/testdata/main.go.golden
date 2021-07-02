@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/spf13/testproject/cmd"
+import "github.com/spf13/cobra/cobra/cmd/cmd"
 
 func main() {
 	cmd.Execute()

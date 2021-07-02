@@ -32,7 +32,7 @@ func main() {
 Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
-[Here](https://github.com/spf13/cobra/blob/master/cobra/README.md) you can find more information about it.
+For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
 
 ## Using the Cobra Library
 

@@ -46,7 +46,7 @@ Cobra provides:
 * Fully POSIX-compliant flags (including short & long versions)
 * Nested subcommands
 * Global, local and cascading flags
-* Easy generation of applications & commands with `cobra init appname` & `cobra add cmdname`
+* Easy generation of applications & commands with `cobra init` & `cobra add cmdname`
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic help flag recognition of `-h`, `--help`, etc.
@@ -54,7 +54,7 @@ Cobra provides:
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
 * The flexibility to define your own help, usage, etc.
-* Optional tight integration with [viper](http://github.com/spf13/viper) for 12-factor apps
+* Optional seamless integration with [viper](http://github.com/spf13/viper) for 12-factor apps
 
 # Concepts
 
@@ -88,7 +88,7 @@ have children commands and optionally run an action.
 
 In the example above, 'server' is the command.
 
-[More about cobra.Command](https://godoc.org/github.com/spf13/cobra#Command)
+[More about cobra.Command](https://pkg.go.dev/github.com/spf13/cobra#Command)
 
 ## Flags
 
@@ -117,8 +117,12 @@ import "github.com/spf13/cobra"
 ```
 
 # Usage
+Cobra provides its own program that will create your application and add any
+commands you want. It's the easiest way to incorporate Cobra into your application.
 
-See [User Guide](user_guide.md).
+For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
+
+For complete details on using the Cobra library, please read the [The Cobra User Guide](user_guide.md).
 
 # License
 
