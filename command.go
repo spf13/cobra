@@ -766,6 +766,13 @@ func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
 
+// CancelRun will nil out the Run and RunE of a command. This can be called from
+// PreRun-style functions to prevent the command from running.
+func (c *Command) CancelRun() {
+	c.Run = nil
+	c.RunE = nil
+}
+
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
@@ -857,7 +864,9 @@ func (c *Command) execute(a []string) (err error) {
 			return err
 		}
 	} else {
-		c.Run(c, argWoFlags)
+		if c.Run != nil {
+			c.Run(c, argWoFlags)
+		}
 	}
 	if c.PostRunE != nil {
 		if err := c.PostRunE(c, argWoFlags); err != nil {
