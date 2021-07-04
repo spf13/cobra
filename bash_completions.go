@@ -24,7 +24,7 @@ func writePreamble(buf io.StringWriter, name string) {
 	WriteStringAndCheck(buf, fmt.Sprintf(`
 __%[1]s_debug()
 {
-    if [[ -n ${BASH_COMP_DEBUG_FILE} ]]; then
+    if [[ -n ${BASH_COMP_DEBUG_FILE-} ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }

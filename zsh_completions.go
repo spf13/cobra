@@ -81,7 +81,7 @@ func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
 
 __%[1]s_debug()
 {
-    local file="$BASH_COMP_DEBUG_FILE"
+    local file="${BASH_COMP_DEBUG_FILE-}"
     if [[ -n ${file} ]]; then
         echo "$*" >> "${file}"
     fi
