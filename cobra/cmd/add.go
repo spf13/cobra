@@ -46,10 +46,14 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 			wd, err := os.Getwd()
 			cobra.CheckErr(err)
 
-			commandName := validateCmdName(args[0])
+			commandUse := validateCmdName(args[0])
+			commandName, commandFileName := generateCmdFileName(commandUse, parentName)
+
 			command := &Command{
-				CmdName:   commandName,
-				CmdParent: parentName,
+				CmdName:     commandName,
+				CmdUse:      commandUse,
+				CmdFileName: commandFileName,
+				CmdParent:   parentName,
 				Project: &Project{
 					AbsolutePath: wd,
 					Legal:        getLicense(),
@@ -121,4 +125,40 @@ func validateCmdName(source string) string {
 		return source // source is initially valid name.
 	}
 	return output
+}
+
+// generateCmdFileName returns a lowerCamelCase command name and a snake_case
+// file name, combining the given command name and the parent command name.
+func generateCmdFileName(cmd, parent string) (string, string) {
+	var cmdName string
+	var cmdFileName string
+
+	if parent == "rootCmd" {
+		return cmd, cmd
+	}
+
+	l := len(parent)
+	if parent[l-3:] == "Cmd" {
+		parent = parent[:l-3]
+	}
+
+	upperCmd := string(unicode.ToUpper(rune(cmd[0]))) + cmd[1:]
+	lowerParent := string(unicode.ToLower(rune(parent[0]))) + parent[1:]
+	cmdName = lowerParent + upperCmd
+
+	l = len(cmdName)
+	cmdFileName = string(cmdName[0])
+	for i := 1; i < l; i++ {
+		if unicode.IsUpper(rune(cmdName[i])) {
+			cmdFileName += "_"
+		}
+		cmdFileName += string(unicode.ToLower(rune(cmdName[i])))
+	}
+
+	l = len(cmdFileName)
+	if cmdFileName[l-5:] == "_test" {
+		cmdFileName += "cmd"
+	}
+
+	return cmdName, cmdFileName
 }
