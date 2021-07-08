@@ -8,9 +8,11 @@ import (
 
 func TestGoldenAddCmd(t *testing.T) {
 	command := &Command{
-		CmdName:   "test",
-		CmdParent: parentName,
-		Project:   getProject(),
+		CmdName:     "test",
+		CmdUse:      "test",
+		CmdFileName: "test",
+		CmdParent:   parentName,
+		Project:     getProject(),
 	}
 	defer os.RemoveAll(command.AbsolutePath)
 
@@ -45,6 +47,33 @@ func TestValidateCmdName(t *testing.T) {
 		got := validateCmdName(testCase.input)
 		if testCase.expected != got {
 			t.Errorf("Expected %q, got %q", testCase.expected, got)
+		}
+	}
+}
+
+func TestGenerateCmdFileName(t *testing.T) {
+	testCases := []struct {
+		inputCmd     string
+		inputParent  string
+		expectedCmd  string
+		expectedFile string
+	}{
+		{"cmdname", "parent", "parentCmdname", "parent_cmdname"},
+		{"cmdname", "parentCmd", "parentCmdname", "parent_cmdname"},
+		{"CmdName", "ParentCmd", "parentCmdName", "parent_cmd_name"},
+		{"cmdname", "granpaParentCmd", "granpaParentCmdname", "granpa_parent_cmdname"},
+		{"test", "granpaParentCmd", "granpaParentTest", "granpa_parent_testcmd"},
+		{"cmdname", "rootCmd", "cmdname", "cmdname"},
+	}
+
+	for _, testCase := range testCases {
+		got1, got2 := generateCmdFileName(testCase.inputCmd, testCase.inputParent)
+		if testCase.expectedCmd != got1 || testCase.expectedFile != got2 {
+			t.Errorf(
+				"Expected %q and %q, got %q and %q",
+				testCase.expectedCmd, testCase.expectedFile,
+				got1, got2,
+			)
 		}
 	}
 }

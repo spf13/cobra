@@ -21,8 +21,10 @@ type Project struct {
 }
 
 type Command struct {
-	CmdName   string
-	CmdParent string
+	CmdName     string
+	CmdUse      string
+	CmdFileName string
+	CmdParent   string
 	*Project
 }
 
@@ -83,7 +85,7 @@ func (p *Project) createLicenseFile() error {
 }
 
 func (c *Command) Create() error {
-	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdName))
+	cmdFile, err := os.Create(fmt.Sprintf("%s/cmd/%s.go", c.AbsolutePath, c.CmdFileName))
 	if err != nil {
 		return err
 	}
