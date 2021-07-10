@@ -2287,13 +2287,20 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		Run:  emptyRun,
 	}
 
-	// Test that no completion command is created if there are not other sub-commands
+	// Test that default completion command is created, hidden if there are no other sub-commands
 	assertNoErr(t, rootCmd.Execute())
+	found := false
 	for _, cmd := range rootCmd.commands {
 		if cmd.Name() == compCmdName {
-			t.Errorf("Should not have a 'completion' command when there are no other sub-commands of root")
+			found = true
+			if !cmd.Hidden {
+				t.Errorf("The 'completion' command should be hidden when there are no other sub-commands of root")
+			}
 			break
 		}
+	}
+	if !found {
+		t.Errorf("Should have a 'completion' command when there are no other sub-commands of root")
 	}
 
 	subCmd := &Command{
@@ -2303,7 +2310,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.AddCommand(subCmd)
 
 	// Test that a completion command is created if there are other sub-commands
-	found := false
+	found = false
 	assertNoErr(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.commands {
 		if cmd.Name() == compCmdName {
