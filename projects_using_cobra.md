@@ -37,5 +37,6 @@
 - [Skaffold](https://skaffold.dev/)
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
+- [UpCloud CLI (`upctl`)](https://github.com/UpCloudLtd/upcloud-cli)
 - [VMware Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition)
 - [Werf](https://werf.io/)
