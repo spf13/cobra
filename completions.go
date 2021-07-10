@@ -574,7 +574,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 // 2- c has no subcommands (to avoid creating one),
 // 3- c already has a 'completion' command provided by the program.
 func (c *Command) initDefaultCompletionCmd() {
-	if c.CompletionOptions.DisableDefaultCmd || !c.HasSubCommands() {
+	if c.CompletionOptions.DisableDefaultCmd {
 		return
 	}
 
@@ -586,6 +586,7 @@ func (c *Command) initDefaultCompletionCmd() {
 	}
 
 	haveNoDescFlag := !c.CompletionOptions.DisableNoDescFlag && !c.CompletionOptions.DisableDescriptions
+	hidden := !c.HasSubCommands()
 
 	completionCmd := &Command{
 		Use:   compCmdName,
@@ -596,6 +597,7 @@ See each sub-command's help for details on how to use the generated script.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
+		Hidden:            hidden,
 	}
 	c.AddCommand(completionCmd)
 
