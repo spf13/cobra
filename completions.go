@@ -589,9 +589,8 @@ func (c *Command) initDefaultCompletionCmd() {
 
 	completionCmd := &Command{
 		Use:   compCmdName,
-		Short: "generate the autocompletion script for the specified shell",
-		Long: fmt.Sprintf(`
-Generate the autocompletion script for %[1]s for the specified shell.
+		Short: "Generate the autocompletion script for the specified shell",
+		Long: fmt.Sprintf(`Generate the autocompletion script for %[1]s for the specified shell.
 See each sub-command's help for details on how to use the generated script.
 `, c.Root().Name()),
 		Args:              NoArgs,
@@ -601,12 +600,11 @@ See each sub-command's help for details on how to use the generated script.
 
 	out := c.OutOrStdout()
 	noDesc := c.CompletionOptions.DisableDescriptions
-	shortDesc := "generate the autocompletion script for %s"
+	shortDesc := "Generate the autocompletion script for %s"
 	bash := &Command{
 		Use:   "bash",
 		Short: fmt.Sprintf(shortDesc, "bash"),
-		Long: fmt.Sprintf(`
-Generate the autocompletion script for the bash shell.
+		Long: fmt.Sprintf(`Generate the autocompletion script for the bash shell.
 
 This script depends on the 'bash-completion' package.
 If it is not installed already, you can install it via your OS's package manager.
@@ -636,8 +634,7 @@ You will need to start a new shell for this setup to take effect.
 	zsh := &Command{
 		Use:   "zsh",
 		Short: fmt.Sprintf(shortDesc, "zsh"),
-		Long: fmt.Sprintf(`
-Generate the autocompletion script for the zsh shell.
+		Long: fmt.Sprintf(`Generate the autocompletion script for the zsh shell.
 
 If shell completion is not already enabled in your environment you will need
 to enable it.  You can execute the following once:
@@ -668,8 +665,7 @@ You will need to start a new shell for this setup to take effect.
 	fish := &Command{
 		Use:   "fish",
 		Short: fmt.Sprintf(shortDesc, "fish"),
-		Long: fmt.Sprintf(`
-Generate the autocompletion script for the fish shell.
+		Long: fmt.Sprintf(`Generate the autocompletion script for the fish shell.
 
 To load completions in your current shell session:
 $ %[1]s completion fish | source
@@ -692,8 +688,7 @@ You will need to start a new shell for this setup to take effect.
 	powershell := &Command{
 		Use:   "powershell",
 		Short: fmt.Sprintf(shortDesc, "powershell"),
-		Long: fmt.Sprintf(`
-Generate the autocompletion script for powershell.
+		Long: fmt.Sprintf(`Generate the autocompletion script for powershell.
 
 To load completions in your current shell session:
 PS C:\> %[1]s completion powershell | Out-String | Invoke-Expression
