@@ -266,6 +266,11 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		}
 	}
 
+	// Skip flag completion for commands that have disabled flag parsing
+	if finalCmd.DisableFlagParsing && flagCompletion {
+		flagCompletion = false
+	}
+
 	if flag != nil && flagCompletion {
 		// Check if we are completing a flag value subject to annotations
 		if validExts, present := flag.Annotations[BashCompFilenameExt]; present {

@@ -482,11 +482,18 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 		Use: "childCmd",
 		Run: emptyRun,
 	}
-	rootCmd.AddCommand(childCmd)
+	disabledFlagsCmd := &Command{
+		Use:                "disabledFlags",
+		Short:              "A command with flag parsing disabled",
+		DisableFlagParsing: true,
+		Run:                emptyRun,
+	}
+	rootCmd.AddCommand(childCmd, disabledFlagsCmd)
 
 	rootCmd.Flags().IntP("first", "f", -1, "first flag")
 	rootCmd.PersistentFlags().BoolP("second", "s", false, "second flag")
 	childCmd.Flags().String("subFlag", "", "sub flag")
+	disabledFlagsCmd.Flags().String("disabledFlag", "", "disabled flag")
 
 	// Test that flag names are not shown if the user has not given the '-' prefix
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
@@ -497,6 +504,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	expected := strings.Join([]string{
 		"childCmd",
 		"completion",
+		"disabledFlags",
 		"help",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -550,6 +558,20 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 		"--subFlag",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not completed when flag parsing is disabled
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "disabledFlags", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
