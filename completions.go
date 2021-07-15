@@ -266,6 +266,12 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		}
 	}
 
+	// We only remove the flags from the arguments if DisableFlagParsing is not set.
+	// This is important for commands which have requested to do their own flag completion.
+	if !finalCmd.DisableFlagParsing {
+		finalArgs = finalCmd.Flags().Args()
+	}
+
 	if flag != nil && flagCompletion {
 		// Check if we are completing a flag value subject to annotations
 		if validExts, present := flag.Annotations[BashCompFilenameExt]; present {
@@ -290,12 +296,16 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		}
 	}
 
+	var completions []string
+	var directive ShellCompDirective
+
+	// Note that we want to perform flagname completion even if finalCmd.DisableFlagParsing==true;
+	// doing this allows for completion of persistant flag names even for commands that disable flag parsing.
+	//
 	// When doing completion of a flag name, as soon as an argument starts with
 	// a '-' we know it is a flag.  We cannot use isFlagArg() here as it requires
 	// the flag name to be complete
 	if flag == nil && len(toComplete) > 0 && toComplete[0] == '-' && !strings.Contains(toComplete, "=") && flagCompletion {
-		var completions []string
-
 		// First check for required flags
 		completions = completeRequireFlags(finalCmd, toComplete)
 
@@ -322,86 +332,86 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			})
 		}
 
-		directive := ShellCompDirectiveNoFileComp
+		directive = ShellCompDirectiveNoFileComp
 		if len(completions) == 1 && strings.HasSuffix(completions[0], "=") {
 			// If there is a single completion, the shell usually adds a space
 			// after the completion.  We don't want that if the flag ends with an =
 			directive = ShellCompDirectiveNoSpace
 		}
-		return finalCmd, completions, directive, nil
-	}
 
-	// We only remove the flags from the arguments if DisableFlagParsing is not set.
-	// This is important for commands which have requested to do their own flag completion.
-	if !finalCmd.DisableFlagParsing {
-		finalArgs = finalCmd.Flags().Args()
-	}
-
-	var completions []string
-	directive := ShellCompDirectiveDefault
-	if flag == nil {
-		foundLocalNonPersistentFlag := false
-		// If TraverseChildren is true on the root command we don't check for
-		// local flags because we can use a local flag on a parent command
-		if !finalCmd.Root().TraverseChildren {
-			// Check if there are any local, non-persistent flags on the command-line
-			localNonPersistentFlags := finalCmd.LocalNonPersistentFlags()
-			finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
-				if localNonPersistentFlags.Lookup(flag.Name) != nil && flag.Changed {
-					foundLocalNonPersistentFlag = true
-				}
-			})
+		if !finalCmd.DisableFlagParsing {
+			// If DisableFlagParsing==false, we have completed the flags as known by Cobra;
+			// we can return what we found.
+			// If DisableFlagParsing==true, Cobra may not be aware of all flags, so we
+			// let the logic continue to see if ValidArgsFunction needs to be called.
+			return finalCmd, completions, directive, nil
 		}
-
-		// Complete subcommand names, including the help command
-		if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
-			// We only complete sub-commands if:
-			// - there are no arguments on the command-line and
-			// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
-			for _, subCmd := range finalCmd.Commands() {
-				if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
-					if strings.HasPrefix(subCmd.Name(), toComplete) {
-						completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+	} else {
+		directive = ShellCompDirectiveDefault
+		if flag == nil {
+			foundLocalNonPersistentFlag := false
+			// If TraverseChildren is true on the root command we don't check for
+			// local flags because we can use a local flag on a parent command
+			if !finalCmd.Root().TraverseChildren {
+				// Check if there are any local, non-persistent flags on the command-line
+				localNonPersistentFlags := finalCmd.LocalNonPersistentFlags()
+				finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+					if localNonPersistentFlags.Lookup(flag.Name) != nil && flag.Changed {
+						foundLocalNonPersistentFlag = true
 					}
-					directive = ShellCompDirectiveNoFileComp
+				})
+			}
+
+			// Complete subcommand names, including the help command
+			if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
+				// We only complete sub-commands if:
+				// - there are no arguments on the command-line and
+				// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
+				for _, subCmd := range finalCmd.Commands() {
+					if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
+						if strings.HasPrefix(subCmd.Name(), toComplete) {
+							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+						}
+						directive = ShellCompDirectiveNoFileComp
+					}
 				}
 			}
-		}
 
-		// Complete required flags even without the '-' prefix
-		completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
+			// Complete required flags even without the '-' prefix
+			completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
 
-		// Always complete ValidArgs, even if we are completing a subcommand name.
-		// This is for commands that have both subcommands and ValidArgs.
-		if len(finalCmd.ValidArgs) > 0 {
-			if len(finalArgs) == 0 {
-				// ValidArgs are only for the first argument
-				for _, validArg := range finalCmd.ValidArgs {
-					if strings.HasPrefix(validArg, toComplete) {
-						completions = append(completions, validArg)
+			// Always complete ValidArgs, even if we are completing a subcommand name.
+			// This is for commands that have both subcommands and ValidArgs.
+			if len(finalCmd.ValidArgs) > 0 {
+				if len(finalArgs) == 0 {
+					// ValidArgs are only for the first argument
+					for _, validArg := range finalCmd.ValidArgs {
+						if strings.HasPrefix(validArg, toComplete) {
+							completions = append(completions, validArg)
+						}
 					}
-				}
-				directive = ShellCompDirectiveNoFileComp
+					directive = ShellCompDirectiveNoFileComp
 
-				// If no completions were found within commands or ValidArgs,
-				// see if there are any ArgAliases that should be completed.
-				if len(completions) == 0 {
-					for _, argAlias := range finalCmd.ArgAliases {
-						if strings.HasPrefix(argAlias, toComplete) {
-							completions = append(completions, argAlias)
+					// If no completions were found within commands or ValidArgs,
+					// see if there are any ArgAliases that should be completed.
+					if len(completions) == 0 {
+						for _, argAlias := range finalCmd.ArgAliases {
+							if strings.HasPrefix(argAlias, toComplete) {
+								completions = append(completions, argAlias)
+							}
 						}
 					}
 				}
+
+				// If there are ValidArgs specified (even if they don't match), we stop completion.
+				// Only one of ValidArgs or ValidArgsFunction can be used for a single command.
+				return finalCmd, completions, directive, nil
 			}
 
-			// If there are ValidArgs specified (even if they don't match), we stop completion.
-			// Only one of ValidArgs or ValidArgsFunction can be used for a single command.
-			return finalCmd, completions, directive, nil
+			// Let the logic continue so as to add any ValidArgsFunction completions,
+			// even if we already found sub-commands.
+			// This is for commands that have subcommands but also specify a ValidArgsFunction.
 		}
-
-		// Let the logic continue so as to add any ValidArgsFunction completions,
-		// even if we already found sub-commands.
-		// This is for commands that have subcommands but also specify a ValidArgsFunction.
 	}
 
 	// Find the completion function for the flag or command

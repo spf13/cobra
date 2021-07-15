@@ -193,7 +193,13 @@ __%[1]s_handle_reply()
                     fi
                 fi
             fi
-            return 0;
+
+            if [[ -z "${flag_parsing_disabled}" ]]; then
+                # If flag parsing is enabled, we have completed the flags and can return.
+                # If flag parsing is disabled, we may not know all (or any) of the flags, so we fallthrough
+                # to possibly call handle_go_custom_completion.
+                return 0;
+            fi
             ;;
     esac
 
@@ -394,6 +400,7 @@ func writePostscript(buf io.StringWriter, name string) {
     fi
 
     local c=0
+    local flag_parsing_disabled=
     local flags=()
     local two_word_flags=()
     local local_nonpersistent_flags=()
@@ -535,6 +542,11 @@ func writeFlags(buf io.StringWriter, cmd *Command) {
     flags_completion=()
 
 `)
+
+	if cmd.DisableFlagParsing {
+		WriteStringAndCheck(buf, "    flag_parsing_disabled=1\n")
+	}
+
 	localNonPersistentFlags := cmd.LocalNonPersistentFlags()
 	cmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
 		if nonCompletableFlag(flag) {
