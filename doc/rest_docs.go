@@ -61,6 +61,7 @@ func GenReST(cmd *cobra.Command, w io.Writer) error {
 func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultCompletionCmd()
 
 	buf := new(bytes.Buffer)
 	name := cmd.CommandPath()
