@@ -92,6 +92,7 @@ func GenYaml(cmd *cobra.Command, w io.Writer) error {
 func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultCompletionCmd()
 
 	yamlDoc := cmdDoc{}
 	yamlDoc.Name = cmd.CommandPath()
