@@ -65,12 +65,12 @@ func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error 
 
 func (c *Command) genZshCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
-	genZshComp(buf, c.Name(), includeDesc)
+	genZshComp(buf, c, includeDesc)
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
+func genZshComp(buf io.StringWriter, cmd *Command, includeDesc bool) {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
@@ -121,7 +121,7 @@ _%[1]s()
     fi
 
     # Prepare the command to obtain completions
-    requestComp="${words[1]} %[2]s ${words[2,-1]}"
+    requestComp="%[9]s=${%[9]s-%[10]s} ${words[1]} %[2]s ${words[2,-1]}"
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
@@ -163,7 +163,24 @@ _%[1]s()
         return
     fi
 
+    local activeHelpMarker="%[8]s"
+    local endIndex=${#activeHelpMarker}
+    local startIndex=$((${#activeHelpMarker}+1))
+    local hasActiveHelp=0
     while IFS='\n' read -r comp; do
+        # Check if this is an activeHelp statement (i.e., prefixed with $activeHelpMarker)
+        if [ "${comp[1,$endIndex]}" = "$activeHelpMarker" ];then
+            __%[1]s_debug "ActiveHelp found: $comp"
+            comp="${comp[$startIndex,-1]}"
+            if [ -n "$comp" ]; then
+                compadd -x "${comp}"
+                __%[1]s_debug "ActiveHelp will need delimiter"
+                hasActiveHelp=1
+            fi
+
+            continue
+        fi
+
         if [ -n "$comp" ]; then
             # If requested, completions are returned with a description.
             # The description is preceded by a TAB character.
@@ -179,6 +196,17 @@ _%[1]s()
             lastComp=$comp
         fi
     done < <(printf "%%s\n" "${out[@]}")
+
+    # Add a delimiter after the activeHelp statements, but only if:
+    # - there are completions following the activeHelp statements, or
+    # - file completion will be performed (so there will be choices after the activeHelp)
+    if [ $hasActiveHelp -eq 1 ]; then
+        if [ ${#completions} -ne 0 ] || [ $((directive & shellCompDirectiveNoFileComp)) -eq 0 ]; then
+            __%[1]s_debug "Adding activeHelp delimiter"
+            compadd -x "--"
+            hasActiveHelp=0
+        fi
+    fi
 
     if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
         __%[1]s_debug "Activating nospace."
@@ -252,7 +280,8 @@ _%[1]s()
 if [ "$funcstack[1]" = "_%[1]s" ]; then
     _%[1]s
 fi
-`, name, compCmd,
+`, cmd.Name(), compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
+		activeHelpMarker, activeHelpEnvVar(cmd.Name()), cmd.ActiveHelpConfig))
 }

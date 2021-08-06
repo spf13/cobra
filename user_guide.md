@@ -660,3 +660,7 @@ Cobra can generate documentation based on subcommands, flags, etc. Read more abo
 ## Generating shell completions
 
 Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+
+## Providing Active Help
+
+Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.  Active Help are messages (hints, warnings, etc) printed as the program is being used.  Read more about it in [Active Help](active_help.md).

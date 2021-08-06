@@ -73,7 +73,8 @@ __%[1]s_handle_go_custom_completion()
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows to handle aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} %[2]s ${args[*]}"
+    # Disable ActiveHelp which is not supported for bash completion v1
+    requestComp="%[8]s=0 ${words[0]} %[2]s ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
@@ -383,7 +384,7 @@ __%[1]s_handle_word()
 
 `, name, ShellCompNoDescRequestCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
 }
 
 func writePostscript(buf io.StringWriter, name string) {

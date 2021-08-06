@@ -222,6 +222,23 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// ActiveHelpConfig is a string that can be used to communicate the level of activeHelp
+	// the user is interested in receiving.
+	// The program can set this string before generating the completion scripts.
+	// When setting this string, it MUST be set on the Root command.
+	//
+	// The program should read this string from within ValidArgsFunction or the flag value
+	// completion functions to make decisions on whether or not to append activeHelp messages.
+	// This string can be read directly from the command passed to the completion functions,
+	// or from the Root command.
+	//
+	// If the value 0 is used, it will automatically be handled by Cobra and
+	// will completely disable activeHelp output, even if some output was specified by
+	// the program.
+	// Any other value will not be interpreted by Cobra but only provided back
+	// to the program when ValidArgsFunction is called.
+	ActiveHelpConfig string
 }
 
 // Context returns underlying command context. If command was executed

@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -66,4 +67,16 @@ func TestProgWithColon(t *testing.T) {
 	// The command name should not have replaced the ':'
 	check(t, output, "-c root:colon")
 	checkOmit(t, output, "-c root_colon")
+}
+
+func TestFishCompletionNoActiveHelp(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenFishCompletion(buf, true))
+	output := buf.String()
+
+	// check that active help is being disabled
+	activeHelpVar := activeHelpEnvVar(c.Name())
+	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
