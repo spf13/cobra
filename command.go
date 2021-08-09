@@ -967,7 +967,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// We have to pass global context to children command
 	// if context is present on the parent command.
-	if cmd.ctx == nil {
+	if cmd.ctx == nil || EnableAlwaysReplaceContexts {
 		cmd.ctx = c.ctx
 	}
 

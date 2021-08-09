@@ -49,6 +49,11 @@ var EnablePrefixMatching = false
 // To disable sorting, set it to false.
 var EnableCommandSorting = true
 
+// EnableAlwaysReplaceContexts changes the behaviour of contexts being passed to child commands. By default a child
+// command's context will be set to its parents context on the first run, but not subsequent runs.
+// To pass contexts to children always, set this to true.
+var EnableAlwaysReplaceContexts = false
+
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.
 // To disable the mousetrap, just set this variable to blank string ("").
