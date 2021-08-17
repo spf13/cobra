@@ -21,6 +21,7 @@ jobs:
         - 14
         - 15
         - 16
+        - 17
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     steps:
@@ -41,7 +42,7 @@ jobs:
         export GOBIN=$HOME/go/bin
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
         case "${{ matrix.go }}" in
-          16) _version='@latest';;
+          16|17) _version='@latest';;
           *) _version='';;
         esac
         go install github.com/kyoh86/richgo"${_version}"
