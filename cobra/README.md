@@ -5,7 +5,7 @@ commands you want. It's the easiest way to incorporate Cobra into your applicati
 
 In order to use the cobra command, compile it using the following command:
 
-    go get github.com/spf13/cobra/cobra
+    go get -u github.com/spf13/cobra/cobra
 
 This will create the cobra executable under your `$GOPATH/bin` directory.
 
@@ -40,9 +40,9 @@ cobra init --pkg-name github.com/spf13/newApp path/to/newApp
 Once an application is initialized, Cobra can create additional commands for you.
 Let's say you created an app and you wanted the following commands for it:
 
-* app serve
-* app config
-* app config create
+- app serve
+- app config
+- app config create
 
 In your project directory (where your main.go file is) you would run the following:
 
@@ -52,9 +52,9 @@ cobra add config
 cobra add create -p 'configCmd'
 ```
 
-*Note: Use camelCase (not snake_case/kebab-case) for command names.
+_Note: Use camelCase (not snake_case/kebab-case) for command names.
 Otherwise, you will encounter errors.
-For example, `cobra add add-user` is incorrect, but `cobra add addUser` is valid.*
+For example, `cobra add add-user` is incorrect, but `cobra add addUser` is valid._
 
 Once you have run these three commands you would have an app structure similar to
 the following:
@@ -68,8 +68,7 @@ the following:
       main.go
 ```
 
-At this point you can run `go run main.go` and it would run your app. `go run
-main.go serve`, `go run main.go config`, `go run main.go config create` along
+At this point you can run `go run main.go` and it would run your app. `go run main.go serve`, `go run main.go config`, `go run main.go config create` along
 with `go run main.go help serve`, etc. would all work.
 
 Obviously you haven't added your own code to these yet. The commands are ready
@@ -121,6 +120,7 @@ master my life.
 
 The `header` property is used as the license header files. No interpolation is
 done. This is the example of the go file header.
+
 ```
 /*
 Copyright © 2020 Steve Francia <spf@spf13.com>
