@@ -125,7 +125,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 
 	expected = strings.Join([]string{
 		"aliased\tA command with aliases",
-		"completion\tgenerate the autocompletion script for the specified shell",
+		"completion\tGenerate the autocompletion script for the specified shell",
 		"firstChild\tFirst command",
 		"help\tHelp about any command",
 		"secondChild",
@@ -580,7 +580,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 
 	expected := strings.Join([]string{
 		"childCmd\tfirst command",
-		"completion\tgenerate the autocompletion script for the specified shell",
+		"completion\tGenerate the autocompletion script for the specified shell",
 		"help\tHelp about any command",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
