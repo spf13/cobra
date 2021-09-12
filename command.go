@@ -1517,7 +1517,7 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 
 	c.parentsPflags.VisitAll(func(f *flag.Flag) {
 		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
-			c.iflags.AddFlag(f)
+			c.iflags.TryAddFlag(f)
 		}
 	})
 	return c.iflags
@@ -1655,7 +1655,7 @@ func (c *Command) Parent() *Command {
 func (c *Command) mergePersistentFlags() {
 	c.updateParentsPflags()
 	c.Flags().AddFlagSet(c.PersistentFlags())
-	c.Flags().AddFlagSet(c.parentsPflags)
+	c.Flags().TryAddFlagSet(c.parentsPflags)
 }
 
 // updateParentsPflags updates c.parentsPflags by adding
@@ -1675,6 +1675,6 @@ func (c *Command) updateParentsPflags() {
 	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
 
 	c.VisitParents(func(parent *Command) {
-		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
+		c.parentsPflags.TryAddFlagSet(parent.PersistentFlags())
 	})
 }
