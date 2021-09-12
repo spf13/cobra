@@ -85,6 +85,9 @@ type Command struct {
 	// Deprecated defines, if this command is deprecated and should print this string when used.
 	Deprecated string
 
+	// The category the command is part of
+	Category string
+
 	// Annotations are key/value pairs that can be used by applications to identify or
 	// group commands.
 	Annotations map[string]string
@@ -498,10 +501,13 @@ Aliases:
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range .CommandsByCategory ""}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
-Flags:
+{{range .Categories}}{{.}}
+{{range $.CommandsByCategory .}}  {{rpad .Name .NamePadding }} {{.Short}}
+{{end}}
+{{end}}Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
 Global Flags:
@@ -559,6 +565,52 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 		return false
 	}
 	return flag.NoOptDefVal != ""
+}
+
+func splitFirstWord(args []string, c *Command) (beforeArgs []string, firstWord string, afterArgs []string) {
+	if len(args) == 0 {
+		return args, "", nil
+	}
+	c.mergePersistentFlags()
+
+	command := ""
+	flags := c.Flags()
+
+Loop:
+	for len(args) > 0 {
+		s := args[0]
+		args = args[1:]
+		switch {
+		case s == "--":
+			// "--" terminates the flags
+			break Loop
+		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && hasNoOptDefVal(s[2:], flags):
+			// If '--flag'
+			beforeArgs = append(beforeArgs, s)
+			continue
+		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
+			// If '--flag arg' then
+			// delete arg from args.
+			fallthrough // (do the same as below)
+		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+			// If '-f arg' then
+			// delete 'arg' from args or break the loop if len(args) <= 1.
+			beforeArgs = append(beforeArgs, s)
+			if len(args) < 1 {
+				break Loop
+			} else {
+				beforeArgs = append(beforeArgs, args[0])
+				args = args[1:]
+				continue
+			}
+		case s != "" && !strings.HasPrefix(s, "-"):
+			command = s
+			afterArgs = args
+			break Loop
+		}
+	}
+
+	return beforeArgs, command, afterArgs
 }
 
 func stripFlags(args []string, c *Command) []string {
@@ -642,6 +694,43 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 		return commandFound, a, legacyArgs(commandFound, stripFlags(a, commandFound))
 	}
 	return commandFound, a, nil
+}
+
+// Find the target command given the args and command tree
+// Meant to be run on the highest node. Only searches down.
+func (c *Command) findAndParseFlag(args []string) (*Command, error) {
+	var innerfind func(*Command, []string) (*Command, []string)
+
+	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
+		beforeFlags, nextSubCmd, afterArgs := splitFirstWord(innerArgs, c)
+		if nextSubCmd == "" {
+			c.ParseFlags(beforeFlags)
+			return c, innerArgs
+		}
+		cmd := c.findNext(nextSubCmd)
+
+		// initialize help and version flag at the last point possible to allow for user
+		// overriding
+		cmd.InitDefaultHelpFlag()
+		cmd.InitDefaultVersionFlag()
+
+		c.parsePersistentFlags(beforeFlags)
+
+		// 	err = c.ParseFlags(a)
+		// if err != nil {
+		// 	return c.FlagErrorFunc()(c, err)
+		// }
+		if cmd != nil {
+			return innerfind(cmd, afterArgs)
+		}
+		return c, innerArgs
+	}
+
+	commandFound, a := innerfind(c, args)
+	if commandFound.Args == nil {
+		return commandFound, legacyArgs(commandFound, stripFlags(a, commandFound))
+	}
+	return commandFound, nil
 }
 
 func (c *Command) findSuggestions(arg string) string {
@@ -946,7 +1035,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if c.TraverseChildren {
 		cmd, flags, err = c.Traverse(args)
 	} else {
-		cmd, flags, err = c.Find(args)
+		cmd, err = c.findAndParseFlag(args)
 	}
 	if err != nil {
 		// If found parse to a subcommand and then failed, talk about the subcommand
@@ -1138,6 +1227,35 @@ func (c *Command) Commands() []*Command {
 		c.commandsAreSorted = true
 	}
 	return c.commands
+}
+
+// Commands returns a sorted slice of child commands.
+func (c *Command) CommandsByCategory(category string) []*Command {
+	// do not sort commands if it already sorted or sorting was disabled
+	if EnableCommandSorting && !c.commandsAreSorted {
+		sort.Sort(commandSorterByName(c.commands))
+		c.commandsAreSorted = true
+	}
+	var result []*Command
+	for _, command := range c.commands {
+		if command.Category == category {
+			result = append(result, command)
+		}
+	}
+	return result
+}
+
+func (c *Command) Categories() []string {
+	keys := make(map[string]bool)
+	categories := []string{}
+	for _, command := range c.commands {
+		if command.Category != "" && !keys[command.Category] {
+			categories = append(categories, command.Category)
+			keys[command.Category] = true
+		}
+	}
+	sort.Strings(categories)
+	return categories
 }
 
 // AddCommand adds one or more commands to this parent command.
@@ -1517,7 +1635,7 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 
 	c.parentsPflags.VisitAll(func(f *flag.Flag) {
 		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
-			c.iflags.AddFlag(f)
+			c.iflags.TryAddFlag(f)
 		}
 	})
 	return c.iflags
@@ -1622,6 +1740,30 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 }
 
 // ParseFlags parses persistent flag tree and local flags.
+func (c *Command) parsePersistentFlags(args []string) error {
+	if c.DisableFlagParsing {
+		return nil
+	}
+
+	if c.flagErrorBuf == nil {
+		c.flagErrorBuf = new(bytes.Buffer)
+	}
+	beforeErrorBufLen := c.flagErrorBuf.Len()
+	c.mergePersistentFlags()
+
+	// do it here after merging all flags and just before parse
+	c.PersistentFlags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
+
+	err := c.PersistentFlags().Parse(args)
+	// Print warnings if they occurred (e.g. deprecated flag messages).
+	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
+		c.Print(c.flagErrorBuf.String())
+	}
+
+	return err
+}
+
+// ParseFlags parses persistent flag tree and local flags.
 func (c *Command) ParseFlags(args []string) error {
 	if c.DisableFlagParsing {
 		return nil
@@ -1655,7 +1797,7 @@ func (c *Command) Parent() *Command {
 func (c *Command) mergePersistentFlags() {
 	c.updateParentsPflags()
 	c.Flags().AddFlagSet(c.PersistentFlags())
-	c.Flags().AddFlagSet(c.parentsPflags)
+	c.Flags().TryAddFlagSet(c.parentsPflags)
 }
 
 // updateParentsPflags updates c.parentsPflags by adding
@@ -1675,6 +1817,6 @@ func (c *Command) updateParentsPflags() {
 	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
 
 	c.VisitParents(func(parent *Command) {
-		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
+		c.parentsPflags.TryAddFlagSet(parent.PersistentFlags())
 	})
 }
