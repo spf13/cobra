@@ -1194,38 +1194,110 @@ func TestSuggestions(t *testing.T) {
 		SuggestFor: []string{"counts"},
 		Run:        emptyRun,
 	}
+	rewindCmd := &Command{
+		Use:        "rewind",
+		SuggestFor: []string{"dejavu"},
+		Run:        emptyRun,
+	}
+	timesCmd.AddCommand(rewindCmd)
 	rootCmd.AddCommand(timesCmd)
 
-	templateWithSuggestions := "Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n"
-	templateWithoutSuggestions := "Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n"
+	templateSuggestions := "\nDid you mean this?\n\t%s\n\n"
 
-	tests := map[string]string{
-		"time":     "times",
-		"tiems":    "times",
-		"tims":     "times",
-		"timeS":    "times",
-		"rimes":    "times",
-		"ti":       "times",
-		"t":        "times",
-		"timely":   "times",
-		"ri":       "",
-		"timezone": "",
-		"foo":      "",
-		"counts":   "times",
+	templatePrefix := "Error: unknown command \"%s\" for \"%s\"\n"
+	templateSuffix := "Run '%s --help' for usage.\n"
+
+	tests := []struct {
+		input              string
+		targetCommand      string
+		expectedSuggestion string
+	}{
+		{
+			input:              "time",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "tiems",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "tims",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "timeS",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "rimes",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "ti",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "t",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "timely",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "ri",
+			expectedSuggestion: "",
+		},
+		{
+			input:              "timezone",
+			expectedSuggestion: "",
+		},
+		{
+			input:              "foo",
+			expectedSuggestion: "",
+		},
+		{
+			input:              "counts",
+			expectedSuggestion: "times",
+		},
+		{
+			input:              "foo rewind",
+			expectedSuggestion: "",
+		},
+		{
+			input:              "times rewin",
+			targetCommand:      "root times",
+			expectedSuggestion: "rewind",
+		},
+		{
+			input:              "times dejavu",
+			targetCommand:      "root times",
+			expectedSuggestion: "rewind",
+		},
 	}
 
-	for typo, suggestion := range tests {
+	for index := range tests {
 		for _, suggestionsDisabled := range []bool{true, false} {
+			test := tests[index]
+
+			timesCmd.DisableSuggestions = suggestionsDisabled
 			rootCmd.DisableSuggestions = suggestionsDisabled
 
-			var expected string
-			output, _ := executeCommand(rootCmd, typo)
+			args := strings.Split(test.input, " ")
+			output, _ := executeCommand(rootCmd, args...)
 
-			if suggestion == "" || suggestionsDisabled {
-				expected = fmt.Sprintf(templateWithoutSuggestions, typo)
-			} else {
-				expected = fmt.Sprintf(templateWithSuggestions, typo, suggestion)
+			unknownArg := args[len(args)-1]
+			if test.targetCommand == "" {
+				test.targetCommand = rootCmd.Use
+				unknownArg = args[0]
 			}
+
+			expected := fmt.Sprintf(templatePrefix, unknownArg, test.targetCommand)
+			if test.expectedSuggestion != "" && !suggestionsDisabled {
+				expected += fmt.Sprintf(templateSuggestions, test.expectedSuggestion)
+			}
+
+			expected += fmt.Sprintf(templateSuffix, test.targetCommand)
 
 			if output != expected {
 				t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expected, output)
