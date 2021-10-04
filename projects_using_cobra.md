@@ -36,4 +36,5 @@
 - [Skaffold](https://skaffold.dev/)
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
+- [VMware Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition)
 - [Werf](https://werf.io/)
