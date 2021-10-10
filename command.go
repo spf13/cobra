@@ -709,18 +709,17 @@ func (c *Command) findAndParseFlag(args []string) (*Command, error) {
 		}
 		cmd := c.findNext(nextSubCmd)
 
-		// initialize help and version flag at the last point possible to allow for user
-		// overriding
-		cmd.InitDefaultHelpFlag()
-		cmd.InitDefaultVersionFlag()
-
-		c.parsePersistentFlags(beforeFlags)
-
-		// 	err = c.ParseFlags(a)
-		// if err != nil {
-		// 	return c.FlagErrorFunc()(c, err)
-		// }
 		if cmd != nil {
+			// initialize help and version flag at the last point possible to allow for user
+			// overriding
+			cmd.InitDefaultHelpFlag()
+			cmd.InitDefaultVersionFlag()
+
+			c.parsePersistentFlags(beforeFlags)
+			// 	err = c.ParseFlags(a)
+			// if err != nil {
+			// 	return c.FlagErrorFunc()(c, err)
+			// }
 			return innerfind(cmd, afterArgs)
 		}
 		return c, innerArgs
