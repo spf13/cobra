@@ -603,6 +603,11 @@ Loop:
 				args = args[1:]
 				continue
 			}
+		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && shortHasNoOptDefVal(s[1:], flags):
+			// If '-f' then
+			// delete '-f' from args or break the loop if len(args) <= 1.
+			beforeArgs = append(beforeArgs, s)
+			continue
 		case s != "" && !strings.HasPrefix(s, "-"):
 			command = s
 			afterArgs = args
