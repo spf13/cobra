@@ -726,8 +726,10 @@ func (c *Command) findAndParseFlag(args []string) (*Command, error) {
 			// 	return c.FlagErrorFunc()(c, err)
 			// }
 			return innerfind(cmd, afterArgs)
+		} else {
+			c.ParseFlags(innerArgs)
+			return c, innerArgs
 		}
-		return c, innerArgs
 	}
 
 	commandFound, a := innerfind(c, args)
@@ -870,13 +872,13 @@ func (c *Command) execute(a []string) (err error) {
 
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
-	c.InitDefaultHelpFlag()
-	c.InitDefaultVersionFlag()
+	// c.InitDefaultHelpFlag()
+	// c.InitDefaultVersionFlag()
 
-	err = c.ParseFlags(a)
-	if err != nil {
-		return c.FlagErrorFunc()(c, err)
-	}
+	// err = c.ParseFlags(a)
+	// if err != nil {
+	// 	return c.FlagErrorFunc()(c, err)
+	// }
 
 	// If help is called, regardless of other flags, return we want help.
 	// Also say we need help if the command isn't runnable.
