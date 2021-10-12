@@ -584,6 +584,9 @@ Loop:
 		case s == "--":
 			// "--" terminates the flags
 			break Loop
+		case strings.HasPrefix(s, "--") && strings.Contains(s, "="):
+			// If --flag=value
+			fallthrough
 		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && hasNoOptDefVal(s[2:], flags):
 			// If '--flag'
 			beforeArgs = append(beforeArgs, s)
