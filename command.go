@@ -712,6 +712,8 @@ func (c *Command) findAndParseFlag(args []string) (*Command, error) {
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
 		beforeFlags, nextSubCmd, afterArgs := splitFirstWord(innerArgs, c)
 		if nextSubCmd == nil {
+			c.InitDefaultHelpFlag()
+			c.InitDefaultVersionFlag()
 			c.ParseFlags(innerArgs)
 			return c, innerArgs
 		}
