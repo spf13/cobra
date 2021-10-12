@@ -567,13 +567,13 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
-func splitFirstWord(args []string, c *Command) (beforeArgs []string, firstWord string, afterArgs []string) {
+func splitFirstWord(args []string, c *Command) (beforeArgs []string, firstWord *string, afterArgs []string) {
 	if len(args) == 0 {
-		return args, "", nil
+		return args, nil, nil
 	}
 	c.mergePersistentFlags()
 
-	command := ""
+	var command *string = nil
 	flags := c.Flags()
 
 Loop:
@@ -609,7 +609,7 @@ Loop:
 			beforeArgs = append(beforeArgs, s)
 			continue
 		case s != "" && !strings.HasPrefix(s, "-"):
-			command = s
+			command = &s
 			afterArgs = args
 			break Loop
 		}
@@ -708,11 +708,11 @@ func (c *Command) findAndParseFlag(args []string) (*Command, error) {
 
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
 		beforeFlags, nextSubCmd, afterArgs := splitFirstWord(innerArgs, c)
-		if nextSubCmd == "" {
-			c.ParseFlags(beforeFlags)
+		if nextSubCmd == nil {
+			c.ParseFlags(innerArgs)
 			return c, innerArgs
 		}
-		cmd := c.findNext(nextSubCmd)
+		cmd := c.findNext(*nextSubCmd)
 
 		if cmd != nil {
 			// initialize help and version flag at the last point possible to allow for user
@@ -917,10 +917,6 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 
 	argWoFlags := c.Flags().Args()
-	if c.DisableFlagParsing {
-		argWoFlags = a
-	}
-
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err
 	}
@@ -1772,6 +1768,7 @@ func (c *Command) parsePersistentFlags(args []string) error {
 // ParseFlags parses persistent flag tree and local flags.
 func (c *Command) ParseFlags(args []string) error {
 	if c.DisableFlagParsing {
+		c.Flags().SetArgs(args)
 		return nil
 	}
 
