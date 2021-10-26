@@ -230,6 +230,11 @@ func (c *Command) Context() context.Context {
 	return c.ctx
 }
 
+// WithContext its context changed to ctx. The provided ctx must be non-nil.
+func (c *Command) WithContext(ctx context.Context) {
+	c.ctx = ctx
+}
+
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
