@@ -281,7 +281,7 @@ func init() {
 
 In this example, the persistent flag `author` is bound with `viper`.
 **Note**: the variable `author` will not be set to the value from config,
-when the `--author` flag is not provided by user.
+when the `--author` flag is provided by user.
 
 More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
 
