@@ -18,6 +18,7 @@
 - [GoReleaser](https://goreleaser.com)
 - [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
+- [Infracost](https://github.com/infracost/infracost)
 - [Istio](https://istio.io)
 - [Kool](https://github.com/kool-dev/kool)
 - [Kubernetes](http://kubernetes.io/)
