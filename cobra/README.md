@@ -9,7 +9,7 @@ Go will automatically install it in your `$GOPATH/bin` directory which should be
 Once installed you should have the `cobra` command available. Confirm by typing `cobra` at a 
 command line. 
 
-There are only two operations currently supported by Cobra generator: 
+There are only two operations currently supported by the Cobra generator: 
 
 ### cobra init
 
@@ -44,7 +44,7 @@ go mod init github.com/spf13/myapp
 From within a Go module run `cobra init`. This will create a new barebones project
 for you to edit. 
 
-You should be able to run you new application immediately. Try it with 
+You should be able to run your new application immediately. Try it with 
 `go run main.go`. 
 
 You will want to open up and edit 'cmd/root.go' and provide your own description and logic. 
@@ -72,7 +72,7 @@ Viper is a companion to Cobra intended to provide easy handling of environment v
 
 ### Add commands to a project
 
-Once a cobra application is initialized you can continue to use cobra generator to 
+Once a cobra application is initialized you can continue to use the Cobra generator to 
 add additional commands to your application. The command to do this is `cobra add`. 
 
 Let's say you created an app and you wanted the following commands for it:
@@ -89,13 +89,13 @@ cobra add config
 cobra add create -p 'configCmd'
 ```
 
-`cobra add` supports all the same optional flags as `cobra init` does mentioned above.
+`cobra add` supports all the same optional flags as `cobra init` does (described above).
 
 You'll notice that this final command has a `-p` flag. This is used to assign a
 parent command to the newly added command. In this case, we want to assign the
 "create" command to the "config" command. All commands have a default parent of rootCmd if not specified.  
 
-By default `cobra` will append `Cmd` to the name provided and uses this to name for the internal variable name. When specifying a parent, be sure to match the variable name used in the code. 
+By default `cobra` will append `Cmd` to the name provided and uses this name for the internal variable name. When specifying a parent, be sure to match the variable name used in the code. 
 
 *Note: Use camelCase (not snake_case/kebab-case) for command names.
 Otherwise, you will encounter errors.
