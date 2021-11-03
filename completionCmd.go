@@ -112,8 +112,10 @@ $ %[1]s %[2]s %[3]s > /usr/local/etc/bash_completion.d/%[1]s
 You will need to start a new shell for this setup to take effect.`,
 			c.Root().Name(), CompletionCmd.Name(), BashCompletionCmd.Name())
 	}
-	bash.RunE = func(cmd *Command, args []string) error {
-		return cmd.Root().GenBashCompletionV2(out, !noDesc)
+	if bash.RunE == nil && bash.Run == nil {
+		bash.RunE = func(cmd *Command, args []string) error {
+			return cmd.Root().GenBashCompletionV2(out, !noDesc)
+		}
 	}
 
 	bash.ResetFlags() // Tests can call this function multiple times in a row, so we must reset
@@ -140,11 +142,13 @@ $ %[1]s %[2]s %[3]s > /usr/local/share/zsh/site-functions/_%[1]s
 You will need to start a new shell for this setup to take effect.`,
 			c.Root().Name(), CompletionCmd.Name(), ZshCompletionCmd.Name())
 	}
-	zsh.RunE = func(cmd *Command, args []string) error {
-		if noDesc {
-			return cmd.Root().GenZshCompletionNoDesc(out)
+	if zsh.RunE == nil && zsh.Run == nil {
+		zsh.RunE = func(cmd *Command, args []string) error {
+			if noDesc {
+				return cmd.Root().GenZshCompletionNoDesc(out)
+			}
+			return cmd.Root().GenZshCompletion(out)
 		}
-		return cmd.Root().GenZshCompletion(out)
 	}
 
 	zsh.ResetFlags() // Tests can call this function multiple times in a row, so we must reset
@@ -166,8 +170,10 @@ $ %[1]s %[2]s %[3]s > ~/.config/fish/completions/%[1]s.fish
 You will need to start a new shell for this setup to take effect.`,
 			c.Root().Name(), CompletionCmd.Name(), FishCompletionCmd.Name())
 	}
-	fish.RunE = func(cmd *Command, args []string) error {
-		return cmd.Root().GenFishCompletion(out, !noDesc)
+	if fish.RunE == nil && fish.Run == nil {
+		fish.RunE = func(cmd *Command, args []string) error {
+			return cmd.Root().GenFishCompletion(out, !noDesc)
+		}
 	}
 
 	fish.ResetFlags() // Tests can call this function multiple times in a row, so we must reset
@@ -187,11 +193,13 @@ To load completions for every new session, add the output of the above command
 to your powershell profile.`,
 			c.Root().Name(), CompletionCmd.Name(), PwshCompletionCmd.Name())
 	}
-	pwsh.RunE = func(cmd *Command, args []string) error {
-		if noDesc {
-			return cmd.Root().GenPowerShellCompletion(out)
+	if pwsh.RunE == nil && pwsh.Run == nil {
+		pwsh.RunE = func(cmd *Command, args []string) error {
+			if noDesc {
+				return cmd.Root().GenPowerShellCompletion(out)
+			}
+			return cmd.Root().GenPowerShellCompletionWithDesc(out)
 		}
-		return cmd.Root().GenPowerShellCompletionWithDesc(out)
 	}
 
 	pwsh.ResetFlags() // Tests can call this function multiple times in a row, so we must reset
