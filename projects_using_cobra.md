@@ -46,5 +46,5 @@
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
 - [UpCloud CLI (`upctl`)](https://github.com/UpCloudLtd/upcloud-cli)
-- [VMware Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition)
+- VMware's [Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition) & [Tanzu Framework](https://github.com/vmware-tanzu/tanzu-framework)
 - [Werf](https://werf.io/)
