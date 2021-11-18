@@ -50,6 +50,7 @@ func init() {
 	initGpl3()
 	initLgpl()
 	initAgpl()
+	initWtfpl()
 }
 
 // getLicense returns license specified by user in flag or in config.
