@@ -2,10 +2,12 @@ package doc
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -109,4 +111,65 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func TestGenMdTreeCustom(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	prepender := func(s string) string { return "Prepended" }
+	identity := func(s string) string { return s }
+
+	if err := GenMarkdownTreeCustom(rootCmd, tmpdir, prepender, identity); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	gotRoot := fileContents(t, tmpdir, "root.md")
+	checkStringContains(t, gotRoot, "Prepended")
+	checkStringContains(t, gotRoot, rootCmd.Long)
+
+	gotEcho := fileContents(t, tmpdir, "root_echo.md")
+	checkStringContains(t, gotEcho, "Prepended")
+	checkStringContains(t, gotEcho, echoCmd.Long)
+
+	gotEchoSub := fileContents(t, tmpdir, "root_echo_echosub.md")
+	checkStringContains(t, gotEchoSub, "Prepended")
+	checkStringContains(t, gotEchoSub, echoSubCmd.Long)
+}
+
+func TestGenMarkdownTreeCustomHeaderAndFooter(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	prependStr := fmt.Sprintf("pre%d", time.Now().UnixNano())
+	postpendStr := fmt.Sprintf("post%d", time.Now().UnixNano())
+
+	prepender := func(s string) string { return prependStr }
+	identity := func(s string) string { return s }
+	postpender := func(s string) string { return postpendStr }
+
+	if err := GenMarkdownTreeCustomHeaderAndFooter(rootCmd, tmpdir, prepender, postpender, identity); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	gotRoot := fileContents(t, tmpdir, "root.md")
+	checkStringContains(t, gotRoot, prependStr)
+	checkStringContains(t, gotRoot, rootCmd.Long)
+	checkStringContains(t, gotRoot, postpendStr)
+
+	gotEcho := fileContents(t, tmpdir, "root_echo.md")
+	checkStringContains(t, gotEcho, prependStr)
+	checkStringContains(t, gotEcho, echoCmd.Long)
+	checkStringContains(t, gotEcho, postpendStr)
+
+	gotEchoSub := fileContents(t, tmpdir, "root_echo_echosub.md")
+	checkStringContains(t, gotEchoSub, prependStr)
+	checkStringContains(t, gotEchoSub, echoSubCmd.Long)
+	checkStringContains(t, gotEchoSub, postpendStr)
 }

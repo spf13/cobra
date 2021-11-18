@@ -1,6 +1,8 @@
 package doc
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -88,4 +90,12 @@ func checkStringOmits(t *testing.T, got, expected string) {
 	if strings.Contains(got, expected) {
 		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
 	}
+}
+
+func fileContents(t *testing.T, dir, filename string) string {
+	contents, err := ioutil.ReadFile(filepath.Join(dir, filename))
+	if err != nil {
+		t.Fatalf("Error loading file %q: %v ", filename, err)
+	}
+	return string(contents)
 }
