@@ -626,9 +626,9 @@ $ source <(%[1]s completion bash)
 
 To load completions for every new session, execute once:
 Linux:
-  $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
+$ %[1]s completion bash > /etc/bash_completion.d/%[1]s
 MacOS:
-  $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+$ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
 
 You will need to start a new shell for this setup to take effect.
   `, c.Root().Name()),
