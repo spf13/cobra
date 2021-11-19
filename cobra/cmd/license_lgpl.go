@@ -3,7 +3,7 @@ package cmd
 func initLgpl() {
 	Licenses["lgpl"] = License{
 		Name:            "GNU Lesser General Public License",
-		PossibleMatches: []string{"lgpl", "lesser gpl", "gnu lgpl"},
+		PossibleMatches: []string{"LGPL-3.0", "lgpl", "lesser gpl", "gnu lgpl"},
 		Header: `
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by

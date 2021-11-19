@@ -1,4 +1,4 @@
-// Copyright © 2015 Steve Francia <spf@spf13.com>.
+// Copyright © 2021 Steve Francia <spf@spf13.com>.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -51,7 +53,7 @@ func init() {
 }
 
 // getLicense returns license specified by user in flag or in config.
-// If user didn't specify the license, it returns Apache License 2.0.
+// If user didn't specify the license, it returns none
 //
 // TODO: Inspect project for existing license
 func getLicense() License {
@@ -71,8 +73,8 @@ func getLicense() License {
 		return findLicense(viper.GetString("license"))
 	}
 
-	// If user didn't set any license, use Apache 2.0 by default.
-	return Licenses["apache"]
+	// If user didn't set any license, use none by default
+	return Licenses["none"]
 }
 
 func copyrightLine() string {
@@ -92,7 +94,7 @@ func copyrightLine() string {
 func findLicense(name string) License {
 	found := matchLicense(name)
 	if found == "" {
-		er("unknown license: " + name)
+		cobra.CheckErr(fmt.Errorf("unknown license: " + name))
 	}
 	return Licenses[found]
 }

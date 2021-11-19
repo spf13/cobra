@@ -40,10 +40,9 @@ func checkRegex(t *testing.T, found, pattern string) {
 }
 
 func runShellCheck(s string) error {
-	excluded := []string{
+	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e",
 		"SC2034", // PREFIX appears unused. Verify it or export it.
-	}
-	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e", strings.Join(excluded, ","))
+	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
@@ -52,7 +51,9 @@ func runShellCheck(s string) error {
 		return err
 	}
 	go func() {
-		stdin.Write([]byte(s))
+		_, err := stdin.Write([]byte(s))
+		CheckErr(err)
+
 		stdin.Close()
 	}()
 
@@ -71,29 +72,33 @@ func TestBashCompletions(t *testing.T) {
 		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
 		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
 		BashCompletionFunction: bashCompletionFunc,
-		Run: emptyRun,
+		Run:                    emptyRun,
 	}
 	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
-	rootCmd.MarkFlagRequired("introot")
+	assertNoErr(t, rootCmd.MarkFlagRequired("introot"))
 
 	// Filename.
 	rootCmd.Flags().String("filename", "", "Enter a filename")
-	rootCmd.MarkFlagFilename("filename", "json", "yaml", "yml")
+	assertNoErr(t, rootCmd.MarkFlagFilename("filename", "json", "yaml", "yml"))
 
 	// Persistent filename.
 	rootCmd.PersistentFlags().String("persistent-filename", "", "Enter a filename")
-	rootCmd.MarkPersistentFlagFilename("persistent-filename")
-	rootCmd.MarkPersistentFlagRequired("persistent-filename")
+	assertNoErr(t, rootCmd.MarkPersistentFlagFilename("persistent-filename"))
+	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("persistent-filename"))
 
 	// Filename extensions.
 	rootCmd.Flags().String("filename-ext", "", "Enter a filename (extension limited)")
-	rootCmd.MarkFlagFilename("filename-ext")
+	assertNoErr(t, rootCmd.MarkFlagFilename("filename-ext"))
 	rootCmd.Flags().String("custom", "", "Enter a filename (extension limited)")
-	rootCmd.MarkFlagCustom("custom", "__complete_custom")
+	assertNoErr(t, rootCmd.MarkFlagCustom("custom", "__complete_custom"))
 
 	// Subdirectories in a given directory.
 	rootCmd.Flags().String("theme", "", "theme to use (located in /themes/THEMENAME/)")
-	rootCmd.Flags().SetAnnotation("theme", BashCompSubdirsInDir, []string{"themes"})
+	assertNoErr(t, rootCmd.Flags().SetAnnotation("theme", BashCompSubdirsInDir, []string{"themes"}))
+
+	// For two word flags check
+	rootCmd.Flags().StringP("two", "t", "", "this is two word flags")
+	rootCmd.Flags().BoolP("two-w-default", "T", false, "this is not two word flags")
 
 	echoCmd := &Command{
 		Use:     "echo [string to echo]",
@@ -105,9 +110,9 @@ func TestBashCompletions(t *testing.T) {
 	}
 
 	echoCmd.Flags().String("filename", "", "Enter a filename")
-	echoCmd.MarkFlagFilename("filename", "json", "yaml", "yml")
+	assertNoErr(t, echoCmd.MarkFlagFilename("filename", "json", "yaml", "yml"))
 	echoCmd.Flags().String("config", "", "config to use (located in /config/PROFILE/)")
-	echoCmd.Flags().SetAnnotation("config", BashCompSubdirsInDir, []string{"config"})
+	assertNoErr(t, echoCmd.Flags().SetAnnotation("config", BashCompSubdirsInDir, []string{"config"}))
 
 	printCmd := &Command{
 		Use:   "print [string to print]",
@@ -145,7 +150,7 @@ func TestBashCompletions(t *testing.T) {
 	rootCmd.AddCommand(echoCmd, printCmd, deprecatedCmd, colonCmd)
 
 	buf := new(bytes.Buffer)
-	rootCmd.GenBashCompletion(buf)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
 	output := buf.String()
 
 	check(t, output, "_root")
@@ -183,6 +188,19 @@ func TestBashCompletions(t *testing.T) {
 	// check for subdirs_in_dir flags in a subcommand
 	checkRegex(t, output, fmt.Sprintf(`_root_echo\(\)\n{[^}]*flags_completion\+=\("__%s_handle_subdirs_in_dir_flag config"\)`, rootCmd.Name()))
 
+	// check two word flags
+	check(t, output, `two_word_flags+=("--two")`)
+	check(t, output, `two_word_flags+=("-t")`)
+	checkOmit(t, output, `two_word_flags+=("--two-w-default")`)
+	checkOmit(t, output, `two_word_flags+=("-T")`)
+
+	// check local nonpersistent flag
+	check(t, output, `local_nonpersistent_flags+=("--two")`)
+	check(t, output, `local_nonpersistent_flags+=("--two=")`)
+	check(t, output, `local_nonpersistent_flags+=("-t")`)
+	check(t, output, `local_nonpersistent_flags+=("--two-w-default")`)
+	check(t, output, `local_nonpersistent_flags+=("-T")`)
+
 	checkOmit(t, output, deprecatedCmd.Name())
 
 	// If available, run shellcheck against the script.
@@ -199,10 +217,10 @@ func TestBashCompletionHiddenFlag(t *testing.T) {
 
 	const flagName = "hiddenFlag"
 	c.Flags().Bool(flagName, false, "")
-	c.Flags().MarkHidden(flagName)
+	assertNoErr(t, c.Flags().MarkHidden(flagName))
 
 	buf := new(bytes.Buffer)
-	c.GenBashCompletion(buf)
+	assertNoErr(t, c.GenBashCompletion(buf))
 	output := buf.String()
 
 	if strings.Contains(output, flagName) {
@@ -215,13 +233,31 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 
 	const flagName = "deprecated-flag"
 	c.Flags().Bool(flagName, false, "")
-	c.Flags().MarkDeprecated(flagName, "use --not-deprecated instead")
+	assertNoErr(t, c.Flags().MarkDeprecated(flagName, "use --not-deprecated instead"))
 
 	buf := new(bytes.Buffer)
-	c.GenBashCompletion(buf)
+	assertNoErr(t, c.GenBashCompletion(buf))
 	output := buf.String()
 
 	if strings.Contains(output, flagName) {
 		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
 	}
+}
+
+func TestBashCompletionTraverseChildren(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun, TraverseChildren: true}
+
+	c.Flags().StringP("string-flag", "s", "", "string flag")
+	c.Flags().BoolP("bool-flag", "b", false, "bool flag")
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletion(buf))
+	output := buf.String()
+
+	// check that local nonpersistent flag are not set since we have TraverseChildren set to true
+	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag=")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("-s")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("--bool-flag")`)
+	checkOmit(t, output, `local_nonpersistent_flags+=("-b")`)
 }

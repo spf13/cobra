@@ -1,0 +1,89 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+env:
+  GO111MODULE: on
+
+jobs:
+
+
+  test-unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - ubuntu
+        - macOS
+        go:
+        - 14
+        - 15
+        - 16
+        - 17
+    name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
+    runs-on: ${{ matrix.platform }}-latest
+    steps:
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.${{ matrix.go }}.x
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-1.${{ matrix.go }}.x-${{ hashFiles('**/go.sum') }}
+        restore-keys: ${{ runner.os }}-1.${{ matrix.go }}.x-
+
+    - run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        case "${{ matrix.go }}" in
+          16|17) _version='@latest';;
+          *) _version='';;
+        esac
+        go install github.com/kyoh86/richgo"${_version}"
+        go install github.com/mitchellh/gox"${_version}"
+
+    - run: PATH=$HOME/go/bin/:$PATH make
+
+
+  test-win:
+    name: MINGW64
+    defaults:
+      run:
+        shell: msys2 {0}
+    runs-on: windows-latest
+    steps:
+
+    - shell: bash
+      run: git config --global core.autocrlf input
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >
+          git
+          make
+          unzip
+          mingw-w64-x86_64-go
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: ${{ runner.os }}-${{ matrix.go }}-
+
+    - run: |
+        export GOBIN=$HOME/go/bin
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOBIN latest
+        go install github.com/kyoh86/richgo@latest
+        go install github.com/mitchellh/gox@latest
+
+    - run: PATH=$HOME/go/bin:$PATH make
