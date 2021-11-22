@@ -599,7 +599,7 @@ func (c *Command) initDefaultCompletionCmd() {
 
 	completionCmd := &Command{
 		Use:   compCmdName,
-		Short: "generate the autocompletion script for the specified shell",
+		Short: "Generate the autocompletion script for the specified shell",
 		Long: fmt.Sprintf(`
 Generate the autocompletion script for %[1]s for the specified shell.
 See each sub-command's help for details on how to use the generated script.
@@ -611,7 +611,7 @@ See each sub-command's help for details on how to use the generated script.
 
 	out := c.OutOrStdout()
 	noDesc := c.CompletionOptions.DisableDescriptions
-	shortDesc := "generate the autocompletion script for %s"
+	shortDesc := "Generate the autocompletion script for %s"
 	bash := &Command{
 		Use:   "bash",
 		Short: fmt.Sprintf(shortDesc, "bash"),
