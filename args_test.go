@@ -292,3 +292,32 @@ func TestMatchAll(t *testing.T) {
 		})
 	}
 }
+
+// This test make sure we keep backwards-compatibility with respect
+// to the legacyArgs() function.
+// It makes sure the root command accepts arguments if it does not have
+// sub-commands.
+func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: nil, Run: emptyRun}
+
+	_, err := executeCommand(rootCmd, "somearg")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+// This test make sure we keep backwards-compatibility with respect
+// to the legacyArgs() function.
+// It makes sure a sub-command accepts arguments and further sub-commands
+func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: nil, Run: emptyRun}
+	childCmd := &Command{Use: "child", Args: nil, Run: emptyRun}
+	grandchildCmd := &Command{Use: "grandchild", Args: nil, Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.AddCommand(grandchildCmd)
+
+	_, err := executeCommand(rootCmd, "child", "somearg")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
