@@ -585,11 +585,12 @@ Loop:
 		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
-			if len(args) <= 1 {
+			if len(args) == 0 {
 				break Loop
-			} else {
+			}
+			// Only delete 'arg' when it is not starts with '-'
+			if !strings.HasPrefix(args[0], "-") {
 				args = args[1:]
-				continue
 			}
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
