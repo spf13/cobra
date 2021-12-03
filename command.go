@@ -588,7 +588,10 @@ Loop:
 			if len(args) == 0 {
 				break Loop
 			}
-			// Only delete 'arg' when it is not starts with '-'
+			// When the flag 's' doesn't contain "=" and without "no option default values", but
+			// following with a string starts with '-', consider 's' an unknown boolean flag
+			// and don't delete 'arg'.
+			// Otherwise, consider it as '--flag arg' or '-f arg' and delete its following arg.
 			if !strings.HasPrefix(args[0], "-") {
 				args = args[1:]
 			}
