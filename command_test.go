@@ -1414,16 +1414,16 @@ func TestPersistentHooks(t *testing.T) {
 		name string
 		got  string
 	}{
-		// TODO: currently PersistenPreRun* defined in parent does not
-		// run if the matchin child subcommand has PersistenPreRun.
+		// TODO: currently PersistentPreRun* defined in parent does not
+		// run if the matching child subcommand has PersistentPreRun.
 		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
 		// this test must be fixed.
 		{"parentPersPreArgs", parentPersPreArgs},
 		{"parentPreArgs", parentPreArgs},
 		{"parentRunArgs", parentRunArgs},
 		{"parentPostArgs", parentPostArgs},
-		// TODO: currently PersistenPostRun* defined in parent does not
-		// run if the matchin child subcommand has PersistenPostRun.
+		// TODO: currently PersistentPostRun* defined in parent does not
+		// run if the matching child subcommand has PersistentPostRun.
 		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
 		// this test must be fixed.
 		{"parentPersPostArgs", parentPersPostArgs},
