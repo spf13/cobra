@@ -50,7 +50,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
     if ($Command.Length -gt $CursorPosition) {
         $Command=$Command.Substring(0,$CursorPosition)
     }
-	__%[1]s_debug "Truncated command: $Command"
+    __%[1]s_debug "Truncated command: $Command"
 
     $ShellCompDirectiveError=%[3]d
     $ShellCompDirectiveNoSpace=%[4]d
@@ -58,7 +58,7 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock {
     $ShellCompDirectiveFilterFileExt=%[6]d
     $ShellCompDirectiveFilterDirs=%[7]d
 
-	# Prepare the command to request completions for the program.
+    # Prepare the command to request completions for the program.
     # Split the command at the first space to separate the program and arguments.
     $Program,$Arguments = $Command.Split(" ",2)
     $RequestComp="$Program %[2]s $Arguments"
