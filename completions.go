@@ -93,6 +93,8 @@ type CompletionOptions struct {
 	// DisableDescriptions turns off all completion descriptions for shells
 	// that support them
 	DisableDescriptions bool
+	// HiddenDefaultCmd makes the default 'completion' command hidden
+	HiddenDefaultCmd bool
 }
 
 // NoFileCompletions can be used to disable file completion for commands that should
@@ -605,6 +607,7 @@ See each sub-command's help for details on how to use the generated script.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
+		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
 	}
 	c.AddCommand(completionCmd)
 

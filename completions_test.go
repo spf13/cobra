@@ -2398,6 +2398,21 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDescriptions = false
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
+
+	// Test that the 'completion' command can be hidden
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+	assertNoErr(t, rootCmd.Execute())
+	compCmd, _, err = rootCmd.Find([]string{compCmdName})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if compCmd.Hidden == false {
+		t.Error("Default 'completion' command should be hidden but it is not")
+	}
+	// Re-enable for next test
+	rootCmd.CompletionOptions.HiddenDefaultCmd = false
+	// Remove completion command for the next test
+	removeCompCmd(rootCmd)
 }
 
 func TestCompleteCompletion(t *testing.T) {
