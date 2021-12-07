@@ -622,13 +622,18 @@ This script depends on the 'bash-completion' package.
 If it is not installed already, you can install it via your OS's package manager.
 
 To load completions in your current shell session:
-$ source <(%[1]s completion bash)
+
+	source <(%[1]s completion bash)
 
 To load completions for every new session, execute once:
-Linux:
-  $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
-MacOS:
-  $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+
+#### Linux:
+
+	%[1]s completion bash > /etc/bash_completion.d/%[1]s
+
+#### macOS:
+
+	%[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
 
 You will need to start a new shell for this setup to take effect.
   `, c.Root().Name()),
@@ -652,13 +657,17 @@ Generate the autocompletion script for the zsh shell.
 If shell completion is not already enabled in your environment you will need
 to enable it.  You can execute the following once:
 
-$ echo "autoload -U compinit; compinit" >> ~/.zshrc
+	echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 To load completions for every new session, execute once:
-# Linux:
-$ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
-# macOS:
-$ %[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
+
+#### Linux:
+
+	%[1]s completion zsh > "${fpath[1]}/_%[1]s"
+
+#### macOS:
+
+	%[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
@@ -682,10 +691,12 @@ You will need to start a new shell for this setup to take effect.
 Generate the autocompletion script for the fish shell.
 
 To load completions in your current shell session:
-$ %[1]s completion fish | source
+
+	%[1]s completion fish | source
 
 To load completions for every new session, execute once:
-$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+
+	%[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
@@ -706,7 +717,8 @@ You will need to start a new shell for this setup to take effect.
 Generate the autocompletion script for powershell.
 
 To load completions in your current shell session:
-PS C:\> %[1]s completion powershell | Out-String | Invoke-Expression
+
+	%[1]s completion powershell | Out-String | Invoke-Expression
 
 To load completions for every new session, add the output of the above command
 to your powershell profile.
