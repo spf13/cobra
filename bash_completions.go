@@ -134,7 +134,7 @@ __%[1]s_handle_go_custom_completion()
         $filteringCmd
     elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
         # File completion for directories only
-        local subDir
+        local subdir
         # Use printf to strip any trailing newline
         subdir=$(printf "%%s" "${out[0]}")
         if [ -n "$subdir" ]; then
