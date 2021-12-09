@@ -263,17 +263,13 @@ func TestConfigActiveHelp(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	activeHelpCfg := "someconfig,anotherconfig"
-	// Set the variable that the completions scripts will be setting
+	// Set the variable that the user would be setting
 	os.Setenv(activeHelpEnvVar(rootCmd.Name()), activeHelpCfg)
 
 	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		// The activeHelpConfig variable should be set on the command
-		if cmd.ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on command: %q, but got: %q", activeHelpCfg, cmd.ActiveHelpConfig)
-		}
-		// The activeHelpConfig variable should also be set on the root
-		if cmd.Root().ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on root: %q, but got: %q", activeHelpCfg, cmd.Root().ActiveHelpConfig)
+		receivedActiveHelpCfg := GetActiveHelpConfig(cmd)
+		if receivedActiveHelpCfg != activeHelpCfg {
+			t.Errorf("expected activeHelpConfig: %q, but got: %q", activeHelpCfg, receivedActiveHelpCfg)
 		}
 		return nil, ShellCompDirectiveDefault
 	}
@@ -293,13 +289,9 @@ func TestConfigActiveHelp(t *testing.T) {
 
 	// Test that multiple activeHelp message can be added
 	_ = childCmd.RegisterFlagCompletionFunc(flagname, func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		// The activeHelpConfig variable should be set on the command
-		if cmd.ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on command: %q, but got: %q", activeHelpCfg, cmd.ActiveHelpConfig)
-		}
-		// The activeHelpConfig variable should also be set on the root
-		if cmd.Root().ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on root: %q, but got: %q", activeHelpCfg, cmd.Root().ActiveHelpConfig)
+		receivedActiveHelpCfg := GetActiveHelpConfig(cmd)
+		if receivedActiveHelpCfg != activeHelpCfg {
+			t.Errorf("expected activeHelpConfig: %q, but got: %q", activeHelpCfg, receivedActiveHelpCfg)
 		}
 		return nil, ShellCompDirectiveDefault
 	})
@@ -380,13 +372,9 @@ func TestDisableActiveHelp(t *testing.T) {
 	os.Setenv(activeHelpEnvVar(rootCmd.Name()), activeHelpCfg)
 
 	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		// The activeHelpConfig variable should be set on the command
-		if cmd.ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on command: %q, but got: %q", activeHelpCfg, cmd.ActiveHelpConfig)
-		}
-		// The activeHelpConfig variable should also be set on the root
-		if cmd.Root().ActiveHelpConfig != activeHelpCfg {
-			t.Errorf("expected activeHelpConfig on root: %q, but got: %q", activeHelpCfg, cmd.Root().ActiveHelpConfig)
+		receivedActiveHelpCfg := GetActiveHelpConfig(cmd)
+		if receivedActiveHelpCfg != activeHelpCfg {
+			t.Errorf("expected activeHelpConfig: %q, but got: %q", activeHelpCfg, receivedActiveHelpCfg)
 		}
 		return nil, ShellCompDirectiveDefault
 	}

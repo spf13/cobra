@@ -65,12 +65,12 @@ func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error 
 
 func (c *Command) genZshCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
-	genZshComp(buf, c, includeDesc)
+	genZshComp(buf, c.Name(), includeDesc)
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func genZshComp(buf io.StringWriter, cmd *Command, includeDesc bool) {
+func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
@@ -121,7 +121,7 @@ _%[1]s()
     fi
 
     # Prepare the command to obtain completions
-    requestComp="%[9]s=${%[9]s-%[10]s} ${words[1]} %[2]s ${words[2,-1]}"
+    requestComp="${words[1]} %[2]s ${words[2,-1]}"
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
@@ -280,8 +280,8 @@ _%[1]s()
 if [ "$funcstack[1]" = "_%[1]s" ]; then
     _%[1]s
 fi
-`, cmd.Name(), compCmd,
+`, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
-		activeHelpMarker, activeHelpEnvVar(cmd.Name()), cmd.ActiveHelpConfig))
+		activeHelpMarker))
 }

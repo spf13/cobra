@@ -178,7 +178,7 @@ func (c *Command) initCompleteCmd(args []string) {
 
 			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
 			for _, comp := range completions {
-				if finalCmd.ActiveHelpConfig == activeHelpGlobalDisable {
+				if GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable {
 					// Remove all activeHelp entries in this case
 					if strings.HasPrefix(comp, activeHelpMarker) {
 						continue
@@ -453,9 +453,6 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		// Go custom completion defined for this flag or command.
 		// Call the registered completion function to get the completions.
 		var comps []string
-
-		setActiveHelpConfig(finalCmd)
-
 		comps, directive = completionFn(finalCmd, finalArgs, toComplete)
 		completions = append(completions, comps...)
 	}

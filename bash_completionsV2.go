@@ -9,12 +9,12 @@ import (
 
 func (c *Command) genBashCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
-	genBashComp(buf, c, includeDesc)
+	genBashComp(buf, c.Name(), includeDesc)
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func genBashComp(buf io.StringWriter, cmd *Command, includeDesc bool) {
+func genBashComp(buf io.StringWriter, name string, includeDesc bool) {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
@@ -45,7 +45,7 @@ __%[1]s_get_completion_results() {
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows to handle aliases
     args=("${words[@]:1}")
-    requestComp="%[9]s=${%[9]s-%[10]s} ${words[0]} %[2]s ${args[*]}"
+    requestComp="${words[0]} %[2]s ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
@@ -345,10 +345,10 @@ else
 fi
 
 # ex: ts=4 sw=4 et filetype=sh
-`, cmd.Name(), compCmd,
+`, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
-		activeHelpMarker, activeHelpEnvVar(cmd.Name()), cmd.Root().ActiveHelpConfig))
+		activeHelpMarker))
 }
 
 // GenBashCompletionFileV2 generates Bash completion version 2.

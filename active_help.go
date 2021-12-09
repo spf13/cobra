@@ -26,27 +26,24 @@ func AppendActiveHelp(compArray []string, activeHelpStr string) []string {
 	return append(compArray, fmt.Sprintf("%s%s", activeHelpMarker, activeHelpStr))
 }
 
-// activeHelpEnvVar returns the name of the program-specific ActiveHelp environment
-// variable.  It has the format <PROGRAM>_ACTIVE_HELP where <PROGRAM> is the name of the
-// root command in upper case, with all - replaced by _.
-// This format should not be changed: users will be using it explicitly.
-func activeHelpEnvVar(name string) string {
-	activeHelpEnvVar := strings.ToUpper(fmt.Sprintf("%s%s", name, activeHelpEnvVarSuffix))
-	return strings.ReplaceAll(activeHelpEnvVar, "-", "_")
-}
-
-// setActiveHelpConfig first checks the global environment variable
-// of ActiveHelp to see if it is disabling active help, and if it is not,
-// it then looks to the program-specific variable.
-// It then sets the ActiveHelpConfig value to make it available when
-// calling the completion function.  We also set it on the root,
-// just in case users try to access it from there.
-func setActiveHelpConfig(cmd *Command) {
+// GetActiveHelpConfig returns the value of the ActiveHelp environment variable
+// <PROGRAM>_ACTIVE_HELP where <PROGRAM> is the name of the root command in upper
+// case, with all - replaced by _.
+// It will always return "0" if the global environment variable COBRA_ACTIVE_HELP
+// is set to "0".
+func GetActiveHelpConfig(cmd *Command) string {
 	activeHelpCfg := os.Getenv(activeHelpGlobalEnvVar)
 	if activeHelpCfg != activeHelpGlobalDisable {
 		activeHelpCfg = os.Getenv(activeHelpEnvVar(cmd.Root().Name()))
 	}
+	return activeHelpCfg
+}
 
-	cmd.ActiveHelpConfig = activeHelpCfg
-	cmd.Root().ActiveHelpConfig = cmd.ActiveHelpConfig
+// activeHelpEnvVar returns the name of the program-specific ActiveHelp environment
+// variable.  It has the format <PROGRAM>_ACTIVE_HELP where <PROGRAM> is the name of the
+// root command in upper case, with all - replaced by _.
+func activeHelpEnvVar(name string) string {
+	// This format should not be changed: users will be using it explicitly.
+	activeHelpEnvVar := strings.ToUpper(fmt.Sprintf("%s%s", name, activeHelpEnvVarSuffix))
+	return strings.ReplaceAll(activeHelpEnvVar, "-", "_")
 }

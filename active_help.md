@@ -13,6 +13,8 @@ Please specify the path to the chart to package
 bash-5.1$ bin/helm package [tab][tab]
 bin/    internal/    scripts/    pkg/     testdata/
 ```
+
+**Hint**: A good place to use Active Help messages is when the normal completion system does not provide any suggestions. In such cases, Active Help nicely supplements the normal shell completions to guide the user in knowing what is expected by the program.
 ## Supported shells
 
 Active Help is currently only supported for the following shells:
@@ -61,6 +63,7 @@ You must specify the URL for the repo you are adding
 bash-5.1$ helm repo add grafana https://grafana.github.io/helm-charts [tab]
 This command does not take any more arguments
 ```
+**Hint**: As can be seen in the above example, a good place to use Active Help messages is when the normal completion system does not provide any suggestions. In such cases, Active Help nicely supplements the normal shell completions.
 
 ### Active Help for flags
 
@@ -84,28 +87,26 @@ bash-5.1$ bin/helm install myrelease bitnami/solr --version 2.0.[tab][tab]
 
 ## User control of Active Help
 
-You may want to allow your users to disable Active Help or choose between different levels of Active Help.  It is entirely up to the program to define the type of configurability of Active Help that it wants to offer.  
+You may want to allow your users to disable Active Help or choose between different levels of Active Help.  It is entirely up to the program to define the type of configurability of Active Help that it wants to offer, if any.
+Allowing to configure Active Help is entirely optional; you can use Active Help in your program without doing anything about Active Help configuration.
 
-### Configuration using an environment variable
-
-One way to configure Active Help is to use the program's Active Help environment
+The way to configure Active Help is to use the program's Active Help environment
 variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where `<PROGRAM>` is the name of your 
-program in uppercase with any `-` replaced by an `_`.  You can find that variable in the generated
-completion scripts of your program.  The variable should be set by the user to whatever Active Help 
-configuration values are supported by the program.
+program in uppercase with any `-` replaced by an `_`.  The variable should be set by the user to whatever
+Active Help configuration values are supported by the program.
 
-For example, say `helm` supports three levels for Active Help: `on`, `off`, `local`.  Then a user
+For example, say `helm` has chosen to support three levels for Active Help: `on`, `off`, `local`.  Then a user
 would set the desired behavior to `local` by doing `export HELM_ACTIVE_HELP=local` in their shell.
 
-When in `cmd.ValidArgsFunction(...)` or a flag's completion function, the program should read the
-Active Help configuration from the `cmd.ActiveHelpConfig` field and select what Active Help messages
-should or should not be added.
+For simplicity, when in `cmd.ValidArgsFunction(...)` or a flag's completion function, the program should read the
+Active Help configuration using the `cobra.GetActiveHelpConfig(cmd)` function and select what Active Help messages
+should or should not be added (instead of reading the environment variable directly).
 
 For example:
 ```go
 ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	activeHelpLevel := cmd.ActiveHelpConfig
-	
+	activeHelpLevel := cobra.GetActiveHelpConfig(cmd)
+
 	var comps []string
 	if len(args) == 0 {
 		if activeHelpLevel != "off"  {
@@ -123,49 +124,23 @@ ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([
 	return comps, cobra.ShellCompDirectiveNoFileComp
 },
 ```
-**Note 1**: If the string "0" is used for `cmd.Root().ActiveHelpConfig`, it will automatically be handled by Cobra and will completely disable all Active Help output (even if some output was specified by the program using the `cobra.AppendActiveHelp(...)` function).  Using "0" can simplify your code in situations where you want to blindly disable Active Help.
+**Note 1**: If the `<PROGRAM>_ACTIVE_HELP` environment variable is set to the string "0", Cobra will automatically disable all Active Help output (even if some output was specified by the program using the `cobra.AppendActiveHelp(...)` function).  Using "0" can simplify your code in situations where you want to blindly disable Active Help without having to call `cobra.GetActiveHelpConfig(cmd)` explicitly.
 
-**Note 2**: Cobra transparently passes the `cmd.ActiveHelpConfig` string you specified back to your program when completion is invoked.  You can therefore define any scheme you choose for your program; you are not limited to using integer levels for the configuration of Active Help.  **However, the reserved "0" value can also be sent to you program and you should be prepared for it.**
+**Note 2**: If a user wants to disable Active Help for every single program based on Cobra, she can set the environment variable `COBRA_ACTIVE_HELP` to "0".  In this case `cobra.GetActiveHelpConfig(cmd)` will return "0" no matter what the variable `<PROGRAM>_ACTIVE_HELP` is set to.
 
-**Note 3**: If a user wants to disable Active Help for every single program based on Cobra, the global environment variable `COBRA_ACTIVE_HELP` can be used as follows:
-```
-export COBRA_ACTIVE_HELP=0
-```
-
-### Configuration using a flag
-
-Another approach for a user to configure Active Help is for the program to add a flag to the command that generates 
-the completion script.  Using the flag, the user specifies the Active Help configuration that is
-desired.  Then the program should specify that configuration by setting the `rootCmd.ActiveHelpConfig` string
-before calling the Cobra API that generates the shell completion script.
-The ActiveHelp configuration would then be read in `cmd.ValidArgsFunction(...)` or a flag's completion function, in the same 
-fashion as explained above, using the same `cmd.ActiveHelpConfig` field.
-
-For example, a program that uses a `completion` command to generate the shell completion script can add a flag `--activehelp-level` to that command.  The user would then use that flag to choose an Active Help level:
-```
-bash-5.1$ source <(helm completion bash --activehelp-level 1)
-```
-The code to pass that information to Cobra would look something like:
-```go
-cmd.Root().ActiveHelpConfig = strconv.Itoa(activeHelpLevel)
-return cmd.Root().GenBashCompletionV2(out, true)
-```
-
-The advantage of using a flag is that it becomes self-documenting through Cobra's `help` command.  Also, it allows you to
-use Cobra's flag parsing to handle the configuration value, instead of having to deal with a environment variable natively.
-
+**Note 3**: If the user does not set `<PROGRAM>_ACTIVE_HELP` or `COBRA_ACTIVE_HELP` (which will be a common case), the default value for the Active Help configuration returned by `cobra.GetActiveHelpConfig(cmd)` will be the empty string. 
 ## Active Help with Cobra's default completion command
 
 Cobra provides a default `completion` command for programs that wish to use it.
-When using the default `completion` command, Active Help is configurable using the
-environment variable approach described above.  You may wish to document this in more
+When using the default `completion` command, Active Help is configurable in the same
+fashion as described above using environment variables.  You may wish to document this in more
 details for your users.
 
 ## Debugging Active Help
 
-Debugging your Active Help code is done in the same way as debugging the dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](shell_completions.md#debugging) for details.
+Debugging your Active Help code is done in the same way as debugging your dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](shell_completions.md#debugging) for details.
 
-When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable (as you can find in the generated completion scripts).  That variable is named `<PROGRAM>_ACTIVE_HELP` where any `-` is replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
+When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any `-` is replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
 ```
 $ HELM_ACTIVE_HELP=1 bin/helm __complete install wordpress bitnami/h<ENTER>
 bitnami/haproxy
