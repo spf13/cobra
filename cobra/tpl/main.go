@@ -37,9 +37,9 @@ package cmd
 
 import (
 {{- if .Viper }}
-	"fmt"
+	"fmt"{{ end }}
 	"os"
-{{ end }}
+
 	"github.com/spf13/cobra"
 {{- if .Viper }}
 	"github.com/spf13/viper"{{ end }}
