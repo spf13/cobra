@@ -5,8 +5,9 @@ go 1.15
 require (
 	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/cpuguy83/go-md2man v1.0.8
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/magiconair/properties v1.8.0 // indirect

@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/OneCloudInc/cobra/decryptor"
 	flag "github.com/spf13/pflag"
 )
 
@@ -851,8 +852,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 
 	// RC: Implementation of decryption - use DI to test
-	decryptor := Gatekeeper{}
-	flags, err = decryptor.DecryptFlags(flags)
+	decryptor := decryptor.NewDecryptor()
+	flags, err = decryptor.DecryptArguments(flags)
 
 	err = cmd.execute(flags)
 	if err != nil {
