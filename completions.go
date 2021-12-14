@@ -228,7 +228,17 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	if c.Root().TraverseChildren {
 		finalCmd, finalArgs, err = c.Root().Traverse(trimmedArgs)
 	} else {
-		finalCmd, finalArgs, err = c.Root().Find(trimmedArgs)
+		// For Root commands that don't specify any value for their Args fields, when we call
+		// Find(), if those Root commands don't have any sub-commands, they will accept arguments.
+		// However, because we have added the __complete sub-command in the current code path, the
+		// call to Find() -> legacyArgs() will return an error if there are any arguments.
+		// To avoid this, we first remove the __complete command to get back to having no sub-commands.
+		rootCmd := c.Root()
+		if len(rootCmd.Commands()) == 1 {
+			rootCmd.RemoveCommand(c)
+		}
+
+		finalCmd, finalArgs, err = rootCmd.Find(trimmedArgs)
 	}
 	if err != nil {
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
