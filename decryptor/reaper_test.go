@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,6 +31,7 @@ func TestDecryptArguments_NoneEncrypted(t *testing.T) {
 }
 
 func TestDecryptArguments_EncryptedArgsDecoded(t *testing.T) {
+	commandExecutorId := "7777"
 	encryptedKey := "zzzzzzz"
 	decryptedKey := "aaaaaaa"
 	firstArg := fmt.Sprintf("--arg1=OC_ENCRYPTED%sDETPYRCNE_CO", encryptedKey)
@@ -40,6 +42,30 @@ func TestDecryptArguments_EncryptedArgsDecoded(t *testing.T) {
 	reaperTestServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
+
+		reqBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("error reading test request: %s", err)
+			t.FailNow()
+		}
+
+		var reqObj map[string]interface{}
+		err = json.Unmarshal(reqBytes, &reqObj)
+		if err != nil {
+			t.Errorf("error parsing test request JSON: %s", err)
+			t.FailNow()
+		}
+
+		foundId, ok := reqObj["commandExecutorId"]
+		if !ok {
+			t.Error("request should contain commandExecutorId")
+			t.FailNow()
+		}
+
+		if foundId.(string) != commandExecutorId {
+			t.Errorf("request should contain commandExecutorId %s, got %s", commandExecutorId, foundId.(string))
+			t.FailNow()
+		}
 
 		payloadObj := make(map[string]interface{})
 		dataObj := make(map[string]interface{})
@@ -57,7 +83,7 @@ func TestDecryptArguments_EncryptedArgsDecoded(t *testing.T) {
 	}))
 	defer reaperTestServer.Close()
 
-	dec := NewReaperDecryptor(reaperTestServer.URL, string(generateNonce()), "1234")
+	dec := NewReaperDecryptor(reaperTestServer.URL, string(generateNonce()), commandExecutorId)
 	decryptedArgs, err := dec.DecryptArguments(args)
 	if err != nil {
 		t.Error("EncryptedArgsDecoded should not return an error")
