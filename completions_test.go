@@ -2619,3 +2619,48 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 }
+
+func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
+	// Test a lonely root command which uses legacyArgs().  In such a case, the root
+	// command should accept any number of arguments and completion should behave accordingly.
+	rootCmd := &Command{
+		Use:  "root",
+		Args: nil, // Args must be nil to trigger the legacyArgs() function
+		Run:  emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"arg1", "arg2"}, ShellCompDirectiveNoFileComp
+		},
+	}
+
+	// Make sure the first arg is completed
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"arg1",
+		"arg2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Make sure the completion of arguments continues
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "arg1", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"arg1",
+		"arg2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
