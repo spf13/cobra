@@ -71,7 +71,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 // validateCmdName returns source without any dashes and underscore.
 // If there will be dash or underscore, next letter will be uppered.
 // It supports only ASCII (1-byte character) strings.
-// https://github.com/OneCloudInc/cobra/issues/269
+// https://github.com/spf13/cobra/issues/269
 func validateCmdName(source string) string {
 	i := 0
 	l := len(source)
