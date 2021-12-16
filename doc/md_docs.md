@@ -8,8 +8,8 @@ package main
 import (
 	"log"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
+	"github.com/OneCloudInc/cobra"
+	"github.com/OneCloudInc/cobra/doc"
 )
 
 func main() {
@@ -41,7 +41,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
-	"github.com/spf13/cobra/doc"
+	"github.com/OneCloudInc/cobra/doc"
 )
 
 func main() {

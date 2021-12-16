@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"unicode"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 )
 
 func init() {
@@ -71,7 +71,7 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 // validateCmdName returns source without any dashes and underscore.
 // If there will be dash or underscore, next letter will be uppered.
 // It supports only ASCII (1-byte character) strings.
-// https://github.com/spf13/cobra/issues/269
+// https://github.com/OneCloudInc/cobra/issues/269
 func validateCmdName(source string) string {
 	i := 0
 	l := len(source)
@@ -130,7 +130,7 @@ package {{.cmdPackage}}
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 )
 
 {{ printFlagVars .flags }}
