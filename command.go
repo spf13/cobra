@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/OneCloudInc/cobra/decryptor"
 	flag "github.com/spf13/pflag"
 )
 
@@ -593,6 +594,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 	inFlag := false
 
 	for i, arg := range args {
+
 		switch {
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
@@ -848,6 +850,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if cmd.commandCalledAs.name == "" {
 		cmd.commandCalledAs.name = cmd.Name()
 	}
+
+	// RC: Implementation of decryption - use DI to test
+	decryptor := decryptor.NewDecryptor()
+	flags, err = decryptor.DecryptArguments(flags)
 
 	err = cmd.execute(flags)
 	if err != nil {
