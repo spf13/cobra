@@ -1166,7 +1166,7 @@ func TestPersistentHooks(t *testing.T) {
 
 	// TODO: currently PersistenPreRun* defined in parent does not
 	// run if the matchin child subcommand has PersistenPreRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
+	// If the behavior changes (https://github.com/OneCloudInc/cobra/issues/252)
 	// this test must be fixed.
 	if parentPersPreArgs != "" {
 		t.Errorf("Expected blank parentPersPreArgs, got %q", parentPersPreArgs)
@@ -1182,7 +1182,7 @@ func TestPersistentHooks(t *testing.T) {
 	}
 	// TODO: currently PersistenPostRun* defined in parent does not
 	// run if the matchin child subcommand has PersistenPostRun.
-	// If the behavior changes (https://github.com/spf13/cobra/issues/252)
+	// If the behavior changes (https://github.com/OneCloudInc/cobra/issues/252)
 	// this test must be fixed.
 	if parentPersPostArgs != "" {
 		t.Errorf("Expected blank parentPersPostArgs, got %q", parentPersPostArgs)
@@ -1555,7 +1555,7 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 }
 
 // TestUpdateName checks if c.Name() updates on changed c.Use.
-// Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
+// Related to https://github.com/OneCloudInc/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
 	c := &Command{Use: "name xyz"}
 	originalName := c.Name()

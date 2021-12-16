@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"unicode"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 )
 
 func init() {
@@ -130,7 +130,7 @@ package {{.cmdPackage}}
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/OneCloudInc/cobra"
 )
 
 {{ printFlagVars .flags }}
