@@ -128,6 +128,7 @@ func addJWTHeader(req *retryablehttp.Request, signingKey []byte) error {
 		return err
 	}
 
+	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", signed))
 
 	return err
@@ -161,10 +162,6 @@ func defaultClientWithRetries() *retryablehttp.Client {
 			return true, err
 		}
 		return false, err
-	}
-
-	retryClient.RequestLogHook = func(l retryablehttp.Logger, req *http.Request, retryCount int) {
-		*req = *req.Clone(context.TODO())
 	}
 
 	return retryClient
