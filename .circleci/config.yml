@@ -1,53 +1,30 @@
 version: 2
-
-references:
-  workspace: &workspace
-    /go/src/github.com/spf13/cobra
-
-  run_tests: &run_tests
-    run:
-      name: "All Commands"
-      command: |
-        mkdir -p bin
-        curl -Lso bin/shellcheck https://github.com/caarlos0/shellcheck-docker/releases/download/v0.4.6/shellcheck
-        chmod +x bin/shellcheck
-        go get -t -v ./...
-        PATH=$PATH:$PWD/bin go test -v ./...
-        go build
-        if [ -z $NOVET ]; then
-          diff -u <(echo -n) <(go tool vet . 2>&1 | grep -vE 'ExampleCommand|bash_completions.*Fprint');
-        fi
-
 jobs:
-  go-current:
+  build:
     docker:
-      - image: circleci/golang:1.11
-    working_directory: *workspace
-    steps:
-      - checkout
-      - *run_tests
-      - run:
-          name: "Check formatting"
-          command: diff -u <(echo -n) <(gofmt -d -s .)
-  go-previous:
-    docker:
-      - image: circleci/golang:1.10
-    working_directory: *workspace
-    steps:
-      - checkout
-      - *run_tests
-  go-latest:
-    docker:
-      - image: circleci/golang:latest
-    working_directory: *workspace
-    steps:
-      - checkout
-      - *run_tests
+      # specify the version
+      - image: circleci/golang:1.15
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
+        environment: # environment variables for primary container
+          DEPLOYMENT: test
 
+    #### TEMPLATE_NOTE: go expects specific checkout path representing url
+    #### expecting it in the form of
+    ####   /go/src/github.com/circleci/go-tool
+    ####   /go/src/bitbucket.org/circleci/go-tool
+    working_directory: /go/src/github.com/OneCloudInc/cobra
+    steps:
+      - checkout
+      - run:
+          name: Run tests
+          command: |
+            go test ./...
 workflows:
   version: 2
-  main:
+  workflow:
     jobs:
-      - go-current
-      - go-previous
-      - go-latest
+      - build:
+          context:
+            - dockerhub
