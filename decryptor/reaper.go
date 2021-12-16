@@ -54,6 +54,10 @@ var vaultRegex = regexp.MustCompile(vaultEncryptStart + "(.*)" + vaultEncryptEnd
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
+
 // NewReaperDecryptor returns a Decryptor implementation that will call out to
 // the reaper service to decrypt any encrypted arguments.
 func NewReaperDecryptor(url, signingKey, commandExecutorID string) Decryptor {
@@ -96,7 +100,10 @@ func (r *ReaperDecryptor) DecryptArguments(args []string) ([]string, error) {
 	}
 
 	cl := defaultClientWithRetries()
-	addJWTHeader(retryReq, r.SigningKey)
+	err = addJWTHeader(retryReq, r.SigningKey)
+	if err != nil {
+		return args, fmt.Errorf("error signing request: %s", err)
+	}
 
 	resp, err := cl.Do(retryReq)
 	if err != nil {
