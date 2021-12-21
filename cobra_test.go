@@ -1,6 +1,7 @@
 package cobra
 
 import (
+	"errors"
 	"testing"
 	"text/template"
 )
@@ -24,5 +25,46 @@ func TestAddTemplateFunctions(t *testing.T) {
 	const expected = "Hello, world."
 	if got := c.UsageString(); got != expected {
 		t.Errorf("Expected UsageString: %v\nGot: %v", expected, got)
+	}
+}
+
+func TestCheckErr(t *testing.T) {
+	tests := []struct {
+		name  string
+		msg   interface{}
+		panic bool
+	}{
+		{
+			name:  "no error",
+			msg:   nil,
+			panic: false,
+		},
+		{
+			name:  "panic string",
+			msg:   "test",
+			panic: true,
+		},
+		{
+			name:  "panic error",
+			msg:   errors.New("test error"),
+			panic: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				r := recover()
+				if r != nil {
+					if !tt.panic {
+						t.Error("Didn't expect panic")
+					}
+				} else {
+					if tt.panic {
+						t.Error("Expected to panic")
+					}
+				}
+			}()
+			CheckErr(tt.msg)
+		})
 	}
 }
