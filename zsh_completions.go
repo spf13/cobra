@@ -38,7 +38,7 @@ func (c *Command) GenZshCompletionNoDesc(w io.Writer) error {
 // ShellCompDirectiveFilterFileExt.
 //
 // Deprecated
-func (c *Command) MarkZshCompPositionalArgumentFile(argPosition int, patterns ...string) error {
+func (c *Command) MarkZshCompPositionalArgumentFile(_ int, _ ...string) error {
 	return nil
 }
 
@@ -49,7 +49,7 @@ func (c *Command) MarkZshCompPositionalArgumentFile(argPosition int, patterns ..
 // any argument (can include the first one also).
 //
 // Deprecated
-func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...string) error {
+func (c *Command) MarkZshCompPositionalArgumentWords(_ int, _ ...string) error {
 	return nil
 }
 
