@@ -103,6 +103,14 @@ func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string
 	return nil, ShellCompDirectiveNoFileComp
 }
 
+// FixedCompletions can be used to create a completion function which always
+// returns the same results.
+func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	return func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return choices, directive
+	}
+}
+
 // RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
 func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)) error {
 	flag := c.Flag(flagName)
