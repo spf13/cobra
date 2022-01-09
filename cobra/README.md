@@ -3,7 +3,7 @@
 Cobra provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
-Install the cobra generator with the command `go install github.com/spf13/cobra/cobra`. 
+Install the cobra generator with the command `go install github.com/spf13/cobra/cobra@latest`. 
 Go will automatically install it in your `$GOPATH/bin` directory which should be in your $PATH. 
 
 Once installed you should have the `cobra` command available. Confirm by typing `cobra` at a 
