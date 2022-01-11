@@ -52,7 +52,7 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 }
 
 // ArbitraryArgs never returns an error.
-func ArbitraryArgs(cmd *Command, args []string) error {
+func ArbitraryArgs(_ *Command, _ []string) error {
 	return nil
 }
 

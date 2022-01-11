@@ -614,8 +614,8 @@ func argsMinusFirstX(args []string, x string) []string {
 }
 
 func isFlagArg(arg string) bool {
-	return ((len(arg) >= 3 && arg[1] == '-') ||
-		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-'))
+	return (len(arg) >= 3 && arg[1] == '-') ||
+		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-')
 }
 
 // Find the target command given the args and command tree

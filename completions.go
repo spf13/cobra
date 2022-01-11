@@ -168,7 +168,7 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
-			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
+			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd
 			for _, comp := range completions {
 				if noDescriptions {
 					// Remove any description that may be included following a tab character.
