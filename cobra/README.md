@@ -135,7 +135,7 @@ An example ~/.cobra.yaml file:
 ```yaml
 author: Steve Francia <spf@spf13.com>
 license: MIT
-viper: true
+useViper: true
 ```
 
 You can also use built-in licenses. For example, **GPLv2**, **GPLv3**, **LGPL**,
