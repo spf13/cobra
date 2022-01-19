@@ -73,7 +73,10 @@ func initConfig() {
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		cobra.CheckErr(err)
 	}
+
+	_, err := fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	cobra.CheckErr(err)
 }
