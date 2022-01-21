@@ -41,7 +41,7 @@ Cobra init must be run inside of a go module (please run "go mod init <MODNAME>"
 			projectPath, err := initializeProject(args)
 			cobra.CheckErr(err)
 			cobra.CheckErr(goGet("github.com/spf13/cobra"))
-			if viper.GetBool("useViper") {
+			if viper.GetBool("viper") {
 				cobra.CheckErr(goGet("github.com/spf13/viper"))
 			}
 			fmt.Printf("Your Cobra application is ready at\n%s\n", projectPath)
@@ -68,7 +68,7 @@ func initializeProject(args []string) (string, error) {
 		PkgName:      modName,
 		Legal:        getLicense(),
 		Copyright:    copyrightLine(),
-		Viper:        viper.GetBool("useViper"),
+		Viper:        viper.GetBool("viper"),
 		AppName:      path.Base(modName),
 	}
 
