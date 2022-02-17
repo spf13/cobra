@@ -29,10 +29,10 @@ func main() {
 
 ## Using the Cobra Generator
 
-Cobra provides its own program that will create your application and add any
+Cobra-CLI is its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
-For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
+For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/master/README.md)
 
 ## Using the Cobra Library
 
@@ -86,7 +86,7 @@ var (
 	userLicense string
 
 	rootCmd = &cobra.Command{
-		Use:   "cobra",
+		Use:   "cobra-cli",
 		Short: "A generator for Cobra based Applications",
 		Long: `Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files

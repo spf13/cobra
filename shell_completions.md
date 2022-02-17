@@ -16,10 +16,12 @@ If you do not wish to use the default `completion` command, you can choose to
 provide your own, which will take precedence over the default one. (This also provides
 backwards-compatibility with programs that already have their own `completion` command.)
 
-If you are using the generator, you can create a completion command by running
+If you are using the `cobra-cli` generator,
+which can be found at [spf13/cobra-cli](https://github.com/spf13/cobra-cli),
+you can create a completion command by running
 
 ```bash
-cobra add completion
+cobra-cli add completion
 ```
 and then modifying the generated `cmd/completion.go` file to look something like this
 (writing the shell script to stdout allows the most flexible use):
