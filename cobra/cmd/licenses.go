@@ -41,6 +41,7 @@ type License struct {
 func init() {
 	// Allows a user to not use a license.
 	Licenses["none"] = License{"None", []string{"none", "false"}, "", ""}
+	Licenses["empty"] = License{"Empty", []string{"empty", "blank"}, "", ""}
 
 	initApache2()
 	initMit()
@@ -55,7 +56,6 @@ func init() {
 // getLicense returns license specified by user in flag or in config.
 // If user didn't specify the license, it returns none
 //
-// TODO: Inspect project for existing license
 func getLicense() License {
 	// If explicitly flagged, use that.
 	if userLicense != "" {
@@ -73,8 +73,8 @@ func getLicense() License {
 		return findLicense(viper.GetString("license"))
 	}
 
-	// If user didn't set any license, use none by default
-	return Licenses["none"]
+	// If user didn't set any license, use empty by default
+	return Licenses["empty"]
 }
 
 func copyrightLine() string {

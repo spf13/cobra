@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"regexp"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -65,12 +67,58 @@ func (p *Project) Create() error {
 	}
 
 	// create license
-	return p.createLicenseFile()
+	if p.Legal.Name != "None" {
+		return p.createLicenseFile()
+	}
+	return nil
 }
 
 func (p *Project) createLicenseFile() error {
 	data := map[string]interface{}{
 		"copyright": copyrightLine(),
+	}
+	licensesExist := []string{}
+	err := filepath.Walk(p.AbsolutePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() && filepath.Ext(path) != ".txt" && filepath.Ext(path) != ".md" && filepath.Ext(path) != "" {
+			return nil
+		}
+		reg := regexp.MustCompile(`(?i).*license\.?.*`)
+		if reg.MatchString(info.Name()) {
+			licensesExist = append(licensesExist, info.Name())
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if len(licensesExist) > 0 {
+		fmt.Println("Licenses already exist in the project")
+		fmt.Println("Licenses found:")
+		for _, license := range licensesExist {
+			fmt.Printf("  %s\n", license)
+		}
+		fmt.Print("Would you like still to add a license? [Y/n] ")
+		var answer string
+		fmt.Scanln(&answer)
+		if !(answer == "y" || answer == "Y") {
+			return nil
+		}
+		licenseFound := false
+		for _, license := range licensesExist {
+			if license == "LICENSE" {
+				licenseFound = true
+			}
+		}
+		if licenseFound {
+			fmt.Print("LICENSE exists. Would you like to overwrite it? [Y/n] ")
+			fmt.Scanln(&answer)
+			if !(answer == "y" || answer == "Y") {
+				return nil
+			}
+		}
 	}
 	licenseFile, err := os.Create(fmt.Sprintf("%s/LICENSE", p.AbsolutePath))
 	if err != nil {

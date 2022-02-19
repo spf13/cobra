@@ -50,7 +50,7 @@ func init() {
 	cobra.CheckErr(viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author")))
 	cobra.CheckErr(viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper")))
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
-	viper.SetDefault("license", "none")
+	viper.SetDefault("license", "empty")
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
