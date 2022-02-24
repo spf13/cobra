@@ -326,8 +326,8 @@ In both of these cases:
 
 ## Positional and Custom Arguments
 
-Validation of positional arguments can be specified using the `Args` field
-of `Command`.
+Validation of positional arguments can be specified using the `Args` field of `Command`.
+If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 
 The following validators are built in:
 
