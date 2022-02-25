@@ -227,6 +227,9 @@ type Command struct {
 // Context returns underlying command context. If command wasn't
 // executed with ExecuteContext Context returns Background context.
 func (c *Command) Context() context.Context {
+	if c.ctx == nil {
+		c.ctx = context.Background()
+	}
 	return c.ctx
 }
 

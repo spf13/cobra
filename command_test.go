@@ -2058,3 +2058,10 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	}
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
+
+func TestContext(t *testing.T) {
+	root := &Command{}
+	if root.Context() == nil {
+		t.Error("expected root.Context() != nil")
+	}
+}
