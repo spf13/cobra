@@ -66,6 +66,16 @@ func MinimumNArgs(n int) PositionalArgs {
 	}
 }
 
+// MinimumNArgsCustomError returns an error if there is not at least N args.
+func MinimumNArgsCustomError(n int,custom string) PositionalArgs {
+   return func(cmd *Command, args []string) error {
+      if len(args) < n {
+         return fmt.Errorf("requires at least %d arg(s), only received %d,%s", n, len(args),custom)
+      }
+      return nil
+   }
+}
+
 // MaximumNArgs returns an error if there are more than N args.
 func MaximumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
