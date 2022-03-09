@@ -2,8 +2,8 @@
 "area/docs-generation": doc/**/*
 
 # changes to the core cobra command
-"area/cobra-command": 
-- any: ['./cobra.go', './cobra_test.go', './*command*.go'
+"area/cobra-command":
+- any: ['./cobra.go', './cobra_test.go', './*command*.go']
 
 # changes made to command flags/args
 "area/flags": ./args*.go
