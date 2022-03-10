@@ -1,6 +1,6 @@
 ![cobra logo](https://cloud.githubusercontent.com/assets/173412/10886352/ad566232-814f-11e5-9cd0-aa101788c117.png)
 
-Cobra is both a library for creating powerful modern CLI applications as well as a program to generate applications and command files.
+Cobra is a library for creating powerful modern CLI applications.
 
 Cobra is used in many Go projects such as [Kubernetes](http://kubernetes.io/),
 [Hugo](https://gohugo.io), and [Github CLI](https://github.com/cli/cli) to
@@ -16,15 +16,11 @@ name a few. [This list](./projects_using_cobra.md) contains a more extensive lis
 Cobra is a library providing a simple interface to create powerful modern CLI
 interfaces similar to git & go tools.
 
-Cobra is also an application that will generate your application scaffolding to rapidly
-develop a Cobra-based application.
-
 Cobra provides:
 * Easy subcommand-based CLIs: `app server`, `app fetch`, etc.
 * Fully POSIX-compliant flags (including short & long versions)
 * Nested subcommands
 * Global, local and cascading flags
-* Easy generation of applications & commands with `cobra init` & `cobra add cmdname`
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic help flag recognition of `-h`, `--help`, etc.
@@ -83,10 +79,11 @@ which maintains the same interface while adding POSIX compliance.
 
 # Installing
 Using Cobra is easy. First, use `go get` to install the latest version
-of the library. This command will install the `cobra` generator executable
-along with the library and its dependencies:
+of the library.     
 
-    go get -u github.com/spf13/cobra
+```
+go get -u github.com/spf13/cobra@latest
+```
 
 Next, include Cobra in your application:
 
@@ -95,10 +92,17 @@ import "github.com/spf13/cobra"
 ```
 
 # Usage
-Cobra provides its own program that will create your application and add any
-commands you want. It's the easiest way to incorporate Cobra into your application.
+`cobra-cli` is a command line program to generate cobra applications and command files.
+It will bootstrap your application scaffolding to rapidly
+develop a Cobra-based application. It is the easiest way to incorporate Cobra into your application.
 
-For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
+It can be installed by running:
+
+```
+go install github.com/spf13/cobra-cli@latest
+```
+
+For complete details on using the Cobra-CLI generator, please read [The Cobra Generator README](https://github.com/spf13/cobra-cli/blob/master/README.md)
 
 For complete details on using the Cobra library, please read the [The Cobra User Guide](user_guide.md).
 
