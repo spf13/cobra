@@ -312,7 +312,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	var directive ShellCompDirective
 
 	// Note that we want to perform flagname completion even if finalCmd.DisableFlagParsing==true;
-	// doing this allows for completion of persistant flag names even for commands that disable flag parsing.
+	// doing this allows for completion of persistent flag names even for commands that disable flag parsing.
 	//
 	// When doing completion of a flag name, as soon as an argument starts with
 	// a '-' we know it is a flag.  We cannot use isFlagArg() here as it requires

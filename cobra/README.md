@@ -21,7 +21,7 @@ It can also apply the license you specify to your application.
 With the introduction of Go modules, the Cobra generator has been simplified to
 take advantage of modules. The Cobra generator works from within a Go module. 
 
-#### Initalizing a module
+#### Initializing a module
 
 __If you already have a module, skip this step.__
 
@@ -39,7 +39,7 @@ cd myapp
 go mod init github.com/spf13/myapp
 ```
 
-#### Initalizing an Cobra CLI application
+#### Initializing an Cobra CLI application
 
 From within a Go module run `cobra init`. This will create a new barebones project
 for you to edit. 
