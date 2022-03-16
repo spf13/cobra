@@ -2061,7 +2061,7 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 
 func TestSetContext(t *testing.T) {
 	type key struct{}
-	val := "val"
+	val := "foobar"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
@@ -2076,7 +2076,7 @@ func TestSetContext(t *testing.T) {
 		},
 	}
 
-	ctx := context.WithValue(context.Background(), key{},  val)
+	ctx := context.WithValue(context.Background(), key{}, val)
 	root.SetContext(ctx)
 	err := root.Execute()
 	if err != nil {
@@ -2086,7 +2086,7 @@ func TestSetContext(t *testing.T) {
 
 func TestSetContextPreRun(t *testing.T) {
 	type key struct{}
-	val := "bar"
+	val := "barr"
 	root := &Command{
 		Use: "root",
 		PreRun: func(cmd *Command, args []string) {
@@ -2112,7 +2112,7 @@ func TestSetContextPreRun(t *testing.T) {
 
 func TestSetContextPreRunOverwrite(t *testing.T) {
 	type key struct{}
-	val := "bar"
+	val := "blah"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
@@ -2133,7 +2133,7 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 
 func TestSetContextPersistentPreRun(t *testing.T) {
 	type key struct{}
-	val := "bar"
+	val := "barbar"
 	root := &Command{
 		Use: "root",
 		PersistentPreRun: func(cmd *Command, args []string) {
