@@ -2060,11 +2060,12 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 }
 
 func TestSetContext(t *testing.T) {
-	key, val := "foo", "bar"
+	type key struct{}
+	val := "val"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
-			key := cmd.Context().Value(key)
+			key := cmd.Context().Value(key{})
 			got, ok := key.(string)
 			if !ok {
 				t.Error("key not found in context")
@@ -2074,7 +2075,8 @@ func TestSetContext(t *testing.T) {
 			}
 		},
 	}
-	ctx := context.WithValue(context.Background(), key, val)
+
+	ctx := context.WithValue(context.Background(), key{},  val)
 	root.SetContext(ctx)
 	err := root.Execute()
 	if err != nil {
@@ -2083,16 +2085,17 @@ func TestSetContext(t *testing.T) {
 }
 
 func TestSetContextPreRun(t *testing.T) {
-	key, val := "foo", "bar"
+	type key struct{}
+	val := "bar"
 	root := &Command{
 		Use: "root",
 		PreRun: func(cmd *Command, args []string) {
-			ctx := context.WithValue(cmd.Context(), key, val)
+			ctx := context.WithValue(cmd.Context(), key{}, val)
 			cmd.SetContext(ctx)
 		},
 		Run: func(cmd *Command, args []string) {
-			key := cmd.Context().Value(key)
-			got, ok := key.(string)
+			val := cmd.Context().Value(key{})
+			got, ok := val.(string)
 			if !ok {
 				t.Error("key not found in context")
 			}
@@ -2108,18 +2111,19 @@ func TestSetContextPreRun(t *testing.T) {
 }
 
 func TestSetContextPreRunOverwrite(t *testing.T) {
-	key, val := "foo", "bar"
+	type key struct{}
+	val := "bar"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
-			key := cmd.Context().Value(key)
+			key := cmd.Context().Value(key{})
 			_, ok := key.(string)
 			if ok {
 				t.Error("key found in context when not expected")
 			}
 		},
 	}
-	ctx := context.WithValue(context.Background(), key, val)
+	ctx := context.WithValue(context.Background(), key{}, val)
 	root.SetContext(ctx)
 	err := root.ExecuteContext(context.Background())
 	if err != nil {
@@ -2128,18 +2132,19 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 }
 
 func TestSetContextPersistentPreRun(t *testing.T) {
-	key, val := "foo", "bar"
+	type key struct{}
+	val := "bar"
 	root := &Command{
 		Use: "root",
 		PersistentPreRun: func(cmd *Command, args []string) {
-			ctx := context.WithValue(cmd.Context(), key, val)
+			ctx := context.WithValue(cmd.Context(), key{}, val)
 			cmd.SetContext(ctx)
 		},
 	}
 	child := &Command{
 		Use: "child",
 		Run: func(cmd *Command, args []string) {
-			key := cmd.Context().Value(key)
+			key := cmd.Context().Value(key{})
 			got, ok := key.(string)
 			if !ok {
 				t.Error("key not found in context")
