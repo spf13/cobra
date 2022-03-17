@@ -669,6 +669,10 @@ to enable it.  You can execute the following once:
 
 	echo "autoload -U compinit; compinit" >> ~/.zshrc
 
+To load completions in your current shell session:
+
+	source <(%[1]s completion zsh); compdef _%[1]s %[1]s
+
 To load completions for every new session, execute once:
 
 #### Linux:
