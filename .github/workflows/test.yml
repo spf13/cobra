@@ -36,6 +36,7 @@ jobs:
         - 15
         - 16
         - 17
+        - 18
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     steps:
@@ -55,7 +56,7 @@ jobs:
     - run: |
         export GOBIN=$HOME/go/bin
         case "${{ matrix.go }}" in
-          16|17) _version='@latest';;
+          16|17|18) _version='@latest';;
           *) _version='';;
         esac
         go install github.com/kyoh86/richgo"${_version}"
