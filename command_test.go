@@ -2058,3 +2058,94 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	}
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
+
+func TestFindSubCommand(t *testing.T) {
+	root := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	type testOpts struct {
+		a bool
+		b bool
+	}
+	var opt testOpts
+	child := &Command{
+		Use: "child",
+		RunE: func(cmd *Command, args []string) error {
+			fmt.Printf("Done! a=%v b=%v\n", opt.a, opt.b)
+			return nil
+		},
+	}
+	child.Flags().BoolVar(&opt.a, "a", false, "a")
+	child.Flags().BoolVar(&opt.b, "b", false, "b")
+	root.AddCommand(child)
+
+	argsToTest := [][]string{
+		{"child", "--a"},
+		{"child", "--b"},
+	}
+	for _, args := range argsToTest {
+		cmdFound, _, err := root.Find(args)
+		if err != nil {
+			t.Errorf("Unexpected error: %v with args: %v", err, args)
+		}
+		if cmdFound.Name() != "child" {
+			t.Errorf("expected found 'child' command with args: %v", args)
+		}
+	}
+
+	argsToTestNotFound := [][]string{
+		{"--a", "--b", "child"},
+		{"--a", "child"},
+		{"--b", "child"},
+	}
+	for _, args := range argsToTestNotFound {
+		cmdFound, _, err := root.Find(args)
+		if err != nil {
+			t.Errorf("Unexpected error: %v with args: %v", err, args)
+		}
+		if cmdFound.Name() != "root" {
+			t.Errorf("expected found 'root' command with args: %v", args)
+		}
+	}
+}
+
+func TestFParseUnknownFlagFromSubCommand(t *testing.T) {
+	root := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	type testOpts struct {
+		a bool
+		b bool
+	}
+	var opt testOpts
+	child := &Command{
+		Use: "child",
+		RunE: func(cmd *Command, args []string) error {
+			fmt.Printf("Done! a=%v b=%v\n", opt.a, opt.b)
+			return nil
+		},
+	}
+	child.Flags().BoolVar(&opt.a, "a", false, "a")
+	child.Flags().BoolVar(&opt.b, "b", false, "b")
+	root.AddCommand(child)
+
+	output, err := executeCommand(root, "--a", "child")
+	if err == nil {
+		t.Error("expected unknown flag error")
+	}
+	checkStringContains(t, output, "unknown flag: --a")
+
+	output, err = executeCommand(root, "--b", "child")
+	if err == nil {
+		t.Error("expected unknown flag error")
+	}
+	checkStringContains(t, output, "unknown flag: --b")
+
+	output, err = executeCommand(root, "--a", "--b", "child")
+	if err == nil {
+		t.Error("expected unknown flag error")
+	}
+	checkStringContains(t, output, "unknown flag: --a")
+}

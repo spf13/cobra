@@ -585,11 +585,15 @@ Loop:
 		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
-			if len(args) <= 1 {
+			if len(args) == 0 {
 				break Loop
-			} else {
+			}
+			// When the flag 's' doesn't contain "=" and without "no option default values", but
+			// following with a string starts with '-', consider 's' an unknown boolean flag
+			// and don't delete 'arg'.
+			// Otherwise, consider it as '--flag arg' or '-f arg' and delete its following arg.
+			if !strings.HasPrefix(args[0], "-") {
 				args = args[1:]
-				continue
 			}
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
