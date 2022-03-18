@@ -2664,3 +2664,30 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 }
+
+func TestFixedCompletions(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	choices := []string{"apple", "banana", "orange"}
+	childCmd := &Command{
+		Use:               "child",
+		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"apple",
+		"banana",
+		"orange",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
