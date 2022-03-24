@@ -32,7 +32,7 @@ func main() {
 Cobra-CLI is its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Cobra into your application.
 
-For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/master/README.md)
+For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
 
 ## Using the Cobra Library
 
