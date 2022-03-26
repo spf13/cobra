@@ -17,7 +17,7 @@ jobs:
         with:
           go-version: '1.17'
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: golangci/golangci-lint-action@v3.1.0
         with:
@@ -45,7 +45,7 @@ jobs:
       with:
         go-version: 1.${{ matrix.go }}.x
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: actions/cache@v3
       with:
@@ -85,7 +85,7 @@ jobs:
           unzip
           mingw-w64-x86_64-go
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: actions/cache@v3
       with:
