@@ -86,18 +86,6 @@ func ExactArgs(n int) PositionalArgs {
 	}
 }
 
-// ExactValidArgs returns an error if
-// there are not exactly N positional args OR
-// there are any positional args that are not in the `ValidArgs` field of `Command`
-func ExactValidArgs(n int) PositionalArgs {
-	return func(cmd *Command, args []string) error {
-		if err := ExactArgs(n)(cmd, args); err != nil {
-			return err
-		}
-		return OnlyValidArgs(cmd, args)
-	}
-}
-
 // RangeArgs returns an error if the number of args is not within the expected range.
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
@@ -118,4 +106,12 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 		}
 		return nil
 	}
+}
+
+// ExactValidArgs returns an error if there are not exactly N positional args OR
+// there are any positional args that are not in the `ValidArgs` field of `Command`
+//
+// Deprecated: use MatchAll(OnlyValidArgs, ExactArgs(n)) instead
+func ExactValidArgs(n int) PositionalArgs {
+	return MatchAll(OnlyValidArgs, ExactArgs(n))
 }

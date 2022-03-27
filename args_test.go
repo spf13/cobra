@@ -159,24 +159,6 @@ func TestExactArgsWithInvalidCount(t *testing.T) {
 	exactArgsWithInvalidCount(err, t)
 }
 
-func TestExactValidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(3), true)
-	output, err := executeCommand(c, "three", "one", "two")
-	expectSuccess(output, err, t)
-}
-
-func TestExactValidArgsWithInvalidCount(t *testing.T) {
-	c := getCommand(ExactValidArgs(2), false)
-	_, err := executeCommand(c, "three", "one", "two")
-	exactArgsWithInvalidCount(err, t)
-}
-
-func TestExactValidArgsWithInvalidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(3), true)
-	_, err := executeCommand(c, "three", "a", "two")
-	validWithInvalidArgs(err, t)
-}
-
 func TestRangeArgs(t *testing.T) {
 	c := getCommand(RangeArgs(2, 4), false)
 	output, err := executeCommand(c, "a", "b", "c")
@@ -291,6 +273,26 @@ func TestMatchAll(t *testing.T) {
 			}
 		})
 	}
+}
+
+// DEPRECATED
+
+func TestExactValidArgs(t *testing.T) {
+	c := getCommand(ExactValidArgs(3), true)
+	output, err := executeCommand(c, "three", "one", "two")
+	expectSuccess(output, err, t)
+}
+
+func TestExactValidArgsWithInvalidCount(t *testing.T) {
+	c := getCommand(ExactValidArgs(2), false)
+	_, err := executeCommand(c, "three", "one", "two")
+	exactArgsWithInvalidCount(err, t)
+}
+
+func TestExactValidArgsWithInvalidArgs(t *testing.T) {
+	c := getCommand(ExactValidArgs(3), true)
+	_, err := executeCommand(c, "three", "a", "two")
+	validWithInvalidArgs(err, t)
 }
 
 // This test make sure we keep backwards-compatibility with respect
