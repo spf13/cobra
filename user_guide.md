@@ -331,17 +331,34 @@ If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 
 The following validators are built in:
 
-- `NoArgs` - the command will report an error if there are any positional args.
-- `ArbitraryArgs` - the command will accept any args.
-- `OnlyValidArgs` - the command will report an error if there are any positional args that are not in the `ValidArgs` field of `Command`.
-- `MinimumNArgs(int)` - the command will report an error if there are not at least N positional args.
-- `MaximumNArgs(int)` - the command will report an error if there are more than N positional args.
-- `ExactArgs(int)` - the command will report an error if there are not exactly N positional args.
-- `ExactValidArgs(int)` - the command will report an error if there are not exactly N positional args OR if there are any positional args that are not in the `ValidArgs` field of `Command`
-- `RangeArgs(min, max)` - the command will report an error if the number of args is not between the minimum and maximum number of expected args.
-- `MatchAll(pargs ...PositionalArgs)` - enables combining existing checks with arbitrary other checks (e.g. you want to check the ExactArgs length along with other qualities).
+- Number of arguments:
+  - `NoArgs` - report an error if there are any positional args.
+  - `ArbitraryArgs` - accept any number of args.
+  - `MinimumNArgs(int)` - report an error if less than N positional args are provided.
+  - `MaximumNArgs(int)` - report an error if more than N positional args are provided.
+  - `ExactArgs(int)` - report an error if there are not exactly N positional args.
+  - `RangeArgs(min, max)` - report an error if the number of args is not between `min` and `max`.
+- Content of the arguments:
+  - `OnlyValidArgs` - report an error if there are any positional args that are not in the `ValidArgs` field of type
+  `[]string` defined in `Command`.
 
-An example of setting the custom validator:
+Moreover, `MatchAll(pargs ...PositionalArgs)` enables combining existing checks with arbitrary other checks.
+For instance, if you want to report an error if there are not exactly N positional args OR if there are any positional
+args that are not in the `ValidArgs` field of `Command`, you can call `MatchAll` on `ExactArgs` and `OnlyValidArgs`, as
+shown below:
+
+```go
+var cmd = &cobra.Command{
+  Short: "hello",
+  Args: MatchAll(OnlyValidArgs, ExactArgs(2)),
+  Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Hello, World!")
+  },
+}
+```
+
+It is possible to set any custom validator that satisfies `func(cmd *cobra.Command, args []string) error`.
+For example:
 
 ```go
 var cmd = &cobra.Command{
