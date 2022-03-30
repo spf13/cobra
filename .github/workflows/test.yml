@@ -62,7 +62,7 @@ jobs:
         go install github.com/kyoh86/richgo"${_version}"
         go install github.com/mitchellh/gox"${_version}"
 
-    - run: PATH=$HOME/go/bin/:$PATH make test
+    - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH make test
 
   test-win:
     name: MINGW64
@@ -98,4 +98,4 @@ jobs:
         go install github.com/kyoh86/richgo@latest
         go install github.com/mitchellh/gox@latest
 
-    - run: PATH=$HOME/go/bin:$PATH make test
+    - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin:$PATH make test
