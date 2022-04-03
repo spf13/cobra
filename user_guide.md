@@ -300,6 +300,30 @@ rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (re
 rootCmd.MarkPersistentFlagRequired("region")
 ```
 
+### Flag Groups
+
+If you have different flags that must be provided together (e.g. if they provide the `--username` flag they MUST provide the `--password` flag as well) then 
+Cobra can enforce that requirement:
+```go
+rootCmd.Flags().StringVarP(&u, "username", "u", "", "Username (required if password is set)")
+rootCmd.Flags().StringVarP(&pw, "password", "p", "", "Password (required if username is set)")
+rootCmd.MarkFlagsRequiredTogether("username", "password")
+``` 
+
+You can also prevent different flags from being provided together if they represent mutually 
+exclusive options such as specifying an output format as either `--json` or `--yaml` but never both:
+```go
+rootCmd.Flags().BoolVar(&u, "json", false, "Output in JSON")
+rootCmd.Flags().BoolVar(&pw, "yaml", false, "Output in YAML")
+rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
+```
+
+In both of these cases:
+  - both local and persistent flags can be used
+    - **NOTE:** the group is only enforced on commands where every flag is defined
+  - a flag may appear in multiple groups
+  - a group may contain any number of flags
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field
