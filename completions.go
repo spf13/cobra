@@ -325,6 +325,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	var completions []string
 	var directive ShellCompDirective
 
+	// Enforce flag groups before doing flag completions
+	finalCmd.enforceFlagGroupsForCompletion()
+
 	// Note that we want to perform flagname completion even if finalCmd.DisableFlagParsing==true;
 	// doing this allows for completion of persistent flag names even for commands that disable flag parsing.
 	//
