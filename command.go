@@ -34,6 +34,15 @@ type FParseErrWhitelist flag.ParseErrorsWhitelist
 // FErrorHandling defines how to handle flag parsing errors
 type FErrorHandling flag.ErrorHandling
 
+const (
+	// ContinueOnError will return an err from Parse() if an error is found
+	ContinueOnError FErrorHandling = iota
+	// ExitOnError will call os.Exit(2) if an error is found when parsing
+	ExitOnError
+	// PanicOnError will panic() if an error is found when parsing flags
+	PanicOnError
+)
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
