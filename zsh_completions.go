@@ -171,7 +171,7 @@ _%[1]s()
             # We first need to escape any : as part of the completion itself.
             comp=${comp//:/\\:}
 
-            local tab=$(printf '\t')
+            local tab="$(printf '\t')"
             comp=${comp//$tab/:}
 
             __%[1]s_debug "Adding completion: ${comp}"
