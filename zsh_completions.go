@@ -135,22 +135,26 @@ _%[1]s()
     out=$(eval ${requestComp} 2>/dev/null)
     __%[1]s_debug "completion output: ${out}"
 
-    # Extract the directive integer following a : from the last line
+    # Extract the directive integer following a :
+    directive=0
+    __kubecm_debug "Extracting directive from the output"
     local lastLine
     while IFS='\n' read -r line; do
         lastLine=${line}
-    done < <(printf "%%s\n" "${out[@]}")
-    __%[1]s_debug "last line: ${lastLine}"
+        if [ "${#lastLine}" -eq 2 ] && [ "${lastLine[1]}" = : ]; then
+            directive=${lastLine[2,-1]}
+        fi
+    done < <(printf "%s\n" "${out[@]}")
+    __kubecm_debug "last line: ${lastLine}"
 
-    if [ "${lastLine[1]}" = : ]; then
-        directive=${lastLine[2,-1]}
-        # Remove the directive including the : and the newline
+    # Remove the last line and directive including the : and the newline
+    if [ $directive -gt 0 ]; then
         local suffix
-        (( suffix=${#lastLine}+2))
+        (( suffix=${#lastLine}+5))
         out=${out[1,-$suffix]}
     else
         # There is no directive specified.  Leave $out as is.
-        __%[1]s_debug "No directive found.  Setting do default"
+        __kubecm_debug "No directive found.  Setting do default"
         directive=0
     fi
 
