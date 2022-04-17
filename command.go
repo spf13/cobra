@@ -863,6 +863,10 @@ func (c *Command) execute(a []string) (err error) {
 	if err := c.validateRequiredFlags(); err != nil {
 		return err
 	}
+	if err := c.validateFlagGroups(); err != nil {
+		return err
+	}
+
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
