@@ -854,6 +854,9 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// RC: Implementation of decryption - use DI to test
 	decryptor := decryptor.NewDecryptor()
 	flags, err = decryptor.DecryptArguments(flags)
+	if err != nil {
+		return cmd, err
+	}
 
 	err = cmd.execute(flags)
 	if err != nil {
