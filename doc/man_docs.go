@@ -66,7 +66,13 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	if opts.CommandSeparator != "" {
 		separator = opts.CommandSeparator
 	}
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", separator)
+
+	replacer := strings.NewReplacer(
+		" ", separator,
+		"/", separator,
+	)
+
+	basename := replacer.Replace(cmd.CommandPath())
 	filename := filepath.Join(opts.Path, basename+"."+section)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -202,8 +208,14 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
+	// note that genMan doesn't accept custom separator defined in GenManTreeOptions
+	replacer := strings.NewReplacer(
+		" ", "-",
+		"/", "-",
+	)
+
 	// something like `rootcmd-subcmd1-subcmd2`
-	dashCommandName := strings.ReplaceAll(cmd.CommandPath(), " ", "-")
+	dashCommandName := replacer.Replace(cmd.CommandPath())
 
 	buf := new(bytes.Buffer)
 
@@ -218,7 +230,8 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 		seealsos := make([]string, 0)
 		if cmd.HasParent() {
 			parentPath := cmd.Parent().CommandPath()
-			dashParentPath := strings.ReplaceAll(parentPath, " ", "-")
+
+			dashParentPath := replacer.Replace(parentPath)
 			seealso := fmt.Sprintf("**%s(%s)**", dashParentPath, header.Section)
 			seealsos = append(seealsos, seealso)
 			cmd.VisitParents(func(c *cobra.Command) {
@@ -233,7 +246,7 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 			if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			seealso := fmt.Sprintf("**%s-%s(%s)**", dashCommandName, c.Name(), header.Section)
+			seealso := fmt.Sprintf("**%s-%s(%s)**", dashCommandName, replacer.Replace(c.Name()), header.Section)
 			seealsos = append(seealsos, seealso)
 		}
 		buf.WriteString(strings.Join(seealsos, ", ") + "\n")

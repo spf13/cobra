@@ -136,6 +136,29 @@ func TestGenManSeeAlso(t *testing.T) {
 	}
 }
 
+func TestGenManSeeAlsoSlashCommands(t *testing.T) {
+	rootCmd := &cobra.Command{Use: "root", Run: emptyRun}
+	childCmd := &cobra.Command{Use: "run/first", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	buf := new(bytes.Buffer)
+	header := &GenManHeader{}
+	if err := GenMan(rootCmd, header, buf); err != nil {
+		t.Fatal(err)
+	}
+	scanner := bufio.NewScanner(buf)
+
+	if err := assertLineFound(scanner, ".SH SEE ALSO"); err != nil {
+		t.Fatalf("Couldn't find SEE ALSO section header: %v", err)
+	}
+	if err := assertNextLineEquals(scanner, ".PP"); err != nil {
+		t.Fatalf("First line after SEE ALSO wasn't break-indent: %v", err)
+	}
+	if err := assertNextLineEquals(scanner, `\fBroot-run-first(1)\fP`); err != nil {
+		t.Fatalf("Second line after SEE ALSO wasn't correct: %v", err)
+	}
+}
+
 func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
 	c := &cobra.Command{}
 	c.Flags().StringP("foo", "f", "default", "Foo flag")
