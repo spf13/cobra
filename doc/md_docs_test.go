@@ -95,6 +95,23 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
+func TestGenMdTreeSlashCommands(t *testing.T) {
+	c := &cobra.Command{Use: "run/first [OPTIONS] arg1 arg2"}
+	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree-slash-commands")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenMarkdownTree(c, tmpdir); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "run_first.md")); err != nil {
+		t.Fatalf("Expected file 'run_first.md' to exist")
+	}
+}
+
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
