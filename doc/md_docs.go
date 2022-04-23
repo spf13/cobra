@@ -20,19 +20,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
-
-func cleanCommandName(name string) string {
-	r := strings.NewReplacer(
-		" ", "_",
-		"/", "_",
-	)
-	return r.Replace(name)
-}
 
 func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 	flags := cmd.NonInheritedFlags()
