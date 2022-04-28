@@ -154,8 +154,7 @@ __%[1]s_handle_completion_types() {
         # If the user requested inserting one completion at a time, or all
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
-        local tab comp
-        tab=$(printf '\t')
+        local tab=$'\t' comp
         while IFS='' read -r comp; do
             # Strip any description
             comp=${comp%%%%$tab*}
@@ -175,8 +174,7 @@ __%[1]s_handle_completion_types() {
 }
 
 __%[1]s_handle_standard_completion_case() {
-    local tab comp
-    tab=$(printf '\t')
+    local tab=$'\t' comp
 
     local longest=0
     # Look for the longest completion so that we can format things nicely
@@ -231,8 +229,7 @@ __%[1]s_handle_special_char()
 
 __%[1]s_format_comp_descriptions()
 {
-    local tab
-    tab=$(printf '\t')
+    local tab=$'\t'
     local comp="$1"
     local longest=$2
 
