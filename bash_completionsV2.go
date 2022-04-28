@@ -78,7 +78,7 @@ __%[1]s_get_completion_results() {
         directive=0
     fi
     __%[1]s_debug "The completion directive is: ${directive}"
-    __%[1]s_debug "The completions are: ${out[*]}"
+    __%[1]s_debug "The completions are: ${out}"
 }
 
 __%[1]s_process_completion_results() {
@@ -117,7 +117,7 @@ __%[1]s_process_completion_results() {
 
         # Do not use quotes around the $out variable or else newline
         # characters will be kept.
-        for filter in ${out[*]}; do
+        for filter in ${out}; do
             fullFilter+="$filter|"
         done
 
@@ -129,7 +129,7 @@ __%[1]s_process_completion_results() {
 
         # Use printf to strip any trailing newline
         local subdir
-        subdir=$(printf "%%s" "${out[0]}")
+        subdir=$(printf "%%s" "${out}")
         if [ -n "$subdir" ]; then
             __%[1]s_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
@@ -163,7 +163,7 @@ __%[1]s_handle_completion_types() {
             if [ -n "$comp" ]; then
                 COMPREPLY+=("$comp")
             fi
-        done < <(printf "%%s\n" "${out[@]}")
+        done < <(printf "%%s\n" "${out}")
         ;;
 
     *)
@@ -186,7 +186,7 @@ __%[1]s_handle_standard_completion_case() {
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%%s\n" "${out[@]}")
+    done < <(printf "%%s\n" "${out}")
 
     local completions=()
     while IFS='' read -r comp; do
@@ -198,7 +198,7 @@ __%[1]s_handle_standard_completion_case() {
         comp="$(__%[1]s_format_comp_descriptions "$comp" "$longest")"
         __%[1]s_debug "Final comp: $comp"
         completions+=("$comp")
-    done < <(printf "%%s\n" "${out[@]}")
+    done < <(printf "%%s\n" "${out}")
 
     while IFS='' read -r comp; do
         COMPREPLY+=("$comp")
