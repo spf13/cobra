@@ -99,7 +99,7 @@ __%[1]s_handle_go_custom_completion()
         directive=0
     fi
     __%[1]s_debug "${FUNCNAME[0]}: the completion directive is: ${directive}"
-    __%[1]s_debug "${FUNCNAME[0]}: the completions are: ${out[*]}"
+    __%[1]s_debug "${FUNCNAME[0]}: the completions are: ${out}"
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
         # Error code.  No completion.
@@ -125,7 +125,7 @@ __%[1]s_handle_go_custom_completion()
         local fullFilter filter filteringCmd
         # Do not use quotes around the $out variable or else newline
         # characters will be kept.
-        for filter in ${out[*]}; do
+        for filter in ${out}; do
             fullFilter+="$filter|"
         done
 
@@ -136,7 +136,7 @@ __%[1]s_handle_go_custom_completion()
         # File completion for directories only
         local subdir
         # Use printf to strip any trailing newline
-        subdir=$(printf "%%s" "${out[0]}")
+        subdir=$(printf "%%s" "${out}")
         if [ -n "$subdir" ]; then
             __%[1]s_debug "Listing directories in $subdir"
             __%[1]s_handle_subdirs_in_dir_flag "$subdir"
@@ -147,7 +147,7 @@ __%[1]s_handle_go_custom_completion()
     else
         while IFS='' read -r comp; do
             COMPREPLY+=("$comp")
-        done < <(compgen -W "${out[*]}" -- "$cur")
+        done < <(compgen -W "${out}" -- "$cur")
     fi
 }
 
