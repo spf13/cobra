@@ -1162,18 +1162,20 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// update max lengths
-		usageLen := len(x.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(x.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(x.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
+		if !cmds[i].Hidden {
+			// update max lengths
+			usageLen := len(x.Use)
+			if usageLen > c.commandsMaxUseLen {
+				c.commandsMaxUseLen = usageLen
+			}
+			commandPathLen := len(x.CommandPath())
+			if commandPathLen > c.commandsMaxCommandPathLen {
+				c.commandsMaxCommandPathLen = commandPathLen
+			}
+			nameLen := len(x.Name())
+			if nameLen > c.commandsMaxNameLen {
+				c.commandsMaxNameLen = nameLen
+			}
 		}
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
@@ -1203,17 +1205,19 @@ main:
 	c.commandsMaxCommandPathLen = 0
 	c.commandsMaxNameLen = 0
 	for _, command := range c.commands {
-		usageLen := len(command.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(command.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(command.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
+		if !command.Hidden {
+			usageLen := len(command.Use)
+			if usageLen > c.commandsMaxUseLen {
+				c.commandsMaxUseLen = usageLen
+			}
+			commandPathLen := len(command.CommandPath())
+			if commandPathLen > c.commandsMaxCommandPathLen {
+				c.commandsMaxCommandPathLen = commandPathLen
+			}
+			nameLen := len(command.Name())
+			if nameLen > c.commandsMaxNameLen {
+				c.commandsMaxNameLen = nameLen
+			}
 		}
 	}
 }

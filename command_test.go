@@ -2161,3 +2161,23 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestCommandsLengthWithoutHiddenCommands(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd.Flags().String("foo", "", "foo things")
+	// add a normal command
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().String("str", "", "")
+	rootCmd.AddCommand(childCmd)
+	//add a hidden command
+	child2Cmd := &Command{Use: "reallyLongCommand"}
+	child2Cmd.Flags().String("str", "", "")
+	child2Cmd.Hidden = true
+	rootCmd.AddCommand(child2Cmd)
+	//hidden commands should not be taken into account for usage length
+	expectedmaxLen := 5
+	fmt.Println(rootCmd.commandsMaxUseLen)
+	if rootCmd.commandsMaxUseLen != expectedmaxLen {
+		t.Errorf("Expected value: \n %v\nGot:\n %v\n", expectedmaxLen, rootCmd.commandsMaxUseLen)
+	}
+}
