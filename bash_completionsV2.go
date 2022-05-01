@@ -181,7 +181,7 @@ __%[1]s_handle_standard_completion_case() {
     # Look for the longest completion so that we can format things nicely
     while IFS='' read -r compline; do
         # Strip any description before checking the length
-        comp=${compline%%$tab*}
+        comp=${compline%%%%$tab*}
         # Only consider the completions that match
         comp=$(compgen -W "$comp" -- "$cur")
         [[ -z $comp ]] && continue
@@ -194,11 +194,11 @@ __%[1]s_handle_standard_completion_case() {
     # If there is a single completion left, remove the description text
     if [ ${#COMPREPLY[*]} -eq 1 ]; then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
-        comp="${COMPREPLY[0]%%$tab*}"
+        comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
         COMPREPLY[0]=$comp
     else # Format the descriptions
-        __sshi_format_comp_descriptions $longest
+        __%[1]s_format_comp_descriptions $longest
     fi
 }
 
@@ -226,7 +226,7 @@ __%[1]s_format_comp_descriptions()
         comp=${COMPREPLY[ci]}
         # Properly format the description string which follows a tab character if there is one
         if [[ "$comp" == *$tab* ]]; then
-            __sshi_debug "Original comp: $comp"
+            __%[1]s_debug "Original comp: $comp"
             desc=${comp#*$tab}
             comp=${comp%%%%$tab*}
 
@@ -256,7 +256,7 @@ __%[1]s_format_comp_descriptions()
                 comp+="  ($desc)"
             fi
             COMPREPLY[ci]=$comp
-            __sshi_debug "Final comp: $comp"
+            __%[1]s_debug "Final comp: $comp"
         fi
     done
 }
