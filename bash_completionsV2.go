@@ -177,40 +177,28 @@ __%[1]s_handle_standard_completion_case() {
     local tab=$'\t' comp
 
     local longest=0
+    local compline
     # Look for the longest completion so that we can format things nicely
-    while IFS='' read -r comp; do
+    while IFS='' read -r compline; do
         # Strip any description before checking the length
-        comp=${comp%%%%$tab*}
+        comp=${compline%%%%$tab*}
         # Only consider the completions that match
         comp=$(compgen -W "$comp" -- "$cur")
+        [[ -z $comp ]] && continue
+        COMPREPLY+=("$compline")
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
     done < <(printf "%%s\n" "${out}")
 
-    local completions=()
-    while IFS='' read -r comp; do
-        if [ -z "$comp" ]; then
-            continue
-        fi
-
-        __%[1]s_debug "Original comp: $comp"
-        comp="$(__%[1]s_format_comp_descriptions "$comp" "$longest")"
-        __%[1]s_debug "Final comp: $comp"
-        completions+=("$comp")
-    done < <(printf "%%s\n" "${out}")
-
-    while IFS='' read -r comp; do
-        COMPREPLY+=("$comp")
-    done < <(compgen -W "${completions[*]}" -- "$cur")
-
     # If there is a single completion left, remove the description text
     if [ ${#COMPREPLY[*]} -eq 1 ]; then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
-        comp="${COMPREPLY[0]%%%% *}"
+        comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY=()
-        COMPREPLY+=("$comp")
+        COMPREPLY[0]=$comp
+    else # Format the descriptions
+        __%[1]s_format_comp_descriptions $longest
     fi
 }
 
@@ -230,43 +218,47 @@ __%[1]s_handle_special_char()
 __%[1]s_format_comp_descriptions()
 {
     local tab=$'\t'
-    local comp="$1"
-    local longest=$2
+    local comp desc maxdesclength
+    local longest=$1
 
-    # Properly format the description string which follows a tab character if there is one
-    if [[ "$comp" == *$tab* ]]; then
-        desc=${comp#*$tab}
-        comp=${comp%%%%$tab*}
+    local i ci
+    for ci in ${!COMPREPLY[*]}; do
+        comp=${COMPREPLY[ci]}
+        # Properly format the description string which follows a tab character if there is one
+        if [[ "$comp" == *$tab* ]]; then
+            __%[1]s_debug "Original comp: $comp"
+            desc=${comp#*$tab}
+            comp=${comp%%%%$tab*}
 
-        # $COLUMNS stores the current shell width.
-        # Remove an extra 4 because we add 2 spaces and 2 parentheses.
-        maxdesclength=$(( COLUMNS - longest - 4 ))
+            # $COLUMNS stores the current shell width.
+            # Remove an extra 4 because we add 2 spaces and 2 parentheses.
+            maxdesclength=$(( COLUMNS - longest - 4 ))
 
-        # Make sure we can fit a description of at least 8 characters
-        # if we are to align the descriptions.
-        if [[ $maxdesclength -gt 8 ]]; then
-            # Add the proper number of spaces to align the descriptions
-            for ((i = ${#comp} ; i < longest ; i++)); do
-                comp+=" "
-            done
-        else
-            # Don't pad the descriptions so we can fit more text after the completion
-            maxdesclength=$(( COLUMNS - ${#comp} - 4 ))
-        fi
-
-        # If there is enough space for any description text,
-        # truncate the descriptions that are too long for the shell width
-        if [ $maxdesclength -gt 0 ]; then
-            if [ ${#desc} -gt $maxdesclength ]; then
-                desc=${desc:0:$(( maxdesclength - 1 ))}
-                desc+="…"
+            # Make sure we can fit a description of at least 8 characters
+            # if we are to align the descriptions.
+            if [[ $maxdesclength -gt 8 ]]; then
+                # Add the proper number of spaces to align the descriptions
+                for ((i = ${#comp} ; i < longest ; i++)); do
+                    comp+=" "
+                done
+            else
+                # Don't pad the descriptions so we can fit more text after the completion
+                maxdesclength=$(( COLUMNS - ${#comp} - 4 ))
             fi
-            comp+="  ($desc)"
-        fi
-    fi
 
-    # Must use printf to escape all special characters
-    printf "%%q" "${comp}"
+            # If there is enough space for any description text,
+            # truncate the descriptions that are too long for the shell width
+            if [ $maxdesclength -gt 0 ]; then
+                if [ ${#desc} -gt $maxdesclength ]; then
+                    desc=${desc:0:$(( maxdesclength - 1 ))}
+                    desc+="…"
+                fi
+                comp+="  ($desc)"
+            fi
+            COMPREPLY[ci]=$comp
+            __%[1]s_debug "Final comp: $comp"
+        fi
+    done
 }
 
 __start_%[1]s()
