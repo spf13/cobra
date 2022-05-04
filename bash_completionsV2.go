@@ -156,11 +156,11 @@ __%[1]s_handle_completion_types() {
         # https://github.com/spf13/cobra/issues/1508
         local tab=$'\t' comp
         while IFS='' read -r comp; do
+            [[ -z $comp ]] && continue
             # Strip any description
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
-            comp=$(compgen -W "$comp" -- "$cur")
-            if [ -n "$comp" ]; then
+            if [[ $comp == "$cur"* ]]; then
                 COMPREPLY+=("$comp")
             fi
         done < <(printf "%%s\n" "${out}")
