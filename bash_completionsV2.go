@@ -188,6 +188,7 @@ __%[1]s_handle_standard_completion_case() {
     local compline
     # Look for the longest completion so that we can format things nicely
     while IFS='' read -r compline; do
+        [[ -z $compline ]] && continue
         # Strip any description before checking the length
         comp=${compline%%%%$tab*}
         # Only consider the completions that match
