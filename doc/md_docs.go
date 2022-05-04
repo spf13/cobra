@@ -54,7 +54,6 @@ func GenMarkdown(cmd *cobra.Command, w io.Writer) error {
 func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
-	cmd.InitDefaultCompletionCmd()
 
 	buf := new(bytes.Buffer)
 	name := cmd.CommandPath()
