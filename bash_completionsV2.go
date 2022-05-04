@@ -191,8 +191,7 @@ __%[1]s_handle_standard_completion_case() {
         # Strip any description before checking the length
         comp=${compline%%%%$tab*}
         # Only consider the completions that match
-        comp=$(compgen -W "$comp" -- "$cur")
-        [[ -z $comp ]] && continue
+        [[ $comp == "$cur"* ]] || continue
         COMPREPLY+=("$compline")
         if ((${#comp}>longest)); then
             longest=${#comp}
