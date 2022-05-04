@@ -176,6 +176,14 @@ __%[1]s_handle_completion_types() {
 __%[1]s_handle_standard_completion_case() {
     local tab=$'\t' comp
 
+    # Short circuit to optimize if we don't have descriptions
+    if [[ $out != *$tab* ]]; then
+        while IFS='' read -r comp; do
+            COMPREPLY+=("$comp")
+        done < <(IFS=$'\n' compgen -W "$out" -- "$cur")
+        return 0
+    fi
+
     local longest=0
     local compline
     # Look for the longest completion so that we can format things nicely
