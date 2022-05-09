@@ -830,6 +830,10 @@ func (c *Command) execute(a []string) (err error) {
 		return flag.ErrHelp
 	}
 
+	if err := c.preRunE(); err != nil {
+		return err
+	}
+
 	c.preRun()
 
 	argWoFlags := c.Flags().Args()
@@ -900,6 +904,17 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+func (c *Command) preRunE() error {
+	for _, x := range initializersE {
+		err := x()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.

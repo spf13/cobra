@@ -40,6 +40,8 @@ var templateFuncs = template.FuncMap{
 
 var initializers []func()
 
+var initializersE []func() error
+
 // EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
@@ -82,6 +84,12 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 // Execute method is called.
 func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
+}
+
+// OnInitializeE sets the passed functions to be run when each command's
+// Execute method is called.
+func OnInitializeE(y ...func() error) {
+	initializersE = append(initializersE, y...)
 }
 
 // FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.

@@ -1,6 +1,7 @@
 package cobra
 
 import (
+	"errors"
 	"testing"
 	"text/template"
 )
@@ -24,5 +25,32 @@ func TestAddTemplateFunctions(t *testing.T) {
 	const expected = "Hello, world."
 	if got := c.UsageString(); got != expected {
 		t.Errorf("Expected UsageString: %v\nGot: %v", expected, got)
+	}
+}
+
+func Test_OnInitialize(t *testing.T) {
+	call := false
+	c := &Command{Use: "c", Run: emptyRun}
+	OnInitialize(func() {
+		call = true
+	})
+	_, err := executeCommand(c)
+	if err != nil {
+		t.Error(err)
+	}
+	if !call {
+		t.Error("expected OnInitialize func to be called")
+	}
+}
+
+func Test_OnInitializeE(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	e := errors.New("test error")
+	OnInitializeE(func() error {
+		return e
+	})
+	_, err := executeCommand(c)
+	if err != e {
+		t.Error("expected error: %w", e)
 	}
 }
