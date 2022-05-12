@@ -830,11 +830,13 @@ func (c *Command) execute(a []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	if err := c.preRunE(); err != nil {
-		return err
+	if len(initializersE) > 0 {
+		if err := c.preRunE(); err != nil {
+			return err
+		}
+	} else {
+		c.preRun()
 	}
-
-	c.preRun()
 
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
