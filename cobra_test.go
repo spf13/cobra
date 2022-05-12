@@ -35,6 +35,7 @@ func Test_OnInitialize(t *testing.T) {
 		call = true
 	})
 	_, err := executeCommand(c)
+	initializers = nil
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,6 +51,7 @@ func Test_OnInitializeE(t *testing.T) {
 		return e
 	})
 	_, err := executeCommand(c)
+	initializersE = nil
 	if err != e {
 		t.Error("expected error: %w", e)
 	}
