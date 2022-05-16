@@ -87,7 +87,9 @@ func OnInitialize(y ...func()) {
 }
 
 // OnInitializeE sets the passed functions to be run when each command's
-// Execute method is called.
+// Execute method is called. It will early stop command's execution
+// before any hooks are called if an error is returned by at least one
+// of the initializers.
 func OnInitializeE(y ...func() error) {
 	initializersE = append(initializersE, y...)
 }
