@@ -132,9 +132,8 @@ __%[1]s_process_completion_results() {
     elif (((directive & shellCompDirectiveFilterDirs) != 0)); then
         # File completion for directories only
 
-        # Use printf to strip any trailing newline
         local subdir
-        subdir=$(printf "%%s" "${completions[0]}")
+        subdir=${completions[0]}
         if [[ -n $subdir ]]; then
             __%[1]s_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
