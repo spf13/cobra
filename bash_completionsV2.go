@@ -258,7 +258,7 @@ __%[1]s_handle_special_char()
         local word=${comp%%"${comp##*${char}}"}
         local idx=${#COMPREPLY[*]}
         while ((--idx >= 0)); do
-            COMPREPLY[$idx]=${COMPREPLY[$idx]#"$word"}
+            COMPREPLY[idx]=${COMPREPLY[idx]#"$word"}
         done
     fi
 }
