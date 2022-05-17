@@ -1,5 +1,6 @@
 # Documentation generation
 
+- [Asciidoc docs](./asciidoc_docs.md)
 - [Man page docs](./man_docs.md)
 - [Markdown docs](./md_docs.md)
 - [Rest docs](./rest_docs.md)
