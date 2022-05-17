@@ -88,12 +88,12 @@ __%[1]s_process_completion_results() {
     local shellCompDirectiveFilterFileExt=%[6]d
     local shellCompDirectiveFilterDirs=%[7]d
 
-    if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveError) != 0)); then
         # Error code.  No completion.
         __%[1]s_debug "Received error from custom completion go code"
         return
     else
-        if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
+        if (((directive & shellCompDirectiveNoSpace) != 0)); then
             if [[ $(type -t compopt) = "builtin" ]]; then
                 __%[1]s_debug "Activating no space"
                 compopt -o nospace
@@ -101,7 +101,7 @@ __%[1]s_process_completion_results() {
                 __%[1]s_debug "No space directive not supported in this version of bash"
             fi
         fi
-        if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
+        if (((directive & shellCompDirectiveNoFileComp) != 0)); then
             if [[ $(type -t compopt) = "builtin" ]]; then
                 __%[1]s_debug "Activating no file completion"
                 compopt +o default
@@ -116,7 +116,7 @@ __%[1]s_process_completion_results() {
     local activeHelp=()
     __%[1]s_extract_activeHelp
 
-    if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveFilterFileExt) != 0)); then
         # File extension filtering
         local fullFilter filter filteringCmd
 
@@ -129,7 +129,7 @@ __%[1]s_process_completion_results() {
         filteringCmd="_filedir $fullFilter"
         __%[1]s_debug "File filtering command: $filteringCmd"
         $filteringCmd
-    elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
+    elif (((directive & shellCompDirectiveFilterDirs) != 0)); then
         # File completion for directories only
 
         # Use printf to strip any trailing newline
@@ -150,7 +150,7 @@ __%[1]s_process_completion_results() {
     __%[1]s_handle_special_char "$cur" =
 
     # Print the activeHelp statements before we finish
-    if [ ${#activeHelp[*]} -ne 0 ]; then
+    if ((${#activeHelp[*]} != 0)); then
         printf "\n";
         printf "%%s\n" "${activeHelp[@]}"
         printf "\n"
@@ -240,7 +240,7 @@ __%[1]s_handle_standard_completion_case() {
     done < <(printf "%%s\n" "${completions[@]}")
 
     # If there is a single completion left, remove the description text
-    if [ ${#COMPREPLY[*]} -eq 1 ]; then
+    if ((${#COMPREPLY[*]} == 1)); then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
@@ -257,7 +257,7 @@ __%[1]s_handle_special_char()
     if [[ "$comp" == *${char}* && "$COMP_WORDBREAKS" == *${char}* ]]; then
         local word=${comp%%"${comp##*${char}}"}
         local idx=${#COMPREPLY[*]}
-        while [[ $((--idx)) -ge 0 ]]; do
+        while ((--idx >= 0)); do
             COMPREPLY[$idx]=${COMPREPLY[$idx]#"$word"}
         done
     fi
@@ -284,7 +284,7 @@ __%[1]s_format_comp_descriptions()
 
             # Make sure we can fit a description of at least 8 characters
             # if we are to align the descriptions.
-            if [[ $maxdesclength -gt 8 ]]; then
+            if ((maxdesclength > 8)); then
                 # Add the proper number of spaces to align the descriptions
                 for ((i = ${#comp} ; i < longest ; i++)); do
                     comp+=" "
@@ -296,8 +296,8 @@ __%[1]s_format_comp_descriptions()
 
             # If there is enough space for any description text,
             # truncate the descriptions that are too long for the shell width
-            if [ $maxdesclength -gt 0 ]; then
-                if [ ${#desc} -gt $maxdesclength ]; then
+            if ((maxdesclength > 0)); then
+                if ((${#desc} > maxdesclength)); then
                     desc=${desc:0:$(( maxdesclength - 1 ))}
                     desc+="…"
                 fi
