@@ -51,7 +51,7 @@ __%[1]s_get_completion_results() {
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __%[1]s_debug "lastParam ${lastParam}, lastChar ${lastChar}"
 
-    if [ -z "${cur}" ] && [ "${lastChar}" != "=" ]; then
+    if [[ -z ${cur} && ${lastChar} != = ]]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go method.
         __%[1]s_debug "Adding extra empty parameter"
@@ -61,7 +61,7 @@ __%[1]s_get_completion_results() {
     # When completing a flag with an = (e.g., %[1]s -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
     # the flag part from $cur
-    if [[ "${cur}" == -*=* ]]; then
+    if [[ ${cur} == -*=* ]]; then
         cur="${cur#*=}"
     fi
 
@@ -73,7 +73,7 @@ __%[1]s_get_completion_results() {
     directive=${out##*:}
     # Remove the directive
     out=${out%%:*}
-    if [ "${directive}" = "${out}" ]; then
+    if [[ ${directive} == "${out}" ]]; then
         # There is not directive specified
         directive=0
     fi
@@ -94,7 +94,7 @@ __%[1]s_process_completion_results() {
         return
     else
         if (((directive & shellCompDirectiveNoSpace) != 0)); then
-            if [[ $(type -t compopt) = "builtin" ]]; then
+            if [[ $(type -t compopt) == builtin ]]; then
                 __%[1]s_debug "Activating no space"
                 compopt -o nospace
             else
@@ -102,7 +102,7 @@ __%[1]s_process_completion_results() {
             fi
         fi
         if (((directive & shellCompDirectiveNoFileComp) != 0)); then
-            if [[ $(type -t compopt) = "builtin" ]]; then
+            if [[ $(type -t compopt) == builtin ]]; then
                 __%[1]s_debug "Activating no file completion"
                 compopt +o default
             else
@@ -135,7 +135,7 @@ __%[1]s_process_completion_results() {
         # Use printf to strip any trailing newline
         local subdir
         subdir=$(printf "%%s" "${completions[0]}")
-        if [ -n "$subdir" ]; then
+        if [[ -n $subdir ]]; then
             __%[1]s_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
         else
@@ -174,10 +174,10 @@ __%[1]s_extract_activeHelp() {
     local endIndex=${#activeHelpMarker}
 
     while IFS='' read -r comp; do
-        if [ "${comp:0:endIndex}" = "$activeHelpMarker" ]; then
+        if [[ ${comp:0:endIndex} == $activeHelpMarker ]]; then
             comp=${comp:endIndex}
             __%[1]s_debug "ActiveHelp found: $comp"
-            if [ -n "$comp" ]; then
+            if [[ -n $comp ]]; then
                 activeHelp+=("$comp")
             fi
         else
@@ -318,9 +318,9 @@ __start_%[1]s()
     # Call _init_completion from the bash-completion package
     # to prepare the arguments properly
     if declare -F _init_completion >/dev/null 2>&1; then
-        _init_completion -n "=:" || return
+        _init_completion -n =: || return
     else
-        __%[1]s_init_completion -n "=:" || return
+        __%[1]s_init_completion -n =: || return
     fi
 
     __%[1]s_debug
