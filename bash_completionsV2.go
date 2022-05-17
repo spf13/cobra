@@ -178,9 +178,7 @@ __%[1]s_handle_standard_completion_case() {
 
     # Short circuit to optimize if we don't have descriptions
     if [[ $out != *$tab* ]]; then
-        while IFS='' read -r comp; do
-            COMPREPLY+=("$comp")
-        done < <(IFS=$'\n' compgen -W "$out" -- "$cur")
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n' compgen -W "$out" -- "$cur")
         return 0
     fi
 
