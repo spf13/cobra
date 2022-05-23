@@ -1115,15 +1115,16 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				}
 				return completions, ShellCompDirectiveNoFileComp
 			},
-			Run: func(c *Command, args []string) {
+			RunE: func(c *Command, args []string) error {
 				cmd, _, e := c.Root().Find(args)
-				if cmd == nil || e != nil {
+				if e != nil {
+					return e
+				} else if cmd == nil {
 					c.PrintErrf("Unknown help topic %#q\n", args)
-					CheckErr(c.Root().Usage())
-				} else {
-					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-					CheckErr(cmd.Help())
+					return c.Root().Usage()
 				}
+				cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
+				return cmd.Help()
 			},
 		}
 	}
