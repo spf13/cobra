@@ -327,6 +327,7 @@ func (c *Command) OutOrStdout() io.Writer {
 }
 
 // OutOrStderr returns output to stderr
+// Deprecated: Use OutOrStdout or ErrOrStderr instead
 func (c *Command) OutOrStderr() io.Writer {
 	return c.getOut(os.Stderr)
 }
@@ -382,7 +383,7 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
+		err := tmpl(c.ErrOrStderr(), c.UsageTemplate(), c)
 		if err != nil {
 			c.PrintErrln(err)
 		}
@@ -783,7 +784,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		c.PrintErrf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
@@ -802,7 +803,7 @@ func (c *Command) execute(a []string) (err error) {
 	if err != nil {
 		// should be impossible to get here as we always declare a help
 		// flag in InitDefaultHelpFlag()
-		c.Println("\"help\" flag declared as non-bool. Please correct your code")
+		c.PrintErrln("\"help\" flag declared as non-bool. Please correct your code")
 		return err
 	}
 
@@ -814,13 +815,13 @@ func (c *Command) execute(a []string) (err error) {
 	if c.Version != "" {
 		versionVal, err := c.Flags().GetBool("version")
 		if err != nil {
-			c.Println("\"version\" flag declared as non-bool. Please correct your code")
+			c.PrintErrln("\"version\" flag declared as non-bool. Please correct your code")
 			return err
 		}
 		if versionVal {
 			err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
 			if err != nil {
-				c.Println(err)
+				c.PrintErrln(err)
 			}
 			return err
 		}
@@ -1004,7 +1005,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceUsage flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceUsage && !c.SilenceUsage {
-			c.Println(cmd.UsageString())
+			c.PrintErrln(cmd.UsageString())
 		}
 	}
 	return cmd, err
@@ -1117,7 +1118,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q\n", args)
+					c.PrintErrf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
@@ -1218,17 +1219,17 @@ main:
 	}
 }
 
-// Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
+// Print is a convenience method to Print to the defined output, fallback to Stdout if not set.
 func (c *Command) Print(i ...interface{}) {
-	fmt.Fprint(c.OutOrStderr(), i...)
+	fmt.Fprint(c.OutOrStdout(), i...)
 }
 
-// Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
+// Println is a convenience method to Println to the defined output, fallback to Stdout if not set.
 func (c *Command) Println(i ...interface{}) {
 	c.Print(fmt.Sprintln(i...))
 }
 
-// Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
+// Printf is a convenience method to Printf to the defined output, fallback to Stdout if not set.
 func (c *Command) Printf(format string, i ...interface{}) {
 	c.Print(fmt.Sprintf(format, i...))
 }
@@ -1654,7 +1655,7 @@ func (c *Command) ParseFlags(args []string) error {
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
-		c.Print(c.flagErrorBuf.String())
+		c.PrintErr(c.flagErrorBuf.String())
 	}
 
 	return err
