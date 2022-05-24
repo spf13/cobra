@@ -37,3 +37,5 @@ bin
 
 .idea/
 *.iml
+
+.vscode
