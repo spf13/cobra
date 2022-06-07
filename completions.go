@@ -652,7 +652,7 @@ To load completions for every new session, execute once:
 
 #### macOS:
 
-	%[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+	%[1]s completion bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
@@ -689,7 +689,7 @@ To load completions for every new session, execute once:
 
 #### macOS:
 
-	%[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
+	%[1]s completion zsh > $(brew --prefix)/share/zsh/site-functions/_%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
