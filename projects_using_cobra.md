@@ -41,6 +41,7 @@
 - [Pouch](https://github.com/alibaba/pouch)
 - [ProjectAtomic (enterprise)](https://www.projectatomic.io/)
 - [Prototool](https://github.com/uber/prototool)
+- [Pulumi](https://www.pulumi.com)
 - [QRcp](https://github.com/claudiodangelis/qrcp)
 - [Random](https://github.com/erdaltsksn/random)
 - [Rclone](https://rclone.org/)
