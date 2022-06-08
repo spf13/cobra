@@ -42,6 +42,7 @@
 - [ProjectAtomic (enterprise)](https://www.projectatomic.io/)
 - [Prototool](https://github.com/uber/prototool)
 - [QRcp](https://github.com/claudiodangelis/qrcp)
+- [Pulumi](https://www.pulumi.com)
 - [Random](https://github.com/erdaltsksn/random)
 - [Rclone](https://rclone.org/)
 - [Scaleway CLI](https://github.com/scaleway/scaleway-cli)
