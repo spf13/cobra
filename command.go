@@ -149,6 +149,12 @@ type Command struct {
 	// flagErrorFunc is func defined by user and it's called when the parsing of
 	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
+	// requiredFlagErrorFunc is func defined by user and it's called when the parsing of
+	// required flags returns an error.
+	requiredFlagErrorFunc func(*Command, error) error
+	// flagGroupsErrorFunc is func defined by user and it's called when the parsing of
+	// required flags returns an error.
+	flagGroupsErrorFunc func(*Command, error) error
 	// helpTemplate is help template defined by user.
 	helpTemplate string
 	// helpFunc is help func defined by user.
@@ -281,12 +287,6 @@ func (c *Command) SetUsageFunc(f func(*Command) error) {
 // SetUsageTemplate sets usage template. Can be defined by Application.
 func (c *Command) SetUsageTemplate(s string) {
 	c.usageTemplate = s
-}
-
-// SetFlagErrorFunc sets a function to generate an error when flag parsing
-// fails.
-func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
-	c.flagErrorFunc = f
 }
 
 // SetHelpFunc sets help function. Can be defined by Application.
@@ -444,6 +444,12 @@ func (c *Command) UsageString() string {
 	return bb.String()
 }
 
+// SetFlagErrorFunc sets a function to generate an error when flag parsing
+// fails.
+func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
+	c.flagErrorFunc = f
+}
+
 // FlagErrorFunc returns either the function set by SetFlagErrorFunc for this
 // command or a parent, or it returns a function which returns the original
 // error.
@@ -451,9 +457,50 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 	if c.flagErrorFunc != nil {
 		return c.flagErrorFunc
 	}
-
 	if c.HasParent() {
 		return c.parent.FlagErrorFunc()
+	}
+	return func(c *Command, err error) error {
+		return err
+	}
+}
+
+// SetRequiredFlagsErrorFunc sets a function to generate an error when
+// validating of required flags fails.
+func (c *Command) SetRequiredFlagsErrorFunc(f func(*Command, error) error) {
+	c.requiredFlagErrorFunc = f
+}
+
+// RequiredFlagsErrorFunc returns either the function set by
+// SetRequiredFlagsErrorFunc for this command or a parent, or it returns a
+// function which returns the original error.
+func (c *Command) RequiredFlagsErrorFunc() (f func(*Command, error) error) {
+	if c.requiredFlagErrorFunc != nil {
+		return c.requiredFlagErrorFunc
+	}
+	if c.HasParent() {
+		return c.parent.RequiredFlagsErrorFunc()
+	}
+	return func(c *Command, err error) error {
+		return err
+	}
+}
+
+// SetFlagGroupsErrorFunc sets a function to generate an error when validating
+// of flag groups fails.
+func (c *Command) SetFlagGroupsErrorFunc(f func(*Command, error) error) {
+	c.flagGroupsErrorFunc = f
+}
+
+// FlagGroupsErrorFunc returns either the function set by
+// SetFlagGroupsErrorFunc for this command or a parent, or it returns a
+// function which returns the original error.
+func (c *Command) FlagGroupsErrorFunc() (f func(*Command, error) error) {
+	if c.flagGroupsErrorFunc != nil {
+		return c.flagGroupsErrorFunc
+	}
+	if c.HasParent() {
+		return c.parent.FlagGroupsErrorFunc()
 	}
 	return func(c *Command, err error) error {
 		return err
@@ -861,10 +908,10 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.validateRequiredFlags(); err != nil {
-		return c.FlagErrorFunc()(c, err)
+		return c.RequiredFlagsErrorFunc()(c, err)
 	}
 	if err := c.validateFlagGroups(); err != nil {
-		return c.FlagErrorFunc()(c, err)
+		return c.FlagGroupsErrorFunc()(c, err)
 	}
 
 	if c.RunE != nil {

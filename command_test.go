@@ -1723,6 +1723,74 @@ func TestFlagErrorFunc(t *testing.T) {
 	}
 }
 
+func TestRequiredFlagsErrorFunc(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	ff := c.Flags()
+	ff.Bool("required-flag-1", false, "required flag #1")
+	ff.Bool("required-flag-2", false, "required flag #1")
+	if err := c.MarkFlagRequired("required-flag-1"); err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if err := c.MarkFlagRequired("required-flag-2"); err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	expectedFmt := "This is expected: %v"
+	c.SetRequiredFlagsErrorFunc(func(_ *Command, err error) error {
+		return fmt.Errorf(expectedFmt, err)
+	})
+
+	_, err := executeCommand(c)
+
+	got := err.Error()
+	expected := fmt.Sprintf(expectedFmt, `required flag(s) "required-flag-1", "required-flag-2" not set`)
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestFlagGroupsErrorFunc_RequiredTogether(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	ff := c.Flags()
+	ff.Bool("required-flag-1", false, "required flag #1")
+	ff.Bool("required-flag-2", false, "required flag #1")
+	c.MarkFlagsRequiredTogether("required-flag-1", "required-flag-2")
+
+	expectedFmt := "This is expected: %v"
+	c.SetFlagGroupsErrorFunc(func(_ *Command, err error) error {
+		return fmt.Errorf(expectedFmt, err)
+	})
+
+	_, err := executeCommand(c, "--required-flag-1")
+
+	got := err.Error()
+	expected := fmt.Sprintf(expectedFmt, `if any flags in the group [required-flag-1 required-flag-2] are set they must all be set; missing [required-flag-2]`)
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestFlagGroupsErrorFunc_MutuallyExclusive(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	ff := c.Flags()
+	ff.Bool("required-flag-1", false, "required flag #1")
+	ff.Bool("required-flag-2", false, "required flag #1")
+	c.MarkFlagsMutuallyExclusive("required-flag-1", "required-flag-2")
+
+	expectedFmt := "This is expected: %v"
+	c.SetFlagGroupsErrorFunc(func(_ *Command, err error) error {
+		return fmt.Errorf(expectedFmt, err)
+	})
+
+	_, err := executeCommand(c, "--required-flag-1", "--required-flag-2")
+
+	got := err.Error()
+	expected := fmt.Sprintf(expectedFmt, `if any flags in the group [required-flag-1 required-flag-2] are set none of the others can be; [required-flag-1 required-flag-2] were all set`)
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.
