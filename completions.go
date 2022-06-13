@@ -480,7 +480,7 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
 	}
 
 	flagName = "-" + flag.Shorthand
-	if len(flag.Shorthand) > 0 && strings.HasPrefix(flagName, toComplete) {
+	if len(flag.Shorthand) > 0 && (strings.HasPrefix(flagName, toComplete) || strings.HasPrefix(toComplete, flagName)) {
 		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
 	}
 

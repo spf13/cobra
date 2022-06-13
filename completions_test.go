@@ -473,6 +473,32 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	}
 }
 
+func TestShorthandFlagCompletionInGoWithDesc(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	rootCmd.Flags().StringP("first", "f", "", "first flag")
+	rootCmd.Flags().StringP("second", "d", "", "second flag")
+
+	// Test that flag names are completed
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "-ftest")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"-f\tfirst flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+}
+
 func TestFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
