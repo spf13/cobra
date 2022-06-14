@@ -627,7 +627,7 @@ Did you mean this?
 Run 'hugo --help' for usage.
 ```
 
-Suggestions are automatic based on every subcommand registered and use an implementation of [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). Every registered command that matches a minimum distance of 2 (ignoring case) will be displayed as a suggestion.
+Suggestions are automatic based on every subcommand registered and use an implementation of [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). Every registered command that matches a maximum distance of 2 (ignoring case) will be displayed as a suggestion.
 
 If you need to disable suggestions or tweak the string distance in your command, use:
 
@@ -638,7 +638,7 @@ command.DisableSuggestions = true
 or
 
 ```go
-command.SuggestionsMinimumDistance = 1
+command.SuggestionsMaximumDistance = 1
 ```
 
 You can also explicitly set names for which a given command will be suggested using the `SuggestFor` attribute. This allows suggestions for strings that are not close in terms of string distance, but makes sense in your set of commands and for some which you don't want aliases. Example:

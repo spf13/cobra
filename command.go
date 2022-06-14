@@ -219,9 +219,9 @@ type Command struct {
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
 
-	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
+	// SuggestionsMaximumDistance defines maximum levenshtein distance to display suggestions.
 	// Must be > 0.
-	SuggestionsMinimumDistance int
+	SuggestionsMaximumDistance int
 }
 
 // Context returns underlying command context. If command was executed
@@ -659,8 +659,8 @@ func (c *Command) findSuggestions(arg string) string {
 	if c.DisableSuggestions {
 		return ""
 	}
-	if c.SuggestionsMinimumDistance <= 0 {
-		c.SuggestionsMinimumDistance = 2
+	if c.SuggestionsMaximumDistance <= 0 {
+		c.SuggestionsMaximumDistance = 2
 	}
 	suggestionsString := ""
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
@@ -740,7 +740,7 @@ func (c *Command) SuggestionsFor(typedName string) []string {
 	for _, cmd := range c.commands {
 		if cmd.IsAvailableCommand() {
 			levenshteinDistance := ld(typedName, cmd.Name(), true)
-			suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
+			suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMaximumDistance
 			suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
 			if suggestByLevenshtein || suggestByPrefix {
 				suggestions = append(suggestions, cmd.Name())
