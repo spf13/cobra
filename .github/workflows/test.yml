@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '1.17'
 
@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ matrix.platform }}-latest
     steps:
 
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: 1.${{ matrix.go }}.x
 
