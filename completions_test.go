@@ -495,19 +495,48 @@ func TestShorthandFlagCompletionInGoWithDesc(t *testing.T) {
 		return completions, ShellCompDirectiveDefault
 	})
 
-	// Test that flag names are completed
+	// Test completion for flag with "no space" value and with defined completion function
 	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "-ftest")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-
 	expected := strings.Join([]string{
 		"test1\tThe first",
 		"test2\tThe second",
 		"test10\tThe tenth",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
 
+	// Test completion for flag without value but with defined completion function
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "-f")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test completion for flag with value and with defined completion function
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "-f", "test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test completion for flag without completion function
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "-d")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	expected = strings.Join([]string{
+		"-d\tsecond flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
@@ -2321,7 +2350,7 @@ func removeCompCmd(rootCmd *Command) {
 	}
 }
 
-func xTestDefaultCompletionCmd(t *testing.T) {
+func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:  "root",
 		Args: NoArgs,
