@@ -480,7 +480,7 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
 	}
 
 	flagName = "-" + flag.Shorthand
-	if len(flag.Shorthand) > 0 && (strings.HasPrefix(flagName, toComplete) || strings.HasPrefix(toComplete, flagName)) {
+	if len(flag.Shorthand) > 0 && strings.HasPrefix(flagName, toComplete) {
 		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
 	}
 
@@ -510,6 +510,13 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	})
 
 	return completions
+}
+
+func checkIfFlagHasCompletionFunction(flag *pflag.Flag) bool {
+	flagCompletionMutex.Lock()
+	defer flagCompletionMutex.Unlock()
+	_, exists := flagCompletionFunctions[flag]
+	return exists
 }
 
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
@@ -543,8 +550,37 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
 		} else {
-			// Normal flag completion
-			return nil, args, lastArg, nil
+			if len(lastArg) < 2 || lastArg[1] == '-' {
+				// Normal flag completion
+				return nil, args, lastArg, nil
+			}
+
+			var lastFlag *pflag.Flag
+			var i int
+			var c rune
+
+			for i, c = range []rune(lastArg[1:]) {
+				flag := findFlag(finalCmd, string(c))
+				if flag == nil {
+					return nil, args, lastArg, nil
+				}
+				lastFlag = flag
+				if flag.Value.Type() != "bool" {
+					break
+				}
+			}
+
+			if lastFlag == nil {
+				return nil, args, lastArg, nil
+			}
+
+			if !checkIfFlagHasCompletionFunction(lastFlag) {
+				return nil, args, lastArg, nil
+			}
+
+			flagName = lastFlag.Name
+			lastArg = lastArg[i+2:]
+			flagWithEqual = true
 		}
 	}
 
