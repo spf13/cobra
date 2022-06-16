@@ -259,6 +259,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// remove the flag name argument from the list of finalArgs or else the parsing
 	// could fail due to an invalid value (incomplete) for the flag.
 	flag, finalArgs, toComplete, flagErr := checkIfFlagCompletion(finalCmd, finalArgs, toComplete)
+	fmt.Println(flag, finalArgs, toComplete)
 
 	// Check if interspersed is false or -- was set on a previous arg.
 	// This works by counting the arguments. Normally -- is not counted as arg but
@@ -512,6 +513,10 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	return completions
 }
 
+func flagsNoSpace() {
+
+}
+
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
 	if finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
@@ -543,7 +548,36 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
 		} else {
-			// Normal flag completion
+
+			// Flag with full name
+			//if strings.HasPrefix(lastArg, "--") {
+			//	// Normal flag completion
+			//	return nil, args, orgLastArg, nil
+			//}
+			//
+			//i := 1
+			//
+			//for ; i < len(lastArg)-1; i++ {
+			//	flagName = lastArg[i : i+1]
+			//	f := findFlag(finalCmd, flagName)
+			//	if f != nil && f.Value.Type() != "bool" {
+			//		flagName = lastArg[i : i+1]
+			//		lastArg = lastArg[i+1:]
+			//		i = -1
+			//		break
+			//	}
+			//}
+			//
+			//if i == len(orgLastArg)-1 {
+			//	return nil, args, orgLastArg, nil
+			//}
+			//
+			//fmt.Printf("flagname: %s, lastArg: %s\n", flagName, lastArg)
+			//if i != -1 {
+			//	// Normal flag completion
+			//	return nil, args, orgLastArg, nil
+			//}
+			//// Normal flag completion
 			return nil, args, lastArg, nil
 		}
 	}
@@ -595,7 +629,8 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 		}
 	}
 
-	return flag, trimmedArgs, lastArg, nil
+	return flag, []string{"-it"}, lastArg, nil
+	//return flag, trimmedArgs, lastArg, nil
 }
 
 // initDefaultCompletionCmd adds a default 'completion' command to c.

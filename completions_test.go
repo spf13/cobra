@@ -3,6 +3,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -2690,4 +2691,280 @@ func TestFixedCompletions(t *testing.T) {
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
+}
+
+func TestMyShorthandFlagCompletionInGoWithDesc(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	rootCmd.Flags().StringP("inter", "i", "", "first flag")
+	rootCmd.Flags().StringP("temp", "t", "", "second flag")
+	rootCmd.Flags().StringP("name", "n", "", "third flag")
+
+	_ = rootCmd.RegisterFlagCompletionFunc("inter", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return []string{"myval1", "mywal", "myvlav"}, ShellCompDirectiveDefault
+	})
+
+	// Test that flag names are completed
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "-i")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"-i\tfirst flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("\nER: %q\nAR: %q", expected, output)
+	}
+
+}
+
+func TestNoSpace(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	f := rootCmd.Flags()
+	f.BoolP("interactive", "i", false, "short flag 1")
+	f.BoolP("timeout", "t", false, "short flag 2")
+	f.StringP("namespace", "n", "defValue", "file namespace")
+	_ = rootCmd.RegisterFlagCompletionFunc("short3", func(*Command, []string, string) ([]string, ShellCompDirective) {
+		return []string{"works"}, ShellCompDirectiveNoFileComp
+	})
+
+	namespaceComps := []string{"infra-production1", "infra-production2", "prod-infra-production1"}
+
+	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		comps := make([]string, 0, len(namespaceComps))
+		for _, comp := range namespaceComps {
+			if strings.HasPrefix(comp, toComplete) {
+				comps = append(comps, comp)
+			}
+		}
+		if len(comps) == 0 {
+			comps = namespaceComps
+		}
+		return comps, ShellCompDirectiveNoFileComp
+	})
+
+	// Test that multiple boolean + string with equal sign with value shorthand flags work
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-itn", "i")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	fmt.Printf("interactive: %v\n", f.Lookup("interactive").Changed)
+	fmt.Printf("timeout: %v\n", f.Lookup("timeout").Changed)
+
+	expected := strings.Join([]string{
+		"-n",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("\nER: %q\nAR: %q", expected, output)
+	}
+
+	// Test that multiple boolean + string with equal sign with value shorthand flags work
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-it")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"infra-production1",
+		"infra-production2",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that multiple boolean + string with equal sign with value shorthand flags work
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-n", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"-n",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that multiple boolean + string with equal sign with value shorthand flags work
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-inp")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"prod-infra-production1",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that multiple boolean + string with equal sign with value shorthand flags work
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-pnp")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	//// Test that multiple boolean + string with equal sign with value shorthand flags work
+	//output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-f", "wor")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected := strings.Join([]string{
+	//	//"anp",
+	//	"bnp1",
+	//	//"bnp2",
+	//	//"cynp1",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//fmt.Println(f.Lookup("short").Changed)
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean + string with equal sign with value shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-n", "b")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	//"anp",
+	//	"bnp1",
+	//	"bnp2",
+	//	//"cynp1",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean + string with equal sign with value shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-n=b")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	//"anp",
+	//	"bnp1",
+	//	"bnp2",
+	//	//"cynp1",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	////--------------------------------
+	//
+	//// Test that a single shorthand flag works
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s", "")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	"foo",
+	//	"bar",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sd", "")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	"foo",
+	//	"bar",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean + string shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf", "")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	"works",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean + string with equal sign shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf=wo")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	"works",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+	//
+	//// Test that multiple boolean + string with equal sign with value shorthand flags work
+	//output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf=abc", "")
+	//if err != nil {
+	//	t.Errorf("Unexpected error: %v", err)
+	//}
+	//
+	//expected = strings.Join([]string{
+	//	"foo",
+	//	"bar",
+	//	":4",
+	//	"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	//
+	//if output != expected {
+	//	t.Errorf("expected: %q, got: %q", expected, output)
+	//}
+
 }
