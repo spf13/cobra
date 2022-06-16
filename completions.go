@@ -178,6 +178,12 @@ func (c *Command) initCompleteCmd(args []string) {
 
 			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
 			for _, comp := range completions {
+				if GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable {
+					// Remove all activeHelp entries in this case
+					if strings.HasPrefix(comp, activeHelpMarker) {
+						continue
+					}
+				}
 				if noDescriptions {
 					// Remove any description that may be included following a tab character.
 					comp = strings.Split(comp, "\t")[0]

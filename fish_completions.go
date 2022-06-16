@@ -38,7 +38,8 @@ function __%[1]s_perform_completion
     __%[1]s_debug "args: $args"
     __%[1]s_debug "last arg: $lastArg"
 
-    set -l requestComp "$args[1] %[3]s $args[2..-1] $lastArg"
+    # Disable ActiveHelp which is not supported for fish shell
+    set -l requestComp "%[9]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
 
     __%[1]s_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
@@ -196,7 +197,7 @@ complete -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 
 `, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
 }
 
 // GenFishCompletion generates fish completion file and writes to the passed writer.

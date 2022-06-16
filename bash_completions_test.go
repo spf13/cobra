@@ -261,3 +261,15 @@ func TestBashCompletionTraverseChildren(t *testing.T) {
 	checkOmit(t, output, `local_nonpersistent_flags+=("--bool-flag")`)
 	checkOmit(t, output, `local_nonpersistent_flags+=("-b")`)
 }
+
+func TestBashCompletionNoActiveHelp(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletion(buf))
+	output := buf.String()
+
+	// check that active help is being disabled
+	activeHelpVar := activeHelpEnvVar(c.Name())
+	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+}
