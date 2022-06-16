@@ -18,6 +18,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -990,7 +991,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
-		if err == flag.ErrHelp {
+		if errors.Is(err, flag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
 		}

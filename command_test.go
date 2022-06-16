@@ -1723,6 +1723,38 @@ func TestFlagErrorFunc(t *testing.T) {
 	}
 }
 
+func TestFlagErrorFuncHelp(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.PersistentFlags().Bool("help", false, "help for c")
+	c.SetFlagErrorFunc(func(_ *Command, err error) error {
+		return fmt.Errorf("wrap error: %w", err)
+	})
+
+	out, err := executeCommand(c, "--help")
+	if err != nil {
+		t.Errorf("--help should not fail: %v", err)
+	}
+
+	expected := `Usage:
+  c [flags]
+
+Flags:
+      --help   help for c
+`
+	if out != expected {
+		t.Errorf("Expected: %v, got: %v", expected, out)
+	}
+
+	out, err = executeCommand(c, "-h")
+	if err != nil {
+		t.Errorf("-h should not fail: %v", err)
+	}
+
+	if out != expected {
+		t.Errorf("Expected: %v, got: %v", expected, out)
+	}
+}
+
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.
