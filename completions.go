@@ -513,10 +513,6 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	return completions
 }
 
-func flagsNoSpace() {
-
-}
-
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
 	if finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
@@ -549,34 +545,20 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 			flagWithEqual = true
 		} else {
 
-			// Flag with full name
-			//if strings.HasPrefix(lastArg, "--") {
-			//	// Normal flag completion
-			//	return nil, args, orgLastArg, nil
-			//}
-			//
-			//i := 1
-			//
-			//for ; i < len(lastArg)-1; i++ {
-			//	flagName = lastArg[i : i+1]
-			//	f := findFlag(finalCmd, flagName)
-			//	if f != nil && f.Value.Type() != "bool" {
-			//		flagName = lastArg[i : i+1]
-			//		lastArg = lastArg[i+1:]
-			//		i = -1
-			//		break
-			//	}
-			//}
-			//
-			//if i == len(orgLastArg)-1 {
-			//	return nil, args, orgLastArg, nil
-			//}
-			//
-			//fmt.Printf("flagname: %s, lastArg: %s\n", flagName, lastArg)
-			//if i != -1 {
-			//	// Normal flag completion
-			//	return nil, args, orgLastArg, nil
-			//}
+			if len(lastArg) > 1 && !strings.HasPrefix(lastArg, "--") {
+				i := 1
+				for ; i < len(lastArg)-1; i++ {
+					flagName = lastArg[i : i+1]
+					f := findFlag(finalCmd, flagName)
+					if f != nil && len(f.NoOptDefVal) == 0 {
+						flagName = lastArg[i : i+1]
+						lastArg = lastArg[i+1:]
+
+						return f, args, lastArg, nil
+					}
+				}
+			}
+
 			//// Normal flag completion
 			return nil, args, lastArg, nil
 		}
@@ -629,8 +611,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 		}
 	}
 
-	return flag, []string{"-it"}, lastArg, nil
-	//return flag, trimmedArgs, lastArg, nil
+	return flag, trimmedArgs, lastArg, nil
 }
 
 // initDefaultCompletionCmd adds a default 'completion' command to c.
