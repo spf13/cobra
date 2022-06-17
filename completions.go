@@ -543,6 +543,25 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
 		} else {
+
+			// Find first shorthand non-boolean flag
+			// Following characters are treated as an argument
+			// e.g. `-ini` => n is a flag, 'i' - argument to complete
+			// https://github.com/spf13/cobra/issues/1629
+			if len(lastArg) > 1 && !strings.HasPrefix(lastArg, "--") {
+				i := 1
+				for ; i < len(lastArg)-1; i++ {
+					flagName = lastArg[i : i+1]
+					f := findFlag(finalCmd, flagName)
+					if f != nil && len(f.NoOptDefVal) == 0 {
+						flagName = lastArg[i : i+1]
+						lastArg = lastArg[i+1:]
+
+						return f, args, lastArg, nil
+					}
+				}
+			}
+
 			// Normal flag completion
 			return nil, args, lastArg, nil
 		}
