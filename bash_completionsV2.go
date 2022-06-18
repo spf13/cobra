@@ -183,7 +183,7 @@ __%[1]s_extract_activeHelp() {
             # Not an activeHelp line but a normal completion
             completions+=("$comp")
         fi
-    done < <(printf "%%s\n" "${out}")
+    done <<<"${out}"
 }
 
 __%[1]s_handle_completion_types() {
