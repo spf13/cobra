@@ -219,7 +219,7 @@ __%[1]s_handle_standard_completion_case() {
     local tab=$'\t' comp
 
     # Short circuit to optimize if we don't have descriptions
-    if [[ ${completions[*]} != *$tab* ]]; then
+    if [[ "${completions[*]}" != *$tab* ]]; then
         IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
         return 0
     fi
