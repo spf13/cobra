@@ -230,7 +230,7 @@ __%[1]s_handle_completion_types() {
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
-                COMPREPLY+=("$comp")
+                COMPREPLY+=( "$(printf %%q "$comp")" )
             fi
         done < <(printf "%%s\n" "${completions[@]}")
         ;;
@@ -248,6 +248,12 @@ __%[1]s_handle_standard_completion_case() {
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
         IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
+
+        # If there is a single completion left, escape the completion
+        if ((${#COMPREPLY[*]} == 1)); then
+            COMPREPLY[0]=$(printf %%q "${COMPREPLY[0]}")
+        fi
+
         return 0
     fi
 
@@ -266,12 +272,12 @@ __%[1]s_handle_standard_completion_case() {
         fi
     done < <(printf "%%s\n" "${completions[@]}")
 
-    # If there is a single completion left, remove the description text
+    # If there is a single completion left, remove the description text and escape the completion
     if ((${#COMPREPLY[*]} == 1)); then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY[0]=$comp
+        COMPREPLY[0]=$(printf %%q "${comp}")
     else # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
     fi
