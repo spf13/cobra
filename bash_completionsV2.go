@@ -247,7 +247,8 @@ __%[1]s_handle_standard_completion_case() {
 
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
+        local compgen_words=$(printf "%%s\n" "${completions[@]}")
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n' compgen -W "${compgen_words}" -- "$cur")
 
         # If there is a single completion left, escape the completion
         if ((${#COMPREPLY[*]} == 1)); then
