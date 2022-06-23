@@ -4,6 +4,7 @@
 - [Bleve](https://blevesearch.com/)
 - [CockroachDB](https://www.cockroachlabs.com/)
 - [Cosmos SDK](https://github.com/cosmos/cosmos-sdk)
+- [CloudQuery](https://github.com/cloudquery/cloudquery)
 - [Datree](https://github.com/datreeio/datree)
 - [Delve](https://github.com/derekparker/delve)
 - [Docker (distribution)](https://github.com/docker/distribution)
