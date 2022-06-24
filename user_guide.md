@@ -318,7 +318,37 @@ rootCmd.Flags().BoolVar(&pw, "yaml", false, "Output in YAML")
 rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 ```
 
-In both of these cases:
+If you need 1 way dependency groups, as opposed to all flags in a group being required together (like `MarkFlagsRequiredTogether`), then you have a further 2 options.
+
+You can specify that 1 or more flags be dependent upon another using `MarkFlagsDependsOn` eg, let's say you have an app that performs filtering and you want to support regex and glob filter types, but by default the _filter_ is regex. The user should be able to define the _filter_ and omit the boolean _glob_ flag. But _glob_ can't be specified without the _filter_ also being present. So _glob_ is ___dependent___ on _filter_ (the ___dependee___), but not vice-versa. In general terms this equates to
+
+> cmd.MarkFlagsDependsOn(dependee, dependent-1, dependent-2 ...)
+
+eg:
+
+```go
+rootCmd.Flags().StringVarP(&f, "filter", "f", "", "Filter")
+rootCmd.Flags().BoolVarP(&t, "glob", "t", false, "Glob")
+rootCmd.MarkFlagsDependsOn("filter", "glob")
+```
+
+A variation on this theme would be to specify that a particular flag is dependent upon on any 1 of another set of flags using `MarkFlagDependsOnAny`. Continuing our filtering theme; if we have a _filter_ flag which may be applied to a set of other entities, let's say _genres_, _albums_ and _artists_, you can do this by marking _filter_ to be dependent on any of these. At least one of the these dependees must be present. The general form would be
+
+> cmd.MarkFlagDependsOnAny(dependent, dependee-1, dependee-2 ...)
+
+eg:
+
+```go
+rootCmd.Flags().StringVarP(&filter, "filter", "f", "", "Filter")
+rootCmd.Flags().StringVarP(&genre, "genre", "g", "", "Genre")
+rootCmd.Flags().StringVarP(&album, "album", "a", "", "Album")
+rootCmd.Flags().StringVarP(&artist, "artist", "r", "", "Artist")
+rootCmd.MarkFlagDependsOnAny("filter", "genre", "album", "artist")
+```
+
+So for `MarkFlagsDependsOn` and `MarkFlagDependsOnAny` the order of flag specification is significant. The first flag is denoted as being special as it carries different semantics than the remaining flags as opposed to `MarkFlagsRequiredTogether` and `MarkFlagsMutuallyExclusive` where order is insignificent as all flags in those groups are equal.
+
+In all of these cases:
   - both local and persistent flags can be used
     - **NOTE:** the group is only enforced on commands where every flag is defined
   - a flag may appear in multiple groups

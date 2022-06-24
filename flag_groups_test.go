@@ -42,13 +42,17 @@ func TestValidateFlagGroups(t *testing.T) {
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                      string
-		flagGroupsRequired        []string
-		flagGroupsExclusive       []string
-		subCmdFlagGroupsRequired  []string
-		subCmdFlagGroupsExclusive []string
-		args                      []string
-		expectErr                 string
+		desc                         string
+		flagGroupsRequired           []string
+		flagGroupsExclusive          []string
+		flagGroupsDependsOn          []string
+		flagGroupsDependsOnAny       []string
+		subCmdFlagGroupsRequired     []string
+		subCmdFlagGroupsExclusive    []string
+		subCmdFlagGroupsDependsOn    []string
+		subCmdFlagGroupsDependsOnAny []string
+		args                         []string
+		expectErr                    string
 	}{
 		{
 			desc: "No flags no problem",
@@ -121,6 +125,71 @@ func TestValidateFlagGroups(t *testing.T) {
 			subCmdFlagGroupsRequired: []string{"e subonly"},
 			args:                     []string{"--e=foo"},
 		},
+		// DependsOn
+		{
+			desc:                "The dependee 'a' is set so Depends On group is satisfied",
+			flagGroupsDependsOn: []string{"a b c d"},
+			args:                []string{"--a=foo", "--b=foo"},
+		}, {
+			desc:                "Depends On flag group not satisfied, a is missing, required by b",
+			flagGroupsDependsOn: []string{"a b c d"},
+			args:                []string{"--b=foo"},
+			expectErr:           "if any flags in the group [b c d] are set then [a] must be present; only [b] were set",
+		}, {
+			desc:                "Depends On flag group not satisfied, a is missing, required by b and c",
+			flagGroupsDependsOn: []string{"a b c d"},
+			args:                []string{"--b=foo", "--c=foo"},
+			expectErr:           "if any flags in the group [b c d] are set then [a] must be present; only [b c] were set",
+		}, {
+			desc:                      "The inherited dependee 'e' is set so Depends On group is satisfied",
+			subCmdFlagGroupsDependsOn: []string{"e subonly"},
+			args:                      []string{"subcmd", "--e=foo", "--subonly=foo"},
+		}, {
+			desc:                      "The inherited dependee 'e' is not set so Depends On group not is satisfied",
+			subCmdFlagGroupsDependsOn: []string{"e subonly"},
+			args:                      []string{"subcmd", "--subonly=foo"},
+			expectErr:                 "if any flags in the group [subonly] are set then [e] must be present; only [subonly] were set",
+		}, {
+			desc:                "Depends On Multiple exclusive flag group not satisfied returns still returns error",
+			flagGroupsDependsOn: []string{"a b c d"},
+			flagGroupsExclusive: []string{"a b"},
+			args:                []string{"--a=foo", "--b=foo"},
+			expectErr:           "if any flags in the group [a b] are set none of the others can be; [a b] were all set",
+		},
+		// DependsOnAny
+		{
+			desc:                   "At least 1 of the dependees are present so Depends On Any is satisfied",
+			flagGroupsDependsOnAny: []string{"a b c d"},
+			args:                   []string{"--a=foo", "--b=foo"},
+		}, {
+			desc:                   "All of the dependees are present so Depends On Any is satisfied",
+			flagGroupsDependsOnAny: []string{"a b c d"},
+			args:                   []string{"--a=foo", "--b=foo", "--c=foo", "--d=foo"},
+		}, {
+			desc:                   "None of the dependees are present so Depends On Any is not satisfied",
+			flagGroupsDependsOnAny: []string{"a b c d"},
+			args:                   []string{"--a=foo"},
+			expectErr:              "if [a] is present, then at least one of the flags in [b c d] must be; none were set",
+		}, {
+			desc:                         "At least 1 of the inherited dependees are present so Depends On Any is satisfied",
+			subCmdFlagGroupsDependsOnAny: []string{"subonly e f g"},
+			args:                         []string{"subcmd", "--subonly=foo", "--e=foo"},
+		}, {
+			desc:                         "All of the inherited dependees are present so Depends On Any is satisfied",
+			subCmdFlagGroupsDependsOnAny: []string{"subonly e f g"},
+			args:                         []string{"subcmd", "--subonly=foo", "--e=foo", "--f=foo", "--g=foo"},
+		}, {
+			desc:                         "None of the inherited dependees are present so Depends On Any is not satisfied",
+			subCmdFlagGroupsDependsOnAny: []string{"subonly e f g"},
+			args:                         []string{"subcmd", "--subonly=foo"},
+			expectErr:                    "if [subonly] is present, then at least one of the flags in [e f g] must be; none were set",
+		}, {
+			desc:                   "Depends On Any Multiple exclusive flag group not satisfied returns still returns error",
+			flagGroupsDependsOnAny: []string{"a b c d"},
+			flagGroupsExclusive:    []string{"a b"},
+			args:                   []string{"--a=foo", "--b=foo"},
+			expectErr:              "if any flags in the group [a b] are set none of the others can be; [a b] were all set",
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -132,12 +201,25 @@ func TestValidateFlagGroups(t *testing.T) {
 			for _, flagGroup := range tc.flagGroupsExclusive {
 				c.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
 			}
+			for _, flagGroup := range tc.flagGroupsDependsOn {
+				c.MarkFlagsDependsOn(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.flagGroupsDependsOnAny {
+				c.MarkFlagDependsOnAny(strings.Split(flagGroup, " ")...)
+			}
 			for _, flagGroup := range tc.subCmdFlagGroupsRequired {
 				sub.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsExclusive {
 				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
 			}
+			for _, flagGroup := range tc.subCmdFlagGroupsDependsOn {
+				sub.MarkFlagsDependsOn(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.subCmdFlagGroupsDependsOnAny {
+				sub.MarkFlagDependsOnAny(strings.Split(flagGroup, " ")...)
+			}
+
 			c.SetArgs(tc.args)
 			err := c.Execute()
 			switch {
