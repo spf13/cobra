@@ -2,6 +2,7 @@
 
 - [Arduino CLI](https://github.com/arduino/arduino-cli)
 - [Bleve](https://blevesearch.com/)
+- [CloudQuery](https://github.com/cloudquery/cloudquery)
 - [CockroachDB](https://www.cockroachlabs.com/)
 - [Cosmos SDK](https://github.com/cosmos/cosmos-sdk)
 - [Datree](https://github.com/datreeio/datree)
