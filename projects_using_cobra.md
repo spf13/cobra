@@ -13,7 +13,7 @@
 - [Gardener](https://github.com/gardener/gardenctl)
 - [Giant Swarm's gsctl](https://github.com/giantswarm/gsctl)
 - [Git Bump](https://github.com/erdaltsksn/git-bump)
-- [Github CLI](https://github.com/cli/cli)
+- [GitHub CLI](https://github.com/cli/cli)
 - [GitHub Labeler](https://github.com/erdaltsksn/gh-label)
 - [Golangci-lint](https://golangci-lint.run)
 - [GopherJS](https://github.com/gopherjs/gopherjs)
