@@ -36,6 +36,7 @@
 - [Multi-gitter](https://github.com/lindell/multi-gitter)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [nFPM](https://nfpm.goreleaser.com)
+- [Okteto](https://github.com/okteto/okteto)
 - [OpenShift](https://www.openshift.com/)
 - [Ory Hydra](https://github.com/ory/hydra)
 - [Ory Kratos](https://github.com/ory/kratos)
