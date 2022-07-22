@@ -150,7 +150,7 @@ __%[1]s_process_completion_results() {
     __%[1]s_handle_special_char "$cur" =
 
     # Print the activeHelp statements before we finish
-    if [ ${#activeHelp} -ne 0 ]; then
+    if [ ${#activeHelp[*]} -ne 0 ]; then
         printf "\n";
         printf "%%s\n" "${activeHelp[@]}"
         printf "\n"
