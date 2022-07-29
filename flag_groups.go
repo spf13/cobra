@@ -105,17 +105,12 @@ func (c *Command) setFlagAnnotation(flag string, annotation string, message stri
 
 // The 'special-ness' of a group means that the first member of the group carries
 // special meaning. In contrast to the other group types, where all members are equal.
-type specialStatusInfo struct {
-	isSet     bool
-	isSpecial bool
-}
-type specialStatusInfoData map[string]*specialStatusInfo
+type specialStatusInfoData map[string]bool
 
 type specialGroupInfo struct {
 	special string
 	others  []string
-	// maps the flag name to special status info
-	data specialStatusInfoData
+	data    specialStatusInfoData // maps the flag name to special status info
 }
 type specialGroupInfoCollection map[string]*specialGroupInfo
 
@@ -220,7 +215,7 @@ func processFlagForSpecialGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag,
 				flagnames := strings.Split(group, " ")
 				// it's important to know that the order of the flags is established
 				// in setFlagAnnotation, which makes the assumption of the first
-				// item being sepcial, being valid
+				// item being special, being valid
 				special := flagnames[0]
 				others := flagnames[1:]
 				isFlagSpecial := pflag.Name == special
@@ -237,10 +232,9 @@ func processFlagForSpecialGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag,
 
 				groupStatus[group] = newSpecialGroup(special, others)
 				for _, name := range flagnames {
-					groupStatus[group].data[name] = &specialStatusInfo{}
+					groupStatus[group].data[name] = false
 
 					if name == special {
-						groupStatus[group].data[special].isSpecial = true
 						break // short circuit after finding special
 					}
 				}
@@ -249,9 +243,9 @@ func processFlagForSpecialGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag,
 			// group exists, but we still need to check if the flag exists in the group,
 			// because the previous loop is short circuited as soon as we find the special.
 			if _, found := groupStatus[group].data[pflag.Name]; !found {
-				groupStatus[group].data[pflag.Name] = &specialStatusInfo{}
+				groupStatus[group].data[pflag.Name] = false
 			}
-			groupStatus[group].data[pflag.Name].isSet = pflag.Changed
+			groupStatus[group].data[pflag.Name] = pflag.Changed
 		}
 	}
 }
@@ -306,17 +300,16 @@ func validateDependsOnFlagGroups(data specialGroupInfoCollection) error {
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
 
-		if flagnameAndStatus.data[flagnameAndStatus.special].isSet {
+		if flagnameAndStatus.data[flagnameAndStatus.special] {
 			// rule is satisfied, because the special flag is present, regardless of
 			// the presence of the other members in the group
 			return nil
 		}
 
-		// we have a problem if at least one of present is set, because special
-		// is not set
+		// we have a problem if at least one of present is set, because special is not set
 		present := []string{}
 		for _, o := range flagnameAndStatus.others {
-			if flagnameAndStatus.data[o].isSet {
+			if flagnameAndStatus.data[o] {
 				present = append(present, o)
 			}
 		}
@@ -338,13 +331,13 @@ func validateDependsOnAnyFlagGroups(data specialGroupInfoCollection) error {
 
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
-		if !flagnameAndStatus.data[flagnameAndStatus.special].isSet {
+		if !flagnameAndStatus.data[flagnameAndStatus.special] {
 			return nil
 		}
 
 		present := []string{}
 		for _, o := range flagnameAndStatus.others {
-			if flagnameAndStatus.data[o].isSet {
+			if flagnameAndStatus.data[o] {
 				present = append(present, o)
 			}
 		}
@@ -436,11 +429,10 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 	// if any of others is set, then mark special as required
 	for _, flagnameAndStatus := range dependsOnSpecialGroupStatus {
 		for _, o := range flagnameAndStatus.others {
-			if flagnameAndStatus.data[o].isSet {
+			if flagnameAndStatus.data[o] {
 				c.MarkFlagRequired(flagnameAndStatus.special)
 				break
 			}
 		}
 	}
-	// we can't aid the completion process for dependsOnAny
 }
