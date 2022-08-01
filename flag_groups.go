@@ -239,12 +239,6 @@ func processFlagForSpecialGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag,
 					}
 				}
 			}
-
-			// group exists, but we still need to check if the flag exists in the group,
-			// because the previous loop is short circuited as soon as we find the special.
-			if _, found := groupStatus[group].data[pflag.Name]; !found {
-				groupStatus[group].data[pflag.Name] = false
-			}
 			groupStatus[group].data[pflag.Name] = pflag.Changed
 		}
 	}
@@ -430,7 +424,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 	for _, flagnameAndStatus := range dependsOnSpecialGroupStatus {
 		for _, o := range flagnameAndStatus.others {
 			if flagnameAndStatus.data[o] {
-				c.MarkFlagRequired(flagnameAndStatus.special)
+				_ = c.MarkFlagRequired(flagnameAndStatus.special)
 				break
 			}
 		}
