@@ -56,3 +56,4 @@
 - [UpCloud CLI (`upctl`)](https://github.com/UpCloudLtd/upcloud-cli)
 - VMware's [Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition) & [Tanzu Framework](https://github.com/vmware-tanzu/tanzu-framework)
 - [Werf](https://werf.io/)
+- [ZITADEL](https://github.com/zitadel/zitadel)
