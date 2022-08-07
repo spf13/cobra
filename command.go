@@ -769,7 +769,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			if c.Runnable() {
 				return c, args, nil
 			}
-			return c, args, legacyArgs(c, args)
+			return c, args, legacySubCommandArgs(c, args)
 		}
 
 		if err := c.ParseFlags(flags); err != nil {
