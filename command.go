@@ -146,6 +146,11 @@ type Command struct {
 	// that we can use on every pflag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
 
+	// flagGroups is the list of groups that contain grouped names of flags.
+	// Groups are like "relationships" between flags that allow to validate
+	// flags and adjust completions taking into account these "relationships".
+	flagGroups []flagGroup
+
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
 	// usageTemplate is usage template defined by user.
