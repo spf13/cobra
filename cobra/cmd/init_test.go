@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// TestGoldenInitCmd initializes the project "github.com/OneCloudInc/testproject"
+// TestGoldenInitCmd initializes the project "github.com/Workiva/testproject"
 // in GOPATH and compares the content of files in initialized project with
 // appropriate golden files ("testdata/*.golden").
 // Use -update to update existing golden files.
 func TestGoldenInitCmd(t *testing.T) {
-	projectName := "github.com/OneCloudInc/testproject"
+	projectName := "github.com/Workiva/testproject"
 	project := NewProject(projectName)
 	defer os.RemoveAll(project.AbsPath())
 
@@ -42,7 +42,7 @@ func TestGoldenInitCmd(t *testing.T) {
 		}
 
 		// Make path relative to project.AbsPath().
-		// E.g. path = "/home/user/go/src/github.com/OneCloudInc/testproject/cmd/root.go"
+		// E.g. path = "/home/user/go/src/github.com/Workiva/testproject/cmd/root.go"
 		// then it returns just "cmd/root.go".
 		relPath, err := filepath.Rel(project.AbsPath(), path)
 		if err != nil {

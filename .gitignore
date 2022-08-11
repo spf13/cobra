@@ -37,3 +37,4 @@ cobra.test
 
 .idea
 vendor
+test-reports/

@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: sunday
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope

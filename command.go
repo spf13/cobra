@@ -24,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/OneCloudInc/cobra/decryptor"
+	"github.com/Workiva/cobra/decryptor"
 	flag "github.com/spf13/pflag"
 )
 

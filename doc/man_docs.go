@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/OneCloudInc/cobra"
+	"github.com/Workiva/cobra"
 	"github.com/cpuguy83/go-md2man/md2man"
 	"github.com/spf13/pflag"
 )

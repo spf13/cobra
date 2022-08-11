@@ -8,8 +8,8 @@ package main
 import (
 	"log"
 
-	"github.com/OneCloudInc/cobra"
-	"github.com/OneCloudInc/cobra/doc"
+	"github.com/Workiva/cobra"
+	"github.com/Workiva/cobra/doc"
 )
 
 func main() {

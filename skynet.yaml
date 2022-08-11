@@ -1,0 +1,22 @@
+# Testing with Skynet - https://github.com/Workiva/skynet/tree/master/docs
+name: unit-tests
+image: golang:1.18-bullseye
+description: run unit tests
+size: small
+timeout: 600 # 10 minutes
+contact: support-onecloud
+
+run:
+  on-pull-request: true
+  on-tag: true
+  when-branch-name-is:
+    - master
+
+scripts:
+  - make test
+
+artifacts:
+  - test-reports
+
+test-reports:
+  - test-reports

@@ -13,7 +13,7 @@
 
 package main
 
-import "github.com/OneCloudInc/cobra/cobra/cmd"
+import "github.com/Workiva/cobra/cobra/cmd"
 
 func main() {
 	cmd.Execute()

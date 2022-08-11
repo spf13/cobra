@@ -16,7 +16,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/OneCloudInc/cobra"
+	"github.com/Workiva/cobra"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )

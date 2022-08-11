@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/OneCloudInc/testproject/cmd"
+import "github.com/Workiva/testproject/cmd"
 
 func main() {
 	cmd.Execute()
