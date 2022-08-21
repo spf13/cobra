@@ -36,7 +36,6 @@ jobs:
         - ubuntu
         - macOS
         go:
-        - 14
         - 15
         - 16
         - 17
