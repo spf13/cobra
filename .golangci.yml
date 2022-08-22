@@ -82,7 +82,7 @@ linters:
     #- lll
     #- maintidx
     #- makezero
-    - maligned # !
+    #- maligned # Replaced by govet 'fieldalignment'
     - megacheck
     #- misspell
     #- nakedret
