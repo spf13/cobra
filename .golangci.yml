@@ -50,7 +50,7 @@ linters:
     #- nolintlint
     #- rowserrcheck
     #- scopelint
-    #- staticcheck
+    - staticcheck
     #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
     #- stylecheck
     #- typecheck
