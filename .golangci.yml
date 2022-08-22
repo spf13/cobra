@@ -68,7 +68,7 @@ linters:
     #- gofumpt
     #- goheader
     - goimports
-    - golint # !
+    #- golint ! Use revive instead
     #- gomnd
     #- gomoddirectives
     #- gomodguard
@@ -99,7 +99,7 @@ linters:
     #- prealloc
     #- predeclared
     #- promlinter
-    #- revive
+    - revive
     #- rowserrcheck
     #- scopelint !
     #- sqlclosecheck
