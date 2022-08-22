@@ -53,7 +53,7 @@ linters:
     - staticcheck
     #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
     #- stylecheck
-    #- typecheck
+    - typecheck
     - unconvert
     #- unparam
     - unused
