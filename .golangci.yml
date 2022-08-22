@@ -37,7 +37,7 @@ linters:
     #- gomnd
     #- goprintffuncname
     #- gosec
-    #- gosimple
+    - gosimple
     - govet
     - ineffassign
     - interfacer
