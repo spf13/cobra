@@ -707,10 +707,7 @@ func TestEmptyInputs(t *testing.T) {
 	}
 }
 
-func TestOverwrittenFlag(t *testing.T) {
-	// TODO: This test fails, but should work.
-	t.Skip()
-
+func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	child := &Command{Use: "child", Run: emptyRun}
 
@@ -732,7 +729,7 @@ func TestOverwrittenFlag(t *testing.T) {
 	}
 
 	if childInherited.Lookup("intf") != nil {
-		t.Errorf(`InheritedFlags should not contain overwritten flag "intf"`)
+		t.Errorf(`InheritedFlags should not contain shadowed flag "intf"`)
 	}
 	if childLocal.Lookup("intf") == nil {
 		t.Error(`LocalFlags expected to contain "intf", got "nil"`)
@@ -885,6 +882,38 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 	}
 
 	checkStringContains(t, output, childCmd.Long)
+}
+
+func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun}
+	child := &Command{Use: "child", Run: emptyRun}
+	parent.AddCommand(child)
+
+	parent.PersistentFlags().Bool("foo", false, "parent foo usage")
+	parent.PersistentFlags().Bool("bar", false, "parent bar usage")
+	child.Flags().Bool("foo", false, "child foo usage") // This shadows parent's foo flag
+	child.Flags().Bool("baz", false, "child baz usage")
+
+	got, err := executeCommand(parent, "help", "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := `Usage:
+  parent child [flags]
+
+Flags:
+      --baz    child baz usage
+      --foo    child foo usage
+  -h, --help   help for child
+
+Global Flags:
+      --bar   parent bar usage
+`
+
+	if got != expected {
+		t.Errorf("Help text mismatch.\nExpected:\n%s\n\nGot:\n%s\n", expected, got)
+	}
 }
 
 func TestSetHelpCommand(t *testing.T) {
