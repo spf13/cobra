@@ -38,12 +38,12 @@ func validOnlyWithInvalidArgs(err error, t *testing.T) {
 	}
 }
 
-func noArgsWithArgs(err error, t *testing.T) {
+func noArgsWithArgs(err error, t *testing.T, arg string) {
 	if err == nil {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := `unknown command "one" for "c"`
+	expected := `unknown command "` + arg + `" for "c"`
 	if got != expected {
 		t.Errorf("Expected: %q, got: %q", expected, got)
 	}
@@ -104,19 +104,19 @@ func TestNoArgs(t *testing.T) {
 func TestNoArgs_WithArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
 	_, err := executeCommand(c, "one")
-	noArgsWithArgs(err, t)
+	noArgsWithArgs(err, t, "one")
 }
 
 func TestNoArgs_WithValid_WithArgs(t *testing.T) {
 	c := getCommand(NoArgs, true)
 	_, err := executeCommand(c, "one")
-	noArgsWithArgs(err, t)
+	noArgsWithArgs(err, t, "one")
 }
 
 func TestNoArgs_WithValid_WithInvalidArgs(t *testing.T) {
 	c := getCommand(NoArgs, true)
-	_, err := executeCommand(c, "one")
-	noArgsWithArgs(err, t)
+	_, err := executeCommand(c, "a")
+	noArgsWithArgs(err, t, "a")
 }
 
 func TestNoArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
