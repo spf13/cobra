@@ -492,7 +492,7 @@ func TestExactValidArgs_WithInvalidCount_WithInvalidArgs(t *testing.T) {
 }
 
 func TestExactValidArgs_WithInvalidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(3), true)
+	c := getCommand(ExactValidArgs(2), true)
 	_, err := executeCommand(c, "three", "a")
 	validOnlyWithInvalidArgs(err, t)
 }
