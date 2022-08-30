@@ -111,7 +111,7 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 // ExactValidArgs returns an error if there are not exactly N positional args OR
 // there are any positional args that are not in the `ValidArgs` field of `Command`
 //
-// Deprecated: use MatchAll(OnlyValidArgs, ExactArgs(n)) instead
+// Deprecated: use MatchAll(ExactArgs(n), OnlyValidArgs) instead
 func ExactValidArgs(n int) PositionalArgs {
 	return MatchAll(ExactArgs(n), OnlyValidArgs)
 }
