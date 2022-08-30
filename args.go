@@ -113,5 +113,5 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 //
 // Deprecated: use MatchAll(OnlyValidArgs, ExactArgs(n)) instead
 func ExactValidArgs(n int) PositionalArgs {
-	return MatchAll(OnlyValidArgs, ExactArgs(n))
+	return MatchAll(ExactArgs(n), OnlyValidArgs)
 }
