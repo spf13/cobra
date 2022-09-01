@@ -4,8 +4,13 @@ name: size-labeler
 
 on: [pull_request_target]
 
+permissions:
+  contents: read
+
 jobs:
   size-labeler:
+    permissions:
+      pull-requests: write  # for codelytv/pr-size-labeler to add labels & comment on PRs
     runs-on: ubuntu-latest
     name: Label the PR size
     steps:
