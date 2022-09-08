@@ -6,188 +6,136 @@ import (
 	"testing"
 )
 
-func getCommand(args PositionalArgs, withValid bool) *Command {
+type argsTestcase struct {
+	exerr  string         // Expected error key (see map[string][string])
+	args   PositionalArgs // Args validator
+	wValid bool           // Define `ValidArgs` in the command
+	rargs  []string       // Runtime args
+}
+
+var errStrings = map[string]string{
+	"invalid":    `invalid argument "a" for "c"`,
+	"unknown":    `unknown command "one" for "c"`,
+	"less":       "requires at least 2 arg(s), only received 1",
+	"more":       "accepts at most 2 arg(s), received 3",
+	"notexact":   "accepts 2 arg(s), received 3",
+	"notinrange": "accepts between 2 and 4 arg(s), received 1",
+}
+
+func (tc *argsTestcase) test(t *testing.T) {
 	c := &Command{
 		Use:  "c",
-		Args: args,
+		Args: tc.args,
 		Run:  emptyRun,
 	}
-	if withValid {
+	if tc.wValid {
 		c.ValidArgs = []string{"one", "two", "three"}
 	}
-	return c
-}
 
-func expectSuccess(output string, err error, t *testing.T) {
-	if output != "" {
-		t.Errorf("Unexpected output: %v", output)
-	}
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-}
+	o, e := executeCommand(c, tc.rargs...)
 
-func validWithInvalidArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := `invalid argument "a" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
-	}
-}
-
-func noArgsWithArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := `unknown command "illegal" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
+	if len(tc.exerr) > 0 {
+		// Expect error
+		if e == nil {
+			t.Fatal("Expected an error")
+		}
+		expected, ok := errStrings[tc.exerr]
+		if !ok {
+			t.Errorf(`key "%s" is not found in map "errStrings"`, tc.exerr)
+			return
+		}
+		if got := e.Error(); got != expected {
+			t.Errorf("Expected: %q, got: %q", expected, got)
+		}
+	} else {
+		// Expect success
+		if o != "" {
+			t.Errorf("Unexpected output: %v", o)
+		}
+		if e != nil {
+			t.Fatalf("Unexpected error: %v", e)
+		}
 	}
 }
 
-func minimumNArgsWithLessArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "requires at least 2 arg(s), only received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
+func testArgs(t *testing.T, tests map[string]argsTestcase) {
+	for name, tc := range tests {
+		t.Run(name, tc.test)
 	}
 }
 
-func maximumNArgsWithMoreArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts at most 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+func TestArgs_No(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | ":      {"", NoArgs, false, []string{}},
+		"      | Arb":   {"unknown", NoArgs, false, []string{"one"}},
+		"Valid | Valid": {"unknown", NoArgs, true, []string{"one"}},
+	})
+}
+func TestArgs_Nil(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":     {"", nil, false, []string{"a", "b"}},
+		"Valid | Valid":   {"", nil, true, []string{"one", "two"}},
+		"Valid | Invalid": {"invalid", nil, true, []string{"a"}},
+	})
+}
+func TestArgs_Arbitrary(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":     {"", ArbitraryArgs, false, []string{"a", "b"}},
+		"Valid | Valid":   {"", ArbitraryArgs, true, []string{"one", "two"}},
+		"Valid | Invalid": {"invalid", ArbitraryArgs, true, []string{"a"}},
+	})
+}
+func TestArgs_MinimumN(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":         {"", MinimumNArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | Valid":       {"", MinimumNArgs(2), true, []string{"one", "three"}},
+		"Valid | Invalid":     {"invalid", MinimumNArgs(2), true, []string{"a", "b"}},
+		"      | Less":        {"less", MinimumNArgs(2), false, []string{"a"}},
+		"Valid | Less":        {"less", MinimumNArgs(2), true, []string{"one"}},
+		"Valid | LessInvalid": {"invalid", MinimumNArgs(2), true, []string{"a"}},
+	})
+}
+func TestArgs_MaximumN(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":         {"", MaximumNArgs(3), false, []string{"a", "b"}},
+		"Valid | Valid":       {"", MaximumNArgs(2), true, []string{"one", "three"}},
+		"Valid | Invalid":     {"invalid", MaximumNArgs(2), true, []string{"a", "b"}},
+		"      | More":        {"more", MaximumNArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | More":        {"more", MaximumNArgs(2), true, []string{"one", "three", "two"}},
+		"Valid | MoreInvalid": {"invalid", MaximumNArgs(2), true, []string{"a", "b", "c"}},
+	})
+}
+func TestArgs_Exact(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":                 {"", ExactArgs(3), false, []string{"a", "b", "c"}},
+		"Valid | Valid":               {"", ExactArgs(3), true, []string{"three", "one", "two"}},
+		"Valid | Invalid":             {"invalid", ExactArgs(3), true, []string{"three", "a", "two"}},
+		"      | InvalidCount":        {"notexact", ExactArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | InvalidCount":        {"notexact", ExactArgs(2), true, []string{"three", "one", "two"}},
+		"Valid | InvalidCountInvalid": {"invalid", ExactArgs(2), true, []string{"three", "a", "two"}},
+	})
+}
+func TestArgs_Range(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"      | Arb":                 {"", RangeArgs(2, 4), false, []string{"a", "b", "c"}},
+		"Valid | Valid":               {"", RangeArgs(2, 4), true, []string{"three", "one", "two"}},
+		"Valid | Invalid":             {"invalid", RangeArgs(2, 4), true, []string{"three", "a", "two"}},
+		"      | InvalidCount":        {"notinrange", RangeArgs(2, 4), false, []string{"a"}},
+		"Valid | InvalidCount":        {"notinrange", RangeArgs(2, 4), true, []string{"two"}},
+		"Valid | InvalidCountInvalid": {"invalid", RangeArgs(2, 4), true, []string{"a"}},
+	})
+}
+func TestArgs_DEPRECATED(t *testing.T) {
+	testArgs(t, map[string]argsTestcase{
+		"OnlyValid  | Valid | Valid":        {"", OnlyValidArgs, true, []string{"one", "two"}},
+		"OnlyValid  | Valid | Invalid":      {"invalid", OnlyValidArgs, true, []string{"a"}},
+		"ExactValid | Valid | Valid":        {"", ExactValidArgs(3), true, []string{"two", "three", "one"}},
+		"ExactValid | Valid | InvalidCount": {"notexact", ExactValidArgs(2), true, []string{"two", "three", "one"}},
+		"ExactValid | Valid | Invalid":      {"invalid", ExactValidArgs(2), true, []string{"two", "a"}},
+	})
 }
 
-func exactArgsWithInvalidCount(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
-}
-
-func rangeArgsWithInvalidCount(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts between 2 and 4 arg(s), received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
-}
-
-func TestNoArgs(t *testing.T) {
-	c := getCommand(NoArgs, false)
-	output, err := executeCommand(c)
-	expectSuccess(output, err, t)
-}
-
-func TestNoArgsWithArgs(t *testing.T) {
-	c := getCommand(NoArgs, false)
-	_, err := executeCommand(c, "illegal")
-	noArgsWithArgs(err, t)
-}
-
-func TestOnlyValidArgs(t *testing.T) {
-	c := getCommand(OnlyValidArgs, true)
-	output, err := executeCommand(c, "one", "two")
-	expectSuccess(output, err, t)
-}
-
-func TestOnlyValidArgsWithInvalidArgs(t *testing.T) {
-	c := getCommand(OnlyValidArgs, true)
-	_, err := executeCommand(c, "a")
-	validWithInvalidArgs(err, t)
-}
-
-func TestArbitraryArgs(t *testing.T) {
-	c := getCommand(ArbitraryArgs, false)
-	output, err := executeCommand(c, "a", "b")
-	expectSuccess(output, err, t)
-}
-
-func TestMinimumNArgs(t *testing.T) {
-	c := getCommand(MinimumNArgs(2), false)
-	output, err := executeCommand(c, "a", "b", "c")
-	expectSuccess(output, err, t)
-}
-
-func TestMinimumNArgsWithLessArgs(t *testing.T) {
-	c := getCommand(MinimumNArgs(2), false)
-	_, err := executeCommand(c, "a")
-	minimumNArgsWithLessArgs(err, t)
-}
-
-func TestMaximumNArgs(t *testing.T) {
-	c := getCommand(MaximumNArgs(3), false)
-	output, err := executeCommand(c, "a", "b")
-	expectSuccess(output, err, t)
-}
-
-func TestMaximumNArgsWithMoreArgs(t *testing.T) {
-	c := getCommand(MaximumNArgs(2), false)
-	_, err := executeCommand(c, "a", "b", "c")
-	maximumNArgsWithMoreArgs(err, t)
-}
-
-func TestExactArgs(t *testing.T) {
-	c := getCommand(ExactArgs(3), false)
-	output, err := executeCommand(c, "a", "b", "c")
-	expectSuccess(output, err, t)
-}
-
-func TestExactArgsWithInvalidCount(t *testing.T) {
-	c := getCommand(ExactArgs(2), false)
-	_, err := executeCommand(c, "a", "b", "c")
-	exactArgsWithInvalidCount(err, t)
-}
-
-func TestExactValidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(3), true)
-	output, err := executeCommand(c, "three", "one", "two")
-	expectSuccess(output, err, t)
-}
-
-func TestExactValidArgsWithInvalidCount(t *testing.T) {
-	c := getCommand(ExactValidArgs(2), false)
-	_, err := executeCommand(c, "three", "one", "two")
-	exactArgsWithInvalidCount(err, t)
-}
-
-func TestExactValidArgsWithInvalidArgs(t *testing.T) {
-	c := getCommand(ExactValidArgs(3), true)
-	_, err := executeCommand(c, "three", "a", "two")
-	validWithInvalidArgs(err, t)
-}
-
-func TestRangeArgs(t *testing.T) {
-	c := getCommand(RangeArgs(2, 4), false)
-	output, err := executeCommand(c, "a", "b", "c")
-	expectSuccess(output, err, t)
-}
-
-func TestRangeArgsWithInvalidCount(t *testing.T) {
-	c := getCommand(RangeArgs(2, 4), false)
-	_, err := executeCommand(c, "a")
-	rangeArgsWithInvalidCount(err, t)
-}
+// Takes(No)Args
 
 func TestRootTakesNoArgs(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}

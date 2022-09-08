@@ -7,6 +7,25 @@ import (
 
 type PositionalArgs func(cmd *Command, args []string) error
 
+// validateArgs returns an error if there are any positional args that are not in
+// the `ValidArgs` field of `Command`
+func validateArgs(cmd *Command, args []string) error {
+	if len(cmd.ValidArgs) > 0 {
+		// Remove any description that may be included in ValidArgs.
+		// A description is following a tab character.
+		var validArgs []string
+		for _, v := range cmd.ValidArgs {
+			validArgs = append(validArgs, strings.Split(v, "\t")[0])
+		}
+		for _, v := range args {
+			if !stringInSlice(v, validArgs) {
+				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
+			}
+		}
+	}
+	return nil
+}
+
 // Legacy arg validation has the following behaviour:
 // - root commands with no subcommands can take arbitrary arguments
 // - root commands with subcommands will do subcommand validity checking
@@ -28,25 +47,6 @@ func legacyArgs(cmd *Command, args []string) error {
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-	}
-	return nil
-}
-
-// OnlyValidArgs returns an error if any args are not in the list of ValidArgs.
-func OnlyValidArgs(cmd *Command, args []string) error {
-	if len(cmd.ValidArgs) > 0 {
-		// Remove any description that may be included in ValidArgs.
-		// A description is following a tab character.
-		var validArgs []string
-		for _, v := range cmd.ValidArgs {
-			validArgs = append(validArgs, strings.Split(v, "\t")[0])
-		}
-
-		for _, v := range args {
-			if !stringInSlice(v, validArgs) {
-				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
-			}
-		}
 	}
 	return nil
 }
@@ -86,18 +86,6 @@ func ExactArgs(n int) PositionalArgs {
 	}
 }
 
-// ExactValidArgs returns an error if
-// there are not exactly N positional args OR
-// there are any positional args that are not in the `ValidArgs` field of `Command`
-func ExactValidArgs(n int) PositionalArgs {
-	return func(cmd *Command, args []string) error {
-		if err := ExactArgs(n)(cmd, args); err != nil {
-			return err
-		}
-		return OnlyValidArgs(cmd, args)
-	}
-}
-
 // RangeArgs returns an error if the number of args is not within the expected range.
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
@@ -118,4 +106,19 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 		}
 		return nil
 	}
+}
+
+// ExactValidArgs returns an error if there are not exactly N positional args OR
+// there are any positional args that are not in the `ValidArgs` field of `Command`
+//
+// Deprecated: now `ExactArgs` honors `ValidArgs`, when defined and not empty
+func ExactValidArgs(n int) PositionalArgs {
+	return ExactArgs(n)
+}
+
+// OnlyValidArgs returns an error if any args are not in the list of `ValidArgs`.
+//
+// Deprecated: now `ArbitraryArgs` honors `ValidArgs`, when defined and not empty
+func OnlyValidArgs(cmd *Command, args []string) error {
+	return ArbitraryArgs(cmd, args)
 }
