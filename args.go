@@ -32,7 +32,8 @@ func NoArgs(cmd *Command, args []string) error {
 	return nil
 }
 
-// OnlyValidArgs returns an error if any args are not in the list of ValidArgs.
+// OnlyValidArgs returns an error if there are any positional args that are not in
+// the `ValidArgs` field of `Command`
 func OnlyValidArgs(cmd *Command, args []string) error {
 	if len(cmd.ValidArgs) > 0 {
 		// Remove any description that may be included in ValidArgs.
@@ -41,7 +42,6 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 		for _, v := range cmd.ValidArgs {
 			validArgs = append(validArgs, strings.Split(v, "\t")[0])
 		}
-
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {
 				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
@@ -86,18 +86,6 @@ func ExactArgs(n int) PositionalArgs {
 	}
 }
 
-// ExactValidArgs returns an error if
-// there are not exactly N positional args OR
-// there are any positional args that are not in the `ValidArgs` field of `Command`
-func ExactValidArgs(n int) PositionalArgs {
-	return func(cmd *Command, args []string) error {
-		if err := ExactArgs(n)(cmd, args); err != nil {
-			return err
-		}
-		return OnlyValidArgs(cmd, args)
-	}
-}
-
 // RangeArgs returns an error if the number of args is not within the expected range.
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
@@ -118,4 +106,12 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 		}
 		return nil
 	}
+}
+
+// ExactValidArgs returns an error if there are not exactly N positional args OR
+// there are any positional args that are not in the `ValidArgs` field of `Command`
+//
+// Deprecated: use MatchAll(ExactArgs(n), OnlyValidArgs) instead
+func ExactValidArgs(n int) PositionalArgs {
+	return MatchAll(ExactArgs(n), OnlyValidArgs)
 }
