@@ -40,9 +40,9 @@ The best applications read like sentences when used, and as a result, users
 intuitively know how to interact with them.
 
 The pattern to follow is
-`APPNAME VERB NOUN --ADJECTIVE.`
+`APPNAME VERB NOUN --ADJECTIVE`
     or
-`APPNAME COMMAND ARG --FLAG`
+`APPNAME COMMAND ARG --FLAG`.
 
 A few good real world examples may better illustrate this point.
 
