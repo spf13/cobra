@@ -314,7 +314,7 @@ func TestEnablePrefixMatching(t *testing.T) {
 		t.Errorf("aCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	EnablePrefixMatching = defaultPrefixMatching
 }
 
 func TestAliasPrefixMatching(t *testing.T) {
@@ -349,7 +349,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 		t.Errorf("timesCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	EnablePrefixMatching = defaultPrefixMatching
 }
 
 // TestChildSameName checks the correct behaviour of cobra in cases,
@@ -1263,6 +1263,113 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestCaseInsensitive(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
+	granchildCmd := &Command{Use: "GRANDCHILD", Run: emptyRun, Aliases: []string{"ALIAS"}}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	tests := []struct {
+		args                []string
+		failWithoutEnabling bool
+	}{
+		{
+			args:                []string{"child"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"CHILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"chILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternative"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"ALTERNATIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"ALTernatIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternatiVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"child", "GRANDCHILD"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"child", "grandchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "GRANdchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternative", "ALIAS"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"alternative", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHILD", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "aliAS"},
+			failWithoutEnabling: true,
+		},
+	}
+
+	for _, test := range tests {
+		for _, enableCaseInsensitivity := range []bool{true, false} {
+			EnableCaseInsensitive = enableCaseInsensitivity
+
+			output, err := executeCommand(rootCmd, test.args...)
+			expectedFailure := test.failWithoutEnabling && !enableCaseInsensitivity
+
+			if !expectedFailure && output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+			if !expectedFailure && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		}
+	}
+
+	EnableCaseInsensitive = defaultCaseInsensitive
+}
+
+// This test make sure we keep backwards-compatibility with respect
+// to command names case sensitivity behavior.
+func TestCaseSensitivityBackwardCompatibility(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+
+	rootCmd.AddCommand(childCmd)
+	_, err := executeCommand(rootCmd, strings.ToUpper(childCmd.Use))
+	if err == nil {
+		t.Error("Expected error on calling a command in upper case while command names are case sensitive. Got nil.")
+	}
+
+}
+
 func TestRemoveCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -1622,7 +1729,7 @@ func TestCommandsAreSorted(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	EnableCommandSorting = defaultCommandSorting
 }
 
 func TestEnableCommandSortingIsDisabled(t *testing.T) {
@@ -1643,7 +1750,7 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	EnableCommandSorting = defaultCommandSorting
 }
 
 func TestSetOutput(t *testing.T) {

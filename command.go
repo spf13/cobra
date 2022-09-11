@@ -676,7 +676,7 @@ func (c *Command) findSuggestions(arg string) string {
 func (c *Command) findNext(next string) *Command {
 	matches := make([]*Command, 0)
 	for _, cmd := range c.commands {
-		if cmd.Name() == next || cmd.HasAlias(next) {
+		if commandNameMatches(cmd.Name(), next) || cmd.HasAlias(next) {
 			cmd.commandCalledAs.name = next
 			return cmd
 		}
@@ -1328,7 +1328,7 @@ func (c *Command) Name() string {
 // HasAlias determines if a given string is an alias of the command.
 func (c *Command) HasAlias(s string) bool {
 	for _, a := range c.Aliases {
-		if a == s {
+		if commandNameMatches(a, s) {
 			return true
 		}
 	}
@@ -1694,4 +1694,15 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+// commandNameMatches checks if two command names are equal
+// taking into account case sensitivity according to
+// EnableCaseInsensitive global configuration.
+func commandNameMatches(s string, t string) bool {
+	if EnableCaseInsensitive {
+		return strings.EqualFold(s, t)
+	}
+
+	return s == t
 }

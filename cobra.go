@@ -40,14 +40,23 @@ var templateFuncs = template.FuncMap{
 
 var initializers []func()
 
+const (
+	defaultPrefixMatching  = false
+	defaultCommandSorting  = true
+	defaultCaseInsensitive = false
+)
+
 // EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
-var EnablePrefixMatching = false
+var EnablePrefixMatching = defaultPrefixMatching
 
 // EnableCommandSorting controls sorting of the slice of commands, which is turned on by default.
 // To disable sorting, set it to false.
-var EnableCommandSorting = true
+var EnableCommandSorting = defaultCommandSorting
+
+// EnableCaseInsensitive allows case-insensitive commands names. (case sensitive by default)
+var EnableCaseInsensitive = defaultCaseInsensitive
 
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.
