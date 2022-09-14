@@ -9,6 +9,25 @@ env:
 
 jobs:
 
+
+  lic-headers:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - run: >-
+          docker run
+          -v $(pwd):/wrk -w /wrk
+          ghcr.io/google/addlicense
+          -c 'The Cobra Authors'
+          -y '2013-2022'
+          -l apache
+          -ignore '.github/**'
+          -check
+          .
+
+
   golangci-lint:
     runs-on: ubuntu-latest
     steps:
@@ -27,6 +46,7 @@ jobs:
         with:
           version: latest
           args: --verbose
+
 
   test-unix:
     strategy:
@@ -62,6 +82,7 @@ jobs:
         go install github.com/mitchellh/gox"${_version}"
 
     - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH make test
+
 
   test-win:
     name: MINGW64
