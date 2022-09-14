@@ -13,10 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+      - uses: actions/checkout@v3
+
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.19'
           check-latest: true
+          cache: true
 
       - uses: actions/checkout@v3
 
@@ -33,7 +36,6 @@ jobs:
         - ubuntu
         - macOS
         go:
-        - 14
         - 15
         - 16
         - 17
@@ -43,17 +45,12 @@ jobs:
     runs-on: ${{ matrix.platform }}-latest
     steps:
 
+    - uses: actions/checkout@v3
+
     - uses: actions/setup-go@v3
       with:
         go-version: 1.${{ matrix.go }}.x
-
-    - uses: actions/checkout@v3
-
-    - uses: actions/cache@v3
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-1.${{ matrix.go }}.x-${{ hashFiles('**/go.sum') }}
-        restore-keys: ${{ runner.os }}-1.${{ matrix.go }}.x-
+        cache: true
 
     - run: |
         export GOBIN=$HOME/go/bin
