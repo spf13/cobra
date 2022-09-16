@@ -99,6 +99,11 @@ To tell Cobra *not* to provide the default `completion` command:
 rootCmd.CompletionOptions.DisableDefaultCmd = true
 ```
 
+To tell Cobra to mark the default `completion` command as *hidden*:
+```
+rootCmd.CompletionOptions.HiddenDefaultCmd = true
+```
+
 To tell Cobra *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:
 ```
 rootCmd.CompletionOptions.DisableNoDescFlag = true
