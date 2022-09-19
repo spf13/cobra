@@ -2162,8 +2162,8 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 	}
 }
 
-const VERSION_FLAG = "--version"
-const HELP_FLAG = "--help"
+const VersionFlag = "--version"
+const HelpFlag = "--help"
 
 func TestNoRootRunCommandExecutedWithVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description"}
@@ -2175,8 +2175,8 @@ func TestNoRootRunCommandExecutedWithVersionSet(t *testing.T) {
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringContains(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
 }
 
 func TestNoRootRunCommandExecutedWithoutVersionSet(t *testing.T) {
@@ -2189,8 +2189,8 @@ func TestNoRootRunCommandExecutedWithoutVersionSet(t *testing.T) {
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringOmits(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
 }
 
 func TestHelpCommandExecutedWithVersionSet(t *testing.T) {
@@ -2203,8 +2203,8 @@ func TestHelpCommandExecutedWithVersionSet(t *testing.T) {
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringContains(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
 }
 
 func TestHelpCommandExecutedWithoutVersionSet(t *testing.T) {
@@ -2217,34 +2217,34 @@ func TestHelpCommandExecutedWithoutVersionSet(t *testing.T) {
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringOmits(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
 }
 
 func TestHelpflagCommandExecutedWithVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
 
-	output, err := executeCommand(rootCmd, HELP_FLAG)
+	output, err := executeCommand(rootCmd, HelpFlag)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringContains(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
 }
 
 func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
 
-	output, err := executeCommand(rootCmd, HELP_FLAG)
+	output, err := executeCommand(rootCmd, HelpFlag)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	checkStringContains(t, output, rootCmd.Long)
-	checkStringContains(t, output, HELP_FLAG)
-	checkStringOmits(t, output, VERSION_FLAG)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
 }
