@@ -3,26 +3,51 @@ name: Test
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 env:
   GO111MODULE: on
 
 jobs:
 
+
+  lic-headers:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - run: >-
+          docker run
+          -v $(pwd):/wrk -w /wrk
+          ghcr.io/google/addlicense
+          -c 'The Cobra Authors'
+          -y '2013-2022'
+          -l apache
+          -ignore '.github/**'
+          -check
+          .
+
+
   golangci-lint:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '^1.19'
+          check-latest: true
+          cache: true
 
       - uses: actions/checkout@v3
 
-      - uses: golangci/golangci-lint-action@v3.1.0
+      - uses: golangci/golangci-lint-action@v3.2.0
         with:
           version: latest
           args: --verbose
+
 
   test-unix:
     strategy:
@@ -32,37 +57,33 @@ jobs:
         - ubuntu
         - macOS
         go:
-        - 14
         - 15
         - 16
         - 17
         - 18
+        - 19
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     steps:
 
-    - uses: actions/setup-go@v2
-      with:
-        go-version: 1.${{ matrix.go }}.x
-
     - uses: actions/checkout@v3
 
-    - uses: actions/cache@v3
+    - uses: actions/setup-go@v3
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-1.${{ matrix.go }}.x-${{ hashFiles('**/go.sum') }}
-        restore-keys: ${{ runner.os }}-1.${{ matrix.go }}.x-
+        go-version: 1.${{ matrix.go }}.x
+        cache: true
 
     - run: |
         export GOBIN=$HOME/go/bin
         case "${{ matrix.go }}" in
-          16|17|18) _version='@latest';;
-          *) _version='';;
+          14|15) _version='';;
+          *) _version='@latest';;
         esac
         go install github.com/kyoh86/richgo"${_version}"
         go install github.com/mitchellh/gox"${_version}"
 
     - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH make test
+
 
   test-win:
     name: MINGW64

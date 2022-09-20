@@ -1,3 +1,17 @@
+// Copyright 2013-2022 The Cobra Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cobra
 
 import (
@@ -73,7 +87,8 @@ __%[1]s_handle_go_custom_completion()
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows to handle aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} %[2]s ${args[*]}"
+    # Disable ActiveHelp which is not supported for bash completion v1
+    requestComp="%[8]s=0 ${words[0]} %[2]s ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
@@ -383,7 +398,7 @@ __%[1]s_handle_word()
 
 `, name, ShellCompNoDescRequestCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
 }
 
 func writePostscript(buf io.StringWriter, name string) {

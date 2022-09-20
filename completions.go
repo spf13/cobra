@@ -1,3 +1,17 @@
+// Copyright 2013-2022 The Cobra Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cobra
 
 import (
@@ -178,6 +192,12 @@ func (c *Command) initCompleteCmd(args []string) {
 
 			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
 			for _, comp := range completions {
+				if GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable {
+					// Remove all activeHelp entries in this case
+					if strings.HasPrefix(comp, activeHelpMarker) {
+						continue
+					}
+				}
 				if noDescriptions {
 					// Remove any description that may be included following a tab character.
 					comp = strings.Split(comp, "\t")[0]
@@ -318,6 +338,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 
 	var completions []string
 	var directive ShellCompDirective
+
+	// Enforce flag groups before doing flag completions
+	finalCmd.enforceFlagGroupsForCompletion()
 
 	// Note that we want to perform flagname completion even if finalCmd.DisableFlagParsing==true;
 	// doing this allows for completion of persistent flag names even for commands that disable flag parsing.
@@ -652,7 +675,7 @@ To load completions for every new session, execute once:
 
 #### macOS:
 
-	%[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+	%[1]s completion bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
@@ -689,7 +712,7 @@ To load completions for every new session, execute once:
 
 #### macOS:
 
-	%[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
+	%[1]s completion zsh > $(brew --prefix)/share/zsh/site-functions/_%[1]s
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
