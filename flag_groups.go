@@ -59,9 +59,9 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
-// validateFlagGroups validates the mutuallyExclusive/requiredAsGroup logic and returns the
+// ValidateFlagGroups validates the mutuallyExclusive/requiredAsGroup logic and returns the
 // first error encountered.
-func (c *Command) validateFlagGroups() error {
+func (c *Command) ValidateFlagGroups() error {
 	if c.DisableFlagParsing {
 		return nil
 	}
