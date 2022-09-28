@@ -828,12 +828,6 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
-	if !c.Runnable() {
-		return flag.ErrHelp
-	}
-
-	c.preRun()
-
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
 		argWoFlags = a
@@ -842,6 +836,12 @@ func (c *Command) execute(a []string) (err error) {
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err
 	}
+
+	if !c.Runnable() {
+		return flag.ErrHelp
+	}
+
+	c.preRun()
 
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPreRunE != nil {
