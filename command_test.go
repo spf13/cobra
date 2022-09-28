@@ -2343,3 +2343,42 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	longChildCmd := &Command{Use: "long-name-child-abcdefghijklmnopqrstuvwxyz", Run: emptyRun}
+	// For this test to be useful the hiddenChildCmd and deprecatedChildCmd commands need to have a longer `Use` field than the other commands.
+	hiddenChildCmd := &Command{Use: longChildCmd.Use + "-hidden", Hidden: true, Run: emptyRun}
+	deprecatedChildCmd := &Command{Use: longChildCmd.Use + "-deprecated", Deprecated: "deprecated", Run: emptyRun}
+
+	rootCmd.AddCommand(childCmd)
+	rootCmd.AddCommand(longChildCmd)
+	rootCmd.AddCommand(hiddenChildCmd)
+	rootCmd.AddCommand(deprecatedChildCmd)
+
+	expectedUsePad := len(longChildCmd.Use)
+	expectedPathPad := len(longChildCmd.CommandPath())
+	expectedNamePad := len(longChildCmd.Name())
+
+	if childCmd.UsagePadding() != expectedUsePad {
+		t.Errorf("Expected usage padding '%d', got '%d'", expectedUsePad, childCmd.UsagePadding())
+	}
+	if longChildCmd.UsagePadding() != expectedUsePad {
+		t.Errorf("Expected usage padding '%d', got '%d'", expectedUsePad, longChildCmd.UsagePadding())
+	}
+
+	if childCmd.CommandPathPadding() != expectedPathPad {
+		t.Errorf("Expected command path padding '%d', got '%d'", expectedPathPad, childCmd.CommandPathPadding())
+	}
+	if longChildCmd.CommandPathPadding() != expectedPathPad {
+		t.Errorf("Expected command path padding '%d', got '%d'", expectedPathPad, longChildCmd.CommandPathPadding())
+	}
+
+	if childCmd.NamePadding() != expectedNamePad {
+		t.Errorf("Expected name padding '%d', got '%d'", expectedNamePad, childCmd.NamePadding())
+	}
+	if longChildCmd.NamePadding() != expectedNamePad {
+		t.Errorf("Expected name padding '%d', got '%d'", expectedNamePad, longChildCmd.NamePadding())
+	}
+}
