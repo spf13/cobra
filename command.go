@@ -1123,7 +1123,8 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
-					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
+					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
+					cmd.InitDefaultVersionFlag() // make possible 'version' flag to be shown
 					CheckErr(cmd.Help())
 				}
 			},
