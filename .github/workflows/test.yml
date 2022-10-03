@@ -8,6 +8,9 @@ on:
 env:
   GO111MODULE: on
 
+permissions:
+  contents: read
+
 jobs:
 
 
@@ -30,6 +33,9 @@ jobs:
 
 
   golangci-lint:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
     runs-on: ubuntu-latest
     steps:
 
