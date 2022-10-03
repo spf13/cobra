@@ -1,5 +1,6 @@
 ## Projects using Cobra
 
+- [Allero](https://github.com/allero-io/allero)
 - [Arduino CLI](https://github.com/arduino/arduino-cli)
 - [Bleve](https://blevesearch.com/)
 - [Cilium](https://cilium.io/)
