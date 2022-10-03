@@ -40,6 +40,7 @@ var templateFuncs = template.FuncMap{
 }
 
 var initializers []func()
+var finalizers []func()
 
 const (
 	defaultPrefixMatching  = false
@@ -92,6 +93,12 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 // Execute method is called.
 func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
+}
+
+// OnFinalize sets the passed functions to be run when each command's
+// Execute method is terminated.
+func OnFinalize(y ...func()) {
+	finalizers = append(finalizers, y...)
 }
 
 // FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
