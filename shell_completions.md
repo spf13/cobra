@@ -40,7 +40,7 @@ Bash:
   # Linux:
   $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
   # macOS:
-  $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
+  $ %[1]s completion bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
 
 Zsh:
 
@@ -97,6 +97,11 @@ the `CompletionOptions` field on the *root* command.
 To tell Cobra *not* to provide the default `completion` command:
 ```
 rootCmd.CompletionOptions.DisableDefaultCmd = true
+```
+
+To tell Cobra to mark the default `completion` command as *hidden*:
+```
+rootCmd.CompletionOptions.HiddenDefaultCmd = true
 ```
 
 To tell Cobra *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:

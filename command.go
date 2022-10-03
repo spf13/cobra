@@ -1,9 +1,10 @@
-// Copyright © 2013 Steve Francia <spf@spf13.com>.
+// Copyright 2013-2022 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// http://www.apache.org/licenses/LICENSE-2.0
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +19,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -235,8 +237,8 @@ func (c *Command) Context() context.Context {
 	return c.ctx
 }
 
-// SetContext sets context for the command. It is set to context.Background by default and will be overwritten by
-// Command.ExecuteContext or Command.ExecuteContextC
+// SetContext sets context for the command. This context will be overwritten by
+// Command.ExecuteContext or Command.ExecuteContextC.
 func (c *Command) SetContext(ctx context.Context) {
 	c.ctx = ctx
 }
@@ -675,7 +677,7 @@ func (c *Command) findSuggestions(arg string) string {
 func (c *Command) findNext(next string) *Command {
 	matches := make([]*Command, 0)
 	for _, cmd := range c.commands {
-		if cmd.Name() == next || cmd.HasAlias(next) {
+		if commandNameMatches(cmd.Name(), next) || cmd.HasAlias(next) {
 			cmd.commandCalledAs.name = next
 			return cmd
 		}
@@ -860,10 +862,10 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
-	if err := c.validateRequiredFlags(); err != nil {
+	if err := c.ValidateRequiredFlags(); err != nil {
 		return err
 	}
-	if err := c.validateFlagGroups(); err != nil {
+	if err := c.ValidateFlagGroups(); err != nil {
 		return err
 	}
 
@@ -990,7 +992,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
-		if err == flag.ErrHelp {
+		if errors.Is(err, flag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
 		}
@@ -1012,12 +1014,13 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 func (c *Command) ValidateArgs(args []string) error {
 	if c.Args == nil {
-		return nil
+		return ArbitraryArgs(c, args)
 	}
 	return c.Args(c, args)
 }
 
-func (c *Command) validateRequiredFlags() error {
+// ValidateRequiredFlags validates all required flags are present and returns an error otherwise
+func (c *Command) ValidateRequiredFlags() error {
 	if c.DisableFlagParsing {
 		return nil
 	}
@@ -1120,7 +1123,8 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
-					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
+					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
+					cmd.InitDefaultVersionFlag() // make possible 'version' flag to be shown
 					CheckErr(cmd.Help())
 				}
 			},
@@ -1327,7 +1331,7 @@ func (c *Command) Name() string {
 // HasAlias determines if a given string is an alias of the command.
 func (c *Command) HasAlias(s string) bool {
 	for _, a := range c.Aliases {
-		if a == s {
+		if commandNameMatches(a, s) {
 			return true
 		}
 	}
@@ -1504,7 +1508,8 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	}
 
 	addToLocal := func(f *flag.Flag) {
-		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
+		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
+		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
 			c.lflags.AddFlag(f)
 		}
 	}
@@ -1692,4 +1697,15 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+// commandNameMatches checks if two command names are equal
+// taking into account case sensitivity according to
+// EnableCaseInsensitive global configuration.
+func commandNameMatches(s string, t string) bool {
+	if EnableCaseInsensitive {
+		return strings.EqualFold(s, t)
+	}
+
+	return s == t
 }

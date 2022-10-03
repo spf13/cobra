@@ -1,3 +1,17 @@
+// Copyright 2013-2022 The Cobra Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cobra
 
 import (
@@ -111,13 +125,18 @@ __%[1]s_process_completion_results() {
         fi
     fi
 
+    # Separate activeHelp from normal completions
+    local completions=()
+    local activeHelp=()
+    __%[1]s_extract_activeHelp
+
     if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
         # File extension filtering
         local fullFilter filter filteringCmd
 
-        # Do not use quotes around the $out variable or else newline
+        # Do not use quotes around the $completions variable or else newline
         # characters will be kept.
-        for filter in ${out}; do
+        for filter in ${completions[*]}; do
             fullFilter+="$filter|"
         done
 
@@ -129,7 +148,7 @@ __%[1]s_process_completion_results() {
 
         # Use printf to strip any trailing newline
         local subdir
-        subdir=$(printf "%%s" "${out}")
+        subdir=$(printf "%%s" "${completions[0]}")
         if [ -n "$subdir" ]; then
             __%[1]s_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
@@ -143,6 +162,43 @@ __%[1]s_process_completion_results() {
 
     __%[1]s_handle_special_char "$cur" :
     __%[1]s_handle_special_char "$cur" =
+
+    # Print the activeHelp statements before we finish
+    if [ ${#activeHelp[*]} -ne 0 ]; then
+        printf "\n";
+        printf "%%s\n" "${activeHelp[@]}"
+        printf "\n"
+
+        # The prompt format is only available from bash 4.4.
+        # We test if it is available before using it.
+        if (x=${PS1@P}) 2> /dev/null; then
+            printf "%%s" "${PS1@P}${COMP_LINE[@]}"
+        else
+            # Can't print the prompt.  Just print the
+            # text the user had typed, it is workable enough.
+            printf "%%s" "${COMP_LINE[@]}"
+        fi
+    fi
+}
+
+# Separate activeHelp lines from real completions.
+# Fills the $activeHelp and $completions arrays.
+__%[1]s_extract_activeHelp() {
+    local activeHelpMarker="%[8]s"
+    local endIndex=${#activeHelpMarker}
+
+    while IFS='' read -r comp; do
+        if [ "${comp:0:endIndex}" = "$activeHelpMarker" ]; then
+            comp=${comp:endIndex}
+            __%[1]s_debug "ActiveHelp found: $comp"
+            if [ -n "$comp" ]; then
+                activeHelp+=("$comp")
+            fi
+        else
+            # Not an activeHelp line but a normal completion
+            completions+=("$comp")
+        fi
+    done < <(printf "%%s\n" "${out}")
 }
 
 __%[1]s_handle_completion_types() {
@@ -163,7 +219,7 @@ __%[1]s_handle_completion_types() {
             if [[ $comp == "$cur"* ]]; then
                 COMPREPLY+=("$comp")
             fi
-        done < <(printf "%%s\n" "${out}")
+        done < <(printf "%%s\n" "${completions[@]}")
         ;;
 
     *)
@@ -177,10 +233,8 @@ __%[1]s_handle_standard_completion_case() {
     local tab=$'\t' comp
 
     # Short circuit to optimize if we don't have descriptions
-    if [[ $out != *$tab* ]]; then
-        while IFS='' read -r comp; do
-            COMPREPLY+=("$comp")
-        done < <(IFS=$'\n' compgen -W "$out" -- "$cur")
+    if [[ "${completions[*]}" != *$tab* ]]; then
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
         return 0
     fi
 
@@ -188,6 +242,7 @@ __%[1]s_handle_standard_completion_case() {
     local compline
     # Look for the longest completion so that we can format things nicely
     while IFS='' read -r compline; do
+        [[ -z $compline ]] && continue
         # Strip any description before checking the length
         comp=${compline%%%%$tab*}
         # Only consider the completions that match
@@ -196,7 +251,7 @@ __%[1]s_handle_standard_completion_case() {
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%%s\n" "${out}")
+    done < <(printf "%%s\n" "${completions[@]}")
 
     # If there is a single completion left, remove the description text
     if [ ${#COMPREPLY[*]} -eq 1 ]; then
@@ -306,7 +361,8 @@ fi
 # ex: ts=4 sw=4 et filetype=sh
 `, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
+		activeHelpMarker))
 }
 
 // GenBashCompletionFileV2 generates Bash completion version 2.

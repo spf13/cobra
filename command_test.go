@@ -1,3 +1,17 @@
+// Copyright 2013-2022 The Cobra Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cobra
 
 import (
@@ -314,7 +328,7 @@ func TestEnablePrefixMatching(t *testing.T) {
 		t.Errorf("aCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	EnablePrefixMatching = defaultPrefixMatching
 }
 
 func TestAliasPrefixMatching(t *testing.T) {
@@ -349,7 +363,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 		t.Errorf("timesCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	EnablePrefixMatching = defaultPrefixMatching
 }
 
 // TestChildSameName checks the correct behaviour of cobra in cases,
@@ -707,10 +721,7 @@ func TestEmptyInputs(t *testing.T) {
 	}
 }
 
-func TestOverwrittenFlag(t *testing.T) {
-	// TODO: This test fails, but should work.
-	t.Skip()
-
+func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	child := &Command{Use: "child", Run: emptyRun}
 
@@ -732,7 +743,7 @@ func TestOverwrittenFlag(t *testing.T) {
 	}
 
 	if childInherited.Lookup("intf") != nil {
-		t.Errorf(`InheritedFlags should not contain overwritten flag "intf"`)
+		t.Errorf(`InheritedFlags should not contain shadowed flag "intf"`)
 	}
 	if childLocal.Lookup("intf") == nil {
 		t.Error(`LocalFlags expected to contain "intf", got "nil"`)
@@ -885,6 +896,38 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 	}
 
 	checkStringContains(t, output, childCmd.Long)
+}
+
+func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun}
+	child := &Command{Use: "child", Run: emptyRun}
+	parent.AddCommand(child)
+
+	parent.PersistentFlags().Bool("foo", false, "parent foo usage")
+	parent.PersistentFlags().Bool("bar", false, "parent bar usage")
+	child.Flags().Bool("foo", false, "child foo usage") // This shadows parent's foo flag
+	child.Flags().Bool("baz", false, "child baz usage")
+
+	got, err := executeCommand(parent, "help", "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := `Usage:
+  parent child [flags]
+
+Flags:
+      --baz    child baz usage
+      --foo    child foo usage
+  -h, --help   help for child
+
+Global Flags:
+      --bar   parent bar usage
+`
+
+	if got != expected {
+		t.Errorf("Help text mismatch.\nExpected:\n%s\n\nGot:\n%s\n", expected, got)
+	}
 }
 
 func TestSetHelpCommand(t *testing.T) {
@@ -1232,6 +1275,113 @@ func TestSuggestions(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestCaseInsensitive(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
+	granchildCmd := &Command{Use: "GRANDCHILD", Run: emptyRun, Aliases: []string{"ALIAS"}}
+
+	childCmd.AddCommand(granchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	tests := []struct {
+		args                []string
+		failWithoutEnabling bool
+	}{
+		{
+			args:                []string{"child"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"CHILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"chILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternative"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"ALTERNATIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"ALTernatIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternatiVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"child", "GRANDCHILD"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"child", "grandchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "GRANdchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternative", "ALIAS"},
+			failWithoutEnabling: false,
+		},
+		{
+			args:                []string{"alternative", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHILD", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "aliAS"},
+			failWithoutEnabling: true,
+		},
+	}
+
+	for _, test := range tests {
+		for _, enableCaseInsensitivity := range []bool{true, false} {
+			EnableCaseInsensitive = enableCaseInsensitivity
+
+			output, err := executeCommand(rootCmd, test.args...)
+			expectedFailure := test.failWithoutEnabling && !enableCaseInsensitivity
+
+			if !expectedFailure && output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+			if !expectedFailure && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		}
+	}
+
+	EnableCaseInsensitive = defaultCaseInsensitive
+}
+
+// This test make sure we keep backwards-compatibility with respect
+// to command names case sensitivity behavior.
+func TestCaseSensitivityBackwardCompatibility(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+
+	rootCmd.AddCommand(childCmd)
+	_, err := executeCommand(rootCmd, strings.ToUpper(childCmd.Use))
+	if err == nil {
+		t.Error("Expected error on calling a command in upper case while command names are case sensitive. Got nil.")
+	}
+
 }
 
 func TestRemoveCommand(t *testing.T) {
@@ -1593,7 +1743,7 @@ func TestCommandsAreSorted(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	EnableCommandSorting = defaultCommandSorting
 }
 
 func TestEnableCommandSortingIsDisabled(t *testing.T) {
@@ -1614,7 +1764,7 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	EnableCommandSorting = defaultCommandSorting
 }
 
 func TestSetOutput(t *testing.T) {
@@ -1720,6 +1870,38 @@ func TestFlagErrorFunc(t *testing.T) {
 	expected := fmt.Sprintf(expectedFmt, "unknown flag: --unknown-flag")
 	if got != expected {
 		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestFlagErrorFuncHelp(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.PersistentFlags().Bool("help", false, "help for c")
+	c.SetFlagErrorFunc(func(_ *Command, err error) error {
+		return fmt.Errorf("wrap error: %w", err)
+	})
+
+	out, err := executeCommand(c, "--help")
+	if err != nil {
+		t.Errorf("--help should not fail: %v", err)
+	}
+
+	expected := `Usage:
+  c [flags]
+
+Flags:
+      --help   help for c
+`
+	if out != expected {
+		t.Errorf("Expected: %v, got: %v", expected, out)
+	}
+
+	out, err = executeCommand(c, "-h")
+	if err != nil {
+		t.Errorf("-h should not fail: %v", err)
+	}
+
+	if out != expected {
+		t.Errorf("Expected: %v, got: %v", expected, out)
 	}
 }
 
@@ -2160,4 +2342,91 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+const VersionFlag = "--version"
+const HelpFlag = "--help"
+
+func TestNoRootRunCommandExecutedWithVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description"}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
+}
+
+func TestNoRootRunCommandExecutedWithoutVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Long: "Long description"}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
+}
+
+func TestHelpCommandExecutedWithVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
+}
+
+func TestHelpCommandExecutedWithoutVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
+}
+
+func TestHelpflagCommandExecutedWithVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, HelpFlag)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringContains(t, output, VersionFlag)
+}
+
+func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
+	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, HelpFlag)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, rootCmd.Long)
+	checkStringContains(t, output, HelpFlag)
+	checkStringOmits(t, output, VersionFlag)
 }
