@@ -161,6 +161,9 @@ type Command struct {
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
 
+	// errorHandlerFunc allows setting a custom error handler by the user.
+	errorHandlerFunc func(error)
+
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
 	// outWriter is a writer defined by the user that replaces stdout
@@ -321,6 +324,12 @@ func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string
 	for _, command := range c.commands {
 		command.SetGlobalNormalizationFunc(n)
 	}
+}
+
+// SetErrorHandlerFunc is the function that will be called, if set, when there is any kind of error in the
+// execution of the command.
+func (c *Command) SetErrorHandlerFunc(f func(error)) {
+	c.errorHandlerFunc = f
 }
 
 // OutOrStdout returns output to stdout.
@@ -979,7 +988,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			if c.errorHandlerFunc != nil {
+				c.errorHandlerFunc(err)
+			} else {
+				c.PrintErrln("Error:", err.Error())
+			}
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1008,7 +1021,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			if c.errorHandlerFunc != nil {
+				c.errorHandlerFunc(err)
+			} else {
+				c.PrintErrln("Error:", err.Error())
+			}
 		}
 
 		// If root command has SilenceUsage flagged,

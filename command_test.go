@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -2429,4 +2430,24 @@ func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Long)
 	checkStringContains(t, output, HelpFlag)
 	checkStringOmits(t, output, VersionFlag)
+}
+
+func TestSetCustomErrorHandler(t *testing.T) {
+	var writer bytes.Buffer
+	handler := func(err error) {
+		writer.Write([]byte(err.Error()))
+	}
+
+	root := &Command{
+		Use: "root",
+		RunE: func(cmd *Command, args []string) error {
+			return errors.New("test error handler function")
+		},
+		SilenceUsage: true,
+	}
+	root.SetErrorHandlerFunc(handler)
+	_ = root.Execute()
+	if writer.String() != "test error handler function" {
+		t.Errorf("Expected error handler to contain [%s] instead it contains [%s]", "test error handler function", writer.String())
+	}
 }
