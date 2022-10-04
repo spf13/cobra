@@ -30,6 +30,8 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
@@ -1064,6 +1066,7 @@ func (c *Command) InitDefaultHelpFlag() {
 			usage += c.Name()
 		}
 		c.Flags().BoolP("help", "h", false, usage)
+		_ = c.Flags().SetAnnotation("help", FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
 
@@ -1089,6 +1092,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			c.Flags().Bool("version", false, usage)
 		}
+		_ = c.Flags().SetAnnotation("version", FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
 
