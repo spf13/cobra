@@ -2,11 +2,17 @@ name: "Pull Request Labeler"
 on:
 - pull_request_target
 
+permissions:
+  contents: read
+
 jobs:
   triage:
+    permissions:
+      contents: read  # for actions/labeler to determine modified files
+      pull-requests: write  # for actions/labeler to add labels to PRs
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/labeler@v3
+    - uses: actions/labeler@v4
       with:
         repo-token: "${{ github.token }}"
 
