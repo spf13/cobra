@@ -332,7 +332,7 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 
 // SetCompletionCommandGroup sets the group id of the completion command.
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
-	// completionCommandGroupID is used if no completion commmand is defined by the user
+	// completionCommandGroupID is used if no completion command is defined by the user
 	c.Root().completionCommandGroupID = groupID
 }
 
@@ -544,13 +544,16 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-Available Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{range $group := .Groups}}
+Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
 {{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -1217,7 +1220,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		cmds[i].parent = c
 		// if Group is not defined let the developer know right away
 		if x.GroupID != "" && !c.ContainsGroup(x.GroupID) {
-			panic(fmt.Sprintf("Group id %s is not defined", x.GroupID))
+			panic(fmt.Sprintf("Group id '%s' is not defined for subcommand '%s'", x.GroupID, cmds[i].CommandPath()))
 		}
 		// update max lengths
 		usageLen := len(x.Use)
@@ -1244,6 +1247,16 @@ func (c *Command) AddCommand(cmds ...*Command) {
 // Groups returns a slice of child command groups.
 func (c *Command) Groups() []*Group {
 	return c.commandgroups
+}
+
+// AllChildCommandsHaveGroup returns if all subcommands are assigned to a group
+func (c *Command) AllChildCommandsHaveGroup() bool {
+	for _, sub := range c.commands {
+		if (sub.IsAvailableCommand() || sub == c.helpCommand) && sub.GroupID == "" {
+			return false
+		}
+	}
+	return true
 }
 
 // ContainGroups return if groupID exists in the list of command groups.

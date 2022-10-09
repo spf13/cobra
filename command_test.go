@@ -1783,7 +1783,7 @@ func TestUsageWithGroup(t *testing.T) {
 	}
 
 	// help should be ungrouped here
-	checkStringContains(t, output, "\nAvailable Commands:\n  help")
+	checkStringContains(t, output, "\nAdditional Commands:\n  help")
 	checkStringContains(t, output, "\ngroup1\n  cmd1")
 	checkStringContains(t, output, "\ngroup2\n  cmd2")
 }
@@ -1802,11 +1802,11 @@ func TestUsageHelpGroup(t *testing.T) {
 	}
 
 	// now help should be grouped under "group"
-	checkStringOmits(t, output, "\nAvailable Commands:\n  help")
-	checkStringContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
+	checkStringOmits(t, output, "\nAdditional Commands:\n  help")
+	checkStringContains(t, output, "\ngroup\n  help")
 }
 
-func TestUsageCompletionpGroup(t *testing.T) {
+func TestUsageCompletionGroup(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
 	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
@@ -1822,8 +1822,30 @@ func TestUsageCompletionpGroup(t *testing.T) {
 	}
 
 	// now completion should be grouped under "group"
-	checkStringOmits(t, output, "\nAvailable Commands:\n  completion")
-	checkStringContains(t, output, "\nAvailable Commands:\n\ngroup\n  completion")
+	checkStringOmits(t, output, "\nAdditional Commands:\n  completion")
+	checkStringContains(t, output, "\ngroup\n  completion")
+}
+
+func TestUngroupedCommand(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
+	rootCmd.AddGroup(&Group{ID: "help", Title: "help"})
+
+	rootCmd.AddCommand(&Command{Use: "xxx", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("group")
+
+	// Add a command without a group
+	rootCmd.AddCommand(&Command{Use: "yyy", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// The yyy command should be in the additional command "group"
+	checkStringContains(t, output, "\nAdditional Commands:\n  yyy")
 }
 
 func TestAddGroup(t *testing.T) {
