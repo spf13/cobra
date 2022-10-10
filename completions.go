@@ -673,6 +673,7 @@ See each sub-command's help for details on how to use the generated script.
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
+		GroupID:           c.completionCommandGroupID,
 	}
 	c.AddCommand(completionCmd)
 

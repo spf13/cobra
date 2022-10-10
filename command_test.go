@@ -1767,6 +1767,101 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = defaultCommandSorting
 }
 
+func TestUsageWithGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.AddGroup(&Group{ID: "group1", Title: "group1"})
+	rootCmd.AddGroup(&Group{ID: "group2", Title: "group2"})
+
+	rootCmd.AddCommand(&Command{Use: "cmd1", GroupID: "group1", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "cmd2", GroupID: "group2", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// help should be ungrouped here
+	checkStringContains(t, output, "\nAdditional Commands:\n  help")
+	checkStringContains(t, output, "\ngroup1\n  cmd1")
+	checkStringContains(t, output, "\ngroup2\n  cmd2")
+}
+
+func TestUsageHelpGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
+	rootCmd.AddCommand(&Command{Use: "xxx", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// now help should be grouped under "group"
+	checkStringOmits(t, output, "\nAdditional Commands:\n  help")
+	checkStringContains(t, output, "\ngroup\n  help")
+}
+
+func TestUsageCompletionGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
+	rootCmd.AddGroup(&Group{ID: "help", Title: "help"})
+
+	rootCmd.AddCommand(&Command{Use: "xxx", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// now completion should be grouped under "group"
+	checkStringOmits(t, output, "\nAdditional Commands:\n  completion")
+	checkStringContains(t, output, "\ngroup\n  completion")
+}
+
+func TestUngroupedCommand(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
+	rootCmd.AddGroup(&Group{ID: "help", Title: "help"})
+
+	rootCmd.AddCommand(&Command{Use: "xxx", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("group")
+
+	// Add a command without a group
+	rootCmd.AddCommand(&Command{Use: "yyy", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// The yyy command should be in the additional command "group"
+	checkStringContains(t, output, "\nAdditional Commands:\n  yyy")
+}
+
+func TestAddGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "Test group"})
+	rootCmd.AddCommand(&Command{Use: "cmd", GroupID: "group", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "\nTest group\n  cmd")
+}
+
 func TestSetOutput(t *testing.T) {
 	c := &Command{}
 	c.SetOutput(nil)

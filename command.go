@@ -35,6 +35,12 @@ const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
+// Structure to manage groups for commands
+type Group struct {
+	ID    string
+	Title string
+}
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -60,6 +66,9 @@ type Command struct {
 
 	// Short is the short description shown in the 'help' output.
 	Short string
+
+	// The group id under which this subcommand is grouped in the 'help' output of its parent.
+	GroupID string
 
 	// Long is the long message shown in the 'help <this-command>' output.
 	Long string
@@ -128,6 +137,9 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 
+	// groups for subcommands
+	commandgroups []*Group
+
 	// args is actual args parsed from flags.
 	args []string
 	// flagErrorBuf contains all error messages from pflag.
@@ -160,6 +172,12 @@ type Command struct {
 	// helpCommand is command with usage 'help'. If it's not defined by user,
 	// cobra uses default help command.
 	helpCommand *Command
+	// helpCommandGroupID is the group id for the helpCommand
+	helpCommandGroupID string
+
+	// completionCommandGroupID is the group id for the completion command
+	completionCommandGroupID string
+
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
 
@@ -301,6 +319,21 @@ func (c *Command) SetHelpFunc(f func(*Command, []string)) {
 // SetHelpCommand sets help command.
 func (c *Command) SetHelpCommand(cmd *Command) {
 	c.helpCommand = cmd
+}
+
+// SetHelpCommandGroup sets the group id of the help command.
+func (c *Command) SetHelpCommandGroupID(groupID string) {
+	if c.helpCommand != nil {
+		c.helpCommand.GroupID = groupID
+	}
+	// helpCommandGroupID is used if no helpCommand is defined by the user
+	c.helpCommandGroupID = groupID
+}
+
+// SetCompletionCommandGroup sets the group id of the completion command.
+func (c *Command) SetCompletionCommandGroupID(groupID string) {
+	// completionCommandGroupID is used if no completion command is defined by the user
+	c.Root().completionCommandGroupID = groupID
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -511,10 +544,16 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+
+{{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -1140,6 +1179,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					CheckErr(cmd.Help())
 				}
 			},
+			GroupID: c.helpCommandGroupID,
 		}
 	}
 	c.RemoveCommand(c.helpCommand)
@@ -1178,6 +1218,10 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
+		// if Group is not defined let the developer know right away
+		if x.GroupID != "" && !c.ContainsGroup(x.GroupID) {
+			panic(fmt.Sprintf("Group id '%s' is not defined for subcommand '%s'", x.GroupID, cmds[i].CommandPath()))
+		}
 		// update max lengths
 		usageLen := len(x.Use)
 		if usageLen > c.commandsMaxUseLen {
@@ -1198,6 +1242,36 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		c.commands = append(c.commands, x)
 		c.commandsAreSorted = false
 	}
+}
+
+// Groups returns a slice of child command groups.
+func (c *Command) Groups() []*Group {
+	return c.commandgroups
+}
+
+// AllChildCommandsHaveGroup returns if all subcommands are assigned to a group
+func (c *Command) AllChildCommandsHaveGroup() bool {
+	for _, sub := range c.commands {
+		if (sub.IsAvailableCommand() || sub == c.helpCommand) && sub.GroupID == "" {
+			return false
+		}
+	}
+	return true
+}
+
+// ContainGroups return if groupID exists in the list of command groups.
+func (c *Command) ContainsGroup(groupID string) bool {
+	for _, x := range c.commandgroups {
+		if x.ID == groupID {
+			return true
+		}
+	}
+	return false
+}
+
+// AddGroup adds one or more command groups to this parent command.
+func (c *Command) AddGroup(groups ...*Group) {
+	c.commandgroups = append(c.commandgroups, groups...)
 }
 
 // RemoveCommand removes one or more commands from a parent command.
