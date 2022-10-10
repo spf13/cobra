@@ -645,12 +645,12 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	return flag, trimmedArgs, lastArg, nil
 }
 
-// initDefaultCompletionCmd adds a default 'completion' command to c.
+// InitDefaultCompletionCmd adds a default 'completion' command to c.
 // This function will do nothing if any of the following is true:
 // 1- the feature has been explicitly disabled by the program,
 // 2- c has no subcommands (to avoid creating one),
 // 3- c already has a 'completion' command provided by the program.
-func (c *Command) initDefaultCompletionCmd() {
+func (c *Command) InitDefaultCompletionCmd() {
 	if c.CompletionOptions.DisableDefaultCmd || !c.HasSubCommands() {
 		return
 	}
