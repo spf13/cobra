@@ -6,6 +6,7 @@
 - [Cilium](https://cilium.io/)
 - [CloudQuery](https://github.com/cloudquery/cloudquery)
 - [CockroachDB](https://www.cockroachlabs.com/)
+- [Constellation](https://github.com/edgelesssys/constellation)
 - [Cosmos SDK](https://github.com/cosmos/cosmos-sdk)
 - [Datree](https://github.com/datreeio/datree)
 - [Delve](https://github.com/derekparker/delve)
