@@ -1,9 +1,8 @@
 BIN="./bin"
 SRC=$(shell find . -name "*.go")
-GOPATH=$(shell go env GOPATH)
 
 ifeq (, $(shell which golangci-lint))
-$(warning "could not find golangci-lint in PATH, run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.50.0")
+$(warning "could not find golangci-lint in PATH, see here for installation details: https://golangci-lint.run/usage/install/")
 endif
 
 ifeq (, $(shell which richgo))
