@@ -53,7 +53,7 @@ function __%[1]s_perform_completion
     __%[1]s_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
-    set -l requestComp "%[9]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
+    set -l requestComp "%[10]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
 
     __%[1]s_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
@@ -119,6 +119,7 @@ function __%[1]s_prepare_completions
     set -l shellCompDirectiveNoFileComp %[6]d
     set -l shellCompDirectiveFilterFileExt %[7]d
     set -l shellCompDirectiveFilterDirs %[8]d
+    set -l shellCompDirectiveNoMatching %[9]d
 
     if test -z "$directive"
         set directive 0
@@ -141,8 +142,9 @@ function __%[1]s_prepare_completions
 
     set -l nospace (math (math --scale 0 $directive / $shellCompDirectiveNoSpace) %% 2)
     set -l nofiles (math (math --scale 0 $directive / $shellCompDirectiveNoFileComp) %% 2)
+    set -l nomatching (math (math --scale 0 $directive / $shellCompDirectiveNoMatching) %% 2)
 
-    __%[1]s_debug "nospace: $nospace, nofiles: $nofiles"
+    __%[1]s_debug "nospace: $nospace, nofiles: $nofiles, nomatching: $nomatching"
 
     # If we want to prevent a space, or if file completion is NOT disabled,
     # we need to count the number of valid completions.
@@ -150,10 +152,14 @@ function __%[1]s_prepare_completions
     # may not already be filtered so as to allow fish to match on different
     # criteria than the prefix.
     if test $nospace -ne 0; or test $nofiles -eq 0
-        set -l prefix (commandline -t | string escape --style=regex)
-        __%[1]s_debug "prefix: $prefix"
-
-        set -l completions (string match -r -- "^$prefix.*" $__%[1]s_comp_results)
+        if test $nomatching -ne 0
+            set -l completions $__%[1]s_comp_results
+        else
+            set -l prefix (commandline -t | string escape --style=regex)
+            __%[1]s_debug "prefix: $prefix"
+    
+            set -l completions (string match -r -- "^$prefix.*" $__%[1]s_comp_results)
+        end
         set --global __%[1]s_comp_results $completions
         __%[1]s_debug "Filtered completions are: $__%[1]s_comp_results"
 
@@ -211,7 +217,8 @@ complete -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 
 `, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveNoMatching,
+		activeHelpEnvVar(name)))
 }
 
 // GenFishCompletion generates fish completion file and writes to the passed writer.
