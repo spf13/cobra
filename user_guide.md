@@ -349,7 +349,7 @@ shown below:
 ```go
 var cmd = &cobra.Command{
   Short: "hello",
-  Args: MatchAll(ExactArgs(2), OnlyValidArgs),
+  Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
   Run: func(cmd *cobra.Command, args []string) {
     fmt.Println("Hello, World!")
   },
