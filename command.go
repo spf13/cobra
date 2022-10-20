@@ -138,7 +138,7 @@ type Command struct {
 	PersistentPostRunE func(cmd *Command, args []string) error
 
 	// groups for subcommands
-	Groups []*Group
+	CommandGroups []*Group
 
 	// args is actual args parsed from flags.
 	args []string
@@ -1244,6 +1244,11 @@ func (c *Command) AddCommand(cmds ...*Command) {
 	}
 }
 
+// Groups returns a slice of child command groups.
+func (c *Command) Groups() []*Group {
+	return c.CommandGroups
+}
+
 // AllChildCommandsHaveGroup returns if all subcommands are assigned to a group
 func (c *Command) AllChildCommandsHaveGroup() bool {
 	for _, sub := range c.commands {
@@ -1256,7 +1261,7 @@ func (c *Command) AllChildCommandsHaveGroup() bool {
 
 // ContainGroups return if groupID exists in the list of command groups.
 func (c *Command) ContainsGroup(groupID string) bool {
-	for _, x := range c.Groups {
+	for _, x := range c.CommandGroups {
 		if x.ID == groupID {
 			return true
 		}
@@ -1266,7 +1271,7 @@ func (c *Command) ContainsGroup(groupID string) bool {
 
 // AddGroup adds one or more command groups to this parent command.
 func (c *Command) AddGroup(groups ...*Group) {
-	c.Groups = append(c.Groups, groups...)
+	c.CommandGroups = append(c.CommandGroups, groups...)
 }
 
 // RemoveCommand removes one or more commands from a parent command.
