@@ -1862,6 +1862,84 @@ func TestAddGroup(t *testing.T) {
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
+func TestWrongGroupFirstLevel(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "Test group"})
+	// Use the wrong group ID
+	rootCmd.AddCommand(&Command{Use: "cmd", GroupID: "wrong", Run: emptyRun})
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestWrongGroupNestedLevel(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	var childCmd = &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	childCmd.AddGroup(&Group{ID: "group", Title: "Test group"})
+	// Use the wrong group ID
+	childCmd.AddCommand(&Command{Use: "cmd", GroupID: "wrong", Run: emptyRun})
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "child", "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestWrongGroupForHelp(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	var childCmd = &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "Test group"})
+	// Use the wrong group ID
+	rootCmd.SetHelpCommandGroupID("wrong")
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestWrongGroupForCompletion(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	var childCmd = &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "Test group"})
+	// Use the wrong group ID
+	rootCmd.SetCompletionCommandGroupID("wrong")
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
 func TestSetOutput(t *testing.T) {
 	c := &Command{}
 	c.SetOutput(nil)
