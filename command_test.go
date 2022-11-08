@@ -2603,3 +2603,92 @@ func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 	checkStringContains(t, output, HelpFlag)
 	checkStringOmits(t, output, VersionFlag)
 }
+
+func TestFind(t *testing.T) {
+	var foo, bar string
+	root := &Command{
+		Use: "root",
+	}
+	root.PersistentFlags().StringVarP(&foo, "foo", "f", "", "")
+	root.PersistentFlags().StringVarP(&bar, "bar", "b", "something", "")
+
+	child := &Command{
+		Use: "child",
+	}
+	root.AddCommand(child)
+
+	testCases := []struct {
+		args              []string
+		expectedFoundArgs []string
+	}{
+		{
+			[]string{"child"},
+			[]string{},
+		},
+		{
+			[]string{"child", "child"},
+			[]string{"child"},
+		},
+		{
+			[]string{"child", "foo", "child", "bar", "child", "baz", "child"},
+			[]string{"foo", "child", "bar", "child", "baz", "child"},
+		},
+		{
+			[]string{"-f", "child", "child"},
+			[]string{"-f", "child"},
+		},
+		{
+			[]string{"child", "-f", "child"},
+			[]string{"-f", "child"},
+		},
+		{
+			[]string{"-b", "child", "child"},
+			[]string{"-b", "child"},
+		},
+		{
+			[]string{"child", "-b", "child"},
+			[]string{"-b", "child"},
+		},
+		{
+			[]string{"child", "-b"},
+			[]string{"-b"},
+		},
+		{
+			[]string{"-b", "-f", "child", "child"},
+			[]string{"-b", "-f", "child"},
+		},
+		{
+			[]string{"-f", "child", "-b", "something", "child"},
+			[]string{"-f", "child", "-b", "something"},
+		},
+		{
+			[]string{"-f", "child", "child", "-b"},
+			[]string{"-f", "child", "-b"},
+		},
+		{
+			[]string{"-f=child", "-b=something", "child"},
+			[]string{"-f=child", "-b=something"},
+		},
+		{
+			[]string{"--foo", "child", "--bar", "something", "child"},
+			[]string{"--foo", "child", "--bar", "something"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%v", tc.args), func(t *testing.T) {
+			cmd, foundArgs, err := root.Find(tc.args)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if cmd != child {
+				t.Fatal("Expected cmd to be child, but it was not")
+			}
+
+			if !reflect.DeepEqual(tc.expectedFoundArgs, foundArgs) {
+				t.Fatalf("Wrong args\nExpected: %v\nGot: %v", tc.expectedFoundArgs, foundArgs)
+			}
+		})
+	}
+}
