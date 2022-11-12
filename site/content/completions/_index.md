@@ -6,6 +6,7 @@ The currently supported shells are:
 - Zsh
 - fish
 - PowerShell
+- Nushell
 
 Cobra will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command.
@@ -68,9 +69,18 @@ PowerShell:
   # To load completions for every new session, run:
   PS> %[1]s completion powershell > %[1]s.ps1
   # and source this file from your PowerShell profile.
+
+Nushell:
+  
+  # To generate completions (replace YOUR_COMPLETION_DIR with actual path to save)
+  > %[1]s completion nushell | save /YOUR_COMPLETION_DIR/%[1]s-completions.nu
+
+  # To load completions for each session, execute once (replace YOUR_COMPLETION_DIR with actual path):
+  > echo "use /YOUR_COMPLETION_DIR/%[1]s-completions.nu *" | save --append $nu.config-path
+
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell", "nushell"},
 	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
@@ -82,6 +92,8 @@ PowerShell:
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
 			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		case "nushell":
+			cmd.Root().GenNushellCompletion(os.Stdout, true)
 		}
 	},
 }
