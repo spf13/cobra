@@ -2,11 +2,11 @@ BIN="./bin"
 SRC=$(shell find . -name "*.go")
 
 ifeq (, $(shell which golangci-lint))
-$(warning "could not find golangci-lint in $(PATH), run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh")
+$(warning "could not find golangci-lint in PATH, see here for installation details: https://golangci-lint.run/usage/install/")
 endif
 
 ifeq (, $(shell which richgo))
-$(warning "could not find richgo in $(PATH), run: go install github.com/kyoh86/richgo@latest")
+$(warning "could not find richgo in PATH, run: go install github.com/kyoh86/richgo@latest")
 endif
 
 .PHONY: fmt lint test install_deps clean

@@ -37,6 +37,8 @@ If you have questions regarding Cobra, feel free to ask it in the community
 
 ### Quick steps to contribute
 
+You'll need [golangci-lint] and [richgo] installed in order to run linting and unit tests
+
 1. Fork the project.
 1. Download your fork to your PC (`git clone https://github.com/your_username/cobra && cd cobra`)
 1. Create your feature branch (`git checkout -b my-new-feature`)
@@ -48,3 +50,5 @@ If you have questions regarding Cobra, feel free to ask it in the community
 
 <!-- Links -->
 [cobra-slack]: https://gophers.slack.com/archives/CD3LP1199
+[golangci-lint]: https://golangci-lint.run
+[richgo]: https://github.com/kyoh86/richgo
