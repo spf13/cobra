@@ -2692,3 +2692,46 @@ func TestFind(t *testing.T) {
 		})
 	}
 }
+
+func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
+	testCases := [][]string{
+		//{"--unknown", "--namespace", "foo", "child", "--bar"}, // FIXME: This test case fails, returning the error `unknown command "foo" for "root"` instead of the expected error `unknown flag: --unknown`
+		{"--namespace", "foo", "--unknown", "child", "--bar"},
+		{"--namespace", "foo", "child", "--unknown", "--bar"},
+		{"--namespace", "foo", "child", "--bar", "--unknown"},
+
+		{"--unknown", "--namespace=foo", "child", "--bar"},
+		{"--namespace=foo", "--unknown", "child", "--bar"},
+		{"--namespace=foo", "child", "--unknown", "--bar"},
+		{"--namespace=foo", "child", "--bar", "--unknown"},
+
+		{"--unknown", "--namespace=foo", "child", "--bar=true"},
+		{"--namespace=foo", "--unknown", "child", "--bar=true"},
+		{"--namespace=foo", "child", "--unknown", "--bar=true"},
+		{"--namespace=foo", "child", "--bar=true", "--unknown"},
+	}
+
+	root := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	root.PersistentFlags().String("namespace", "", "a string flag")
+
+	c := &Command{
+		Use: "child",
+		Run: emptyRun,
+	}
+	c.Flags().Bool("bar", false, "a boolean flag")
+
+	root.AddCommand(c)
+
+	for _, tc := range testCases {
+		t.Run(strings.Join(tc, " "), func(t *testing.T) {
+			output, err := executeCommand(root, tc...)
+			if err == nil {
+				t.Error("expected unknown flag error")
+			}
+			checkStringContains(t, output, "unknown flag: --unknown")
+		})
+	}
+}
