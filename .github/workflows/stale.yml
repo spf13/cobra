@@ -28,7 +28,7 @@ jobs:
           You can:
 
           - Make a comment to remove the stale label and show your support. The 60 days reset.
-          - If an issue has lifecycle/rotten and is closed, comment and ask maintainers if they'd be interseted in reopening"
+          - If an issue has lifecycle/rotten and is closed, comment and ask maintainers if they'd be interested in reopening"
 
         stale-pr-message: "The Cobra project currently lacks enough contributors to adequately respond to all PRs.
           This bot triages issues and PRs according to the following rules:
@@ -39,7 +39,7 @@ jobs:
           You can:
 
           - Make a comment to remove the stale label and show your support. The 60 days reset.
-          - If a PR has lifecycle/rotten and is closed, comment and ask maintainers if they'd be interseted in reopening."
+          - If a PR has lifecycle/rotten and is closed, comment and ask maintainers if they'd be interested in reopening."
 
         days-before-stale: 60
         days-before-close: 30
