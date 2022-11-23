@@ -63,7 +63,6 @@ jobs:
         - ubuntu
         - macOS
         go:
-        - 15
         - 16
         - 17
         - 18
@@ -81,12 +80,8 @@ jobs:
 
     - run: |
         export GOBIN=$HOME/go/bin
-        case "${{ matrix.go }}" in
-          14|15) _version='';;
-          *) _version='@latest';;
-        esac
-        go install github.com/kyoh86/richgo"${_version}"
-        go install github.com/mitchellh/gox"${_version}"
+        go install github.com/kyoh86/richgo@latest
+        go install github.com/mitchellh/gox@latest
 
     - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH make richtest
 
