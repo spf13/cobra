@@ -684,11 +684,19 @@ func gen(buf io.StringWriter, cmd *Command) {
 
 // GenBashCompletion generates bash completion file and writes to the passed writer.
 func (c *Command) GenBashCompletion(w io.Writer) error {
+	if len(c.BashCompletionFunction) == 0 {
+		// If the program does not define any legacy custom completion (which is not
+		// supported by bash completion V2), use bash completion V2 which is the version
+		// that is maintained.  However, we keep descriptions off to behave as much as v1
+		// as possible to avoid changing things unexpectedly for projects
+		return c.GenBashCompletionV2(w, false)
+	}
+
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
-	if len(c.BashCompletionFunction) > 0 {
-		buf.WriteString(c.BashCompletionFunction + "\n")
-	}
+
+	buf.WriteString(c.BashCompletionFunction + "\n")
+
 	gen(buf, c)
 	writePostscript(buf, c.Name())
 

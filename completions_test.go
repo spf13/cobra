@@ -1506,11 +1506,19 @@ func TestValidArgsFuncAliases(t *testing.T) {
 }
 
 func TestValidArgsFuncInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{
+		Use:  "root",
+		Args: NoArgs,
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
 	child := &Command{
-		Use:               "child",
-		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		Use:                    "child",
+		ValidArgsFunction:      validArgsFunc,
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1522,7 +1530,14 @@ func TestValidArgsFuncInBashScript(t *testing.T) {
 }
 
 func TestNoValidArgsFuncInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{
+		Use:  "root",
+		Args: NoArgs,
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
 	child := &Command{
 		Use: "child",
 		Run: emptyRun,

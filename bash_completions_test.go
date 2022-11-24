@@ -227,39 +227,72 @@ func TestBashCompletions(t *testing.T) {
 }
 
 func TestBashCompletionHiddenFlag(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun}
+	c := &Command{
+		Use: "c",
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
 
-	const flagName = "hiddenFlag"
-	c.Flags().Bool(flagName, false, "")
-	assertNoErr(t, c.Flags().MarkHidden(flagName))
+	const validFlagName = "valid-flag"
+	c.Flags().Bool(validFlagName, false, "")
+
+	const hiddenFlagName = "hiddenFlag"
+	c.Flags().Bool(hiddenFlagName, false, "")
+	assertNoErr(t, c.Flags().MarkHidden(hiddenFlagName))
 
 	buf := new(bytes.Buffer)
 	assertNoErr(t, c.GenBashCompletion(buf))
 	output := buf.String()
 
-	if strings.Contains(output, flagName) {
-		t.Errorf("Expected completion to not include %q flag: Got %v", flagName, output)
+	if !strings.Contains(output, validFlagName) {
+		t.Errorf("Expected completion to include %q flag: Got %v", validFlagName, output)
+	}
+
+	if strings.Contains(output, hiddenFlagName) {
+		t.Errorf("Expected completion to not include %q flag: Got %v", hiddenFlagName, output)
 	}
 }
 
 func TestBashCompletionDeprecatedFlag(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun}
+	c := &Command{
+		Use: "c",
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
 
-	const flagName = "deprecated-flag"
-	c.Flags().Bool(flagName, false, "")
-	assertNoErr(t, c.Flags().MarkDeprecated(flagName, "use --not-deprecated instead"))
+	const validFlagName = "valid-flag"
+	c.Flags().Bool(validFlagName, false, "")
+
+	const deprecatedFlagName = "deprecated-flag"
+	c.Flags().Bool(deprecatedFlagName, false, "")
+	assertNoErr(t, c.Flags().MarkDeprecated(deprecatedFlagName, "use --not-deprecated instead"))
 
 	buf := new(bytes.Buffer)
 	assertNoErr(t, c.GenBashCompletion(buf))
 	output := buf.String()
 
-	if strings.Contains(output, flagName) {
-		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
+	if !strings.Contains(output, validFlagName) {
+		t.Errorf("expected completion to include %q flag: Got %v", validFlagName, output)
+	}
+
+	if strings.Contains(output, deprecatedFlagName) {
+		t.Errorf("expected completion to not include %q flag: Got %v", deprecatedFlagName, output)
 	}
 }
 
 func TestBashCompletionTraverseChildren(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun, TraverseChildren: true}
+	c := &Command{
+		Use: "c",
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+		TraverseChildren:       true,
+	}
 
 	c.Flags().StringP("string-flag", "s", "", "string flag")
 	c.Flags().BoolP("bool-flag", "b", false, "bool flag")
@@ -267,6 +300,10 @@ func TestBashCompletionTraverseChildren(t *testing.T) {
 	buf := new(bytes.Buffer)
 	assertNoErr(t, c.GenBashCompletion(buf))
 	output := buf.String()
+
+	if !strings.Contains(output, "bool-flag") {
+		t.Errorf("Expected completion to include bool-flag flag: Got %v", output)
+	}
 
 	// check that local nonpersistent flag are not set since we have TraverseChildren set to true
 	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag")`)
@@ -277,7 +314,13 @@ func TestBashCompletionTraverseChildren(t *testing.T) {
 }
 
 func TestBashCompletionNoActiveHelp(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun}
+	c := &Command{
+		Use: "c",
+		// Set the legacy BashCompletionFunction to force the
+		// use of bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
 
 	buf := new(bytes.Buffer)
 	assertNoErr(t, c.GenBashCompletion(buf))
@@ -286,4 +329,38 @@ func TestBashCompletionNoActiveHelp(t *testing.T) {
 	// check that active help is being disabled
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+}
+
+func TestBashCompletionV1WhenBashCompletionFunction(t *testing.T) {
+	c := &Command{
+		Use: "c",
+		// Include the legacy BashCompletionFunction field
+		// and check that we are generating bash completion V1
+		BashCompletionFunction: bashCompletionFunc,
+		Run:                    emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletion(buf))
+	output := buf.String()
+
+	// Check the generated script is the V1 version
+	checkOmit(t, output, "# bash completion V2 for")
+	check(t, output, "# bash completion for")
+}
+
+func TestBashCompletionV2WhenNoBashCompletionFunction(t *testing.T) {
+	c := &Command{
+		Use: "c",
+		// Do NOT include the legacy BashCompletionFunction
+		// and check that we are generating bash completion V2
+		Run: emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletion(buf))
+	output := buf.String()
+
+	// Check the generated script is the V2 version
+	check(t, output, "# bash completion V2 for")
 }
