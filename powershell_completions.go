@@ -137,7 +137,7 @@ filter __%[1]s_escapeStringWithSpecialChars {
     }
 
     $Longest = 0
-    $Values = $Out | ForEach-Object {
+    [Array]$Values = $Out | ForEach-Object {
         #Split the output in name and description
 `+"        $Name, $Description = $_.Split(\"`t\",2)"+`
         __%[1]s_debug "Name: $Name Description: $Description"
