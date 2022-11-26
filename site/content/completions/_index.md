@@ -72,11 +72,18 @@ PowerShell:
 
 Nushell:
   
-  # To generate completions (replace YOUR_COMPLETION_DIR with actual path to save)
-  > %[1]s completion nushell | save /YOUR_COMPLETION_DIR/%[1]s-completions.nu
+  # 1. Copy the output of the command below:
+  > %[1]s completion nushell 
 
-  # To load completions for each session, execute once (replace YOUR_COMPLETION_DIR with actual path):
-  > echo "use /YOUR_COMPLETION_DIR/%[1]s-completions.nu *" | save --append $nu.config-path
+  # 2. Edit the nushell config file:
+  > config nu
+
+  # 3. Paste above the "let-env config" line.
+
+  # 4. Change the config block's external_completer line to be 
+  external_completer: $cobra_completer
+
+  # 5. You will need to start a new shell for this setup to take effect.
 
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,

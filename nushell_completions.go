@@ -16,109 +16,59 @@ package cobra
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
-	"regexp"
-	"strings"
-
-	"github.com/spf13/pflag"
 )
 
-var carrageReturnRE = regexp.MustCompile(`\r?\n`)
-
-func descriptionString(desc string) string {
-	// Remove any carriage returns, this will break the extern
-	desc = carrageReturnRE.ReplaceAllString(desc, " ")
-
-	// Lets keep the descriptions short-ish
-	if len(desc) > 100 {
-		desc = desc[0:97] + "..."
-	}
-	return desc
-}
-
-func GenNushellComp(c *Command, buf io.StringWriter, nameBuilder *strings.Builder, isRoot bool, includeDesc bool) {
-	processFlags := func(flags *pflag.FlagSet) {
-		flags.VisitAll(func(f *pflag.Flag) {
-			WriteStringAndCheck(buf, fmt.Sprintf("\t--%[1]s", f.Name))
-
-			if f.Shorthand != "" {
-				WriteStringAndCheck(buf, fmt.Sprintf("(-%[1]s)", f.Shorthand))
-			}
-
-			if includeDesc && f.Usage != "" {
-				desc := descriptionString(f.Usage)
-				WriteStringAndCheck(buf, fmt.Sprintf("\t# %[1]s", desc))
-			}
-
-			WriteStringAndCheck(buf, "\n")
-
-		})
-	}
-
-	cmdName := c.Name()
-	// commands after root name will be like "git pull"
-	if !isRoot {
-		nameBuilder.WriteString(" ")
-	}
-	nameBuilder.WriteString(cmdName)
-
-	// only create an extern block if there is something to put in it
-	if len(c.ValidArgs) > 0 || c.HasAvailableFlags() {
-		builderString := nameBuilder.String()
-
-		// ensure there is a space before any previous content
-		// otherwise it will break descriptions
-		WriteStringAndCheck(buf, "\n")
-
-		funcName := builderString
-		if !isRoot {
-			funcName = fmt.Sprintf("\"%[1]s\"", builderString)
-		}
-
-		if includeDesc && c.Short != "" {
-			desc := descriptionString(c.Short)
-			WriteStringAndCheck(buf, fmt.Sprintf("# %[1]s\n", desc))
-		}
-		WriteStringAndCheck(buf, fmt.Sprintf("export extern %[1]s [\n", funcName))
-
-		// valid args
-		for _, arg := range c.ValidArgs {
-			WriteStringAndCheck(buf, fmt.Sprintf("\t%[1]s?\n", arg))
-		}
-
-		processFlags(c.InheritedFlags())
-		processFlags(c.LocalFlags())
-
-		// End extern statement
-		WriteStringAndCheck(buf, "]\n")
-	}
-
-	// process sub commands
-	for _, child := range c.Commands() {
-		childBuilder := strings.Builder{}
-		childBuilder.WriteString(nameBuilder.String())
-		GenNushellComp(child, buf, &childBuilder, false, includeDesc)
-	}
-
-}
-
-func (c *Command) GenNushellCompletion(w io.Writer, includeDesc bool) error {
-	var nameBuilder strings.Builder
+func (c *Command) GenNushellCompletion(w io.Writer) error {
 	buf := new(bytes.Buffer)
-	GenNushellComp(c, buf, &nameBuilder, true, includeDesc)
+	WriteStringAndCheck(buf, `
+# An external configurator that works with any cobra based
+# command line application (e.g. kubectl, minikube)
+let cobra_configurator = {|spans| 
+ 
+  let cmd = $spans.0
+
+  # skip the first entry in the span (the command) and join the rest of the span to create __complete args
+  let cmd_args = ($spans | skip 1 | str join ' ') 
+
+  # If the last span entry was empty add "" to the end of the command args
+  let cmd_args = if ($spans | last | str trim | is-empty) {
+    $'($cmd_args) ""'
+  } else {
+    $cmd_args
+  }
+
+  # The full command to be executed
+  let full_cmd = $'($cmd) __complete ($cmd_args)'
+
+  # Since nushell doesn't have anything like eval, execute in a subshell
+  let result = (do -i { nu -c $"'($full_cmd)'" } | complete)
+
+  # Create a record with all completion related info. 
+  # directive and directive_str are for posterity
+  let stdout_lines = ($result.stdout | lines)
+  let $completions = ($stdout_lines | drop | parse -r '([\w\-\.:\+]*)\t?(.*)' | rename value description)
+
+  let result = ({
+    completions: $completions
+    directive_str: ($result.stderr)
+    directive: ($stdout_lines | last)
+  })
+
+  $result.completions
+}`)
 
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func (c *Command) GenNushellCompletionFile(filename string, includeDesc bool) error {
+func (c *Command) GenNushellCompletionFile(filename string) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	return c.GenNushellCompletion(outFile, includeDesc)
+	return c.GenNushellCompletion(outFile)
 }
