@@ -38,7 +38,7 @@ func TestGenNushellCompletion(t *testing.T) {
 	assertNoErr(t, rootCmd.GenNushellCompletion(buf))
 	output := buf.String()
 
-	check(t, output, "let full_cmd = $'($cmd) __complete ($cmd_args)'")
+	check(t, output, "let full_cmd = $'($cmd)_ACTIVE_HELP=0 ($cmd) __complete ($cmd_args)'")
 }
 
 func TestGenNushellCompletionFile(t *testing.T) {
