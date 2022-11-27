@@ -29,7 +29,7 @@ and then modifying the generated `cmd/completion.go` file to look something like
 
 ```go
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
+	Use:   "completion [bash|zsh|fish|powershell|nushell]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
 
