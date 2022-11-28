@@ -16,6 +16,7 @@ package cobra
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -35,10 +36,10 @@ func TestGenNushellCompletion(t *testing.T) {
 	rootCmd.AddCommand(getCmd)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenNushellCompletion(buf))
+	assertNoErr(t, rootCmd.GenNushellCompletion(buf, true))
 	output := buf.String()
 
-	check(t, output, "let full_cmd = $'($cmd)_ACTIVE_HELP=0 ($cmd) __complete ($cmd_args)'")
+	check(t, output, fmt.Sprintf("let cobra_apps = [\"%[1]s\"]", rootCmd.Name()))
 }
 
 func TestGenNushellCompletionFile(t *testing.T) {
@@ -57,7 +58,7 @@ func TestGenNushellCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	assertNoErr(t, rootCmd.GenNushellCompletionFile("./tmp/test"))
+	assertNoErr(t, rootCmd.GenNushellCompletionFile("./tmp/test", true))
 }
 
 func TestFailGenNushellCompletionFile(t *testing.T) {
@@ -79,7 +80,7 @@ func TestFailGenNushellCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	got := rootCmd.GenNushellCompletionFile("./tmp/test")
+	got := rootCmd.GenNushellCompletionFile("./tmp/test", true)
 	if got == nil {
 		t.Error("should raise permission denied error")
 	}

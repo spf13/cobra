@@ -21,20 +21,20 @@ import (
 	"os"
 )
 
-func (c *Command) GenNushellCompletion(w io.Writer) error {
+func (c *Command) GenNushellCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
+	name := c.Name()
 	WriteStringAndCheck(buf, fmt.Sprintf(`
-
-# A list of cobra that completion will be attempted for.
+# A list of cobra apps that completion will be attempted for.
 # Add new apps to this list to enable completion for them.
 let cobra_apps = ["%[1]s"]
 
-# An external configurator that works with any cobra based
+# An external completer that works with any cobra based
 # command line application (e.g. kubectl, minikube)
 let cobra_completer = {|spans| 
   let cmd = $spans.0
 
-  if not ($cobra_apps | where $it == $cmd | is-empty) {
+  if not ($cobra_apps | where $cmd =~ $it | is-empty) {
     let ShellCompDirectiveError = %[2]d
     let ShellCompDirectiveNoSpace = %[3]d
     let ShellCompDirectiveNoFileComp = %[4]d
@@ -54,7 +54,7 @@ let cobra_completer = {|spans|
     }
 
     # The full command to be executed with active help disable (Nushell does not support active help)
-    let full_cmd = $'($cmd)_ACTIVE_HELP=0 ($cmd) __complete ($cmd_args)'
+    let full_cmd = $'%[7]s=0 ($cmd) __complete ($cmd_args)'
 
     # Since nushell doesn't have anything like eval, execute in a subshell
     let result = (do -i { nu -c $"'($full_cmd)'" } | complete)
@@ -65,6 +65,14 @@ let cobra_completer = {|spans|
     let directive = ($stdout_lines | last | str trim | str replace ":" "" | into int)
     let completions = ($stdout_lines | drop | parse -r '([\w\-\.:\+\=]*)\t?(.*)' | rename value description)
 
+    # filter completions that don't contain the last span, for fuzzy searches
+    let filtered = ($completions | where $it.value =~ $last_span) 
+    let completions = if not ($filtered | is-empty) {
+      $filtered
+    } else {
+      $completions
+    }
+
     # Add space at the end of each completion
     let completions = if $directive != $ShellCompDirectiveNoSpace {
       ($completions | each {|it| {value: $"($it.value) ", description: $it.description}})
@@ -72,9 +80,9 @@ let cobra_completer = {|spans|
       $completions
     }
 
-    if $last_span =~ '=$' {
-      # return flag as part of the completion so that it doesn't get replaced
-      $completions | each {|it| $"($last_span)($it.value)" }
+    if $last_span =~ '=' {
+      # if the completion is of the form -n= return flag as part of the completion so that it doesn't get replaced
+      $completions | each {|it| $"($last_span | split row '=' | first)=($it.value)" }
     } else if $directive == $ShellCompDirectiveNoFileComp {
       # Allow empty results as this will stop file completion
       $completions
@@ -89,19 +97,19 @@ let cobra_completer = {|spans|
     null
   }
 }
-`, c.Name(), ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+`, name, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
 
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func (c *Command) GenNushellCompletionFile(filename string) error {
+func (c *Command) GenNushellCompletionFile(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	return c.GenNushellCompletion(outFile)
+	return c.GenNushellCompletion(outFile, includeDesc)
 }

@@ -847,39 +847,26 @@ to your powershell profile.
 		Short: fmt.Sprintf(shortDesc, "nushell"),
 		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
 
-To configure the Nushell cobra external configurator for the first time:
-      
+To configure the Nushell cobra external completer for the first time:
   # 1. Copy the output of the command below:
-  > %[1]s completion nushell 
-
+  > %[1]s completion nushell
   # 2. Edit the nushell config file:
   > config nu
-
   # 3. Paste above the "let-env config" line.
-
-  # 4. Change the config block's external_completer line to be 
-  external_completer: $cobra_completer
-
+  # 4. Change the config block's external_completer line to be external_completer: $cobra_completer
   # 5. You will need to start a new shell or for this setup to take effect.
 
-If you have already setup the cobra external configurator:
-
+If you have already setup the cobra external completer:
   # 1. Edit the nushell config file:
   > config nu
-
   # 2. Modify the cobra_apps varible to contain this application:
   > let cobra_apps = [ "othercobraapp", "%[1]s" ]
-
-  # 3. You will need to start a new shell or for this setup to take effect.
-
+  # 3. You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			if noDesc {
-				return cmd.Root().GenPowerShellCompletion(out)
-			}
-			return cmd.Root().GenPowerShellCompletionWithDesc(out)
+			return cmd.Root().GenNushellCompletion(out, !noDesc)
 		},
 	}
 	if haveNoDescFlag {
