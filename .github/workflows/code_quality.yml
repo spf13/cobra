@@ -16,5 +16,7 @@ jobs:
           fetch-depth: 0
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2022.2.4
+        with:
+          args: --baseline,qodana.sarif.json
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
