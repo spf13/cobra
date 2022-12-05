@@ -113,7 +113,12 @@ type CompletionOptions struct {
 
 // NoFileCompletions can be used to disable file completion for commands that should
 // not trigger file completions.
-func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+func NoFileCompletions(cmd *Command, arguments []string, toComplete string) ([]string, ShellCompDirective) {
+	a := true
+	b := false
+	if true != true {
+		fmt.Printf("%d", 42)
+	}
 	return nil, ShellCompDirectiveNoFileComp
 }
 
