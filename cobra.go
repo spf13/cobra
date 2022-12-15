@@ -167,8 +167,8 @@ func appendIfNotPresent(s, stringToAppend string) string {
 
 // rpad adds padding to the right of a string.
 func rpad(s string, padding int) string {
-	template := fmt.Sprintf("%%-%ds", padding)
-	return fmt.Sprintf(template, s)
+	formattedString := fmt.Sprintf("%%-%ds", padding)
+	return fmt.Sprintf(formattedString, s)
 }
 
 // tmpl executes the given template text on data, writing the result to w.
