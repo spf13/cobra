@@ -101,7 +101,7 @@ let cobra_completer = {|spans|
       # directive and directive_str are for posterity
       let stdout_lines = ($result.stdout | lines)
       let directive = ($stdout_lines | last | str trim | str replace ":" "" | into int)
-      let completions = ($stdout_lines | drop | parse -r '([\w\-\.:\+\=]*)\t?(.*)' | rename value description)
+      let completions = ($stdout_lines | drop | parse -r '([\w\-\.:\+\=\/]*)\t?(.*)' | rename value description)
       let completions = if $fuzzy {
         $completions | where $it.value =~ $last_span
 
