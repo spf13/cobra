@@ -31,7 +31,7 @@ let cobra_apps = ["%[1]s"]
 
 # An external completer that works with any cobra based
 # command line application (e.g. kubectl, minikube)
-let-env cobra_completer = {|spans| 
+let cobra_completer = {|spans| 
   let cmd = $spans.0
 
   if not ($cobra_apps | where $cmd =~ $it | is-empty) {
@@ -128,6 +128,14 @@ let-env cobra_completer = {|spans|
     # Add space at the end of each completion
     let completions = if $directive != $ShellCompDirectiveNoSpace {
       $completions | each {|it| {value: $"($it.value) ", description: $it.description}}
+    } else {
+      $completions
+    }
+
+    # Cobra returns a list of completions that are supported with this directive
+    # There is no way to currently support this in a nushell external completer
+    let completions = if $directive == $ShellCompDirectiveFilterFileExt {
+      []
     } else {
       $completions
     }
