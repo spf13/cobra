@@ -1641,6 +1641,41 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	return c.lflags
 }
 
+// getClashingFlagnames returns all flags which names are used more than once
+func (c *Command) getClashingFlagnames() []*flag.Flag {
+	allFlags := make(map[string]*flag.Flag, 0)
+	clashingFlagsSet := make(map[*flag.Flag]interface{}, 0)
+
+	checkFlagFunc := func(f *flag.Flag) {
+		savedFlag, exists := allFlags[f.Name]
+		if !exists {
+			allFlags[f.Name] = f
+		} else if savedFlag != f /* Different flag or not */ {
+			clashingFlagsSet[f] = nil
+			clashingFlagsSet[savedFlag] = nil
+		}
+	}
+
+	c.VisitParents(func(parent *Command) {
+		if parent.pflags != nil {
+			parent.pflags.VisitAll(checkFlagFunc)
+		}
+	})
+
+	if c.pflags != nil {
+		c.pflags.VisitAll(checkFlagFunc)
+	}
+
+	// Possibility that we Visit some of the flags which we already visited in c.pflags
+	c.LocalFlags().VisitAll(checkFlagFunc)
+
+	clashingFlags := make([]*flag.Flag, 0, len(clashingFlagsSet))
+	for flag := range clashingFlagsSet {
+		clashingFlags = append(clashingFlags, flag)
+	}
+	return clashingFlags
+}
+
 // InheritedFlags returns all flags which were inherited from parent commands.
 func (c *Command) InheritedFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
