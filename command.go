@@ -244,6 +244,9 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// ErrorOnShadowedFlags will check for any shadowed flags when calling Execute and returns and error
+	ErrorOnShadowedFlags bool
 }
 
 // Context returns underlying command context. If command was executed
@@ -1063,6 +1066,17 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// if context is present on the parent command.
 	if cmd.ctx == nil {
 		cmd.ctx = c.ctx
+	}
+
+	if c.ErrorOnShadowedFlags {
+		clashingFlags := cmd.getClashingFlagnames()
+		if len(clashingFlags) != 0 {
+			errorString := "Error: The following flags would shadow each other:\n"
+			for _, clashingFlag := range clashingFlags {
+				errorString += fmt.Sprintf(" - Flag '%s' with usage '%s'\n", clashingFlag.Name, clashingFlag.Usage)
+			}
+			return cmd, fmt.Errorf(errorString)
+		}
 	}
 
 	err = cmd.execute(flags)
