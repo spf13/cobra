@@ -854,7 +854,7 @@ To configure the Nushell cobra external completer for the first time:
   > config nu
   # 3. Paste above the "let-env config" line.
   # 4. Change the config block's external_completer line to be external_completer: $cobra_completer
-  # 5. You will need to start a new shell or for this setup to take effect.
+  # 5. You will need to start a new shel for this setup to take effect.
 
 If you have already setup the cobra external completer:
   # 1. Edit the nushell config file:
