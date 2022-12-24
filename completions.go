@@ -856,7 +856,7 @@ To configure the Nushell cobra external completer for the first time:
   # 4. Change the config block's external_completer line to be external_completer: $cobra_completer
   # 5. You will need to start a new shel for this setup to take effect.
 
-If you have already setup the cobra external completer:
+If you have already setup the cobra external completer for other Cobra-based applications:
   # 1. Edit the nushell config file:
   > config nu
   # 2. Modify the cobra_apps variable to contain this new application:
