@@ -48,7 +48,7 @@ func printOptionsReST(buf *bytes.Buffer, cmd *cobra.Command, name string) error 
 	return nil
 }
 
-// linkHandler for default ReST hyperlink markup
+// defaultLinkHandler for default ReST hyperlink markup
 func defaultLinkHandler(name, ref string) string {
 	return fmt.Sprintf("`%s <%s.rst>`_", name, ref)
 }
@@ -169,7 +169,7 @@ func GenReSTTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string
 	return nil
 }
 
-// adapted from: https://github.com/kr/text/blob/main/indent.go
+// indentString adapted from: https://github.com/kr/text/blob/main/indent.go
 func indentString(s, p string) string {
 	var res []byte
 	b := []byte(s)
