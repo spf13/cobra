@@ -859,7 +859,7 @@ To configure the Nushell cobra external completer for the first time:
 If you have already setup the cobra external completer:
   # 1. Edit the nushell config file:
   > config nu
-  # 2. Modify the cobra_apps varible to contain this application:
+  # 2. Modify the cobra_apps variable to contain this new application:
   > let cobra_apps = [ "othercobraapp", "%[1]s" ]
   # 3. You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
