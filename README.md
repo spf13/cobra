@@ -25,7 +25,7 @@ Cobra provides:
 * Automatic help generation for commands and flags
 * Grouping help for subcommands
 * Automatic help flag recognition of `-h`, `--help`, etc.
-* Automatically generated shell autocomplete for your application (bash, zsh, fish, powershell)
+* Automatically generated shell autocomplete for your application (bash, zsh, fish, powershell, nushell)
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
 * The flexibility to define your own help, usage, etc.
