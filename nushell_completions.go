@@ -31,7 +31,7 @@ let cobra_apps = ["%[1]s"]
 
 # An external completer that works with any cobra based
 # command line application (e.g. kubectl, minikube)
-let cobra_completer = {|spans| 
+let cobra_completer = {|spans|
   let cmd = $spans.0
 
   if not ($cobra_apps | where $cmd =~ $it | is-empty) {
@@ -40,7 +40,6 @@ let cobra_completer = {|spans|
     let ShellCompDirectiveNoFileComp = %[4]d
     let ShellCompDirectiveFilterFileExt = %[5]d
     let ShellCompDirectiveFilterDirs = %[6]d
-   
     let last_span = ($spans | last | str trim)
 
     def exec_complete [
@@ -51,7 +50,6 @@ let cobra_completer = {|spans|
         last_span: ($spans | last | str trim),
         spans: $spans
       }
-      
       # If there is an equals in the last span
       # parse the span into two
       let params = if $last_span =~ '=' {
@@ -66,7 +64,7 @@ let cobra_completer = {|spans|
             last_span: '',
             spans: ($spans | drop | append ($split | first) | append '')
           }
-        } 
+        }
       } else {
         $params
       }
@@ -82,7 +80,7 @@ let cobra_completer = {|spans|
       }
 
       # skip the first entry in the span (the command) and join the rest of the span to create __complete args
-      let cmd_args = ($spans | skip 1 | str join ' ') 
+      let cmd_args = ($spans | skip 1 | str join ' ')
 
       # If the last span entry was empty add "" to the end of the command args
       let cmd_args = if ($last_span | is-empty) or $fuzzy {
@@ -97,7 +95,7 @@ let cobra_completer = {|spans|
       # Since nushell doesn't have anything like eval, execute in a subshell
       let result = (do -i { nu -c $"'($full_cmd)'" } | complete)
 
-      # Create a record with all completion related info. 
+      # Create a record with all completion related info.
       # directive and directive_str are for posterity
       let stdout_lines = ($result.stdout | lines)
       let directive = ($stdout_lines | last | str trim | str replace ":" "" | into int)
@@ -110,7 +108,7 @@ let cobra_completer = {|spans|
       }
 
       {
-        directive: $directive,    
+        directive: $directive,
         completions: $completions
       }
     }
@@ -148,7 +146,7 @@ let cobra_completer = {|spans|
       $completions
     } else if ($completions | is-empty)  or  $directive == $ShellCompDirectiveError {
       # Not returning null causes file completions to break
-      # Return null if there are no completions or ShellCompDirectiveError 
+      # Return null if there are no completions or ShellCompDirectiveError
       null
     } else {
       $completions
@@ -159,12 +157,6 @@ let cobra_completer = {|spans|
     null
   }
 }
-
-
- 
-
-
-
 `, name, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
 
