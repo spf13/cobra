@@ -35,7 +35,7 @@ const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
-// Structure to manage groups for commands
+// Group Structure to manage groups for commands
 type Group struct {
 	ID    string
 	Title string
@@ -47,7 +47,7 @@ type Group struct {
 // definition to ensure usability.
 type Command struct {
 	// Use is the one-line usage message.
-	// Recommended syntax is as follow:
+	// Recommended syntax is as follows:
 	//   [ ] identifies an optional argument. Arguments that are not enclosed in brackets are required.
 	//   ... indicates that you can specify multiple values for the previous argument.
 	//   |   indicates mutually exclusive information. You can use the argument to the left of the separator or the
@@ -321,7 +321,7 @@ func (c *Command) SetHelpCommand(cmd *Command) {
 	c.helpCommand = cmd
 }
 
-// SetHelpCommandGroup sets the group id of the help command.
+// SetHelpCommandGroupID sets the group id of the help command.
 func (c *Command) SetHelpCommandGroupID(groupID string) {
 	if c.helpCommand != nil {
 		c.helpCommand.GroupID = groupID
@@ -330,7 +330,7 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	c.helpCommandGroupID = groupID
 }
 
-// SetCompletionCommandGroup sets the group id of the completion command.
+// SetCompletionCommandGroupID sets the group id of the completion command.
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
 	// completionCommandGroupID is used if no completion command is defined by the user
 	c.Root().completionCommandGroupID = groupID
@@ -1296,7 +1296,7 @@ func (c *Command) AllChildCommandsHaveGroup() bool {
 	return true
 }
 
-// ContainGroups return if groupID exists in the list of command groups.
+// ContainsGroup return if groupID exists in the list of command groups.
 func (c *Command) ContainsGroup(groupID string) bool {
 	for _, x := range c.commandgroups {
 		if x.ID == groupID {

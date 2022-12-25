@@ -169,7 +169,7 @@ func (d ShellCompDirective) string() string {
 	return strings.Join(directives, ", ")
 }
 
-// Adds a special hidden command that can be used to request custom completions.
+// initCompleteCmd adds a special hidden command that can be used to request custom completions.
 func (c *Command) initCompleteCmd(args []string) {
 	completeCmd := &Command{
 		Use:                   fmt.Sprintf("%s [command-line]", ShellCompRequestCmd),
