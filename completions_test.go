@@ -3115,3 +3115,67 @@ func TestCompletionCobraFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestArgsNotDetectedAsFlagsCompletionInGo(t *testing.T) {
+	// Regression test that ensures the bug described in
+	// https://github.com/spf13/cobra/issues/1816 does not occur anymore.
+
+	root := Command{
+		Use: "root",
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"service", "1-123", "11-123"}, ShellCompDirectiveNoFileComp
+		},
+	}
+
+	completion := `service
+1-123
+11-123
+:4
+Completion ended with directive: ShellCompDirectiveNoFileComp
+`
+
+	testcases := []struct {
+		desc           string
+		args           []string
+		expectedOutput string
+	}{
+		{
+			desc:           "empty",
+			args:           []string{""},
+			expectedOutput: completion,
+		},
+		{
+			desc:           "service only",
+			args:           []string{"service", ""},
+			expectedOutput: completion,
+		},
+		{
+			desc:           "service last",
+			args:           []string{"1-123", "service", ""},
+			expectedOutput: completion,
+		},
+		{
+			desc:           "two digit prefixed dash last",
+			args:           []string{"service", "11-123", ""},
+			expectedOutput: completion,
+		},
+		{
+			desc:           "one digit prefixed dash last",
+			args:           []string{"service", "1-123", ""},
+			expectedOutput: completion,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.desc, func(t *testing.T) {
+			args := []string{ShellCompNoDescRequestCmd}
+			args = append(args, tc.args...)
+			output, err := executeCommand(&root, args...)
+			switch {
+			case err == nil && output != tc.expectedOutput:
+				t.Errorf("expected: %q, got: %q", tc.expectedOutput, output)
+			case err != nil:
+				t.Errorf("Unexpected error %q", err)
+			}
+		})
+	}
+}
