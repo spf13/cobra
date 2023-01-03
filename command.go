@@ -692,7 +692,7 @@ Loop:
 }
 
 func isFlagArg(arg string) bool {
-	return ((len(arg) >= 3 && arg[1] == '-') ||
+	return ((len(arg) >= 3 && arg[0:2] == "--") ||
 		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-'))
 }
 
