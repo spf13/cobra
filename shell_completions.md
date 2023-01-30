@@ -385,6 +385,19 @@ or
 ```go
 ValidArgs: []string{"bash\tCompletions for bash", "zsh\tCompletions for zsh"}
 ```
+
+If you don't want to show descriptions in the completions, you can add `--no-descriptions` to the default `completion` command to disable them, like:
+
+```bash
+$ source <(helm completion bash)
+$ helm completion [tab][tab]
+bash        (generate autocompletion script for bash)        powershell  (generate autocompletion script for powershell)
+fish        (generate autocompletion script for fish)        zsh         (generate autocompletion script for zsh)
+
+$ source <(helm completion bash --no-descriptions)
+$ helm completion [tab][tab]
+bash        fish        powershell  zsh
+```
 ## Bash completions
 
 ### Dependencies
