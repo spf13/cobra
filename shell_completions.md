@@ -173,6 +173,21 @@ backend        frontend       database
 Note that without declaring `rc` as an alias, the completion algorithm would not know to show the list of
 replication controllers following `rc`.
 
+#### Disable completion descriptions
+
+If you don't want to show descriptions in the completion, you can add `--no-descriptions` to disable it, like:
+
+```bash
+$ source <(helm completion bash)
+$ helm completion [tab][tab]
+bash        (generate autocompletion script for bash)        powershell  (generate autocompletion script for powershell)
+fish        (generate autocompletion script for fish)        zsh         (generate autocompletion script for zsh)
+
+$ source <(helm completion bash --no-descriptions)
+$ helm completion [tab][tab]
+bash        fish        powershell  zsh
+```
+
 ### Dynamic completion of nouns
 
 In some cases it is not possible to provide a list of completions in advance.  Instead, the list of completions must be determined at execution-time. In a similar fashion as for static completions, you can use the `ValidArgsFunction` field to provide a Go function that Cobra will execute when it needs the list of completion choices for the nouns of a command.  Note that either `ValidArgs` or `ValidArgsFunction` can be used for a single cobra command, but not both.
