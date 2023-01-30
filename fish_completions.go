@@ -101,10 +101,10 @@ function __%[1]s_doesnt_requires_order_preservation
 
     set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) %% 2)
 
-	if test "$keeporder" -ne 0
-		__%[1]s_debug "This does require order preservation"
-		return 1
-	end
+    if test "$keeporder" -ne 0
+        __%[1]s_debug "This does require order preservation"
+        return 1
+    end
 end
 
 
