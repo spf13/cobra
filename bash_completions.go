@@ -81,6 +81,7 @@ __%[1]s_handle_go_custom_completion()
     local shellCompDirectiveNoFileComp=%[5]d
     local shellCompDirectiveFilterFileExt=%[6]d
     local shellCompDirectiveFilterDirs=%[7]d
+    local shellCompDirectiveKeepOrder=%[8]d
 
     local out requestComp lastParam lastChar comp directive args
 
@@ -88,7 +89,7 @@ __%[1]s_handle_go_custom_completion()
     # Calling ${words[0]} instead of directly %[1]s allows to handle aliases
     args=("${words[@]:1}")
     # Disable ActiveHelp which is not supported for bash completion v1
-    requestComp="%[8]s=0 ${words[0]} %[2]s ${args[*]}"
+    requestComp="%[9]s=0 ${words[0]} %[2]s ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
@@ -125,6 +126,12 @@ __%[1]s_handle_go_custom_completion()
             if [[ $(type -t compopt) = "builtin" ]]; then
                 __%[1]s_debug "${FUNCNAME[0]}: activating no space"
                 compopt -o nospace
+            fi
+        fi
+        if [ $((directive & shellCompDirectiveKeepOrder)) -ne 0 ]; then
+            if [[ $(type -t compopt) = "builtin" ]]; then
+                __%[1]s_debug "${FUNCNAME[0]}: activating keep order"
+                compopt -o nosort
             fi
         fi
         if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
@@ -398,7 +405,7 @@ __%[1]s_handle_word()
 
 `, name, ShellCompNoDescRequestCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
 }
 
 func writePostscript(buf io.StringWriter, name string) {
@@ -437,7 +444,7 @@ func writePostscript(buf io.StringWriter, name string) {
 	WriteStringAndCheck(buf, fmt.Sprintf(`if [[ $(type -t compopt) = "builtin" ]]; then
     complete -o default -F __start_%s %s
 else
-    complete -o default -o nospace -F __start_%s %s
+    complete -F __start_%s %s
 fi
 
 `, name, name, name, name))
