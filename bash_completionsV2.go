@@ -360,8 +360,11 @@ __start_%[1]s()
     __%[1]s_process_completion_results
 }
 
-# compopts are already set, we don't have to specify them here
-complete -F __start_%[1]s %[1]s
+if [[ $(type -t compopt) = "builtin" ]]; then
+    complete -o default -F __start_%[1]s %[1]s
+else
+    complete -F __start_%[1]s %[1]s
+fi
 
 # ex: ts=4 sw=4 et filetype=sh
 `, name, compCmd,
