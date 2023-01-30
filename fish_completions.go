@@ -53,7 +53,7 @@ function __%[1]s_perform_completion
     __%[1]s_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
-    set -l requestComp "%[9]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
+    set -l requestComp "%[10]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
 
     __%[1]s_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
@@ -89,6 +89,25 @@ function __%[1]s_perform_completion
     printf "%%s\n" "$directiveLine"
 end
 
+function __%[1]s_doesnt_requires_order_preservation
+    __%[1]s_debug ""
+    __%[1]s_debug "========= checking if order preservation is required =========="
+
+    set -l results (__%[1]s_perform_completion)
+    if test -z "$results"
+        __%[1]s_debug "Error determining if order preservation is required"
+        return 1
+    end
+
+    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) %% 2)
+
+	if test "$keeporder" -ne 0
+		__%[1]s_debug "This does require order preservation"
+		return 1
+	end
+end
+
+
 # This function does two things:
 # - Obtain the completions and store them in the global __%[1]s_comp_results
 # - Return false if file completion should be performed
@@ -119,6 +138,7 @@ function __%[1]s_prepare_completions
     set -l shellCompDirectiveNoFileComp %[6]d
     set -l shellCompDirectiveFilterFileExt %[7]d
     set -l shellCompDirectiveFilterDirs %[8]d
+    set -l shellCompDirectiveKeepOrder %[9]d
 
     if test -z "$directive"
         set directive 0
@@ -207,11 +227,13 @@ complete -c %[2]s -e
 
 # The call to __%[1]s_prepare_completions will setup __%[1]s_comp_results
 # which provides the program's completion choices.
-complete -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
-
+# if this doesn't require order preservation, we dont use the -k flag
+complete -c %[2]s -n '__%[1]s_doesnt_requires_order_preservation' -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
+# otherwise we use the -k flag
+complete -k -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 `, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
 }
 
 // GenFishCompletion generates fish completion file and writes to the passed writer.

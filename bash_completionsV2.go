@@ -101,6 +101,7 @@ __%[1]s_process_completion_results() {
     local shellCompDirectiveNoFileComp=%[5]d
     local shellCompDirectiveFilterFileExt=%[6]d
     local shellCompDirectiveFilterDirs=%[7]d
+    local shellCompDirectiveKeepOrder=%[8]d
 
     if (((directive & shellCompDirectiveError) != 0)); then
         # Error code.  No completion.
@@ -113,6 +114,14 @@ __%[1]s_process_completion_results() {
                 compopt -o nospace
             else
                 __%[1]s_debug "No space directive not supported in this version of bash"
+            fi
+        fi
+        if (((directive & shellCompDirectiveKeepOrder) != 0)); then
+            if [[ $(type -t compopt) == builtin ]]; then
+                __%[1]s_debug "Activating keep order"
+                compopt -o nosort
+            else
+                __%[1]s_debug "No sort directive not supported in this version of bash"
             fi
         fi
         if (((directive & shellCompDirectiveNoFileComp) != 0)); then
@@ -183,7 +192,7 @@ __%[1]s_process_completion_results() {
 # Separate activeHelp lines from real completions.
 # Fills the $activeHelp and $completions arrays.
 __%[1]s_extract_activeHelp() {
-    local activeHelpMarker="%[8]s"
+    local activeHelpMarker="%[9]s"
     local endIndex=${#activeHelpMarker}
 
     while IFS='' read -r comp; do
@@ -351,16 +360,13 @@ __start_%[1]s()
     __%[1]s_process_completion_results
 }
 
-if [[ $(type -t compopt) = "builtin" ]]; then
-    complete -o default -F __start_%[1]s %[1]s
-else
-    complete -o default -o nospace -F __start_%[1]s %[1]s
-fi
+# compopts are already set, we don't have to specify them here
+complete -F __start_%[1]s %[1]s
 
 # ex: ts=4 sw=4 et filetype=sh
 `, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder,
 		activeHelpMarker))
 }
 
