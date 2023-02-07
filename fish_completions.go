@@ -99,12 +99,20 @@ function __%[1]s_doesnt_requires_order_preservation
         return 1
     end
 
-    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) %% 2)
+    set -l directive (string sub --start 2 $results[-1])
+    __%[1]s_debug "Directive is: $directive"
 
-    if test "$keeporder" -ne 0
+    set -l shellCompDirectiveKeepOrder %[9]d
+    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) %% 2)
+    __%[1]s_debug "Keeporder is: $keeporder"
+
+    if test $keeporder -ne 0
         __%[1]s_debug "This does require order preservation"
         return 1
     end
+
+    __%[1]s_debug "This doesn't require order preservation"
+    return 0
 end
 
 
@@ -138,7 +146,6 @@ function __%[1]s_prepare_completions
     set -l shellCompDirectiveNoFileComp %[6]d
     set -l shellCompDirectiveFilterFileExt %[7]d
     set -l shellCompDirectiveFilterDirs %[8]d
-    set -l shellCompDirectiveKeepOrder %[9]d
 
     if test -z "$directive"
         set directive 0
@@ -230,7 +237,7 @@ complete -c %[2]s -e
 # if this doesn't require order preservation, we dont use the -k flag
 complete -c %[2]s -n '__%[1]s_doesnt_requires_order_preservation' -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 # otherwise we use the -k flag
-complete -k -c %[2]s -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
+complete -k -c %[2]s -n 'not __%[1]s_doesnt_requires_order_preservation' -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 `, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
