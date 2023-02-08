@@ -162,16 +162,7 @@ cmd := &cobra.Command{
 }
 ```
 
-The aliases are not shown to the user on tab completion, but they are accepted as valid nouns by
-the completion algorithm if entered manually, e.g. in:
-
-```bash
-$ kubectl get rc [tab][tab]
-backend        frontend       database
-```
-
-Note that without declaring `rc` as an alias, the completion algorithm would not know to show the list of
-replication controllers following `rc`.
+The aliases are shown to the user on tab completion only if no completions were found within sub-commands or `ValidArgs`.
 
 ### Dynamic completion of nouns
 
