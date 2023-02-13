@@ -363,7 +363,7 @@ __start_%[1]s()
 if [[ $(type -t compopt) = "builtin" ]]; then
     complete -o default -F __start_%[1]s %[1]s
 else
-    complete -F __start_%[1]s %[1]s
+    complete -o default -o nospace -F __start_%[1]s %[1]s
 fi
 
 # ex: ts=4 sw=4 et filetype=sh
