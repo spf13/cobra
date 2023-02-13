@@ -89,7 +89,7 @@ function __%[1]s_perform_completion
     printf "%%s\n" "$directiveLine"
 end
 
-function __%[1]s_doesnt_requires_order_preservation
+function __%[1]s_requires_order_preservation
     __%[1]s_debug ""
     __%[1]s_debug "========= checking if order preservation is required =========="
 
@@ -108,11 +108,11 @@ function __%[1]s_doesnt_requires_order_preservation
 
     if test $keeporder -ne 0
         __%[1]s_debug "This does require order preservation"
-        return 1
+        return 0
     end
 
     __%[1]s_debug "This doesn't require order preservation"
-    return 0
+    return 1
 end
 
 
@@ -234,10 +234,10 @@ complete -c %[2]s -e
 
 # The call to __%[1]s_prepare_completions will setup __%[1]s_comp_results
 # which provides the program's completion choices.
-# if this doesn't require order preservation, we dont use the -k flag
-complete -c %[2]s -n '__%[1]s_doesnt_requires_order_preservation' -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
+# If this doesn't require order preservation, we don't use the -k flag
+complete -c %[2]s -n 'not __%[1]s_requires_order_preservation && __%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 # otherwise we use the -k flag
-complete -k -c %[2]s -n 'not __%[1]s_doesnt_requires_order_preservation' -n '__%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
+complete -k -c %[2]s -n '__%[1]s_requires_order_preservation && __%[1]s_prepare_completions' -f -a '$__%[1]s_comp_results'
 `, nameForVar, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
