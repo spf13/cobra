@@ -118,8 +118,13 @@ __%[1]s_process_completion_results() {
         fi
         if (((directive & shellCompDirectiveKeepOrder) != 0)); then
             if [[ $(type -t compopt) == builtin ]]; then
-                __%[1]s_debug "Activating keep order"
-                compopt -o nosort
+                # no sort isn't supported for bash less than < 4.4
+                if [[ ${BASH_VERSINFO[0]} -lt 4 || ( ${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -lt 4 ) ]]; then
+                    __%[1]s_debug "No sort directive not supported in this version of bash"
+                else
+                    __%[1]s_debug "Activating keep order"
+                    compopt -o nosort
+                fi
             else
                 __%[1]s_debug "No sort directive not supported in this version of bash"
             fi
