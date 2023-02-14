@@ -77,6 +77,9 @@ const (
 	// obtain the same behavior but only for flags.
 	ShellCompDirectiveFilterDirs
 
+	// ShellCompDirectiveNoMatching indicates that the provided completions will be
+	// passed to the user as-is, without additional matching (zsh and fish only).
+	ShellCompDirectiveNoMatching
 	// ===========================================================================
 
 	// All directives using iota should be above this one.
@@ -158,6 +161,9 @@ func (d ShellCompDirective) string() string {
 	}
 	if d&ShellCompDirectiveFilterDirs != 0 {
 		directives = append(directives, "ShellCompDirectiveFilterDirs")
+	}
+	if d&ShellCompDirectiveNoMatching != 0 {
+		directives = append(directives, "ShellCompDirectiveNoMatching")
 	}
 	if len(directives) == 0 {
 		directives = append(directives, "ShellCompDirectiveDefault")
