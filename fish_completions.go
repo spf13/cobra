@@ -89,17 +89,44 @@ function __%[1]s_perform_completion
     printf "%%s\n" "$directiveLine"
 end
 
+# this function limits calls to __%[1]s_perform_completion, by caching the result behind $__%[1]s_perform_completion_once_result
+function __%[1]s_perform_completion_once
+    __%[1]s_debug "Starting __%[1]s_perform_completion_once"
+
+    if test -n "$__%[1]s_perform_completion_once_result"
+        __%[1]s_debug "Seems like a valid result already exists, skipping __%[1]s_perform_completion"
+        return 0
+    end
+
+    set --global __%[1]s_perform_completion_once_result (__%[1]s_perform_completion)
+    if test -z "$__%[1]s_perform_completion_once_result"
+        __%[1]s_debug "No completions, probably due to a failure"
+        return 1
+    end
+
+    __%[1]s_debug "Performed completions and set __%[1]s_perform_completion_once_result"
+    return 0
+end
+
+# this function is used to clear the $__%[1]s_perform_completion_once_result variable after completions are run
+function __%[1]s_clear_perform_completion_once_result
+    __%[1]s_debug ""
+    __%[1]s_debug "========= clearing previously set __%[1]s_perform_completion_once_result variable =========="
+    set --erase __%[1]s_perform_completion_once_result
+    __%[1]s_debug "Succesfully erased the variable __%[1]s_perform_completion_once_result"
+end
+
 function __%[1]s_requires_order_preservation
     __%[1]s_debug ""
     __%[1]s_debug "========= checking if order preservation is required =========="
 
-    set -l results (__%[1]s_perform_completion)
-    if test -z "$results"
+    __%[1]s_perform_completion_once
+    if test -z "$__%[1]s_perform_completion_once_result"
         __%[1]s_debug "Error determining if order preservation is required"
         return 1
     end
 
-    set -l directive (string sub --start 2 $results[-1])
+    set -l directive (string sub --start 2 $__%[1]s_perform_completion_once_result[-1])
     __%[1]s_debug "Directive is: $directive"
 
     set -l shellCompDirectiveKeepOrder %[9]d
@@ -126,17 +153,17 @@ function __%[1]s_prepare_completions
     # Start fresh
     set --erase __%[1]s_comp_results
 
-    set -l results (__%[1]s_perform_completion)
-    __%[1]s_debug "Completion results: $results"
+    __%[1]s_perform_completion_once
+    __%[1]s_debug "Completion results: $__%[1]s_perform_completion_once_result"
 
-    if test -z "$results"
+    if test -z "$__%[1]s_perform_completion_once_result"
         __%[1]s_debug "No completion, probably due to a failure"
         # Might as well do file completion, in case it helps
         return 1
     end
 
-    set -l directive (string sub --start 2 $results[-1])
-    set --global __%[1]s_comp_results $results[1..-2]
+    set -l directive (string sub --start 2 $__%[1]s_perform_completion_once_result[-1])
+    set --global __%[1]s_comp_results $__%[1]s_perform_completion_once_result[1..-2]
 
     __%[1]s_debug "Completions are: $__%[1]s_comp_results"
     __%[1]s_debug "Directive is: $directive"
@@ -232,6 +259,8 @@ end
 # Remove any pre-existing completions for the program since we will be handling all of them.
 complete -c %[2]s -e
 
+# this will get called after the two calls below and clear the $__%[1]s_perform_completion_once_result global
+complete -c %[2]s -n '__%[1]s_clear_perform_completion_once_result'
 # The call to __%[1]s_prepare_completions will setup __%[1]s_comp_results
 # which provides the program's completion choices.
 # If this doesn't require order preservation, we don't use the -k flag
