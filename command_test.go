@@ -1862,6 +1862,24 @@ func TestAddGroup(t *testing.T) {
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
+func TestRemoveGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(&Group{ID: "group1", Title: "Test group 1"})
+	rootCmd.AddGroup(&Group{ID: "group2", Title: "Test group 2"})
+	rootCmd.AddGroup(&Group{ID: "group3", Title: "Test group 3"})
+	rootCmd.AddGroup(&Group{ID: "group4", Title: "Test group 4"})
+
+	rootCmd.RemoveGroup("group2")
+
+	for _, group := range rootCmd.Groups() {
+		if group.ID == "group2" {
+			t.Error(`Expected to not contain "group2"`)
+		}
+	}
+
+}
+
 func TestWrongGroupFirstLevel(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 

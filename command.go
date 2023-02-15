@@ -1312,8 +1312,8 @@ func (c *Command) AddGroup(groups ...*Group) {
 }
 
 // RemoveGroup removes command group from parent command.
-func (c *Command) RemoveGroup(group *Group) bool {
-	index := c.getGroupIndex(group.ID)
+func (c *Command) RemoveGroup(groupID string) bool {
+	index := c.getGroupIndex(groupID)
 	if index >= 0 {
 		c.commandgroups = append(c.commandgroups[:index], c.commandgroups[index+1:]...)
 		return true
