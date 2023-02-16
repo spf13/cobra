@@ -23,9 +23,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 
 	flag "github.com/spf13/pflag"
 )
@@ -136,6 +138,8 @@ type Command struct {
 	PersistentPostRun func(cmd *Command, args []string)
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
+	// OnKillRun: run if a commands execution is exited
+	OnKillRun func(cmd *Command, args []string)
 
 	// groups for subcommands
 	commandgroups []*Group
@@ -904,6 +908,23 @@ func (c *Command) execute(a []string) (err error) {
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
 		argWoFlags = a
+	}
+
+	if c.OnKillRun != nil {
+		sigchan := make(chan os.Signal)
+		signal.Notify(
+			sigchan,
+			syscall.SIGINT,
+			syscall.SIGKILL,
+			syscall.SIGTERM,
+			syscall.SIGQUIT,
+		)
+
+		go func() {
+			_ = <-sigchan
+
+			c.OnKillRun(c, argWoFlags)
+		}()
 	}
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
