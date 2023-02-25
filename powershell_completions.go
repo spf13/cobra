@@ -107,8 +107,17 @@ filter __%[1]s_escapeStringWithSpecialChars {
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go method.
         __%[1]s_debug "Adding extra empty parameter"
-`+"        # We need to use `\"`\" to pass an empty argument a \"\" or '' does not work!!!"+`
-`+"        $RequestComp=\"$RequestComp\" + ' `\"`\"'"+`
+        # PowerShell 7.2+ changed the way how the arguments are passed to executables,
+        # so for pre-7.2 or when Legacy argument passing is enabled we need to use
+`+"        # `\"`\" to pass an empty argument, a \"\" or '' does not work!!!"+`
+        if ($PSVersionTable.PsVersion -lt [version]'7.2.0' -or
+            ($PSVersionTable.PsVersion -lt [version]'7.3.0' -and -not [ExperimentalFeature]::IsEnabled("PSNativeCommandArgumentPassing")) -or
+            (($PSVersionTable.PsVersion -ge [version]'7.3.0' -or [ExperimentalFeature]::IsEnabled("PSNativeCommandArgumentPassing")) -and
+              $PSNativeCommandArgumentPassing -eq 'Legacy')) {
+`+"             $RequestComp=\"$RequestComp\" + ' `\"`\"'"+`
+        } else {
+             $RequestComp="$RequestComp" + ' ""'
+        }
     }
 
     __%[1]s_debug "Calling $RequestComp"
