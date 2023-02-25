@@ -228,6 +228,10 @@ ShellCompDirectiveFilterFileExt
 //    return []string{"themes"}, ShellCompDirectiveFilterDirs
 //
 ShellCompDirectiveFilterDirs
+
+// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
+// in which the completions are provided
+ShellCompDirectiveKeepOrder
 ```
 
 ***Note***: When using the `ValidArgsFunction`, Cobra will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Cobra will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
