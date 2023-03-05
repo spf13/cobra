@@ -1,6 +1,4 @@
 maintainers:
-- spf13
-- johnSchnake
 - jpmcb
 - marckhouzam
 inactive:
@@ -10,4 +8,6 @@ inactive:
 - broady
 - eparis
 - jharshman
+- johnSchnake
+- spf13
 - wfernandes
