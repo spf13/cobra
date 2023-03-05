@@ -25,7 +25,7 @@ jobs:
           -v $(pwd):/wrk -w /wrk
           ghcr.io/google/addlicense
           -c 'The Cobra Authors'
-          -y '2013-2022'
+          -y '2013-2023'
           -l apache
           -ignore '.github/**'
           -check
