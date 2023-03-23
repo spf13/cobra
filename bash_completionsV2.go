@@ -264,7 +264,7 @@ __%[1]s_handle_standard_completion_case() {
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%%s\n" "${completions[@]}")
+    done <<< "$(printf "%%s\n" "${completions[@]}")"
 
     # If there is a single completion left, remove the description text
     if ((${#COMPREPLY[*]} == 1)); then
