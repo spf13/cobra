@@ -92,7 +92,7 @@ Allowing to configure Active Help is entirely optional; you can use Active Help 
 
 The way to configure Active Help is to use the program's Active Help environment
 variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where `<PROGRAM>` is the name of your 
-program in uppercase with any `-` replaced by an `_`.  The variable should be set by the user to whatever
+program in uppercase with any non-ASCII-alphanumeric characters replaced by an `_`.  The variable should be set by the user to whatever
 Active Help configuration values are supported by the program.
 
 For example, say `helm` has chosen to support three levels for Active Help: `on`, `off`, `local`.  Then a user
