@@ -93,11 +93,6 @@ func TestNoArgs_WithPostTerminatorArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
 	_, err := executeCommand(c, "--", "post", "args")
 	noArgsWithArgs(err, t, "post")
-	// got := c.PostTerminatorArgs()
-	// expected := []string{"post", "args"}
-	// if strings.Join(got, ",") != strings.Join(expected, ",") {
-	// 	t.Fatalf("Expected %q, got %q", expected, got)
-	// }
 }
 func TestNoArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
@@ -228,7 +223,7 @@ func TestMinimumNArgs_WithLessArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
 
 func TestMinimumNArgs_WithLessArgs_WithValid(t *testing.T) {
 	c := getCommand(MinimumNArgs(2), true)
-	_, err := executeCommand(c, "one") // @todo check
+	_, err := executeCommand(c, "one")
 	minimumNArgsWithLessArgs(err, t)
 }
 
