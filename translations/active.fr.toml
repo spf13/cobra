@@ -1,7 +1,14 @@
 [Error]
 description = "prefix of error messages"
+hash = "sha1-7dcb56355a3ddc7ff7e5ccd6522507999ca7f238"
 other = "Erreur"
 
 [ExclusiveFlagsValidationError]
 description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
+hash = "sha1-221b98bada52cfc2932f9aa5142b653b46baded6"
 other = "les options [%v] sont exclusives, mais les options %v ont été fournies"
+
+[RunHelpTip]
+description = "tip shown when a command fails (command path)"
+hash = "sha1-e1d2c4cccd484df365c3249347d5172981929b88"
+other = "Essayez '%v --help' pour obtenir de l'aide."

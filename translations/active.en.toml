@@ -5,3 +5,7 @@ other = "Error"
 [ExclusiveFlagsValidationError]
 description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
 other = "if any flags in the group [%v] are set none of the others can be; %v were all set"
+
+[RunHelpTip]
+description = "tip shown when a command fails (command path)"
+other = "Run '%v --help' for usage."
