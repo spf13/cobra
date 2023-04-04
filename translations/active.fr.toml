@@ -14,6 +14,11 @@ description = "error shown when multiple exclusive flags are provided (group fla
 hash = "sha1-221b98bada52cfc2932f9aa5142b653b46baded6"
 other = "les options [%v] sont exclusives, mais les options %v ont été fournies"
 
+[ForInfoAboutCommand]
+description = "end of a sentence"
+hash = "sha1-923f6d48908b3a6981fb5504b0e5078700a312c0"
+other = "pour plus d'information au sujet d'une commande"
+
 [LegacyArgsValidationError]
 description = "error shown when args are not understood (subcmd, cmd, suggestion)"
 hash = "sha1-c601c68bdcb9687109e793112b789b1858953b15"
@@ -51,3 +56,48 @@ other = "accepte entre %d et %d args, mais en a reçu %d"
 description = "tip shown when a command fails (command path)"
 hash = "sha1-e1d2c4cccd484df365c3249347d5172981929b88"
 other = "Essayez '%v --help' pour obtenir de l'aide."
+
+[SectionAdditionalCommands]
+description = "title of the section in the usage template"
+hash = "sha1-730484f22c7ce0885ca13a3b8222b231dc29a4a9"
+other = "Commandes Connexes"
+
+[SectionAdditionalHelpTopics]
+description = "title of the section in the usage template"
+hash = "sha1-615c9551f4dcd30836fbe04506e0b807c59dd901"
+other = "Autres Sujets"
+
+[SectionAliases]
+description = "title of the section in the usage template"
+hash = "sha1-3c66c036f454cb3d23f757c430a5c05b148dc01f"
+other = "Alias"
+
+[SectionAvailableCommands]
+description = "title of the section in the usage template"
+hash = "sha1-fc33c38777373e51c9c84c8594efb5de4df0f23e"
+other = "Commandes Disponibles"
+
+[SectionExamples]
+description = "title of the section in the usage template"
+hash = "sha1-6e2f0c7dddc3ce6aacb1184b3b21694492d6595a"
+other = "Exemples"
+
+[SectionFlags]
+description = "title of the section in the usage template"
+hash = "sha1-5513ed25ed4e1ad2e569ff4c963bba347320e9f7"
+other = "Options"
+
+[SectionGlobalFlags]
+description = "title of the section in the usage template"
+hash = "sha1-705f1ebcdce1374e23f41bc8e0e14e5197ac1742"
+other = "Options Globales"
+
+[SectionUsage]
+description = "title of the section in the usage template"
+hash = "sha1-5fdae7bd171315a453063384887ee4300363cf20"
+other = "Usage"
+
+[Use]
+description = "beginning of a sentence like 'Use <this> to do <that>'"
+hash = "sha1-f42c92acc9934eec952161dfa338a95ec0f02b75"
+other = "Utilisez"

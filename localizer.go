@@ -27,6 +27,119 @@ var localeFS embed.FS
 // Localizer can be used to fetch localized messages
 var localizer *i18n.Localizer
 
+type i18nCommandGlossary struct {
+	SectionUsage                string
+	SectionAliases              string
+	SectionExamples             string
+	SectionAvailableCommands    string
+	SectionAdditionalCommands   string
+	SectionFlags                string
+	SectionGlobalFlags          string
+	SectionAdditionalHelpTopics string
+	Use                         string
+	ForInfoAboutCommand         string
+}
+
+var commonCommandGlossary *i18nCommandGlossary
+
+func getCommandGlossary() *i18nCommandGlossary {
+	if commonCommandGlossary == nil {
+		commonCommandGlossary = &i18nCommandGlossary{
+			SectionUsage:                i18nSectionUsage(),
+			SectionAliases:              i18nSectionAliases(),
+			SectionExamples:             i18nSectionExamples(),
+			SectionAvailableCommands:    i18nSectionAvailableCommands(),
+			SectionAdditionalCommands:   i18nSectionAdditionalCommands(),
+			SectionFlags:                i18nSectionFlags(),
+			SectionGlobalFlags:          i18nSectionGlobalFlags(),
+			SectionAdditionalHelpTopics: i18nSectionAdditionalHelpTopics(),
+			Use:                         i18nUse(),
+			ForInfoAboutCommand:         i18nForInfoAboutCommand(),
+		}
+	}
+	return commonCommandGlossary
+}
+
+func i18nSectionUsage() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionUsage",
+		Description: "title of the section in the usage template",
+		Other:       "Usage",
+	})
+}
+
+func i18nSectionAliases() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionAliases",
+		Description: "title of the section in the usage template",
+		Other:       "Aliases",
+	})
+}
+
+func i18nSectionExamples() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionExamples",
+		Description: "title of the section in the usage template",
+		Other:       "Examples",
+	})
+}
+
+func i18nSectionAvailableCommands() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionAvailableCommands",
+		Description: "title of the section in the usage template",
+		Other:       "Available Commands",
+	})
+}
+
+func i18nSectionAdditionalCommands() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionAdditionalCommands",
+		Description: "title of the section in the usage template",
+		Other:       "Additional Commands",
+	})
+}
+
+func i18nSectionFlags() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionFlags",
+		Description: "title of the section in the usage template",
+		Other:       "Flags",
+	})
+}
+
+func i18nSectionGlobalFlags() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionGlobalFlags",
+		Description: "title of the section in the usage template",
+		Other:       "Global Flags",
+	})
+}
+
+func i18nSectionAdditionalHelpTopics() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "SectionAdditionalHelpTopics",
+		Description: "title of the section in the usage template",
+		Other:       "Additional Help Topics",
+	})
+}
+
+func i18nUse() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "Use",
+		Description: "beginning of a sentence like 'Use <this> to do <that>'",
+		Other:       "Use",
+	})
+}
+
+func i18nForInfoAboutCommand() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "ForInfoAboutCommand",
+		Description: "end of a sentence",
+		Other:       "for more information about a command",
+	})
+}
+
 func i18nError() string {
 	return localizeMessage(&i18n.Message{
 		ID:          "Error",

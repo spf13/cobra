@@ -252,6 +252,8 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	I18n *i18nCommandGlossary
 }
 
 // Context returns underlying command context. If command was executed
@@ -542,6 +544,7 @@ func (c *Command) NamePadding() int {
 
 // UsageTemplate returns usage template for the command.
 func (c *Command) UsageTemplate() string {
+	c.I18n = getCommandGlossary()
 	if c.usageTemplate != "" {
 		return c.usageTemplate
 	}
@@ -549,35 +552,35 @@ func (c *Command) UsageTemplate() string {
 	if c.HasParent() {
 		return c.parent.UsageTemplate()
 	}
-	return `Usage:{{if .Runnable}}
+	return `{{.I18n.SectionUsage}}:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
-Aliases:
+{{.I18n.SectionAliases}}:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
-Examples:
+{{.I18n.SectionExamples}}:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+{{.I18n.SectionAvailableCommands}}:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
 {{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
-Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+{{.I18n.SectionAdditionalCommands}}:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
-Flags:
+{{.I18n.SectionFlags}}:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
-Global Flags:
+{{.I18n.SectionGlobalFlags}}:
 {{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
 
-Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+{{.I18n.SectionAdditionalHelpTopics}}:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
-Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
+{{.I18n.Use}} "{{.CommandPath}} [command] --help" {{.I18n.ForInfoAboutCommand}}.{{end}}
 `
 }
 

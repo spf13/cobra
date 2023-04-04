@@ -11,6 +11,10 @@ other = "accepts %d args, received %d"
 description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
 other = "if any flags in the group [%v] are set none of the others can be; %v were all set"
 
+[ForInfoAboutCommand]
+description = "end of a sentence"
+other = "for more information about a command"
+
 [LegacyArgsValidationError]
 description = "error shown when args are not understood (subcmd, cmd, suggestion)"
 other = "unknown command %q for %q%s"
@@ -41,3 +45,39 @@ other = "accepts between %d and %d args, received %d"
 [RunHelpTip]
 description = "tip shown when a command fails (command path)"
 other = "Run '%v --help' for usage."
+
+[SectionAdditionalCommands]
+description = "title of the section in the usage template"
+other = "Additional Commands"
+
+[SectionAdditionalHelpTopics]
+description = "title of the section in the usage template"
+other = "Additional Help Topics"
+
+[SectionAliases]
+description = "title of the section in the usage template"
+other = "Aliases"
+
+[SectionAvailableCommands]
+description = "title of the section in the usage template"
+other = "Available Commands"
+
+[SectionExamples]
+description = "title of the section in the usage template"
+other = "Examples"
+
+[SectionFlags]
+description = "title of the section in the usage template"
+other = "Flags"
+
+[SectionGlobalFlags]
+description = "title of the section in the usage template"
+other = "Global Flags"
+
+[SectionUsage]
+description = "title of the section in the usage template"
+other = "Usage"
+
+[Use]
+description = "beginning of a sentence like 'Use <this> to do <that>'"
+other = "Use"
