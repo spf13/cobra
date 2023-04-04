@@ -16,6 +16,7 @@ package cobra
 
 import (
 	"fmt"
+	"github.com/leonelquinteros/gotext"
 	"os"
 	"regexp"
 	"strconv"
@@ -50,7 +51,7 @@ type flagCompError struct {
 }
 
 func (e *flagCompError) Error() string {
-	return "Subcommand '" + e.subCommand + "' does not support flag '" + e.flagName + "'"
+	return fmt.Sprintf(gotext.Get("CompletionSubcommandUnsupportedFlagError"), e.subCommand, e.flagName)
 }
 
 const (
@@ -99,7 +100,6 @@ const (
 	// Constants for the completion command
 	compCmdName              = "completion"
 	compCmdNoDescFlagName    = "no-descriptions"
-	compCmdNoDescFlagDesc    = "disable completion descriptions"
 	compCmdNoDescFlagDefault = false
 )
 
@@ -213,9 +213,8 @@ func (c *Command) initCompleteCmd(args []string) {
 		Hidden:                true,
 		DisableFlagParsing:    true,
 		Args:                  MinimumNArgs(1),
-		Short:                 "Request shell completion choices for the specified command-line",
-		Long: fmt.Sprintf("%[2]s is a special command that is used by the shell completion logic\n%[1]s",
-			"to request completion choices for the specified command-line.", ShellCompRequestCmd),
+		Short:                 gotext.Get("CompletionCommandShellShort"),
+		Long:                  fmt.Sprintf(gotext.Get("CompletionCommandShellLong"), ShellCompRequestCmd),
 		Run: func(cmd *Command, args []string) {
 			finalCmd, completions, directive, err := cmd.getCompletions(args)
 			if err != nil {
@@ -267,7 +266,7 @@ func (c *Command) initCompleteCmd(args []string) {
 
 			// Print some helpful info to stderr for the user to understand.
 			// Output from stderr must be ignored by the completion script.
-			fmt.Fprintf(finalCmd.ErrOrStderr(), "Completion ended with directive: %s\n", directive.string())
+			fmt.Fprintf(finalCmd.ErrOrStderr(), fmt.Sprintf(gotext.Get("CompletionCommandShellDirectiveTip"), directive.string())+"\n")
 		},
 	}
 	c.AddCommand(completeCmd)
@@ -773,7 +772,7 @@ You will need to start a new shell for this setup to take effect.
 		},
 	}
 	if haveNoDescFlag {
-		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, gotext.Get("CompletionSubcommandNoDescFlagDesc"))
 	}
 
 	zsh := &Command{
@@ -812,7 +811,7 @@ You will need to start a new shell for this setup to take effect.
 		},
 	}
 	if haveNoDescFlag {
-		zsh.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		zsh.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, gotext.Get("CompletionSubcommandNoDescFlagDesc"))
 	}
 
 	fish := &Command{
@@ -837,7 +836,7 @@ You will need to start a new shell for this setup to take effect.
 		},
 	}
 	if haveNoDescFlag {
-		fish.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		fish.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, gotext.Get("CompletionSubcommandNoDescFlagDesc"))
 	}
 
 	powershell := &Command{
@@ -863,7 +862,7 @@ to your powershell profile.
 		},
 	}
 	if haveNoDescFlag {
-		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, gotext.Get("CompletionSubcommandNoDescFlagDesc"))
 	}
 
 	completionCmd.AddCommand(bash, zsh, fish, powershell)

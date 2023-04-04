@@ -1,0 +1,172 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: command.go:891
+msgid "CommandDeprecatedWarning"
+msgstr "Command %q is deprecated, %s"
+
+#: command.go:1249
+msgid "CommandHelpLong"
+msgstr ""
+"Help provides help for any command in the application.\n"
+"Simply type %s for full details."
+
+#: command.go:1248
+msgid "CommandHelpShort"
+msgstr "Help about any command"
+
+#: command.go:1272
+msgid "CommandHelpUnknownTopicError"
+msgstr "Unknown help topic %#q"
+
+#: completions.go:250
+msgid "CompletionCommandShellDirectiveTip"
+msgstr "Completion ended with directive: %s"
+
+#: completions.go:203
+msgid "CompletionCommandShellLong"
+msgstr ""
+"%s is a special command that is used by the shell completion logic\n"
+"to request completion choices for the specified command-line."
+
+#: completions.go:202
+msgid "CompletionCommandShellShort"
+msgstr "Request shell completion choices for the specified command-line"
+
+#: completions.go:745 completions.go:784 completions.go:809 completions.go:835
+msgid "CompletionSubcommandNoDescFlagDesc"
+msgstr "disable completion descriptions"
+
+#: completions.go:52
+msgid "CompletionSubcommandUnsupportedFlagError"
+msgstr "subcommand '%s' does not support flag '%s'"
+
+#: command.go:770
+msgid "DidYouMeanThis"
+msgstr "Did you mean this?"
+
+#: cobra.go:234
+msgid "Error"
+msgstr "Error"
+
+#: args.go:98
+msgid "ExactArgsValidationError"
+msgid_plural "ExactArgsValidationErrorPlural"
+msgstr[0] "accepts %d arg, received %d"
+msgstr[1] "accepts %d args, received %d"
+
+#: flag_groups.go:205
+msgid "ExclusiveFlagsValidationError"
+msgstr ""
+"if any flags in the group [%v] are set none of the others can be; %v were "
+"all set"
+
+#: command.go:1176
+msgid "FlagNotSetError"
+msgid_plural "FlagNotSetErrorPlural"
+msgstr[0] "required flag \"%s\" is not set"
+msgstr[1] "required flags \"%s\" are not set"
+
+#: localizer.go:66
+msgid "ForInfoAboutCommand"
+msgstr "for more information about a command"
+
+#: command.go:1200
+msgid "HelpFor"
+msgstr "help for"
+
+#: args.go:37
+msgid "LegacyArgsValidationError"
+msgstr "unknown command %q for %q%s"
+
+#: args.go:88
+msgid "MaximumNArgsValidationError"
+msgid_plural "MaximumNArgsValidationErrorPlural"
+msgstr[0] "accepts at most %d arg, received %d"
+msgstr[1] "accepts at most %d args, received %d"
+
+#: args.go:78
+msgid "MinimumNArgsValidationError"
+msgid_plural "MinimumNArgsValidationErrorPlural"
+msgstr[0] "requires at least %d arg, only received %d"
+msgstr[1] "requires at least %d args, only received %d"
+
+#: args.go:45
+msgid "NoArgsValidationError"
+msgstr "unknown command %q for %q"
+
+#: args.go:62
+msgid "OnlyValidArgsValidationError"
+msgstr "invalid argument %q for %q%s"
+
+#: args.go:108
+msgid "RangeArgsValidationError"
+msgid_plural "RangeArgsValidationErrorPlural"
+msgstr[0] "accepts between %d and %d arg, received %d"
+msgstr[1] "accepts between %d and %d args, received %d"
+
+#: command.go:1110
+msgid "RunHelpTip"
+msgstr "Run '%v --help' for usage."
+
+#: localizer.go:61
+msgid "SectionAdditionalCommands"
+msgstr "Additional Commands"
+
+#: localizer.go:64
+msgid "SectionAdditionalHelpTopics"
+msgstr "Additional Help Topics"
+
+#: localizer.go:58
+msgid "SectionAliases"
+msgstr "Aliases"
+
+#: localizer.go:60
+msgid "SectionAvailableCommands"
+msgstr "Available Commands"
+
+#: localizer.go:59
+msgid "SectionExamples"
+msgstr "Examples"
+
+#: localizer.go:62
+msgid "SectionFlags"
+msgstr "Flags"
+
+#: localizer.go:63
+msgid "SectionGlobalFlags"
+msgstr "Global Flags"
+
+#: localizer.go:57
+msgid "SectionUsage"
+msgstr "Usage"
+
+#: command.go:1202 command.go:1224
+msgid "ThisCommand"
+msgstr "this command"
+
+#: localizer.go:65
+msgid "Use"
+msgstr "Use"
+
+#: command.go:1222
+msgid "VersionFor"
+msgstr "version for"
+
+#: command.go:1247 command.go:1249
+msgid "command"
+msgstr "command"
+
+#~ msgid "PathToCommand"
+#~ msgstr "path to command"

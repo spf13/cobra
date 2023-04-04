@@ -21,7 +21,7 @@ lint:
 
 test: install_deps
 	$(info ******************** running tests ********************)
-	go test -v ./...
+	LANGUAGE="en" go test -v ./...
 
 richtest: install_deps
 	$(info ******************** running tests with kyoh86/richgo ********************)
@@ -33,3 +33,7 @@ install_deps:
 
 clean:
 	rm -rf $(BIN)
+
+i18n_extract:
+	$(info ******************** extracting translation files ********************)
+	xgotext -v -in . -out locales

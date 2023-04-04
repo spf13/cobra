@@ -1,0 +1,172 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: command.go:891
+msgid "CommandDeprecatedWarning"
+msgstr "La commande %q est dépréciée, %s"
+
+#: command.go:1249
+msgid "CommandHelpLong"
+msgstr ""
+"Help fournit de l'aide pour n'importe quelle commande de l'application.\n"
+"Tapez '%s' pour obtenir une aide détaillée."
+
+#: command.go:1248
+msgid "CommandHelpShort"
+msgstr "Obtenir de l'aide au sujet d'une commande"
+
+#: command.go:1272
+msgid "CommandHelpUnknownTopicError"
+msgstr "Sujet d'aide %#q inconnu"
+
+#: completions.go:250
+msgid "CompletionCommandShellDirectiveTip"
+msgstr "Auto-complétion achevée par la directive : %s"
+
+#: completions.go:203
+msgid "CompletionCommandShellLong"
+msgstr ""
+"%s est une commande spéciale utilisée par l'auto-complétion de la console\n"
+"pour récupérer les différents choix possibles pour une certaine commande."
+
+#: completions.go:202
+msgid "CompletionCommandShellShort"
+msgstr ""
+"Obtenir les différentes possibilités d'auto-complétion pour une certaine "
+"commande"
+
+#: completions.go:745 completions.go:784 completions.go:809 completions.go:835
+msgid "CompletionSubcommandNoDescFlagDesc"
+msgstr "désactiver les desriptions"
+
+#: completions.go:52
+msgid "CompletionSubcommandUnsupportedFlagError"
+msgstr "la sous-commande '%s' ne comprend pas l'option '%s'"
+
+#: command.go:770
+msgid "DidYouMeanThis"
+msgstr "Vouliez-vous dire ceci ?"
+
+#: cobra.go:234
+msgid "Error"
+msgstr "Erreur"
+
+#: args.go:98
+msgid "ExactArgsValidationError"
+msgid_plural "ExactArgsValidationErrorPlural"
+msgstr[0] "accepte %d arg, mais en a reçu %d"
+msgstr[1] "accepte %d args, mais en a reçu %d"
+
+#: flag_groups.go:205
+msgid "ExclusiveFlagsValidationError"
+msgstr "les options [%v] sont exclusives, mais les options %v ont été fournies"
+
+#: command.go:1176
+msgid "FlagNotSetError"
+msgid_plural "FlagNotSetErrorPlural"
+msgstr[0] "l'option requise \"%s\" n'est pas présente"
+msgstr[1] "les options requises \"%s\" ne sont pas présentes"
+
+#: localizer.go:66
+msgid "ForInfoAboutCommand"
+msgstr "pour plus d'information au sujet d'une commande"
+
+#: command.go:1200
+msgid "HelpFor"
+msgstr "aide pour"
+
+#: args.go:37
+msgid "LegacyArgsValidationError"
+msgstr "commande %q inconnue pour %q%s"
+
+#: args.go:88
+msgid "MaximumNArgsValidationError"
+msgid_plural "MaximumNArgsValidationErrorPlural"
+msgstr[0] "accepte au plus %d arg, mais en a reçu %d"
+msgstr[1] "accepte au plus %d args, mais en a reçu %d"
+
+#: args.go:78
+msgid "MinimumNArgsValidationError"
+msgid_plural "MinimumNArgsValidationErrorPlural"
+msgstr[0] "requiert au moins %d arg, mais en a reçu %d"
+msgstr[1] "requiert au moins %d args, mais en a reçu %d"
+
+#: args.go:45
+msgid "NoArgsValidationError"
+msgstr "commande %q inconnue pour %q"
+
+#: args.go:62
+msgid "OnlyValidArgsValidationError"
+msgstr "argument %q invalide pour %q%s"
+
+#: args.go:108
+msgid "RangeArgsValidationError"
+msgid_plural "RangeArgsValidationErrorPlural"
+msgstr[0] "accepte entre %d et %d arg, mais en a reçu %d"
+msgstr[1] "accepte entre %d et %d args, mais en a reçu %d"
+
+#: command.go:1110
+msgid "RunHelpTip"
+msgstr "Essayez '%v --help' pour obtenir de l'aide."
+
+#: localizer.go:61
+msgid "SectionAdditionalCommands"
+msgstr "Commandes Connexes"
+
+#: localizer.go:64
+msgid "SectionAdditionalHelpTopics"
+msgstr "Autres Sujets"
+
+#: localizer.go:58
+msgid "SectionAliases"
+msgstr "Alias"
+
+#: localizer.go:60
+msgid "SectionAvailableCommands"
+msgstr "Commandes Disponibles"
+
+#: localizer.go:59
+msgid "SectionExamples"
+msgstr "Exemples"
+
+#: localizer.go:62
+msgid "SectionFlags"
+msgstr "Options"
+
+#: localizer.go:63
+msgid "SectionGlobalFlags"
+msgstr "Options Globales"
+
+#: localizer.go:57
+msgid "SectionUsage"
+msgstr "Usage"
+
+#: command.go:1202 command.go:1224
+msgid "ThisCommand"
+msgstr "cette commande"
+
+#: localizer.go:65
+msgid "Use"
+msgstr "Utiliser"
+
+#: command.go:1222
+msgid "VersionFor"
+msgstr "version pour"
+
+#: command.go:1247 command.go:1249
+msgid "command"
+msgstr "commande"
+
+#~ msgid "PathToCommand"
+#~ msgstr "command"

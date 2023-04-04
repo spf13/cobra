@@ -1,0 +1,163 @@
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+"X-Generator: xgotext\n"
+
+#: command.go:891
+msgid "CommandDeprecatedWarning"
+msgstr ""
+
+#: command.go:1249
+msgid "CommandHelpLong"
+msgstr ""
+
+#: command.go:1248
+msgid "CommandHelpShort"
+msgstr ""
+
+#: command.go:1272
+msgid "CommandHelpUnknownTopicError"
+msgstr ""
+
+#: completions.go:250
+msgid "CompletionCommandShellDirectiveTip"
+msgstr ""
+
+#: completions.go:203
+msgid "CompletionCommandShellLong"
+msgstr ""
+
+#: completions.go:202
+msgid "CompletionCommandShellShort"
+msgstr ""
+
+#: completions.go:745
+#: completions.go:784
+#: completions.go:809
+#: completions.go:835
+msgid "CompletionSubcommandNoDescFlagDesc"
+msgstr ""
+
+#: completions.go:52
+msgid "CompletionSubcommandUnsupportedFlagError"
+msgstr ""
+
+#: command.go:770
+msgid "DidYouMeanThis"
+msgstr ""
+
+#: cobra.go:234
+msgid "Error"
+msgstr ""
+
+#: args.go:98
+msgid "ExactArgsValidationError"
+msgid_plural "ExactArgsValidationErrorPlural"
+msgstr[0] ""
+msgstr[1] ""
+
+#: flag_groups.go:205
+msgid "ExclusiveFlagsValidationError"
+msgstr ""
+
+#: command.go:1176
+msgid "FlagNotSetError"
+msgid_plural "FlagNotSetErrorPlural"
+msgstr[0] ""
+msgstr[1] ""
+
+#: localizer.go:66
+msgid "ForInfoAboutCommand"
+msgstr ""
+
+#: command.go:1200
+msgid "HelpFor"
+msgstr ""
+
+#: args.go:37
+msgid "LegacyArgsValidationError"
+msgstr ""
+
+#: args.go:88
+msgid "MaximumNArgsValidationError"
+msgid_plural "MaximumNArgsValidationErrorPlural"
+msgstr[0] ""
+msgstr[1] ""
+
+#: args.go:78
+msgid "MinimumNArgsValidationError"
+msgid_plural "MinimumNArgsValidationErrorPlural"
+msgstr[0] ""
+msgstr[1] ""
+
+#: args.go:45
+msgid "NoArgsValidationError"
+msgstr ""
+
+#: args.go:62
+msgid "OnlyValidArgsValidationError"
+msgstr ""
+
+#: args.go:108
+msgid "RangeArgsValidationError"
+msgid_plural "RangeArgsValidationErrorPlural"
+msgstr[0] ""
+msgstr[1] ""
+
+#: command.go:1110
+msgid "RunHelpTip"
+msgstr ""
+
+#: localizer.go:61
+msgid "SectionAdditionalCommands"
+msgstr ""
+
+#: localizer.go:64
+msgid "SectionAdditionalHelpTopics"
+msgstr ""
+
+#: localizer.go:58
+msgid "SectionAliases"
+msgstr ""
+
+#: localizer.go:60
+msgid "SectionAvailableCommands"
+msgstr ""
+
+#: localizer.go:59
+msgid "SectionExamples"
+msgstr ""
+
+#: localizer.go:62
+msgid "SectionFlags"
+msgstr ""
+
+#: localizer.go:63
+msgid "SectionGlobalFlags"
+msgstr ""
+
+#: localizer.go:57
+msgid "SectionUsage"
+msgstr ""
+
+#: command.go:1202
+#: command.go:1224
+msgid "ThisCommand"
+msgstr ""
+
+#: localizer.go:65
+msgid "Use"
+msgstr ""
+
+#: command.go:1222
+msgid "VersionFor"
+msgstr ""
+
+#: command.go:1247
+#: command.go:1249
+msgid "command"
+msgstr ""
