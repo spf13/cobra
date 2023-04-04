@@ -140,6 +140,87 @@ func i18nForInfoAboutCommand() string {
 	})
 }
 
+func i18nCommand() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "Command",
+		Description: "lowercase",
+		Other:       "command",
+	})
+}
+
+func i18nPathToCommand() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "PathToCommand",
+		Description: "lowercase",
+		Other:       "path to command",
+	})
+}
+
+func i18nCommandHelpShort() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "CommandHelpShort",
+		Description: "short help for command help",
+		Other:       "Help about any command",
+	})
+}
+
+func i18nCommandHelpLong() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "CommandHelpLong",
+		Description: "long help for command help (cmd example)",
+		Other: `Help provides help for any command in the application.
+Simply type %s for full details.`,
+	})
+}
+
+func i18nCommandHelpUnknownTopicError() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "CommandHelpUnknownTopicError",
+		Description: "shown when help topic is unknown (args)",
+		Other:       "Unknown help topic %#q",
+	})
+}
+
+func i18nHelpFor() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "HelpFor",
+		Description: "lowercase, beginning of sentence",
+		Other:       "help for",
+	})
+}
+
+func i18nVersionFor() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "VersionFor",
+		Description: "lowercase, beginning of sentence",
+		Other:       "version for",
+	})
+}
+
+func i18nThisCommand() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "ThisCommand",
+		Description: "lowercase, end of sentence, used when command name is undefined",
+		Other:       "this command",
+	})
+}
+
+func i18nDidYouMeanThis() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "DidYouMeanThis",
+		Description: "shown as suggestion",
+		Other:       "Did you mean this?",
+	})
+}
+
+func i18nCommandDeprecatedWarning() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "CommandDeprecatedWarning",
+		Description: "printed when a deprecated command is executed (cmd, deprecation message)",
+		Other:       "Command %q is deprecated, %s",
+	})
+}
+
 func i18nError() string {
 	return localizeMessage(&i18n.Message{
 		ID:          "Error",
@@ -222,6 +303,15 @@ func i18nExclusiveFlagsValidationError() string {
 		Description: "error shown when multiple exclusive flags are provided (group flags, offending flags)",
 		Other:       "if any flags in the group [%v] are set none of the others can be; %v were all set",
 	})
+}
+
+func i18nFlagNotSetError(amountFlags int) string {
+	return localizeMessageWithPlural(&i18n.Message{
+		ID:          "FlagNotSetError",
+		Description: "error shown when required flags are not set (flags)",
+		Other:       "required flags \"%s\" are not set",
+		One:         "required flag \"%s\" is not set",
+	}, amountFlags)
 }
 
 // … lots more translations here

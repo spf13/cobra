@@ -1,3 +1,33 @@
+[Command]
+description = "lowercase"
+hash = "sha1-c90bde9bb93ee6452afbe579d55cd32ba0159c8d"
+other = "commande"
+
+[CommandDeprecatedWarning]
+description = "printed when a deprecated command is executed (cmd, deprecation message)"
+hash = "sha1-e8b974a255eafe86d4a4fe15a0e79aaab345354c"
+other = "La commande %q est dépréciée, %s"
+
+[CommandHelpLong]
+description = "long help for command help (cmd example)"
+hash = "sha1-dc993d9f12d54910147c477318fa82c8210b6669"
+other = "Help fournit de l'aide pour n'importe quelle commande de l'application.\nTapez '%s' pour obtenir une aide détaillée."
+
+[CommandHelpShort]
+description = "short help for command help"
+hash = "sha1-5bab4a463f36ea8e33681f523445bbd614e9891c"
+other = "Obtenir de l'aide au sujet d'une commande"
+
+[CommandHelpUnknownTopicError]
+description = "shown when help topic is unknown (args)"
+hash = "sha1-d3b6cb615eee5770e0e8e62fbf7a3293502dd7a8"
+other = "Sujet d'aide %#q inconnu"
+
+[DidYouMeanThis]
+description = "shown as suggestion"
+hash = "sha1-eb9504fe384499caafe690853204c7fb7ac8b531"
+other = "Vouliez-vous dire ceci ?"
+
 [Error]
 description = "prefix of error messages"
 hash = "sha1-7dcb56355a3ddc7ff7e5ccd6522507999ca7f238"
@@ -14,10 +44,21 @@ description = "error shown when multiple exclusive flags are provided (group fla
 hash = "sha1-221b98bada52cfc2932f9aa5142b653b46baded6"
 other = "les options [%v] sont exclusives, mais les options %v ont été fournies"
 
+[FlagNotSetError]
+description = "error shown when required flags are not set (flags)"
+hash = "sha1-f5340c4bfceb0066ec70944b57e6458b6f8cc97b"
+one = "l'option requise \"%s\" n'est pas présente"
+other = "les options requises \"%s\" ne sont pas présentes"
+
 [ForInfoAboutCommand]
 description = "end of a sentence"
 hash = "sha1-923f6d48908b3a6981fb5504b0e5078700a312c0"
 other = "pour plus d'information au sujet d'une commande"
+
+[HelpFor]
+description = "lowercase, beginning of sentence"
+hash = "sha1-18fbe8d2780935dbe6a71f998821c22f283cbd25"
+other = "aide pour"
 
 [LegacyArgsValidationError]
 description = "error shown when args are not understood (subcmd, cmd, suggestion)"
@@ -45,6 +86,11 @@ other = "commande %q inconnue pour %q"
 description = "error shown when arg is invalid (arg, cmd, suggestion)"
 hash = "sha1-60b40e5782dd252c78ef3d585065cb99197ec22e"
 other = "argument %q invalide pour %q%s"
+
+[PathToCommand]
+description = "lowercase"
+hash = "sha1-7dcca04d5dcb7ff289a5483bea3e4f1e4119c1f4"
+other = "commande"
 
 [RangeArgsValidationError]
 description = "error shown when arg count is not in range (expected min, expected max, actual amount)"
@@ -97,7 +143,17 @@ description = "title of the section in the usage template"
 hash = "sha1-5fdae7bd171315a453063384887ee4300363cf20"
 other = "Usage"
 
+[ThisCommand]
+description = "lowercase, end of sentence, used when command name is undefined"
+hash = "sha1-5cfa4629fdf18b89471b3d07a0d051a8a10afe70"
+other = "cette commande"
+
 [Use]
 description = "beginning of a sentence like 'Use <this> to do <that>'"
 hash = "sha1-f42c92acc9934eec952161dfa338a95ec0f02b75"
 other = "Utilisez"
+
+[VersionFor]
+description = "lowercase, beginning of sentence"
+hash = "sha1-e7f03028ab18076d111cd3343a24bbd8113d5431"
+other = "version de"

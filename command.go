@@ -759,7 +759,7 @@ func (c *Command) findSuggestions(arg string) string {
 	}
 	suggestionsString := ""
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		suggestionsString += "\n\nDid you mean this?\n"
+		suggestionsString += "\n\n" + i18nDidYouMeanThis() + "\n"
 		for _, s := range suggestions {
 			suggestionsString += fmt.Sprintf("\t%v\n", s)
 		}
@@ -880,7 +880,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		c.Printf(i18nCommandDeprecatedWarning()+"\n", c.Name(), c.Deprecated)
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
@@ -1165,7 +1165,7 @@ func (c *Command) ValidateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+		return fmt.Errorf(i18nFlagNotSetError(len(missingFlagNames)), strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
 }
@@ -1189,9 +1189,9 @@ func (c *Command) checkCommandGroups() {
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
-		usage := "help for "
+		usage := i18nHelpFor() + " "
 		if c.Name() == "" {
-			usage += "this command"
+			usage += i18nThisCommand()
 		} else {
 			usage += c.Name()
 		}
@@ -1211,9 +1211,9 @@ func (c *Command) InitDefaultVersionFlag() {
 
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("version") == nil {
-		usage := "version for "
+		usage := i18nVersionFor() + " "
 		if c.Name() == "" {
-			usage += "this command"
+			usage += i18nThisCommand()
 		} else {
 			usage += c.Name()
 		}
@@ -1236,10 +1236,9 @@ func (c *Command) InitDefaultHelpCmd() {
 
 	if c.helpCommand == nil {
 		c.helpCommand = &Command{
-			Use:   "help [command]",
-			Short: "Help about any command",
-			Long: `Help provides help for any command in the application.
-Simply type ` + c.Name() + ` help [path to command] for full details.`,
+			Use:   fmt.Sprintf("help [%s]", i18nCommand()),
+			Short: i18nCommandHelpShort(),
+			Long:  fmt.Sprintf(i18nCommandHelpLong(), c.Name()+fmt.Sprintf(" help [%s]", i18nPathToCommand())),
 			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 				var completions []string
 				cmd, _, e := c.Root().Find(args)
@@ -1262,7 +1261,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q\n", args)
+					c.Printf(i18nCommandHelpUnknownTopicError()+"\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
 					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
