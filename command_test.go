@@ -815,6 +815,21 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 	}
 }
 
+func TestRequiredFlag(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.Flags().String("foo1", "", "")
+	assertNoErr(t, c.MarkFlagRequired("foo1"))
+
+	expected := fmt.Sprintf("required flag %q is not set", "foo1")
+
+	_, err := executeCommand(c)
+	got := err.Error()
+
+	if got != expected {
+		t.Errorf("Expected error: %q, got: %q", expected, got)
+	}
+}
+
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().String("foo1", "", "")
