@@ -35,6 +35,14 @@ func i18nError() string {
 	})
 }
 
+func i18nRunHelpTip() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "RunHelpTip",
+		Description: "tip shown when a command fails (command path)",
+		Other:       "Run '%v --help' for usage.",
+	})
+}
+
 func i18nExclusiveFlagsValidationError() string {
 	return localizeMessage(&i18n.Message{
 		ID:          "ExclusiveFlagsValidationError",
@@ -58,7 +66,7 @@ func localizeMessage(message *i18n.Message) string {
 
 func loadTranslationFiles(bundle *i18n.Bundle, langs []string) {
 	for _, lang := range langs {
-		_, _ = bundle.LoadMessageFileFS(localeFS, fmt.Sprintf("translations/main.%s.toml", lang))
+		_, _ = bundle.LoadMessageFileFS(localeFS, fmt.Sprintf("translations/active.%s.toml", lang))
 	}
 }
 
