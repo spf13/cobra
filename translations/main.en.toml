@@ -1,0 +1,7 @@
+[Error]
+description = "prefix of error messages"
+other = "Error"
+
+[ExclusiveFlagsValidationError]
+description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
+other = "if any flags in the group [%v] are set none of the others can be; %v were all set"
