@@ -252,8 +252,6 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
-
-	I18n *i18nCommandGlossary
 }
 
 // Context returns underlying command context. If command was executed
@@ -434,7 +432,11 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
+		data := CommandUsageTemplateData{
+			Command: c,
+			I18n:    getCommandGlossary(),
+		}
+		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), data)
 		if err != nil {
 			c.PrintErrln(err)
 		}
@@ -544,7 +546,6 @@ func (c *Command) NamePadding() int {
 
 // UsageTemplate returns usage template for the command.
 func (c *Command) UsageTemplate() string {
-	c.I18n = getCommandGlossary()
 	if c.usageTemplate != "" {
 		return c.usageTemplate
 	}

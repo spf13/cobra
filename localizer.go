@@ -40,6 +40,11 @@ type i18nCommandGlossary struct {
 	ForInfoAboutCommand         string
 }
 
+type CommandUsageTemplateData struct {
+	*Command
+	I18n *i18nCommandGlossary
+}
+
 var commonCommandGlossary *i18nCommandGlossary
 
 func getCommandGlossary() *i18nCommandGlossary {
