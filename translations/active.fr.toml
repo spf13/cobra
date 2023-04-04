@@ -3,10 +3,49 @@ description = "prefix of error messages"
 hash = "sha1-7dcb56355a3ddc7ff7e5ccd6522507999ca7f238"
 other = "Erreur"
 
+[ExactArgsValidationError]
+description = "error shown when arg count is not exact (expected amount, actual amount)"
+hash = "sha1-207d771f1d5dc4ed5c4094dcd29a4c80e31a6260"
+one = "accepte %d arg, mais en a reçu %d"
+other = "accepte %d args, mais en en reçu %d"
+
 [ExclusiveFlagsValidationError]
 description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
 hash = "sha1-221b98bada52cfc2932f9aa5142b653b46baded6"
 other = "les options [%v] sont exclusives, mais les options %v ont été fournies"
+
+[LegacyArgsValidationError]
+description = "error shown when args are not understood (subcmd, cmd, suggestion)"
+hash = "sha1-c601c68bdcb9687109e793112b789b1858953b15"
+other = "commande %q inconnue pour %q%s"
+
+[MaximumNArgsValidationError]
+description = "error shown when arg count is too low (expected amount, actual amount)"
+hash = "sha1-86d71b8bc054ea8aad7006808bc9d96551052ab4"
+one = "accepte au plus %d arg, mais en a reçu %d"
+other = "accepte au plus %d args, mais en a reçu %d"
+
+[MinimumNArgsValidationError]
+description = "error shown when arg count is too low (expected amount, actual amount)"
+hash = "sha1-7cc9093bf167d6f0601dd0763a8d3f10d71c8889"
+one = "requiert au moins %d arg, mais en a reçu %d"
+other = "requiert au moins %d args, mais en a reçu %d"
+
+[NoArgsValidationError]
+description = "error shown when args are present but should not (subcmd, cmd)"
+hash = "sha1-551d8d237dc2ab9a853fcfbe7ef85318a0f78720"
+other = "commande %q inconnue pour %q"
+
+[OnlyValidArgsValidationError]
+description = "error shown when arg is invalid (arg, cmd, suggestion)"
+hash = "sha1-60b40e5782dd252c78ef3d585065cb99197ec22e"
+other = "argument %q invalide pour %q%s"
+
+[RangeArgsValidationError]
+description = "error shown when arg count is not in range (expected min, expected max, actual amount)"
+hash = "sha1-aa81e0aee17a3439b479cdf47169eb194706cd14"
+one = "accepte entre %d et %d arg, mais en a reçu %d"
+other = "accepte entre %d et %d args, mais en a reçu %d"
 
 [RunHelpTip]
 description = "tip shown when a command fails (command path)"

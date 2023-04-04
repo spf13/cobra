@@ -35,6 +35,66 @@ func i18nError() string {
 	})
 }
 
+func i18nLegacyArgsValidationError() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "LegacyArgsValidationError",
+		Description: "error shown when args are not understood (subcmd, cmd, suggestion)",
+		Other:       "unknown command %q for %q%s",
+	})
+}
+
+func i18nNoArgsValidationError() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "NoArgsValidationError",
+		Description: "error shown when args are present but should not (subcmd, cmd)",
+		Other:       "unknown command %q for %q",
+	})
+}
+
+func i18nOnlyValidArgsValidationError() string {
+	return localizeMessage(&i18n.Message{
+		ID:          "OnlyValidArgsValidationError",
+		Description: "error shown when arg is invalid (arg, cmd, suggestion)",
+		Other:       "invalid argument %q for %q%s",
+	})
+}
+
+func i18nMinimumNArgsValidationError(amountRequired int) string {
+	return localizeMessageWithPlural(&i18n.Message{
+		ID:          "MinimumNArgsValidationError",
+		Description: "error shown when arg count is too low (expected amount, actual amount)",
+		Other:       "requires at least %d args, only received %d",
+		One:         "requires at least %d arg, only received %d",
+	}, amountRequired)
+}
+
+func i18nMaximumNArgsValidationError(amountRequired int) string {
+	return localizeMessageWithPlural(&i18n.Message{
+		ID:          "MaximumNArgsValidationError",
+		Description: "error shown when arg count is too low (expected amount, actual amount)",
+		Other:       "accepts at most %d args, received %d",
+		One:         "accepts at most %d arg, received %d",
+	}, amountRequired)
+}
+
+func i18nExactArgsValidationError(amountRequired int) string {
+	return localizeMessageWithPlural(&i18n.Message{
+		ID:          "ExactArgsValidationError",
+		Description: "error shown when arg count is not exact (expected amount, actual amount)",
+		Other:       "accepts %d args, received %d",
+		One:         "accepts %d arg, received %d",
+	}, amountRequired)
+}
+
+func i18nRangeArgsValidationError(amountMax int) string {
+	return localizeMessageWithPlural(&i18n.Message{
+		ID:          "RangeArgsValidationError",
+		Description: "error shown when arg count is not in range (expected min, expected max, actual amount)",
+		Other:       "accepts between %d and %d args, received %d",
+		One:         "accepts between %d and %d arg, received %d",
+	}, amountMax)
+}
+
 func i18nRunHelpTip() string {
 	return localizeMessage(&i18n.Message{
 		ID:          "RunHelpTip",
@@ -55,6 +115,18 @@ func i18nExclusiveFlagsValidationError() string {
 
 func localizeMessage(message *i18n.Message) string {
 	localizedValue, err := localizer.Localize(&i18n.LocalizeConfig{
+		DefaultMessage: message,
+	})
+	if err != nil {
+		return message.Other
+	}
+
+	return localizedValue
+}
+
+func localizeMessageWithPlural(message *i18n.Message, pluralCount int) string {
+	localizedValue, err := localizer.Localize(&i18n.LocalizeConfig{
+		PluralCount:    pluralCount,
 		DefaultMessage: message,
 	})
 	if err != nil {
@@ -92,11 +164,15 @@ func appendLang(langs *[]string, lang language.Tag) {
 	*langs = append(*langs, langBase.String())
 }
 
-func init() {
+func setupLocalizer() {
 	bundle := i18n.NewBundle(defaultLanguage)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	detectedLangs := detectLangs()
 	//fmt.Println("Detected languages", detectedLangs)
 	loadTranslationFiles(bundle, detectedLangs)
 	localizer = i18n.NewLocalizer(bundle, detectedLangs...)
+}
+
+func init() {
+	setupLocalizer() // FIXME: perhaps hook this somewhere else?  (not init)
 }
