@@ -3,10 +3,11 @@ package cobra
 import (
 	"embed"
 	"fmt"
+	"os"
+
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
-	"os"
 )
 
 var defaultLanguage = language.English
@@ -366,10 +367,13 @@ func detectLangs() []string {
 
 func appendLang(langs *[]string, lang language.Tag) {
 	langString := lang.String()
-	langBase, _ := lang.Base()
 	*langs = append(*langs, langString)
-	*langs = append(*langs, langBase.ISO3())
-	*langs = append(*langs, langBase.String())
+
+	langBase, confidentInBase := lang.Base()
+	if confidentInBase != language.No {
+		*langs = append(*langs, langBase.String())
+		*langs = append(*langs, langBase.ISO3())
+	}
 }
 
 func setupLocalizer() {
