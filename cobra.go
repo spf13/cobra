@@ -48,6 +48,8 @@ const (
 	defaultCaseInsensitive = false
 )
 
+var initializersE []func() error
+
 // EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
@@ -93,6 +95,14 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 // Execute method is called.
 func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
+}
+
+// OnInitializeE sets the passed functions to be run when each command's
+// Execute method is called. It will early stop command's execution
+// before any hooks are called if an error is returned by at least one
+// of the initializers.
+func OnInitializeE(y ...func() error) {
+	initializersE = append(initializersE, y...)
 }
 
 // OnFinalize sets the passed functions to be run when each command's

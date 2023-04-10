@@ -897,7 +897,13 @@ func (c *Command) execute(a []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	c.preRun()
+	if len(initializersE) > 0 {
+		if err := c.preRunE(); err != nil {
+			return err
+		}
+	} else {
+		c.preRun()
+	}
 
 	defer c.postRun()
 
@@ -969,6 +975,17 @@ func (c *Command) preRun() {
 	for _, x := range initializers {
 		x()
 	}
+}
+
+func (c *Command) preRunE() error {
+	for _, x := range initializersE {
+		err := x()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *Command) postRun() {
