@@ -33,6 +33,7 @@ func getCommand(args PositionalArgs, withValid bool) *Command {
 }
 
 func expectSuccess(output string, err error, t *testing.T) {
+	t.Helper()
 	if output != "" {
 		t.Errorf("Unexpected output: %v", output)
 	}
@@ -40,71 +41,45 @@ func expectSuccess(output string, err error, t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 }
-
-func validOnlyWithInvalidArgs(err error, t *testing.T) {
+func expectError(expected string, err error, t *testing.T) {
+	t.Helper()
 	if err == nil {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := `invalid argument "a" for "c"`
 	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
+		t.Fatalf("Expected %q, got %q", expected, got)
 	}
+}
+
+func validOnlyWithInvalidArgs(err error, t *testing.T) {
+	t.Helper()
+	expectError(`invalid argument "a" for "c"`, err, t)
 }
 
 func noArgsWithArgs(err error, t *testing.T, arg string) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := `unknown command "` + arg + `" for "c"`
-	if got != expected {
-		t.Errorf("Expected: %q, got: %q", expected, got)
-	}
+	t.Helper()
+	expectError(`unknown command "`+arg+`" for "c"`, err, t)
 }
 
 func minimumNArgsWithLessArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "requires at least 2 arg(s), only received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	t.Helper()
+	expectError("requires at least 2 arg(s), only received 1", err, t)
 }
 
 func maximumNArgsWithMoreArgs(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts at most 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	t.Helper()
+	expectError("accepts at most 2 arg(s), received 3", err, t)
 }
 
 func exactArgsWithInvalidCount(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts 2 arg(s), received 3"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	t.Helper()
+	expectError("accepts 2 arg(s), received 3", err, t)
 }
 
 func rangeArgsWithInvalidCount(err error, t *testing.T) {
-	if err == nil {
-		t.Fatal("Expected an error")
-	}
-	got := err.Error()
-	expected := "accepts between 2 and 4 arg(s), received 1"
-	if got != expected {
-		t.Fatalf("Expected %q, got %q", expected, got)
-	}
+	t.Helper()
+	expectError("accepts between 2 and 4 arg(s), received 1", err, t)
 }
 
 // NoArgs
@@ -112,6 +87,17 @@ func rangeArgsWithInvalidCount(err error, t *testing.T) {
 func TestNoArgs(t *testing.T) {
 	c := getCommand(NoArgs, false)
 	output, err := executeCommand(c)
+	expectSuccess(output, err, t)
+}
+func TestNoArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(NoArgs, false)
+	_, err := executeCommand(c, "--", "post", "args")
+	noArgsWithArgs(err, t, "post")
+}
+func TestNoArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(NoArgs, false)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "--", "post", "args")
 	expectSuccess(output, err, t)
 }
 
@@ -144,6 +130,19 @@ func TestNoArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 func TestOnlyValidArgs(t *testing.T) {
 	c := getCommand(OnlyValidArgs, true)
 	output, err := executeCommand(c, "one", "two")
+	expectSuccess(output, err, t)
+}
+
+func TestOnlyValidArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(OnlyValidArgs, true)
+	_, err := executeCommand(c, "one", "two", "--", "post", "args")
+	expectError("invalid argument \"post\" for \"c\"", err, t)
+}
+
+func TestOnlyValidArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(OnlyValidArgs, true)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "one", "two", "--", "post", "args")
 	expectSuccess(output, err, t)
 }
 
@@ -210,6 +209,17 @@ func TestMinimumNArgs_WithLessArgs(t *testing.T) {
 	_, err := executeCommand(c, "a")
 	minimumNArgsWithLessArgs(err, t)
 }
+func TestMinimumNArgs_WithLessArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MinimumNArgs(2), false)
+	output, err := executeCommand(c, "a", "--", "post", "args")
+	expectSuccess(output, err, t)
+}
+func TestMinimumNArgs_WithLessArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MinimumNArgs(2), false)
+	c.IgnorePostTerminatorArgs = true
+	_, err := executeCommand(c, "a", "--", "post", "args")
+	minimumNArgsWithLessArgs(err, t)
+}
 
 func TestMinimumNArgs_WithLessArgs_WithValid(t *testing.T) {
 	c := getCommand(MinimumNArgs(2), true)
@@ -237,12 +247,37 @@ func TestMaximumNArgs(t *testing.T) {
 	expectSuccess(output, err, t)
 }
 
+func TestMaximumNArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(3), false)
+	_, err := executeCommand(c, "a", "b", "--", "post", "args")
+	expectError("accepts at most 3 arg(s), received 4", err, t)
+}
+
+func TestMaximumNArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(3), false)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "a", "b", "--", "post", "args")
+	expectSuccess(output, err, t)
+}
+
 func TestMaximumNArgs_WithValid(t *testing.T) {
 	c := getCommand(MaximumNArgs(2), true)
 	output, err := executeCommand(c, "one", "three")
 	expectSuccess(output, err, t)
 }
 
+func TestMaximumNArgs_WithValid_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(2), true)
+	_, err := executeCommand(c, "one", "three", "--", "post", "args")
+	expectError("accepts at most 2 arg(s), received 4", err, t)
+}
+
+func TestMaximumNArgs_WithValid_WithIgnoredPostTermintatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(2), true)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "one", "three", "--", "post", "args")
+	expectSuccess(output, err, t)
+}
 func TestMaximumNArgs_WithValid_WithInvalidArgs(t *testing.T) {
 	c := getCommand(MaximumNArgs(2), true)
 	output, err := executeCommand(c, "a", "b")
@@ -258,6 +293,19 @@ func TestMaximumNArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 func TestMaximumNArgs_WithMoreArgs(t *testing.T) {
 	c := getCommand(MaximumNArgs(2), false)
 	_, err := executeCommand(c, "a", "b", "c")
+	maximumNArgsWithMoreArgs(err, t)
+}
+
+func TestMaximumNArgs_WithMoreArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(2), false)
+	_, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
+	expectError("accepts at most 2 arg(s), received 5", err, t)
+}
+
+func TestMaximumNArgs_WithMoreArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(MaximumNArgs(2), false)
+	c.IgnorePostTerminatorArgs = true
+	_, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
 	maximumNArgsWithMoreArgs(err, t)
 }
 
@@ -284,6 +332,19 @@ func TestMaximumNArgs_WithMoreArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 func TestExactArgs(t *testing.T) {
 	c := getCommand(ExactArgs(3), false)
 	output, err := executeCommand(c, "a", "b", "c")
+	expectSuccess(output, err, t)
+}
+
+func TestExactArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(ExactArgs(3), false)
+	_, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
+	expectError("accepts 3 arg(s), received 5", err, t)
+}
+
+func TestExactArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(ExactArgs(3), false)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
 	expectSuccess(output, err, t)
 }
 
@@ -334,6 +395,19 @@ func TestExactArgs_WithInvalidCount_WithValidOnly_WithInvalidArgs(t *testing.T) 
 func TestRangeArgs(t *testing.T) {
 	c := getCommand(RangeArgs(2, 4), false)
 	output, err := executeCommand(c, "a", "b", "c")
+	expectSuccess(output, err, t)
+}
+
+func TestRangeArgs_WithPostTerminatorArgs(t *testing.T) {
+	c := getCommand(RangeArgs(2, 4), false)
+	_, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
+	expectError("accepts between 2 and 4 arg(s), received 5", err, t)
+}
+
+func TestRangeArgs_WithIgnoredPostTerminatorArgs(t *testing.T) {
+	c := getCommand(RangeArgs(2, 4), false)
+	c.IgnorePostTerminatorArgs = true
+	output, err := executeCommand(c, "a", "b", "c", "--", "post", "args")
 	expectSuccess(output, err, t)
 }
 
@@ -453,20 +527,34 @@ func TestMatchAll(t *testing.T) {
 	)
 
 	testCases := map[string]struct {
-		args []string
-		fail bool
+		args           []string
+		ignorePostArgs bool
+		fail           bool
 	}{
 		"happy path": {
 			[]string{"aa", "bb", "cc"},
 			false,
+			false,
 		},
 		"incorrect number of args": {
 			[]string{"aa", "bb", "cc", "dd"},
+			false,
 			true,
 		},
 		"incorrect number of bytes in one arg": {
 			[]string{"aa", "bb", "abc"},
+			false,
 			true,
+		},
+		"happy path with post args makes unhappy": {
+			[]string{"aa", "bb", "cc", "--", "post", "args"},
+			false,
+			true,
+		},
+		"happy path with ignored post args stay happy": {
+			[]string{"aa", "bb", "cc", "--", "post", "args"},
+			true,
+			false,
 		},
 	}
 
@@ -474,6 +562,7 @@ func TestMatchAll(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			rootCmd.IgnorePostTerminatorArgs = tc.ignorePostArgs
 			_, err := executeCommand(rootCmd, tc.args...)
 			if err != nil && !tc.fail {
 				t.Errorf("unexpected: %v\n", err)

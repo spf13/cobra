@@ -2735,3 +2735,90 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+func TestRunArgsWithPostTerminatorArgs(t *testing.T) {
+	preArgs := []string{"one", "two"}
+	postArgs := []string{"post", "args"}
+	allArgs := []string{"one", "two", "post", "args"}
+	rootCliArgs := []string{"one", "two", "--", "post", "args"}
+	childCliArgs := []string{"child", "one", "two", "--", "post", "args"}
+	deepChildCliArgs := []string{"child", "deepchild", "one", "two", "--", "post", "args"}
+	runExpectPreOnly := func(t *testing.T) func(*Command, []string) {
+		return func(cmd *Command, args []string) {
+			if !reflect.DeepEqual(cmd.PostTerminatorArgs(), postArgs) {
+				t.Errorf("Expected postTerminatorArgs %q, got %q", postArgs, cmd.PostTerminatorArgs())
+			}
+			if !reflect.DeepEqual(args, preArgs) {
+				t.Errorf("Expected %q, got %q", preArgs, args)
+			}
+		}
+	}
+	runExpectAllArgs := func(t *testing.T) func(*Command, []string) {
+		return func(cmd *Command, args []string) {
+			if !reflect.DeepEqual(cmd.PostTerminatorArgs(), postArgs) {
+				t.Errorf("Expected postTerminatorArgs %q, got %q", postArgs, cmd.PostTerminatorArgs())
+			}
+			if !reflect.DeepEqual(args, allArgs) {
+				t.Errorf("Expected %q, got %q", allArgs, args)
+			}
+		}
+	}
+	runCase := func(t *testing.T, name string, cmdBuilder func(t *testing.T) (*Command, []string)) {
+		t.Run(name, func(t *testing.T) {
+			root, args := cmdBuilder(t)
+			_, err := executeCommand(root, args...)
+			if err != nil {
+				t.Errorf("unexpected error %q", err)
+			}
+		})
+	}
+	runCase(t, "root with postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		return &Command{Use: "root", Run: runExpectAllArgs(t)}, rootCliArgs
+	})
+	runCase(t, "root with ignored postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		return &Command{Use: "root", Run: runExpectPreOnly(t), IgnorePostTerminatorArgs: true}, rootCliArgs
+	})
+	runCase(t, "child with postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root", PersistentPreRun: runExpectAllArgs(t)}
+		root.AddCommand(&Command{Use: "child", Run: runExpectAllArgs(t)})
+		return root, childCliArgs
+	})
+	runCase(t, "child with ignored postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root"}
+		root.AddCommand(&Command{Use: "child", Run: runExpectPreOnly(t), IgnorePostTerminatorArgs: true})
+		return root, childCliArgs
+	})
+	runCase(t, "child with ignored postTerminatorArgs on root", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root", IgnorePostTerminatorArgs: true}
+		root.AddCommand(&Command{Use: "child", Run: runExpectPreOnly(t)})
+		return root, childCliArgs
+	})
+	runCase(t, "deepChild with postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root"}
+		child := &Command{Use: "child"}
+		root.AddCommand(child)
+		child.AddCommand(&Command{Use: "deepchild", Run: runExpectAllArgs(t)})
+		return root, deepChildCliArgs
+	})
+	runCase(t, "deepChild with ignored postTerminatorArgs", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root"}
+		child := &Command{Use: "child"}
+		root.AddCommand(child)
+		child.AddCommand(&Command{Use: "deepchild", Run: runExpectPreOnly(t), IgnorePostTerminatorArgs: true})
+		return root, deepChildCliArgs
+	})
+	runCase(t, "deepChild with ignored postTerminatorArgs on parent", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root"}
+		child := &Command{Use: "child", IgnorePostTerminatorArgs: true}
+		root.AddCommand(child)
+		child.AddCommand(&Command{Use: "deepchild", Run: runExpectPreOnly(t)})
+		return root, deepChildCliArgs
+	})
+	runCase(t, "deepChild with ignored postTerminatorArgs on root", func(t *testing.T) (*Command, []string) {
+		root := &Command{Use: "root", IgnorePostTerminatorArgs: true}
+		child := &Command{Use: "child"}
+		root.AddCommand(child)
+		child.AddCommand(&Command{Use: "deepchild", Run: runExpectPreOnly(t)})
+		return root, deepChildCliArgs
+	})
+}

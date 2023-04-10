@@ -86,6 +86,9 @@ type Command struct {
 	// Expected arguments
 	Args PositionalArgs
 
+	// wether to include or not arguments after the -- arg terminator in args
+	IgnorePostTerminatorArgs bool
+
 	// ArgAliases is List of aliases for ValidArgs.
 	// These are not suggested to the user in the shell completion,
 	// but accepted if entered manually.
@@ -142,6 +145,8 @@ type Command struct {
 
 	// args is actual args parsed from flags.
 	args []string
+	// postTerminatorArgs is args after "--" terminator on the command line
+	postTerminatorArgs []string
 	// flagErrorBuf contains all error messages from pflag.
 	flagErrorBuf *bytes.Buffer
 	// flags is full set of flags.
@@ -653,6 +658,22 @@ Loop:
 	return commands
 }
 
+func splitPostTerminatorArgs(args []string) ([]string, []string) {
+	additionalArgsIndex := -1
+	var additionalArgs []string
+	for k, v := range args {
+		if v == "--" {
+			additionalArgsIndex = k
+			break
+		}
+	}
+	if additionalArgsIndex >= 0 {
+		additionalArgs = args[additionalArgsIndex+1:]
+		args = args[0 : len(args)-len(additionalArgs)-1]
+	}
+	return args, additionalArgs
+}
+
 // argsMinusFirstX removes only the first x from args.  Otherwise, commands that look like
 // openshift admin policy add-role-to-user admin my-user, lose the admin argument (arg[4]).
 // Special care needs to be taken not to remove a flag value.
@@ -842,6 +863,19 @@ func (c *Command) Root() *Command {
 // when a -- was found during args parsing.
 func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
+}
+
+// check IgnorePostTerminatorArgs is set in the command chain
+func (c *Command) shouldIgnorePostTerminatorArgs() bool {
+	if !c.IgnorePostTerminatorArgs && c.HasParent() {
+		return c.parent.shouldIgnorePostTerminatorArgs()
+	}
+	return c.IgnorePostTerminatorArgs
+}
+
+// return args that are placed after terminator "--"
+func (c *Command) PostTerminatorArgs() []string {
+	return c.postTerminatorArgs
 }
 
 func (c *Command) execute(a []string) (err error) {
@@ -1063,6 +1097,12 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// if context is present on the parent command.
 	if cmd.ctx == nil {
 		cmd.ctx = c.ctx
+	}
+
+	if cmd.shouldIgnorePostTerminatorArgs() {
+		flags, cmd.postTerminatorArgs = splitPostTerminatorArgs(flags)
+	} else {
+		_, cmd.postTerminatorArgs = splitPostTerminatorArgs(flags)
 	}
 
 	err = cmd.execute(flags)

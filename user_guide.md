@@ -410,7 +410,7 @@ var cmd = &cobra.Command{
 }
 ```
 
-## Example
+### Example
 
 In the example below, we have defined three commands. Two are at the top level
 and one (cmdTimes) is a child of one of the top commands. In this case the root
@@ -479,6 +479,28 @@ a count and a string.`,
 ```
 
 For a more complete example of a larger application, please checkout [Hugo](https://gohugo.io/).
+
+### post arg terminator "--" args
+
+By default args passed to the Run method will include arguments passed after
+the arg terminator "--". You can change this behavior by setting the field
+IgnorePostTerminatorArgs to true. You can retrieve these arguments easily by
+calling the PostTerminatorArgs() method of the command. This can be useful when
+calling child command from your program.
+
+```go
+var cmd = &cobra.Command{
+  Use: "exec",
+  IgnorePostTerminatorArgs: true,
+  Run: func(cmd *cobra.Command, args []string) {
+    bin := args[0]
+    //...pass all args after -- to the underlying command
+    cmd := exec.Command(bin, cmd.PostTerminatorArgs())
+  },
+}
+```
+
+
 
 ## Help Command
 
