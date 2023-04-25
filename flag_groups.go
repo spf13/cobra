@@ -24,6 +24,7 @@ import (
 
 const (
 	requiredAsGroup   = "cobra_annotation_required_if_others_set"
+	oneRequired       = "cobra_annotation_one_required"
 	mutuallyExclusive = "cobra_annotation_mutually_exclusive"
 )
 
@@ -37,6 +38,22 @@ func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
 			panic(fmt.Sprintf("Failed to find flag %q and mark it as being required in a flag group", v))
 		}
 		if err := c.Flags().SetAnnotation(v, requiredAsGroup, append(f.Annotations[requiredAsGroup], strings.Join(flagNames, " "))); err != nil {
+			// Only errs if the flag isn't found.
+			panic(err)
+		}
+	}
+}
+
+// MarkFlagsOneRequired marks the given flags with annotations so that Cobra errors
+// if the command is invoked without at least one flag from the given set of flags.
+func (c *Command) MarkFlagsOneRequired(flagNames ...string) {
+	c.mergePersistentFlags()
+	for _, v := range flagNames {
+		f := c.Flags().Lookup(v)
+		if f == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark it as being in a one-required flag group", v))
+		}
+		if err := c.Flags().SetAnnotation(v, oneRequired, append(f.Annotations[oneRequired], strings.Join(flagNames, " "))); err != nil {
 			// Only errs if the flag isn't found.
 			panic(err)
 		}
@@ -59,7 +76,7 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
-// ValidateFlagGroups validates the mutuallyExclusive/requiredAsGroup logic and returns the
+// ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the
 // first error encountered.
 func (c *Command) ValidateFlagGroups() error {
 	if c.DisableFlagParsing {
@@ -71,13 +88,18 @@ func (c *Command) ValidateFlagGroups() error {
 	// groupStatus format is the list of flags as a unique ID,
 	// then a map of each flag name and whether it is set or not.
 	groupStatus := map[string]map[string]bool{}
+	oneRequiredGroupStatus := map[string]map[string]bool{}
 	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
 	flags.VisitAll(func(pflag *flag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroup, groupStatus)
+		processFlagForGroupAnnotation(flags, pflag, oneRequired, oneRequiredGroupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusive, mutuallyExclusiveGroupStatus)
 	})
 
 	if err := validateRequiredFlagGroups(groupStatus); err != nil {
+		return err
+	}
+	if err := validateOneRequiredFlagGroups(oneRequiredGroupStatus); err != nil {
 		return err
 	}
 	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus); err != nil {
@@ -139,6 +161,27 @@ func validateRequiredFlagGroups(data map[string]map[string]bool) error {
 		return fmt.Errorf("if any flags in the group [%v] are set they must all be set; missing %v", flagList, unset)
 	}
 
+	return nil
+}
+
+func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
+	keys := sortedKeys(data)
+	for _, flagList := range keys {
+		flagnameAndStatus := data[flagList]
+		var set []string
+		for flagname, isSet := range flagnameAndStatus {
+			if isSet {
+				set = append(set, flagname)
+			}
+		}
+		if len(set) >= 1 {
+			continue
+		}
+
+		// Sort values, so they can be tested/scripted against consistently.
+		sort.Strings(set)
+		return fmt.Errorf("at least one of the flags in the group [%v] is required", flagList)
+	}
 	return nil
 }
 
