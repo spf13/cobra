@@ -15,6 +15,10 @@
 package cobra
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 	"text/template"
 )
@@ -220,5 +224,59 @@ func TestRpad(t *testing.T) {
 				t.Errorf("Expected rpad: %v\nGot: %v", tt.expected, got)
 			}
 		})
+	}
+}
+
+func TestDeadcodeElimination(t *testing.T) {
+	// check that a simple program using cobra in its default configuration is
+	// linked with deadcode elimination enabled.
+	const (
+		dirname  = "test_deadcode"
+		progname = "test_deadcode_elimination"
+	)
+	os.Mkdir(dirname, 0770)
+	filename := filepath.Join(dirname, progname+".go")
+	err := os.WriteFile(filename, []byte(`package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Version: "1.0",
+	Use:     "example_program",
+	Short:   "example_program - test fixture to check that deadcode elimination is allowed",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("hello world")
+	},
+	Aliases: []string{"alias1", "alias2"},
+	Example: "stringer --help",
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Whoops. There was an error while executing your CLI '%s'", err)
+		os.Exit(1)
+	}
+}
+`), 0660)
+	if err != nil {
+		t.Fatalf("could not write test program: %v", err)
+	}
+	defer os.RemoveAll(dirname)
+	buf, err := exec.Command("go", "build", filename).CombinedOutput()
+	if err != nil {
+		t.Fatalf("could not compile test program: %s", string(buf))
+	}
+	defer os.Remove(progname)
+	buf, err = exec.Command("go", "tool", "nm", progname).CombinedOutput()
+	if err != nil {
+		t.Fatalf("could not run go tool nm: %v", err)
+	}
+	if strings.Contains(string(buf), "MethodByName") {
+		t.Error("compiled programs contains MethodByName symbol")
 	}
 }
