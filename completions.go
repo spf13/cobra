@@ -217,6 +217,7 @@ func (c *Command) initCompleteCmd(args []string) {
 			}
 
 			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
+			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
 				if GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable {
 					// Remove all activeHelp entries in this case
@@ -242,14 +243,14 @@ func (c *Command) initCompleteCmd(args []string) {
 				// although there is no description).
 				comp = strings.TrimSpace(comp)
 
-				// Print each possible completion to stdout for the completion script to consume.
-				fmt.Fprintln(finalCmd.OutOrStdout(), comp)
+				// Print each possible completion to the output for the completion script to consume.
+				fmt.Fprintln(out, comp)
 			}
 
 			// As the last printout, print the completion directive for the completion script to parse.
 			// The directive integer must be that last character following a single colon (:).
 			// The completion script expects :<directive>
-			fmt.Fprintf(finalCmd.OutOrStdout(), ":%d\n", directive)
+			fmt.Fprintf(out, ":%d\n", directive)
 
 			// Print some helpful info to stderr for the user to understand.
 			// Output from stderr must be ignored by the completion script.
