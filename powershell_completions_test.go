@@ -29,5 +29,5 @@ func TestPwshCompletionNoActiveHelp(t *testing.T) {
 
 	// check that active help is being disabled
 	activeHelpVar := activeHelpEnvVar(c.Name())
-	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+	check(t, output, fmt.Sprintf("${env:%s}=0", activeHelpVar))
 }
