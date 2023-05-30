@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
@@ -28,13 +28,10 @@ type ReaperDecryptor struct {
 }
 
 // Authorization uses a signed nonce, so we really just
-// want to sign a string as the token we use for authorization.  In order
-// for it to be signed correctly, go-jwt requires us to implement a Valid()
-// method.
-type tokenClaims string
-
-func (t tokenClaims) Valid() error {
-	return nil
+// want to sign a string as the token we use for authorization.
+type tokenClaims struct {
+	Nonce string `json:"nonce"`
+	jwt.RegisteredClaims
 }
 
 //
@@ -127,8 +124,8 @@ func (r *ReaperDecryptor) DecryptArguments(args []string) ([]string, error) {
 }
 
 func addJWTHeader(req *retryablehttp.Request, signingKey []byte) error {
-	nonce := generateNonce()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, nonce)
+	claims := generateNonce()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	signed, err := token.SignedString(signingKey)
 	if err != nil {
@@ -141,14 +138,18 @@ func addJWTHeader(req *retryablehttp.Request, signingKey []byte) error {
 	return err
 }
 
-// random string of 32 bytes to be signed into a JWT - value is not used
-func generateNonce() tokenClaims {
-	b := make([]rune, 32)
+func randomString(n int) string {
+	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
+	return string(b)
+}
 
-	return tokenClaims(b)
+// random string of 32 bytes to be signed into a JWT - value is not used
+func generateNonce() tokenClaims {
+	b := randomString(32)
+	return tokenClaims{Nonce: b}
 }
 
 // Using a HTTP client that will automatically retry 5xx errors to ensure that our connection

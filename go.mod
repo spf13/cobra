@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/cpuguy83/go-md2man v1.0.8
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0

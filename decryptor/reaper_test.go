@@ -11,7 +11,8 @@ import (
 )
 
 func TestDecryptArguments_NoneEncrypted(t *testing.T) {
-	dec := NewReaperDecryptor("http://url.com/not/used", string(generateNonce()), "1234")
+	secret := randomString(32)
+	dec := NewReaperDecryptor("http://url.com/not/used", secret, "1234")
 	firstArg := "--arg1=aaa"
 	secondArg := "--zzz=bbb"
 	args := []string{firstArg, secondArg}
@@ -82,8 +83,8 @@ func TestDecryptArguments_EncryptedArgsDecoded(t *testing.T) {
 		b.WriteTo(w)
 	}))
 	defer reaperTestServer.Close()
-
-	dec := NewReaperDecryptor(reaperTestServer.URL, string(generateNonce()), commandExecutorId)
+	secret := randomString(32)
+	dec := NewReaperDecryptor(reaperTestServer.URL, secret, commandExecutorId)
 	decryptedArgs, err := dec.DecryptArguments(args)
 	if err != nil {
 		t.Error("EncryptedArgsDecoded should not return an error")
