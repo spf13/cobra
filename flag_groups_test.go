@@ -43,13 +43,14 @@ func TestValidateFlagGroups(t *testing.T) {
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                      string
-		flagGroupsRequired        []string
-		flagGroupsExclusive       []string
-		subCmdFlagGroupsRequired  []string
-		subCmdFlagGroupsExclusive []string
-		args                      []string
-		expectErr                 string
+		desc                        string
+		flagGroupsRequired          []string
+		flagGroupsExclusive         []string
+		flagGroupsExclusiveRequires []string
+		subCmdFlagGroupsRequired    []string
+		subCmdFlagGroupsExclusive   []string
+		args                        []string
+		expectErr                   string
 	}{
 		{
 			desc: "No flags no problem",
@@ -67,6 +68,16 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsExclusive: []string{"a b c"},
 			args:                []string{"--a=foo", "--b=foo"},
 			expectErr:           "if any flags in the group [a b c] are set none of the others can be; [a b] were all set",
+		}, {
+			desc:                        "Required exclusive group not satisfied",
+			flagGroupsExclusiveRequires: []string{"a b c"},
+			args:                        []string{"--d=foo"},
+			expectErr:                   "exactly one of the flags in the group [a b c] must be set; none were set",
+		}, {
+			desc:                        "Required exclusive group selected more than one",
+			flagGroupsExclusiveRequires: []string{"a b c"},
+			args:                        []string{"--a=foo", "--b=foo"},
+			expectErr:                   "exactly one of the flags in the group [a b c] must be set; [a b] were all set",
 		}, {
 			desc:               "Multiple required flag group not satisfied returns first error",
 			flagGroupsRequired: []string{"a b c", "a d"},
@@ -132,6 +143,9 @@ func TestValidateFlagGroups(t *testing.T) {
 			}
 			for _, flagGroup := range tc.flagGroupsExclusive {
 				c.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.flagGroupsExclusiveRequires {
+				c.MarkFlagsMutuallyExclusiveAndRequired(strings.Split(flagGroup, " ")...)
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsRequired {
 				sub.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
