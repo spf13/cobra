@@ -1,0 +1,16 @@
+name: CI process for Cobra
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  wayne-test1:
+    runs-on: small
+    container:
+      image: amazonlinux:2023
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get upgrade -y
