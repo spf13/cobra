@@ -278,8 +278,16 @@ filter __%[1]s_escapeStringWithSpecialChars {
 
     }
 }
+# Enumerate the cmds for %[1]s (set by System.Environment)
+$available%[2]s = Get-Command -Name '%[1]s' -All -ErrorAction SilentlyContinue
 
-Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock $__%[2]sCompleterBlock
+# Enumerate set aliases for %[1]s (set by user)
+$__%[2]sAliases = @()
+foreach($__%[2]sCmd in $available%[2]s){
+    $__%[2]sAliases += Get-Alias | Where-Object { $_.Definition -eq ($__%[2]sCmd | Resolve-Path) }
+}
+# Register args completer for all cmds and aliases
+Register-ArgumentCompleter -CommandName ([array]$available%[2]s.Name + [array]$__%[2]sAliases.Name) -ScriptBlock $__%[2]sCompleterBlock
 `, name, nameForVar, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
