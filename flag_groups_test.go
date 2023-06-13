@@ -43,13 +43,15 @@ func TestValidateFlagGroups(t *testing.T) {
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                      string
-		flagGroupsRequired        []string
-		flagGroupsExclusive       []string
-		subCmdFlagGroupsRequired  []string
-		subCmdFlagGroupsExclusive []string
-		args                      []string
-		expectErr                 string
+		desc                        string
+		flagGroupsRequired          []string
+		flagGroupsOneRequired       []string
+		flagGroupsExclusive         []string
+		subCmdFlagGroupsRequired    []string
+		subCmdFlagGroupsOneRequired []string
+		subCmdFlagGroupsExclusive   []string
+		args                        []string
+		expectErr                   string
 	}{
 		{
 			desc: "No flags no problem",
@@ -63,6 +65,11 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:               []string{"--a=foo"},
 			expectErr:          "if any flags in the group [a b c] are set they must all be set; missing [b c]",
 		}, {
+			desc:                  "One-required flag group not satisfied",
+			flagGroupsOneRequired: []string{"a b"},
+			args:                  []string{"--c=foo"},
+			expectErr:             "at least one of the flags in the group [a b] is required",
+		}, {
 			desc:                "Exclusive flag group not satisfied",
 			flagGroupsExclusive: []string{"a b c"},
 			args:                []string{"--a=foo", "--b=foo"},
@@ -72,6 +79,11 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsRequired: []string{"a b c", "a d"},
 			args:               []string{"--c=foo", "--d=foo"},
 			expectErr:          `if any flags in the group [a b c] are set they must all be set; missing [a b]`,
+		}, {
+			desc:                  "Multiple one-required flag group not satisfied returns first error",
+			flagGroupsOneRequired: []string{"a b", "d e"},
+			args:                  []string{"--c=foo", "--f=foo"},
+			expectErr:             `at least one of the flags in the group [a b] is required`,
 		}, {
 			desc:                "Multiple exclusive flag group not satisfied returns first error",
 			flagGroupsExclusive: []string{"a b c", "a d"},
@@ -83,31 +95,56 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:               []string{"--a=foo"},
 			expectErr:          `if any flags in the group [a b] are set they must all be set; missing [b]`,
 		}, {
+			desc:                  "Validation of one-required groups occurs on groups in sorted order",
+			flagGroupsOneRequired: []string{"d e", "a b", "f g"},
+			args:                  []string{"--c=foo"},
+			expectErr:             `at least one of the flags in the group [a b] is required`,
+		}, {
 			desc:                "Validation of exclusive groups occurs on groups in sorted order",
 			flagGroupsExclusive: []string{"a d", "a b", "a c"},
 			args:                []string{"--a=foo", "--b=foo", "--c=foo"},
 			expectErr:           `if any flags in the group [a b] are set none of the others can be; [a b] were all set`,
 		}, {
-			desc:                "Persistent flags utilize both features and can fail required groups",
+			desc:                "Persistent flags utilize required and exclusive groups and can fail required groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
 			args:                []string{"--a=foo", "--f=foo", "--g=foo"},
 			expectErr:           `if any flags in the group [a e] are set they must all be set; missing [e]`,
 		}, {
-			desc:                "Persistent flags utilize both features and can fail mutually exclusive groups",
+			desc:                  "Persistent flags utilize one-required and exclusive groups and can fail one-required groups",
+			flagGroupsOneRequired: []string{"a b", "e f"},
+			flagGroupsExclusive:   []string{"e f"},
+			args:                  []string{"--e=foo"},
+			expectErr:             `at least one of the flags in the group [a b] is required`,
+		}, {
+			desc:                "Persistent flags utilize required and exclusive groups and can fail mutually exclusive groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
 			args:                []string{"--a=foo", "--e=foo", "--f=foo", "--g=foo"},
 			expectErr:           `if any flags in the group [f g] are set none of the others can be; [f g] were all set`,
 		}, {
-			desc:                "Persistent flags utilize both features and can pass",
+			desc:                "Persistent flags utilize required and exclusive groups and can pass",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
 			args:                []string{"--a=foo", "--e=foo", "--f=foo"},
 		}, {
+			desc:                  "Persistent flags utilize one-required and exclusive groups and can pass",
+			flagGroupsOneRequired: []string{"a e", "e f"},
+			flagGroupsExclusive:   []string{"f g"},
+			args:                  []string{"--a=foo", "--e=foo", "--f=foo"},
+		}, {
 			desc:                     "Subcmds can use required groups using inherited flags",
 			subCmdFlagGroupsRequired: []string{"e subonly"},
 			args:                     []string{"subcmd", "--e=foo", "--subonly=foo"},
+		}, {
+			desc:                        "Subcmds can use one-required groups using inherited flags",
+			subCmdFlagGroupsOneRequired: []string{"e subonly"},
+			args:                        []string{"subcmd", "--e=foo", "--subonly=foo"},
+		}, {
+			desc:                        "Subcmds can use one-required groups using inherited flags and fail one-required groups",
+			subCmdFlagGroupsOneRequired: []string{"e subonly"},
+			args:                        []string{"subcmd"},
+			expectErr:                   "at least one of the flags in the group [e subonly] is required",
 		}, {
 			desc:                      "Subcmds can use exclusive groups using inherited flags",
 			subCmdFlagGroupsExclusive: []string{"e subonly"},
@@ -130,11 +167,17 @@ func TestValidateFlagGroups(t *testing.T) {
 			for _, flagGroup := range tc.flagGroupsRequired {
 				c.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
 			}
+			for _, flagGroup := range tc.flagGroupsOneRequired {
+				c.MarkFlagsOneRequired(strings.Split(flagGroup, " ")...)
+			}
 			for _, flagGroup := range tc.flagGroupsExclusive {
 				c.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsRequired {
 				sub.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.subCmdFlagGroupsOneRequired {
+				sub.MarkFlagsOneRequired(strings.Split(flagGroup, " ")...)
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsExclusive {
 				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
