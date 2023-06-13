@@ -219,6 +219,7 @@ func sortedKeys(m map[string]map[string]bool) []string {
 
 // enforceFlagGroupsForCompletion will do the following:
 // - when a flag in a group is present, other flags in the group will be marked required
+// - when none of the flags in a one-required group are present, all flags in the group will be marked required
 // - when a flag in a mutually exclusive group is present, other flags in the group will be marked as hidden
 // This allows the standard completion logic to behave appropriately for flag groups
 func (c *Command) enforceFlagGroupsForCompletion() {
@@ -228,9 +229,11 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 
 	flags := c.Flags()
 	groupStatus := map[string]map[string]bool{}
+	oneRequiredGroupStatus := map[string]map[string]bool{}
 	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
 	c.Flags().VisitAll(func(pflag *flag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroup, groupStatus)
+		processFlagForGroupAnnotation(flags, pflag, oneRequired, oneRequiredGroupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusive, mutuallyExclusiveGroupStatus)
 	})
 
@@ -243,6 +246,26 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 				for _, fName := range strings.Split(flagList, " ") {
 					_ = c.MarkFlagRequired(fName)
 				}
+			}
+		}
+	}
+
+	// If none of the flags of a one-required group are present, we make all the flags
+	// of that group required so that the shell completion suggests them automatically
+	for flagList, flagnameAndStatus := range oneRequiredGroupStatus {
+		set := 0
+
+		for _, isSet := range flagnameAndStatus {
+			if isSet {
+				set++
+			}
+		}
+
+		// None of the flags of the group are set, mark all flags in the group
+		// as required
+		if set == 0 {
+			for _, fName := range strings.Split(flagList, " ") {
+				_ = c.MarkFlagRequired(fName)
 			}
 		}
 	}
