@@ -140,7 +140,7 @@ details for your users.
 
 Debugging your Active Help code is done in the same way as debugging your dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](shell_completions.md#debugging) for details.
 
-When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any `-` is replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
+When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any non-ASCII-alphanumeric characters are replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
 ```
 $ HELM_ACTIVE_HELP=1 bin/helm __complete install wordpress bitnami/h<ENTER>
 bitnami/haproxy
