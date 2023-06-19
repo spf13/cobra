@@ -8,7 +8,8 @@ The currently supported shells are:
 - PowerShell
 
 Cobra will automatically provide your program with a fully functional `completion` command,
-similarly to how it provides the `help` command.
+similarly to how it provides the `help` command. If there are no other subcommands, the
+default `completion` command will be hidden, but still functional.
 
 ## Creating your own completion command
 
