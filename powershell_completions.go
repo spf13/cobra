@@ -287,7 +287,8 @@ foreach($__%[2]sCmd in $available%[2]s){
     $__%[2]sAliases += Get-Alias | Where-Object { $_.Definition -eq ($__%[2]sCmd | Resolve-Path) }
 }
 # Register args completer for all cmds and aliases
-Register-ArgumentCompleter -CommandName ([array]$available%[2]s.Name + [array]${__%[2]sAliases}.Name + @('%[1]s')) -ScriptBlock ${__%[2]sCompleterBlock}
+[string[]]$joint%[2]snames = [array]$available%[2]s.Name + [array]${__%[2]sAliases}.Name + @('%[1]s')
+Register-ArgumentCompleter -CommandName $joint%[2]snames -ScriptBlock ${__%[2]sCompleterBlock}
 `, name, nameForVar, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
