@@ -722,7 +722,7 @@ Read more about it in the [docs generation documentation](docgen/_index.md).
 
 Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
 If you add more information to your commands, these completions can be amazingly powerful and flexible.
-Read more about it in [Shell Completions](shell_completions.md).
+Read more about it in [Shell Completions](completions/_index.md).
 
 ## Providing Active Help
 
