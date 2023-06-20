@@ -2466,6 +2466,7 @@ func TestCompleteCompletion(t *testing.T) {
 	expected := strings.Join([]string{
 		"bash",
 		"fish",
+		"nushell",
 		"powershell",
 		"zsh",
 		":4",
