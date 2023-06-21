@@ -21,126 +21,137 @@ import (
 
 func TestValidateFlagGroups(t *testing.T) {
 	getCmd := func() *Command {
-		c := &Command{
+		cmd := &Command{
 			Use: "testcmd",
-			Run: func(cmd *Command, args []string) {
-			}}
-		// Define lots of flags to utilize for testing.
-		for _, v := range []string{"a", "b", "c", "d"} {
-			c.Flags().String(v, "", "")
+			Run: func(cmd *Command, args []string) {},
 		}
-		for _, v := range []string{"e", "f", "g"} {
-			c.PersistentFlags().String(v, "", "")
-		}
-		subC := &Command{
+
+		cmd.Flags().String("a", "", "")
+		cmd.Flags().String("b", "", "")
+		cmd.Flags().String("c", "", "")
+		cmd.Flags().String("d", "", "")
+		cmd.PersistentFlags().String("p-a", "", "")
+		cmd.PersistentFlags().String("p-b", "", "")
+		cmd.PersistentFlags().String("p-c", "", "")
+
+		subCmd := &Command{
 			Use: "subcmd",
-			Run: func(cmd *Command, args []string) {
-			}}
-		subC.Flags().String("subonly", "", "")
-		c.AddCommand(subC)
-		return c
+			Run: func(cmd *Command, args []string) {},
+		}
+		subCmd.Flags().String("sub-a", "", "")
+
+		cmd.AddCommand(subCmd)
+
+		return cmd
 	}
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                      string
-		flagGroupsRequired        []string
-		flagGroupsExclusive       []string
-		subCmdFlagGroupsRequired  []string
-		subCmdFlagGroupsExclusive []string
-		args                      []string
-		expectErr                 string
+		desc                 string
+		requiredTogether     []string
+		mutuallyExclusive    []string
+		subRequiredTogether  []string
+		subMutuallyExclusive []string
+		args                 []string
+		expectErr            string
 	}{
 		{
-			desc: "No flags no problem",
+			desc: "No flags no problems",
 		}, {
-			desc:                "No flags no problem even with conflicting groups",
-			flagGroupsRequired:  []string{"a b"},
-			flagGroupsExclusive: []string{"a b"},
+			desc:              "No flags no problems even with conflicting groups",
+			requiredTogether:  []string{"a b"},
+			mutuallyExclusive: []string{"a b"},
 		}, {
-			desc:               "Required flag group not satisfied",
-			flagGroupsRequired: []string{"a b c"},
-			args:               []string{"--a=foo"},
-			expectErr:          "if any flags in the group [a b c] are set they must all be set; missing [b c]",
+			desc:             "Required together flag group validation fails",
+			requiredTogether: []string{"a b c"},
+			args:             []string{"--a=foo"},
+			expectErr:        `flags [a b c] must be set together, but [b c] were not set`,
 		}, {
-			desc:                "Exclusive flag group not satisfied",
-			flagGroupsExclusive: []string{"a b c"},
-			args:                []string{"--a=foo", "--b=foo"},
-			expectErr:           "if any flags in the group [a b c] are set none of the others can be; [a b] were all set",
+			desc:             "Required together flag group validation passes",
+			requiredTogether: []string{"a b c"},
+			args:             []string{"--c=bar", "--a=foo", "--b=baz"},
 		}, {
-			desc:               "Multiple required flag group not satisfied returns first error",
-			flagGroupsRequired: []string{"a b c", "a d"},
-			args:               []string{"--c=foo", "--d=foo"},
-			expectErr:          `if any flags in the group [a b c] are set they must all be set; missing [a b]`,
+			desc:              "Mutually exclusive flag group validation fails",
+			mutuallyExclusive: []string{"a b c"},
+			args:              []string{"--b=foo", "--c=bar"},
+			expectErr:         `exactly one of the flags [a b c] can be set, but [b c] were set`,
 		}, {
-			desc:                "Multiple exclusive flag group not satisfied returns first error",
-			flagGroupsExclusive: []string{"a b c", "a d"},
-			args:                []string{"--a=foo", "--c=foo", "--d=foo"},
-			expectErr:           `if any flags in the group [a b c] are set none of the others can be; [a c] were all set`,
+			desc:              "Mutually exclusive flag group validation passes",
+			mutuallyExclusive: []string{"a b c"},
+			args:              []string{"--b=foo"},
 		}, {
-			desc:               "Validation of required groups occurs on groups in sorted order",
-			flagGroupsRequired: []string{"a d", "a b", "a c"},
-			args:               []string{"--a=foo"},
-			expectErr:          `if any flags in the group [a b] are set they must all be set; missing [b]`,
+			desc:             "Multiple required together flag groups failed validation returns first error",
+			requiredTogether: []string{"a b c", "a d"},
+			args:             []string{"--d=foo", "--c=foo"},
+			expectErr:        `flags [a b c] must be set together, but [a b] were not set`,
 		}, {
-			desc:                "Validation of exclusive groups occurs on groups in sorted order",
-			flagGroupsExclusive: []string{"a d", "a b", "a c"},
-			args:                []string{"--a=foo", "--b=foo", "--c=foo"},
-			expectErr:           `if any flags in the group [a b] are set none of the others can be; [a b] were all set`,
+			desc:              "Multiple mutually exclusive flag groups failed validation returns first error",
+			mutuallyExclusive: []string{"a b c", "a d"},
+			args:              []string{"--a=foo", "--c=foo", "--d=foo"},
+			expectErr:         `exactly one of the flags [a b c] can be set, but [a c] were set`,
 		}, {
-			desc:                "Persistent flags utilize both features and can fail required groups",
-			flagGroupsRequired:  []string{"a e", "e f"},
-			flagGroupsExclusive: []string{"f g"},
-			args:                []string{"--a=foo", "--f=foo", "--g=foo"},
-			expectErr:           `if any flags in the group [a e] are set they must all be set; missing [e]`,
+			desc:              "Flag and persistent flags being in multiple groups fail required together group",
+			requiredTogether:  []string{"a p-a", "p-a p-b"},
+			mutuallyExclusive: []string{"p-b p-c"},
+			args:              []string{"--a=foo", "--p-b=foo", "--p-c=foo"},
+			expectErr:         `flags [a p-a] must be set together, but [p-a] were not set`,
 		}, {
-			desc:                "Persistent flags utilize both features and can fail mutually exclusive groups",
-			flagGroupsRequired:  []string{"a e", "e f"},
-			flagGroupsExclusive: []string{"f g"},
-			args:                []string{"--a=foo", "--e=foo", "--f=foo", "--g=foo"},
-			expectErr:           `if any flags in the group [f g] are set none of the others can be; [f g] were all set`,
+			desc:              "Flag and persistent flags being in multiple groups fail mutually exclusive group",
+			requiredTogether:  []string{"a p-a", "p-a p-b"},
+			mutuallyExclusive: []string{"p-b p-c"},
+			args:              []string{"--a=foo", "--p-a=foo", "--p-b=foo", "--p-c=foo"},
+			expectErr:         `exactly one of the flags [p-b p-c] can be set, but [p-b p-c] were set`,
 		}, {
-			desc:                "Persistent flags utilize both features and can pass",
-			flagGroupsRequired:  []string{"a e", "e f"},
-			flagGroupsExclusive: []string{"f g"},
-			args:                []string{"--a=foo", "--e=foo", "--f=foo"},
+			desc:              "Flag and persistent flags pass required together and mutually exclusive groups",
+			requiredTogether:  []string{"a p-a", "p-a p-b"},
+			mutuallyExclusive: []string{"p-b p-c"},
+			args:              []string{"--a=foo", "--p-a=foo", "--p-b=foo"},
 		}, {
-			desc:                     "Subcmds can use required groups using inherited flags",
-			subCmdFlagGroupsRequired: []string{"e subonly"},
-			args:                     []string{"subcmd", "--e=foo", "--subonly=foo"},
+			desc:                "Required together flag group validation fails on subcommand with inherited flag",
+			subRequiredTogether: []string{"p-a sub-a"},
+			args:                []string{"subcmd", "--sub-a=foo"},
+			expectErr:           `flags [p-a sub-a] must be set together, but [p-a] were not set`,
 		}, {
-			desc:                      "Subcmds can use exclusive groups using inherited flags",
-			subCmdFlagGroupsExclusive: []string{"e subonly"},
-			args:                      []string{"subcmd", "--e=foo", "--subonly=foo"},
-			expectErr:                 "if any flags in the group [e subonly] are set none of the others can be; [e subonly] were all set",
+			desc:                "Required together flag group validation passes on subcommand with inherited flag",
+			subRequiredTogether: []string{"p-a sub-a"},
+			args:                []string{"subcmd", "--p-a=foo", "--sub-a=foo"},
 		}, {
-			desc:                      "Subcmds can use exclusive groups using inherited flags and pass",
-			subCmdFlagGroupsExclusive: []string{"e subonly"},
-			args:                      []string{"subcmd", "--e=foo"},
+			desc:                 "Mutually exclusive flag group validation fails on subcommand with inherited flag",
+			subMutuallyExclusive: []string{"p-a sub-a"},
+			args:                 []string{"subcmd", "--p-a=foo", "--sub-a=foo"},
+			expectErr:            `exactly one of the flags [p-a sub-a] can be set, but [p-a sub-a] were set`,
 		}, {
-			desc:                     "Flag groups not applied if not found on invoked command",
-			subCmdFlagGroupsRequired: []string{"e subonly"},
-			args:                     []string{"--e=foo"},
+			desc:                 "Mutually exclusive flag group validation passes on subcommand with inherited flag",
+			subMutuallyExclusive: []string{"p-a sub-a"},
+			args:                 []string{"subcmd", "--p-a=foo"},
+		}, {
+			desc:                "Required together flag group validation is not applied on other command",
+			subRequiredTogether: []string{"p-a sub-a"},
+			args:                []string{"--p-a=foo"},
 		},
 	}
+
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := getCmd()
-			sub := c.Commands()[0]
-			for _, flagGroup := range tc.flagGroupsRequired {
-				c.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
+			cmd := getCmd()
+			subCmd := cmd.Commands()[0]
+
+			for _, group := range tc.requiredTogether {
+				cmd.MarkFlagsRequiredTogether(strings.Split(group, " ")...)
 			}
-			for _, flagGroup := range tc.flagGroupsExclusive {
-				c.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
+			for _, group := range tc.mutuallyExclusive {
+				cmd.MarkFlagsMutuallyExclusive(strings.Split(group, " ")...)
 			}
-			for _, flagGroup := range tc.subCmdFlagGroupsRequired {
-				sub.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
+			for _, group := range tc.subRequiredTogether {
+				subCmd.MarkFlagsRequiredTogether(strings.Split(group, " ")...)
 			}
-			for _, flagGroup := range tc.subCmdFlagGroupsExclusive {
-				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
+			for _, group := range tc.subMutuallyExclusive {
+				subCmd.MarkFlagsMutuallyExclusive(strings.Split(group, " ")...)
 			}
-			c.SetArgs(tc.args)
-			err := c.Execute()
+
+			cmd.SetArgs(tc.args)
+			err := cmd.Execute()
+
 			switch {
 			case err == nil && len(tc.expectErr) > 0:
 				t.Errorf("Expected error %q but got nil", tc.expectErr)
