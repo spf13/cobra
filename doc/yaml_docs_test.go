@@ -73,6 +73,24 @@ func TestGenYamlTree(t *testing.T) {
 	}
 }
 
+func TestGenYamlTreeSlashCommands(t *testing.T) {
+	c := &cobra.Command{Use: "run/first [OPTIONS] arg1 arg2"}
+
+	tmpdir, err := ioutil.TempDir("", "test-gen-yaml-tree-slash-commands")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %s", err.Error())
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenYamlTree(c, tmpdir); err != nil {
+		t.Fatalf("GenYamlTree failed: %s", err.Error())
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "run_first.yaml")); err != nil {
+		t.Fatalf("Expected file 'run_first.yaml' to exist")
+	}
+}
+
 func TestGenYamlDocRunnable(t *testing.T) {
 	// Testing a runnable command: should contain the "usage" field
 	buf := new(bytes.Buffer)

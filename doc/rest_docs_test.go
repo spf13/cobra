@@ -96,6 +96,24 @@ func TestGenRSTTree(t *testing.T) {
 	}
 }
 
+func TestGenRSTTreeSlashCommands(t *testing.T) {
+	c := &cobra.Command{Use: "run/first [OPTIONS] arg1 arg2"}
+
+	tmpdir, err := ioutil.TempDir("", "test-gen-rst-tree-slash-commands")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %s", err.Error())
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenReSTTree(c, tmpdir); err != nil {
+		t.Fatalf("GenReSTTree failed: %s", err.Error())
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "run_first.rst")); err != nil {
+		t.Fatalf("Expected file 'run_first.rst' to exist")
+	}
+}
+
 func BenchmarkGenReSTToFile(b *testing.B) {
 	file, err := ioutil.TempFile("", "")
 	if err != nil {
