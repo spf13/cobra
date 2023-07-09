@@ -2447,6 +2447,17 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.HiddenDefaultCmd = false
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
+
+	// Test that required flag will be ignored
+	rootCmd.PersistentFlags().Bool("foo", false, "")
+	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("foo"))
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
+		if _, err = executeCommand(rootCmd, compCmdName, shell); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}
+	// Remove completion command for the next test
+	removeCompCmd(rootCmd)
 }
 
 func TestCompleteCompletion(t *testing.T) {
