@@ -885,6 +885,18 @@ func TestHelpCommandExecuted(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Long)
 }
 
+func TestHelpCommandExecutedWithPersistentRequiredFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.PersistentFlags().Bool("foo", false, "")
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("foo"))
+
+	if _, err := executeCommand(rootCmd, "help"); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestHelpCommandExecutedOnChild(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description", Run: emptyRun}
