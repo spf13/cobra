@@ -1190,7 +1190,6 @@ func (c *Command) InitDefaultHelpCmd() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
 Simply type ` + c.Name() + ` help [path to command] for full details.`,
-			DisableFlagParsing: true,
 			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 				var completions []string
 				cmd, _, e := c.Root().Find(args)
@@ -1209,6 +1208,15 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					}
 				}
 				return completions, ShellCompDirectiveNoFileComp
+			},
+			PersistentPreRun: func(cmd *Command, args []string) {
+				cmd.Flags().VisitAll(func(pflag *flag.Flag) {
+					requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
+					if found && requiredAnnotation[0] == "true" {
+						// Disable any persistent required flags for the help command
+						pflag.Annotations[BashCompOneRequiredFlag] = []string{"false"}
+					}
+				})
 			},
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
