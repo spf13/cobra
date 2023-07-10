@@ -681,6 +681,15 @@ See each sub-command's help for details on how to use the generated script.
 		ValidArgsFunction: NoFileCompletions,
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
 		GroupID:           c.completionCommandGroupID,
+		PersistentPreRun: func(cmd *Command, args []string) {
+			cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				requiredAnnotation, found := flag.Annotations[BashCompOneRequiredFlag]
+				if found && requiredAnnotation[0] == "true" {
+					// Disable any persistent required flags for the completion command
+					flag.Annotations[BashCompOneRequiredFlag] = []string{"false"}
+				}
+			})
+		},
 	}
 	c.AddCommand(completionCmd)
 
@@ -713,7 +722,6 @@ You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
 		Args:                  NoArgs,
 		DisableFlagsInUseLine: true,
-		DisableFlagParsing:    true,
 		ValidArgsFunction:     NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
 			return cmd.Root().GenBashCompletionV2(out, !noDesc)
@@ -749,9 +757,8 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
-		Args:               NoArgs,
-		DisableFlagParsing: true,
-		ValidArgsFunction:  NoFileCompletions,
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
 			if noDesc {
 				return cmd.Root().GenZshCompletionNoDesc(out)
@@ -778,9 +785,8 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
-		Args:               NoArgs,
-		DisableFlagParsing: true,
-		ValidArgsFunction:  NoFileCompletions,
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
 			return cmd.Root().GenFishCompletion(out, !noDesc)
 		},
@@ -801,9 +807,8 @@ To load completions in your current shell session:
 To load completions for every new session, add the output of the above command
 to your powershell profile.
 `, c.Root().Name()),
-		Args:               NoArgs,
-		DisableFlagParsing: true,
-		ValidArgsFunction:  NoFileCompletions,
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
 			if noDesc {
 				return cmd.Root().GenPowerShellCompletion(out)
