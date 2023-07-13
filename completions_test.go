@@ -2460,6 +2460,31 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	removeCompCmd(rootCmd)
 }
 
+func TestPersistentPreRunHooksForCompletionCommand(t *testing.T) {
+	executed := false
+
+	rootCmd := &Command{
+		Use:              "root",
+		PersistentPreRun: func(*Command, []string) { executed = true },
+		Run:              emptyRun,
+	}
+	subCmd := &Command{
+		Use: "sub",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(subCmd)
+
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
+		if _, err := executeCommand(rootCmd, compCmdName, shell); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		if !executed {
+			t.Error("Root PersistentPreRun should have been executed")
+		}
+		executed = false
+	}
+}
+
 func TestCompleteCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	subCmd := &Command{
