@@ -1611,6 +1611,25 @@ func TestPersistentHooks(t *testing.T) {
 	}
 }
 
+func TestPersistentPreRunHooksForHelpCommand(t *testing.T) {
+	executed := false
+
+	rootCmd := &Command{
+		Use:              "root",
+		PersistentPreRun: func(*Command, []string) { executed = true },
+		Run:              emptyRun,
+	}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	if _, err := executeCommand(rootCmd, "help"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !executed {
+		t.Error("Root PersistentPreRun should have been executed")
+	}
+}
+
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestGlobalNormFuncPropagation(t *testing.T) {
 	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
