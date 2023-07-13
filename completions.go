@@ -689,6 +689,9 @@ See each sub-command's help for details on how to use the generated script.
 					flag.Annotations[BashCompOneRequiredFlag] = []string{"false"}
 				}
 			})
+			// Adding PersistentPreRun on sub-commands prevents root's PersistentPreRun from being called.
+			// So it is intentionally called here.
+			cmd.Root().PersistentPreRun(cmd.Root(), args)
 		},
 	}
 	c.AddCommand(completionCmd)
