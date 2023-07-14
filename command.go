@@ -1209,7 +1209,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				}
 				return completions, ShellCompDirectiveNoFileComp
 			},
-			PersistentPreRun: func(cmd *Command, args []string) {
+			PersistentPreRunE: func(cmd *Command, args []string) error {
 				cmd.Flags().VisitAll(func(pflag *flag.Flag) {
 					requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
 					if found && requiredAnnotation[0] == "true" {
@@ -1219,7 +1219,12 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				})
 				// Adding PersistentPreRun on sub-commands prevents root's PersistentPreRun from being called.
 				// So it is intentionally called here.
-				cmd.Root().PersistentPreRun(cmd.Root(), args)
+				if cmd.Root().PersistentPreRunE != nil {
+					return cmd.Root().PersistentPreRunE(cmd, args)
+				} else if cmd.Root().PersistentPreRun != nil {
+					cmd.Root().PersistentPreRun(cmd, args)
+				}
+				return nil
 			},
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
