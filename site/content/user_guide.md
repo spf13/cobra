@@ -29,8 +29,8 @@ func main() {
 
 ## Using the Cobra Generator
 
-Cobra-CLI is its own program that will create your application and add any
-commands you want. It's the easiest way to incorporate Cobra into your application.
+Cobra-CLI is its own program that will create your application and add any commands you want.
+It's the easiest way to incorporate Cobra into your application.
 
 For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
 
@@ -715,12 +715,17 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
+Cobra can generate documentation based on subcommands, flags, etc.
+Read more about it in the [docs generation documentation](docgen/_index.md).
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
+If you add more information to your commands, these completions can be amazingly powerful and flexible.
+Read more about it in [Shell Completions](completions/_index.md).
 
 ## Providing Active Help
 
-Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.  Active Help are messages (hints, warnings, etc) printed as the program is being used.  Read more about it in [Active Help](active_help.md).
+Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.
+Active Help are messages (hints, warnings, etc) printed as the program is being used.
+Read more about it in [Active Help](active_help.md).

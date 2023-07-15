@@ -1,6 +1,6 @@
 # Generating Bash Completions For Your cobra.Command
 
-Please refer to [Shell Completions](shell_completions.md) for details.
+Please refer to [Shell Completions](_index.md) for details.
 
 ## Bash legacy dynamic completions
 

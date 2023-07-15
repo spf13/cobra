@@ -1,9 +1,9 @@
 # Documentation generation
 
-- [Man page docs](./man_docs.md)
-- [Markdown docs](./md_docs.md)
-- [Rest docs](./rest_docs.md)
-- [Yaml docs](./yaml_docs.md)
+- [Man page docs](man.md)
+- [Markdown docs](md.md)
+- [Rest docs](rest.md)
+- [Yaml docs](yaml.md)
 
 ## Options
 ### `DisableAutoGenTag`
