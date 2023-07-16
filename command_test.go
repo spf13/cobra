@@ -1862,6 +1862,61 @@ func TestAddGroup(t *testing.T) {
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
+func TestRemoveSingleGroup(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(
+		&Group{ID: "group", Title: "Test group"},
+		&Group{ID: "help", Title: "help"},
+		&Group{ID: "comp", Title: "comp"},
+	)
+
+	rootCmd.AddCommand(&Command{Use: "sub", GroupID: "group", Run: emptyRun})
+
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("comp")
+
+	rootCmd.RemoveGroup("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "\nTest group:\n  sub")
+	checkStringContains(t, output, "\nAdditional Commands:\n  sub")
+}
+
+func TestRemoveMultipleGroups(t *testing.T) {
+	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(
+		&Group{ID: "group1", Title: "Test group1"},
+		&Group{ID: "group2", Title: "Test group2"},
+		&Group{ID: "help", Title: "help"},
+		&Group{ID: "comp", Title: "comp"},
+	)
+
+	rootCmd.AddCommand(
+		&Command{Use: "sub1", Short: "sub1", GroupID: "group1", Run: emptyRun},
+		&Command{Use: "sub2", Short: "sub2", GroupID: "group2", Run: emptyRun},
+	)
+
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("comp")
+
+	rootCmd.RemoveGroup("group1", "group2")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "\nTest group1:\n  sub1")
+	checkStringOmits(t, output, "\nTest group2:\n  sub2")
+	checkStringContains(t, output, "\nAdditional Commands:\n  sub1        sub1\n  sub2        sub2")
+}
+
 func TestWrongGroupFirstLevel(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
