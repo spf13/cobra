@@ -1311,6 +1311,30 @@ func (c *Command) AddGroup(groups ...*Group) {
 	c.commandgroups = append(c.commandgroups, groups...)
 }
 
+// RemoveGroup removes one or more command groups to this parent command.
+func (c *Command) RemoveGroup(groupIDs ...string) {
+	// remove groups from commandgroups
+	groups := []*Group{}
+main:
+	for _, group := range c.commandgroups {
+		for _, groupID := range groupIDs {
+			if group.ID == groupID {
+				continue main
+			}
+		}
+		groups = append(groups, group)
+	}
+	c.commandgroups = groups
+	// remove the groupID from the target commands
+	for _, command := range c.commands {
+		for _, groupID := range groupIDs {
+			if command.GroupID == groupID {
+				command.GroupID = ""
+			}
+		}
+	}
+}
+
 // RemoveCommand removes one or more commands from a parent command.
 func (c *Command) RemoveCommand(cmds ...*Command) {
 	commands := []*Command{}
