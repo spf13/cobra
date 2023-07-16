@@ -349,7 +349,7 @@ rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
 rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 ```
 
-If you want to require least one flag from a group to be present, you can use `MarkFlagsOneRequired`.
+If you want to require at least one flag from a group to be present, you can use `MarkFlagsOneRequired`.
 This can be combined with `MarkFlagsMutuallyExclusive` to enforce exactly one flag from a given group:
 ```go
 rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
