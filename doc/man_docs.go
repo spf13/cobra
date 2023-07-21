@@ -146,7 +146,7 @@ func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command, 
 		description = cmd.Short
 	}
 
-	cobra.WriteStringAndCheck(buf, fmt.Sprintf(`%% "%s" "%s" "%s" "%s" "%s"
+	cobra.WriteStringAndCheck(buf, fmt.Sprintf(`%% %q %q %q %q %q
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual))
 	cobra.WriteStringAndCheck(buf, fmt.Sprintf("%s \\- %s\n\n", dashedName, cmd.Short))

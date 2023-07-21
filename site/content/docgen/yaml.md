@@ -87,7 +87,7 @@ The `filePrepender` will prepend the return value given the full filepath to the
 ```go
 const fmTemplate = `---
 date: %s
-title: "%s"
+title: %q
 slug: %s
 url: %s
 ---
