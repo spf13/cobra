@@ -1828,9 +1828,7 @@ func (c *Command) parseShortArgs(s string, args []string) (passedArgs []string, 
 	return
 }
 
-func (c *Command) removeParentPersistentArgs(args []string) []string {
-	var newArgs []string
-
+func (c *Command) removeParentPersistentArgs(args []string) (newArgs []string) {
 	for len(args) > 0 {
 		s := args[0]
 		args = args[1:]
@@ -1850,8 +1848,7 @@ func (c *Command) removeParentPersistentArgs(args []string) []string {
 		}
 		args = restArgs
 	}
-
-	return newArgs
+	return
 }
 
 // ParseFlags parses persistent flag tree and local flags.
