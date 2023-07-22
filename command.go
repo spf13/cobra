@@ -1027,7 +1027,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	c.checkCommandGroups()
 
 	args := c.args
-
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
 	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
@@ -1769,25 +1768,30 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 
 func (c *Command) parseLongArgs(s string, args []string) (passedArgs, restArgs []string) {
 	restArgs = args
+	name := s[2:]
+	if len(name) == 0 {
+		passedArgs = append(passedArgs, s)
+		return
+	}
 
 	split := strings.SplitN(s[2:], "=", 2)
-	name := split[0]
+	name = split[0]
 	searchedFlag := c.lflags.Lookup(name)
 
 	if searchedFlag == nil {
-		// a flag not registered in c.lflags should be registered in c.flags
+		// ignore the flag that is not registered in c.lflags but is registered in c.flags
 		c.flags.VisitAll(func(f *flag.Flag) {
 			if name == f.Name {
 				if len(split) == 1 && f.NoOptDefVal == "" && len(args) > 0 {
 					// '--flag arg'
 					restArgs = args[1:]
 				}
-				return
 			}
 		})
+		return
 	}
 
-	passedArgs = append(passedArgs, fmt.Sprintf("--%s", name))
+	passedArgs = append(passedArgs, fmt.Sprintf("--%s", s[2:]))
 	if len(split) == 1 && searchedFlag.NoOptDefVal == "" && len(args) > 0 {
 		passedArgs = append(passedArgs, args[0])
 		restArgs = args[1:]
@@ -1804,7 +1808,7 @@ func (c *Command) parseShortArgs(s string, args []string) (passedArgs []string, 
 
 	searchedFlag := c.lflags.ShorthandLookup(shorthand)
 	if searchedFlag == nil {
-		// a flag not registered in c.lflags should be registered in c.flags
+		// ignore the flag that is not registered in c.lflags but is registered in c.flags
 		c.flags.VisitAll(func(f *flag.Flag) {
 			if shorthand == f.Shorthand {
 				if len(shorthands) == 1 && f.NoOptDefVal == "" && len(args) > 0 {
@@ -1832,7 +1836,7 @@ func (c *Command) removeParentPersistentArgs(args []string) []string {
 	for len(args) > 0 {
 		s := args[0]
 		args = args[1:]
-		if s[0] != '-' {
+		if len(s) == 0 || s[0] != '-' {
 			newArgs = append(newArgs, s)
 			continue
 		}
@@ -1857,7 +1861,6 @@ func (c *Command) ParseFlags(args []string) error {
 	if c.DisableFlagParsing {
 		return nil
 	}
-
 	if c.flagErrorBuf == nil {
 		c.flagErrorBuf = new(bytes.Buffer)
 	}
@@ -1873,9 +1876,13 @@ func (c *Command) ParseFlags(args []string) error {
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
 		c.Print(c.flagErrorBuf.String())
 	}
+	if err != nil {
+		return err
+	}
 
 	// parse Local Flags
-	c.LocalFlags()                                  // need to execute LocalFlags() to set the value in c.lflags before executing removeParentPersistentArgs
+	c.LocalFlags() // need to execute LocalFlags() to set the value in c.lflags before executing removeParentPersistentArgs
+	c.lflags.ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
 	localArgs := c.removeParentPersistentArgs(args) // get only arguments related to c.lflags
 	err = c.lflags.Parse(localArgs)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
