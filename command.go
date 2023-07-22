@@ -1632,10 +1632,8 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	addToLocal := func(f *flag.Flag) {
 		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
 		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
-			newFlag := &flag.Flag{}
-			*newFlag = *f
-			newFlag.Changed = false
-			c.lflags.AddFlag(newFlag)
+			f.Changed = false
+			c.lflags.AddFlag(f)
 		}
 	}
 	c.Flags().VisitAll(addToLocal)
