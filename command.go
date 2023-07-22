@@ -191,6 +191,11 @@ type Command struct {
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
 
+	// outFallbackWriter is a writer defined by the user that is used if outWriter is nil
+	outFallbackWriter io.Writer
+	// errFallbackWriter is a writer defined by the user that is used if errWriter is nil
+	errFallbackWriter io.Writer
+
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
 
@@ -282,14 +287,28 @@ func (c *Command) SetOutput(output io.Writer) {
 
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
+// Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetOut(newOut io.Writer) {
 	c.outWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
 // If newErr is nil, os.Stderr is used.
+// Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
+}
+
+// SetOutFallback sets the destination for usage messages when SetOut() was not used.
+// If newOut is nil, os.Stdout is used.
+func (c *Command) SetOutFallback(newOut io.Writer) {
+	c.outFallbackWriter = newOut
+}
+
+// SetErrFallback sets the destination for error messages when SetErr() was not used.
+// If newErr is nil, os.Stderr is used.
+func (c *Command) SetErrFallback(newErr io.Writer) {
+	c.errFallbackWriter = newErr
 }
 
 // SetIn sets the source for input data
@@ -371,9 +390,10 @@ func (c *Command) OutOrStdout() io.Writer {
 	return c.getOut(os.Stdout)
 }
 
-// OutOrStderr returns output to stderr
+// OutOrStderr returns output to stderr.
+// Deprecated: Use OutOrStdout or ErrOrStderr instead
 func (c *Command) OutOrStderr() io.Writer {
-	return c.getOut(os.Stderr)
+	return c.getOutFallbackToErr(os.Stderr)
 }
 
 // ErrOrStderr returns output to stderr
@@ -390,6 +410,9 @@ func (c *Command) getOut(def io.Writer) io.Writer {
 	if c.outWriter != nil {
 		return c.outWriter
 	}
+	if c.outFallbackWriter != nil {
+		return c.outFallbackWriter
+	}
 	if c.HasParent() {
 		return c.parent.getOut(def)
 	}
@@ -400,8 +423,27 @@ func (c *Command) getErr(def io.Writer) io.Writer {
 	if c.errWriter != nil {
 		return c.errWriter
 	}
+	if c.errFallbackWriter != nil {
+		return c.errFallbackWriter
+	}
 	if c.HasParent() {
 		return c.parent.getErr(def)
+	}
+	return def
+}
+
+// getOutFallbackToErr should only be used inside OutOrStderr.
+// Deprecated: this function exists to allow for backwards compatibility only
+// (see https://github.com/spf13/cobra/issues/1708)
+func (c *Command) getOutFallbackToErr(def io.Writer) io.Writer {
+	if c.outWriter != nil {
+		return c.outWriter
+	}
+	if c.errFallbackWriter != nil {
+		return c.errFallbackWriter
+	}
+	if c.HasParent() {
+		return c.parent.getOutFallbackToErr(def)
 	}
 	return def
 }
