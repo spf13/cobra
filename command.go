@@ -150,6 +150,8 @@ type Command struct {
 	pflags *flag.FlagSet
 	// lflags contains local flags.
 	lflags *flag.FlagSet
+	// lnpflags contains local non persistent flags
+	lnpflags *flag.FlagSet
 	// iflags contains inherited flags.
 	iflags *flag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
@@ -1602,15 +1604,19 @@ func (c *Command) Flags() *flag.FlagSet {
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
 func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
-	persistentFlags := c.PersistentFlags()
+	if c.lnpflags == nil {
+		persistentFlags := c.PersistentFlags()
 
-	out := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	c.LocalFlags().VisitAll(func(f *flag.Flag) {
-		if persistentFlags.Lookup(f.Name) == nil {
-			out.AddFlag(f)
-		}
-	})
-	return out
+		c.lnpflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.LocalFlags().VisitAll(func(f *flag.Flag) {
+			if persistentFlags.Lookup(f.Name) == nil {
+				f.Changed = false
+				c.lnpflags.AddFlag(f)
+			}
+		})
+	}
+
+	return c.lnpflags
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
