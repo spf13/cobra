@@ -2735,3 +2735,143 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+func TestNFlagForFlags(t *testing.T) {
+	var rootNFlag, childNFlag int
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(cmd *Command, _ []string) {
+			rootNFlag = cmd.Flags().NFlag()
+		},
+	}
+	childCmd := &Command{
+		Use: "child",
+		Run: func(cmd *Command, args []string) {
+			childNFlag = cmd.Flags().NFlag()
+		},
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.PersistentFlags().Bool("rp", false, "")
+	rpFlag := rootCmd.PersistentFlags().Lookup("rp")
+	childCmd.PersistentFlags().Bool("cp", false, "")
+	childCmd.Flags().Int("int", 0, "")
+
+	output, err := executeCommand(rootCmd, "--rp")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if rootNFlag != 1 {
+		t.Errorf("Expected NFlag: %v, got %v", 1, rootNFlag)
+	}
+	// set Changed false for the next test
+	rpFlag.Changed = false
+
+	output, err = executeCommand(rootCmd, "child", "--rp", "--cp", "--int", "10")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if childNFlag != 3 {
+		t.Errorf("Expected NFlag: %v, got %v", 3, childNFlag)
+	}
+}
+
+func TestNFlagForLocalFlags(t *testing.T) {
+	var localNFlag int
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use: "child",
+		Run: func(cmd *Command, args []string) {
+			localNFlag = cmd.LocalFlags().NFlag()
+		},
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.PersistentFlags().Bool("rp", false, "")
+	childCmd.PersistentFlags().Bool("cp", false, "")
+	childCmd.Flags().Int("int", 0, "")
+
+	output, err := executeCommand(rootCmd, "child", "--rp", "--cp", "--int", "10")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if localNFlag != 2 { // LocalFlags().NFlag() ignores '--rp'
+		t.Errorf("Expected NFlag: %v, got %v", 2, localNFlag)
+	}
+}
+
+func TestNFlagForLocalNonPersistentFlags(t *testing.T) {
+	var localNonPNFlag int
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use: "child",
+		Run: func(cmd *Command, args []string) {
+			localNonPNFlag = cmd.LocalNonPersistentFlags().NFlag()
+		},
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.PersistentFlags().Bool("rp", false, "")
+	childCmd.PersistentFlags().Bool("cp", false, "")
+	childCmd.Flags().Int("int", 0, "")
+
+	output, err := executeCommand(rootCmd, "child", "--rp", "--cp", "--int", "10")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if localNonPNFlag != 1 { // LocalNonPersistentFlags().NFlag() ignores '--rp' and '--cp'
+		t.Errorf("Expected NFlag: %v, got %v", 1, localNonPNFlag)
+	}
+}
+
+func TestRemoveParentPersistentArgs(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.PersistentFlags().BoolP("rp", "r", false, "")
+	rootCmd.PersistentFlags().Int("ri", 0, "")
+	childCmd.PersistentFlags().Bool("cp", false, "")
+	childCmd.Flags().Int("int", 0, "")
+
+	output, err := executeCommand(rootCmd, "child", "--rp", "--ri", "10", "--cp", "--int", "10")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	args := rootCmd.args
+	_, args, _ = rootCmd.Find(args)
+
+	gotLocalArgs := childCmd.removeParentPersistentArgs(args, childCmd.lflags)
+	expectedLocalArgs := []string{"--cp", "--int", "10"}
+	if !reflect.DeepEqual(gotLocalArgs, expectedLocalArgs) {
+		t.Errorf("Expected localArgs: %v, got %v", expectedLocalArgs, gotLocalArgs)
+	}
+
+	gotLocalNonPersistentArgs := childCmd.removeParentPersistentArgs(args, childCmd.lnpflags)
+	expectedLocalNonPersistentArgs := []string{"--int", "10"}
+	if !reflect.DeepEqual(gotLocalNonPersistentArgs, expectedLocalNonPersistentArgs) {
+		t.Errorf("Expected localArgs: %v, got %v", expectedLocalNonPersistentArgs, gotLocalNonPersistentArgs)
+	}
+}
