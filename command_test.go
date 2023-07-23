@@ -2852,7 +2852,7 @@ func TestRemoveParentPersistentArgs(t *testing.T) {
 	childCmd.PersistentFlags().Bool("cp", false, "")
 	childCmd.Flags().Int("int", 0, "")
 
-	output, err := executeCommand(rootCmd, "child", "--rp", "--ri", "10", "--cp", "--int", "10")
+	output, err := executeCommand(rootCmd, "child", "-r", "--ri", "10", "--cp", "--int", "10")
 	if output != "" {
 		t.Errorf("Unexpected output: %v", output)
 	}
