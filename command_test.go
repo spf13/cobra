@@ -438,7 +438,7 @@ func TestFlagLong(t *testing.T) {
 
 	output, err := executeCommand(c, "--intf=7", "--sf=abc", "one", "--", "two")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -475,7 +475,7 @@ func TestFlagShort(t *testing.T) {
 
 	output, err := executeCommand(c, "-i", "7", "-sabc", "one", "two")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -504,7 +504,7 @@ func TestChildFlag(t *testing.T) {
 
 	output, err := executeCommand(rootCmd, "child", "-i7")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
