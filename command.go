@@ -330,10 +330,23 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	c.helpCommandGroupID = groupID
 }
 
+// resetHelpCommandGroupID resets the group id of the help command.
+func (c *Command) resetHelpCommandGroupID() {
+	if c.helpCommand != nil {
+		c.helpCommand.GroupID = ""
+	}
+	c.helpCommandGroupID = ""
+}
+
 // SetCompletionCommandGroupID sets the group id of the completion command.
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
 	// completionCommandGroupID is used if no completion command is defined by the user
 	c.Root().completionCommandGroupID = groupID
+}
+
+// resetCompletionCommandGroupID resets the group id of the completion command.
+func (c *Command) resetCompletionCommandGroupID() {
+	c.Root().completionCommandGroupID = ""
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -1331,6 +1344,17 @@ main:
 			if command.GroupID == groupID {
 				command.GroupID = ""
 			}
+			if command.helpCommandGroupID == groupID {
+				command.resetHelpCommandGroupID()
+			}
+		}
+	}
+	for _, groupID := range groupIDs {
+		if c.helpCommandGroupID == groupID {
+			c.resetHelpCommandGroupID()
+		}
+		if c.Root().completionCommandGroupID == groupID {
+			c.resetCompletionCommandGroupID()
 		}
 	}
 }
