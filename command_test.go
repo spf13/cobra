@@ -1887,6 +1887,47 @@ func TestRemoveSingleGroup(t *testing.T) {
 	checkStringContains(t, output, "\nAdditional Commands:\n  sub")
 }
 
+func TestRemoveHelpCommandGroup(t *testing.T) {
+	rootCmd := &Command{Use: "root", Short: "test", Run: emptyRun}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.AddGroup(&Group{ID: "group", Title: "group"})
+	rootCmd.AddCommand(&Command{Use: "child", Short: "c", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("group")
+
+	rootCmd.RemoveGroup("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "\ngroup\n  child\n  help")
+	checkStringContains(t, output, "\nAvailable Commands:\n  child       c\n  help")
+}
+
+func TestRemoveCompletionCommandGroup(t *testing.T) {
+	rootCmd := &Command{Use: "root", Short: "test", Run: emptyRun}
+
+	rootCmd.AddGroup(
+		&Group{ID: "group", Title: "group"},
+		&Group{ID: "help", Title: "help"},
+	)
+	rootCmd.AddCommand(&Command{Use: "child", Short: "c", GroupID: "group", Run: emptyRun})
+	rootCmd.SetHelpCommandGroupID("help")
+	rootCmd.SetCompletionCommandGroupID("group")
+
+	rootCmd.RemoveGroup("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringOmits(t, output, "\ngroup\n  child\n  completion")
+	checkStringContains(t, output, "\nAdditional Commands:\n  child       c\n  completion")
+}
+
 func TestRemoveMultipleGroups(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
