@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/spf13/pflag"
 )
@@ -33,10 +32,10 @@ const (
 )
 
 // Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
-
-// lock for reading and writing from flagCompletionFunctions
-var flagCompletionMutex = &sync.RWMutex{}
+// var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+//
+// // lock for reading and writing from flagCompletionFunctions
+// var flagCompletionMutex = &sync.RWMutex{}
 
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
@@ -135,13 +134,13 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
-	flagCompletionMutex.Lock()
-	defer flagCompletionMutex.Unlock()
+	c.flagCompletionMutex.Lock()
+	defer c.flagCompletionMutex.Unlock()
 
-	if _, exists := flagCompletionFunctions[flag]; exists {
+	if _, exists := c.flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
-	flagCompletionFunctions[flag] = f
+	c.flagCompletionFunctions[flag] = f
 	return nil
 }
 
@@ -479,9 +478,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
-		flagCompletionMutex.RLock()
-		completionFn = flagCompletionFunctions[flag]
-		flagCompletionMutex.RUnlock()
+		finalCmd.flagCompletionMutex.RLock()
+		completionFn = finalCmd.flagCompletionFunctions[flag]
+		finalCmd.flagCompletionMutex.RUnlock()
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}
@@ -805,7 +804,6 @@ to your powershell profile.
 				return cmd.Root().GenPowerShellCompletion(out)
 			}
 			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
 		},
 	}
 	if haveNoDescFlag {
