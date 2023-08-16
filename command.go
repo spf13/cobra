@@ -30,7 +30,10 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+const (
+	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
+	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
+)
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
@@ -99,7 +102,7 @@ type Command struct {
 	Deprecated string
 
 	// Annotations are key/value pairs that can be used by applications to identify or
-	// group commands.
+	// group commands or set special options.
 	Annotations map[string]string
 
 	// Version defines the version for this command. If this value is non-empty and the command does not
@@ -1401,6 +1404,9 @@ func (c *Command) PrintErrf(format string, i ...interface{}) {
 func (c *Command) CommandPath() string {
 	if c.HasParent() {
 		return c.Parent().CommandPath() + " " + c.Name()
+	}
+	if displayName, ok := c.Annotations[CommandDisplayNameAnnotation]; ok {
+		return displayName
 	}
 	return c.Name()
 }
