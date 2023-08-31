@@ -603,6 +603,18 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
+// ErrPrefix return error message prefix for the command
+func (c *Command) ErrPrefix() string {
+	if c.errPrefix != "" {
+		return c.errPrefix
+	}
+
+	if c.HasParent() {
+		return c.parent.ErrPrefix()
+	}
+	return "Error:"
+}
+
 func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	flag := fs.Lookup(name)
 	if flag == nil {
@@ -1058,7 +1070,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln(c.errPrefix, err.Error())
+			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1087,7 +1099,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln(c.errPrefix, err.Error())
+			c.PrintErrln(c.ErrPrefix(), err.Error())
 		}
 
 		// If root command has SilenceUsage flagged,
