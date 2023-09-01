@@ -1876,7 +1876,9 @@ func TestRemoveSingleGroup(t *testing.T) {
 	rootCmd.SetHelpCommandGroupID("help")
 	rootCmd.SetCompletionCommandGroupID("comp")
 
-	rootCmd.RemoveGroup("group")
+	if err := rootCmd.RemoveGroup("group"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1895,7 +1897,9 @@ func TestRemoveHelpCommandGroup(t *testing.T) {
 	rootCmd.AddCommand(&Command{Use: "child", Short: "c", GroupID: "group", Run: emptyRun})
 	rootCmd.SetHelpCommandGroupID("group")
 
-	rootCmd.RemoveGroup("group")
+	if err := rootCmd.RemoveGroup("group"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1917,7 +1921,9 @@ func TestRemoveCompletionCommandGroup(t *testing.T) {
 	rootCmd.SetHelpCommandGroupID("help")
 	rootCmd.SetCompletionCommandGroupID("group")
 
-	rootCmd.RemoveGroup("group")
+	if err := rootCmd.RemoveGroup("group"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1946,7 +1952,9 @@ func TestRemoveMultipleGroups(t *testing.T) {
 	rootCmd.SetHelpCommandGroupID("help")
 	rootCmd.SetCompletionCommandGroupID("comp")
 
-	rootCmd.RemoveGroup("group1", "group2")
+	if err := rootCmd.RemoveGroup("group1", "group2"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
