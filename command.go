@@ -1325,17 +1325,22 @@ func (c *Command) AddGroup(groups ...*Group) {
 }
 
 // RemoveGroup removes one or more command groups to this parent command.
-func (c *Command) RemoveGroup(groupIDs ...string) {
+func (c *Command) RemoveGroup(groupIDs ...string) error {
 	// remove groups from commandgroups
 	groups := []*Group{}
+	hasRemoved := false
 main:
 	for _, group := range c.commandgroups {
 		for _, groupID := range groupIDs {
 			if group.ID == groupID {
+				hasRemoved = true
 				continue main
 			}
 		}
 		groups = append(groups, group)
+	}
+	if !hasRemoved {
+		return fmt.Errorf("following group ID does not exist; %s", strings.Join(groupIDs, ", "))
 	}
 	c.commandgroups = groups
 	// remove the groupID from the target commands
@@ -1357,6 +1362,7 @@ main:
 			c.resetCompletionCommandGroupID()
 		}
 	}
+	return nil
 }
 
 // RemoveCommand removes one or more commands from a parent command.
