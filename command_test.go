@@ -1099,6 +1099,18 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	checkStringContains(t, output, "customized version: 1.0.0")
 }
 
+func TestErrPrefix(t *testing.T) {
+	rootCmd := &Command{Use: "root", SilenceUsage: true, Run: emptyRun}
+	rootCmd.SetErrPrefix("customized error prefix:")
+
+	output, err := executeCommand(rootCmd, "--unknown", "flag")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, output, "customized error prefix: unknown flag: --unknown")
+}
+
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
