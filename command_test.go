@@ -1099,16 +1099,37 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	checkStringContains(t, output, "customized version: 1.0.0")
 }
 
-func TestErrPrefix(t *testing.T) {
-	rootCmd := &Command{Use: "root", SilenceUsage: true, Run: emptyRun}
-	rootCmd.SetErrPrefix("customized error prefix:")
+func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.SetErrPrefix("root error prefix:")
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
-	output, err := executeCommand(rootCmd, "--unknown", "flag")
+	output, err := executeCommand(rootCmd, "sub", "--unknown-flag")
 	if err == nil {
 		t.Errorf("Expected error")
 	}
 
-	checkStringContains(t, output, "customized error prefix: unknown flag: --unknown")
+	checkStringContains(t, output, "root error prefix: unknown flag: --unknown-flag")
+}
+
+func TestRootAndSubErrPrefix(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	subCmd := &Command{Use: "sub", Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.SetErrPrefix("root error prefix:")
+	subCmd.SetErrPrefix("sub error prefix:")
+
+	if output, err := executeCommand(rootCmd, "--unknown-root-flag"); err == nil {
+		t.Errorf("Expected error")
+	} else {
+		checkStringContains(t, output, "root error prefix: unknown flag: --unknown-root-flag")
+	}
+
+	if output, err := executeCommand(rootCmd, "sub", "--unknown-sub-flag"); err == nil {
+		t.Errorf("Expected error")
+	} else {
+		checkStringContains(t, output, "sub error prefix: unknown flag: --unknown-sub-flag")
+	}
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
