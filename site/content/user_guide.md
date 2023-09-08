@@ -598,8 +598,8 @@ the version template. The template can be customized using the
 
 ## Error Message Prefix
 
-Cobra prints an error message when being returned a non-nil error value.
-The default error message is `Error: error contents`.
+Cobra prints an error message when receiving a non-nil error value.
+The default error message is `Error: <error contents>`.
 The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` function.
 
 ## PreRun and PostRun Hooks
