@@ -596,6 +596,12 @@ Running an application with the '--version' flag will print the version to stdou
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
 
+## Error Message Prefix
+
+Cobra prints an error message when receiving a non-nil error value.
+The default error message is `Error: <error contents>`.
+The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` function.
+
 ## PreRun and PostRun Hooks
 
 It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  These functions are run in the following order:

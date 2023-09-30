@@ -150,6 +150,33 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	return nil
 }
 
+// GetFlagCompletion returns the completion function for the given flag, if available.
+func (c *Command) GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	c.initializeCompletionStorage()
+
+	c.flagCompletionMutex.RLock()
+	defer c.flagCompletionMutex.RUnlock()
+
+	completionFunc, exists := c.flagCompletionFunctions[flag]
+
+	if completionFunc != nil && exists {
+		return completionFunc, exists
+	}
+
+	// If not found on the current, walk up the command tree.
+	return c.Parent().GetFlagCompletion(flag)
+}
+
+// GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
+func (c *Command) GetFlagCompletionByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	flag := c.Flags().Lookup(flagName)
+	if flag == nil {
+		return nil, false
+	}
+
+	return c.GetFlagCompletion(flag)
+}
+
 // initializeCompletionStorage is (and should be) called in all
 // functions that make use of the command's flag completion functions.
 func (c *Command) initializeCompletionStorage() {
