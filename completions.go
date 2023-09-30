@@ -159,11 +159,17 @@ func (c *Command) GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args [
 
 	completionFunc, exists := c.flagCompletionFunctions[flag]
 
+	// If found it here, return now
 	if completionFunc != nil && exists {
 		return completionFunc, exists
 	}
 
-	// If not found on the current, walk up the command tree.
+	// If we are already at the root command level, return anyway
+	if !c.HasParent() {
+		return nil, false
+	}
+
+	// Or walk up the command tree.
 	return c.Parent().GetFlagCompletion(flag)
 }
 
