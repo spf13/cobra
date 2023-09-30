@@ -534,6 +534,7 @@ func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
 
 // prepareCustomAnnotationsForFlags setup annotations for go completions for registered flags
 func prepareCustomAnnotationsForFlags(cmd *Command) {
+	cmd.initializeCompletionStorage()
 	cmd.flagCompletionMutex.RLock()
 	defer cmd.flagCompletionMutex.RUnlock()
 	for flag := range cmd.flagCompletionFunctions {

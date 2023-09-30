@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/spf13/pflag"
+	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -134,14 +136,32 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
+	// Ensure none of our relevant fields are nil.
+	c.initializeCompletionStorage()
+
 	c.flagCompletionMutex.Lock()
 	defer c.flagCompletionMutex.Unlock()
 
+	// And attempt to bind the completion.
 	if _, exists := c.flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
 	c.flagCompletionFunctions[flag] = f
 	return nil
+}
+
+// initializeCompletionStorage is (and should be) called in all
+// functions that make use of the command's flag completion functions.
+func (c *Command) initializeCompletionStorage() {
+	if c.flagCompletionMutex == nil {
+		c.flagCompletionMutex = new(sync.RWMutex)
+	}
+
+	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+	if c.flagCompletionFunctions == nil {
+		c.flagCompletionFunctions = make(map[*flag.Flag]completionFn, 0)
+	}
 }
 
 // Returns a string listing the different directive enabled in the specified parameter
@@ -478,6 +498,8 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
+		c.initializeCompletionStorage()
+
 		finalCmd.flagCompletionMutex.RLock()
 		completionFn = finalCmd.flagCompletionFunctions[flag]
 		finalCmd.flagCompletionMutex.RUnlock()
