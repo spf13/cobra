@@ -397,7 +397,7 @@ func (c *Command) OutOrStdout() io.Writer {
 // OutOrStderr returns output to stderr.
 // Deprecated: Use OutOrStdout or ErrOrStderr instead
 func (c *Command) OutOrStderr() io.Writer {
-	return c.getOutFallbackToErr(os.Stderr)
+	return c.getErrOrLegacyOutFallbackToStderr()
 }
 
 // ErrOrStderr returns output to stderr
@@ -411,11 +411,11 @@ func (c *Command) InOrStdin() io.Reader {
 }
 
 func (c *Command) getOut(def io.Writer) io.Writer {
-	if c.legacyOutWriter != nil {
-		return c.legacyOutWriter
-	}
 	if c.outStreamWriter != nil {
 		return c.outStreamWriter
+	}
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
 	}
 	if c.HasParent() {
 		return c.parent.getOut(def)
@@ -436,20 +436,20 @@ func (c *Command) getErr(def io.Writer) io.Writer {
 	return def
 }
 
-// getOutFallbackToErr should only be used inside OutOrStderr.
+// getErrOrLegacyOutFallbackToStderr should only be used inside OutOrStderr.
 // Deprecated: this function exists to allow for backwards compatibility only
 // (see https://github.com/spf13/cobra/issues/1708)
-func (c *Command) getOutFallbackToErr(def io.Writer) io.Writer {
-	if c.legacyOutWriter != nil {
-		return c.legacyOutWriter
-	}
+func (c *Command) getErrOrLegacyOutFallbackToStderr() io.Writer {
 	if c.errStreamWriter != nil {
 		return c.errStreamWriter
 	}
-	if c.HasParent() {
-		return c.parent.getOutFallbackToErr(def)
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
 	}
-	return def
+	if c.HasParent() {
+		return c.parent.getErrOrLegacyOutFallbackToStderr()
+	}
+	return os.Stderr
 }
 
 func (c *Command) getIn(def io.Reader) io.Reader {
