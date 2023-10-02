@@ -186,15 +186,17 @@ type Command struct {
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
-	// outWriter is a writer defined by the user that replaces stdout
-	outWriter io.Writer
-	// errWriter is a writer defined by the user that replaces stderr
-	errWriter io.Writer
+	// legacyOutWriter is a writer defined by the user that replaces stdout.
+	// Deprecated: use outStreamWriter instead (see https://github.com/spf13/cobra/issues/1708)
+	legacyOutWriter io.Writer
+	// legacyErrWriter is a writer defined by the user that replaces stderr.
+	// Deprecated: use errStreamWriter instead (see https://github.com/spf13/cobra/issues/1708)
+	legacyErrWriter io.Writer
 
-	// outFallbackWriter is a writer defined by the user that is used if outWriter is nil
-	outFallbackWriter io.Writer
-	// errFallbackWriter is a writer defined by the user that is used if errWriter is nil
-	errFallbackWriter io.Writer
+	// outStreamWriter is a writer defined by the user that replaces stdout
+	outStreamWriter io.Writer
+	// errStreamWriter is a writer defined by the user that replaces stderr
+	errStreamWriter io.Writer
 
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
@@ -281,34 +283,36 @@ func (c *Command) SetArgs(a []string) {
 // If output is nil, os.Stderr is used.
 // Deprecated: Use SetOut and/or SetErr instead
 func (c *Command) SetOutput(output io.Writer) {
-	c.outWriter = output
-	c.errWriter = output
+	c.legacyOutWriter = output
+	c.legacyErrWriter = output
 }
 
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
 // Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetOut(newOut io.Writer) {
-	c.outWriter = newOut
+	c.legacyOutWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
 // If newErr is nil, os.Stderr is used.
 // Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetErr(newErr io.Writer) {
-	c.errWriter = newErr
+	c.legacyErrWriter = newErr
 }
 
-// SetOutFallback sets the destination for usage messages when SetOut() was not used.
+// SetOutStream sets the destination for usage messages.
+// It includes (at least): --help, --version, completion.
 // If newOut is nil, os.Stdout is used.
-func (c *Command) SetOutFallback(newOut io.Writer) {
-	c.outFallbackWriter = newOut
+func (c *Command) SetOutStream(newOut io.Writer) {
+	c.outStreamWriter = newOut
 }
 
-// SetErrFallback sets the destination for error messages when SetErr() was not used.
+// SetErrStream sets the destination for error messages.
+// It includes (at least): errors, usage, deprecations msgs, unknowns cmds/flags/topics msgs, DebugFlags.
 // If newErr is nil, os.Stderr is used.
-func (c *Command) SetErrFallback(newErr io.Writer) {
-	c.errFallbackWriter = newErr
+func (c *Command) SetErrStream(newErr io.Writer) {
+	c.errStreamWriter = newErr
 }
 
 // SetIn sets the source for input data
@@ -407,11 +411,11 @@ func (c *Command) InOrStdin() io.Reader {
 }
 
 func (c *Command) getOut(def io.Writer) io.Writer {
-	if c.outWriter != nil {
-		return c.outWriter
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
 	}
-	if c.outFallbackWriter != nil {
-		return c.outFallbackWriter
+	if c.outStreamWriter != nil {
+		return c.outStreamWriter
 	}
 	if c.HasParent() {
 		return c.parent.getOut(def)
@@ -420,11 +424,11 @@ func (c *Command) getOut(def io.Writer) io.Writer {
 }
 
 func (c *Command) getErr(def io.Writer) io.Writer {
-	if c.errWriter != nil {
-		return c.errWriter
+	if c.legacyErrWriter != nil {
+		return c.legacyErrWriter
 	}
-	if c.errFallbackWriter != nil {
-		return c.errFallbackWriter
+	if c.errStreamWriter != nil {
+		return c.errStreamWriter
 	}
 	if c.HasParent() {
 		return c.parent.getErr(def)
@@ -436,11 +440,11 @@ func (c *Command) getErr(def io.Writer) io.Writer {
 // Deprecated: this function exists to allow for backwards compatibility only
 // (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) getOutFallbackToErr(def io.Writer) io.Writer {
-	if c.outWriter != nil {
-		return c.outWriter
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
 	}
-	if c.errFallbackWriter != nil {
-		return c.errFallbackWriter
+	if c.errStreamWriter != nil {
+		return c.errStreamWriter
 	}
 	if c.HasParent() {
 		return c.parent.getOutFallbackToErr(def)
@@ -515,18 +519,18 @@ func (c *Command) Help() error {
 // UsageString returns usage string.
 func (c *Command) UsageString() string {
 	// Storing normal writers
-	tmpOutput := c.outWriter
-	tmpErr := c.errWriter
+	tmpOutput := c.legacyOutWriter
+	tmpErr := c.legacyErrWriter
 
 	bb := new(bytes.Buffer)
-	c.outWriter = bb
-	c.errWriter = bb
+	c.legacyOutWriter = bb
+	c.legacyErrWriter = bb
 
 	CheckErr(c.Usage())
 
 	// Setting things back to normal
-	c.outWriter = tmpOutput
-	c.errWriter = tmpErr
+	c.legacyOutWriter = tmpOutput
+	c.legacyErrWriter = tmpErr
 
 	return bb.String()
 }
