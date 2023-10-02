@@ -1414,18 +1414,36 @@ main:
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOut or PrintErr instead.
 func (c *Command) Print(i ...interface{}) {
 	fmt.Fprint(c.OutOrStderr(), i...)
 }
 
 // Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOutln or PrintErrln instead.
 func (c *Command) Println(i ...interface{}) {
 	c.Print(fmt.Sprintln(i...))
 }
 
 // Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOutf or PrintErrf instead.
 func (c *Command) Printf(format string, i ...interface{}) {
 	c.Print(fmt.Sprintf(format, i...))
+}
+
+// PrintOut is a convenience method to Print to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOut(i ...interface{}) {
+	fmt.Fprint(c.OutOrStdout(), i...)
+}
+
+// PrintOutln is a convenience method to Println to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOutln(i ...interface{}) {
+	c.PrintOut(fmt.Sprintln(i...))
+}
+
+// PrintOutf is a convenience method to Printf to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOutf(format string, i ...interface{}) {
+	c.PrintOut(fmt.Sprintf(format, i...))
 }
 
 // PrintErr is a convenience method to Print to the defined Err output, fallback to Stderr if not set.
