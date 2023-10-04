@@ -273,7 +273,6 @@ func (c *Command) SetArgs(a []string) {
 }
 
 // SetOutput sets the destination for usage and error messages.
-// If output is nil, os.Stderr is used.
 // Deprecated: Use SetOut and/or SetErr instead
 func (c *Command) SetOutput(output io.Writer) {
 	c.outWriter = output
@@ -281,19 +280,16 @@ func (c *Command) SetOutput(output io.Writer) {
 }
 
 // SetOut sets the destination for usage messages.
-// If newOut is nil, os.Stdout is used.
 func (c *Command) SetOut(newOut io.Writer) {
 	c.outWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
-// If newErr is nil, os.Stderr is used.
 func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
 }
 
 // SetIn sets the source for input data
-// If newIn is nil, os.Stdin is used.
 func (c *Command) SetIn(newIn io.Reader) {
 	c.inReader = newIn
 }
