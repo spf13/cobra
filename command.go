@@ -701,7 +701,7 @@ Loop:
 			// This is not a flag or a flag value. Check to see if it matches what we're looking for, and if so,
 			// return the args, excluding the one at this position.
 			if s == x {
-				ret := []string{}
+				ret := make([]string, 0, len(args)-1)
 				ret = append(ret, args[:pos]...)
 				ret = append(ret, args[pos+1:]...)
 				return ret

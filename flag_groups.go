@@ -130,7 +130,7 @@ func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annota
 					continue
 				}
 
-				groupStatus[group] = map[string]bool{}
+				groupStatus[group] = make(map[string]bool, len(flagnames))
 				for _, name := range flagnames {
 					groupStatus[group][name] = false
 				}
