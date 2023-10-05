@@ -749,14 +749,14 @@ func (c *Command) findSuggestions(arg string) string {
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
-	suggestionsString := ""
+	var sb strings.Builder
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		suggestionsString += "\n\nDid you mean this?\n"
+		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
-			suggestionsString += fmt.Sprintf("\t%v\n", s)
+			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
 		}
 	}
-	return suggestionsString
+	return sb.String()
 }
 
 func (c *Command) findNext(next string) *Command {
