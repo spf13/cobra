@@ -253,17 +253,17 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 	// If none of the flags of a one-required group are present, we make all the flags
 	// of that group required so that the shell completion suggests them automatically
 	for flagList, flagnameAndStatus := range oneRequiredGroupStatus {
-		set := 0
+		isSet := false
 
-		for _, isSet := range flagnameAndStatus {
+		for _, isSet = range flagnameAndStatus {
 			if isSet {
-				set++
+				break
 			}
 		}
 
 		// None of the flags of the group are set, mark all flags in the group
 		// as required
-		if set == 0 {
+		if !isSet {
 			for _, fName := range strings.Split(flagList, " ") {
 				_ = c.MarkFlagRequired(fName)
 			}
