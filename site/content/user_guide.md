@@ -604,7 +604,7 @@ The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` fu
 
 ## PreRun and PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  These functions are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own. The `*PreRun` and `*PostRun` functions will only be executed if the `Run` function of the current command has been declared. These functions are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
