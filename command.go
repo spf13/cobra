@@ -115,6 +115,8 @@ type Command struct {
 	//   * PostRun()
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name.
+	// The *PreRun and *PostRun functions will only be executed if the Run function of the current
+	// command has been declared.
 	//
 	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
