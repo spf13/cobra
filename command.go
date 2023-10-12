@@ -934,15 +934,31 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
+	parents := make([]*Command, 0, 5)
 	for p := c; p != nil; p = p.Parent() {
+		if EnableTraverseRunHooks {
+			// When EnableTraverseRunHooks is set:
+			// - Execute all persistent pre-runs from the root parent till this command.
+			// - Execute all persistent post-runs from this command till the root parent.
+			parents = append([]*Command{p}, parents...)
+		} else {
+			// Otherwise, execute only the first found persistent hook.
+			parents = append(parents, p)
+		}
+	}
+	for _, p := range parents {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
 				return err
 			}
-			break
+			if !EnableTraverseRunHooks {
+				break
+			}
 		} else if p.PersistentPreRun != nil {
 			p.PersistentPreRun(c, argWoFlags)
-			break
+			if !EnableTraverseRunHooks {
+				break
+			}
 		}
 	}
 	if c.PreRunE != nil {
@@ -979,10 +995,14 @@ func (c *Command) execute(a []string) (err error) {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
 				return err
 			}
-			break
+			if !EnableTraverseRunHooks {
+				break
+			}
 		} else if p.PersistentPostRun != nil {
 			p.PersistentPostRun(c, argWoFlags)
-			break
+			if !EnableTraverseRunHooks {
+				break
+			}
 		}
 	}
 
