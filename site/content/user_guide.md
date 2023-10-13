@@ -29,8 +29,8 @@ func main() {
 
 ## Using the Cobra Generator
 
-Cobra-CLI is its own program that will create your application and add any
-commands you want. It's the easiest way to incorporate Cobra into your application.
+Cobra-CLI is its own program that will create your application and add any commands you want.
+It's the easiest way to incorporate Cobra into your application.
 
 For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
 
@@ -188,6 +188,37 @@ var versionCmd = &cobra.Command{
 }
 ```
 
+### Organizing subcommands
+
+A command may have subcommands which in turn may have other subcommands. This is achieved by using
+`AddCommand`. In some cases, especially in larger applications, each subcommand may be defined in
+its own go package.
+
+The suggested approach is for the parent command to use `AddCommand` to add its most immediate
+subcommands. For example, consider the following directory structure:
+
+```text
+├── cmd
+│   ├── root.go
+│   └── sub1
+│       ├── sub1.go
+│       └── sub2
+│           ├── leafA.go
+│           ├── leafB.go
+│           └── sub2.go
+└── main.go
+```
+
+In this case:
+
+* The `init` function of `root.go` adds the command defined in `sub1.go` to the root command.
+* The `init` function of `sub1.go` adds the command defined in `sub2.go` to the sub1 command.
+* The `init` function of `sub2.go` adds the commands defined in `leafA.go` and `leafB.go` to the
+  sub2 command.
+
+This approach ensures the subcommands are always included at compile time while avoiding cyclic
+references.
+
 ### Returning and handling errors
 
 If you wish to return an error to the caller of a command, `RunE` can be used.
@@ -318,7 +349,16 @@ rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
 rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 ```
 
-In both of these cases:
+If you want to require at least one flag from a group to be present, you can use `MarkFlagsOneRequired`.
+This can be combined with `MarkFlagsMutuallyExclusive` to enforce exactly one flag from a given group:
+```go
+rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
+rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
+rootCmd.MarkFlagsOneRequired("json", "yaml")
+rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
+```
+
+In these cases:
   - both local and persistent flags can be used
     - **NOTE:** the group is only enforced on commands where every flag is defined
   - a flag may appear in multiple groups
@@ -556,9 +596,15 @@ Running an application with the '--version' flag will print the version to stdou
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
 
+## Error Message Prefix
+
+Cobra prints an error message when receiving a non-nil error value.
+The default error message is `Error: <error contents>`.
+The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` function.
+
 ## PreRun and PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  These functions are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  The `*PreRun` and `*PostRun` functions will only be executed if the `Run` function of the current command has been declared.  These functions are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
@@ -684,12 +730,17 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
+Cobra can generate documentation based on subcommands, flags, etc.
+Read more about it in the [docs generation documentation](docgen/_index.md).
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
+If you add more information to your commands, these completions can be amazingly powerful and flexible.
+Read more about it in [Shell Completions](completions/_index.md).
 
 ## Providing Active Help
 
-Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.  Active Help are messages (hints, warnings, etc) printed as the program is being used.  Read more about it in [Active Help](active_help.md).
+Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.
+Active Help are messages (hints, warnings, etc) printed as the program is being used.
+Read more about it in [Active Help](active_help.md).

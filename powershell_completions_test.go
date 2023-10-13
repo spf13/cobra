@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,5 +29,5 @@ func TestPwshCompletionNoActiveHelp(t *testing.T) {
 
 	// check that active help is being disabled
 	activeHelpVar := activeHelpEnvVar(c.Name())
-	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+	check(t, output, fmt.Sprintf("${env:%s}=0", activeHelpVar))
 }

@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,6 +77,10 @@ const (
 	// obtain the same behavior but only for flags.
 	ShellCompDirectiveFilterDirs
 
+	// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
+	// in which the completions are provided
+	ShellCompDirectiveKeepOrder
+
 	// ===========================================================================
 
 	// All directives using iota should be above this one.
@@ -141,6 +145,25 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	return nil
 }
 
+// GetFlagCompletion returns the completion function for the given flag, if available.
+func GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	flagCompletionMutex.RLock()
+	defer flagCompletionMutex.RUnlock()
+
+	completionFunc, exists := flagCompletionFunctions[flag]
+	return completionFunc, exists
+}
+
+// GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
+func (c *Command) GetFlagCompletionByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	flag := c.Flags().Lookup(flagName)
+	if flag == nil {
+		return nil, false
+	}
+
+	return GetFlagCompletion(flag)
+}
+
 // Returns a string listing the different directive enabled in the specified parameter
 func (d ShellCompDirective) string() string {
 	var directives []string
@@ -158,6 +181,9 @@ func (d ShellCompDirective) string() string {
 	}
 	if d&ShellCompDirectiveFilterDirs != 0 {
 		directives = append(directives, "ShellCompDirectiveFilterDirs")
+	}
+	if d&ShellCompDirectiveKeepOrder != 0 {
+		directives = append(directives, "ShellCompDirectiveKeepOrder")
 	}
 	if len(directives) == 0 {
 		directives = append(directives, "ShellCompDirectiveDefault")
@@ -727,7 +753,7 @@ to enable it.  You can execute the following once:
 
 To load completions in your current shell session:
 
-	source <(%[1]s completion zsh); compdef _%[1]s %[1]s
+	source <(%[1]s completion zsh)
 
 To load completions for every new session, execute once:
 

@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ const (
 	defaultCaseInsensitive = false
 )
 
-// EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
+// EnablePrefixMatching allows setting automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
 var EnablePrefixMatching = defaultPrefixMatching

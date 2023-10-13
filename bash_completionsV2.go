@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ __%[1]s_get_completion_results() {
     local requestComp lastParam lastChar args
 
     # Prepare the command to request completions for the program.
-    # Calling ${words[0]} instead of directly %[1]s allows to handle aliases
+    # Calling ${words[0]} instead of directly %[1]s allows handling aliases
     args=("${words[@]:1}")
     requestComp="${words[0]} %[2]s ${args[*]}"
 
@@ -101,6 +101,7 @@ __%[1]s_process_completion_results() {
     local shellCompDirectiveNoFileComp=%[5]d
     local shellCompDirectiveFilterFileExt=%[6]d
     local shellCompDirectiveFilterDirs=%[7]d
+    local shellCompDirectiveKeepOrder=%[8]d
 
     if (((directive & shellCompDirectiveError) != 0)); then
         # Error code.  No completion.
@@ -113,6 +114,19 @@ __%[1]s_process_completion_results() {
                 compopt -o nospace
             else
                 __%[1]s_debug "No space directive not supported in this version of bash"
+            fi
+        fi
+        if (((directive & shellCompDirectiveKeepOrder) != 0)); then
+            if [[ $(type -t compopt) == builtin ]]; then
+                # no sort isn't supported for bash less than < 4.4
+                if [[ ${BASH_VERSINFO[0]} -lt 4 || ( ${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -lt 4 ) ]]; then
+                    __%[1]s_debug "No sort directive not supported in this version of bash"
+                else
+                    __%[1]s_debug "Activating keep order"
+                    compopt -o nosort
+                fi
+            else
+                __%[1]s_debug "No sort directive not supported in this version of bash"
             fi
         fi
         if (((directive & shellCompDirectiveNoFileComp) != 0)); then
@@ -183,7 +197,7 @@ __%[1]s_process_completion_results() {
 # Separate activeHelp lines from real completions.
 # Fills the $activeHelp and $completions arrays.
 __%[1]s_extract_activeHelp() {
-    local activeHelpMarker="%[8]s"
+    local activeHelpMarker="%[9]s"
     local endIndex=${#activeHelpMarker}
 
     while IFS='' read -r comp; do
@@ -360,7 +374,7 @@ fi
 # ex: ts=4 sw=4 et filetype=sh
 `, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs,
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder,
 		activeHelpMarker))
 }
 

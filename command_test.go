@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -438,7 +438,7 @@ func TestFlagLong(t *testing.T) {
 
 	output, err := executeCommand(c, "--intf=7", "--sf=abc", "one", "--", "two")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -475,7 +475,7 @@ func TestFlagShort(t *testing.T) {
 
 	output, err := executeCommand(c, "-i", "7", "-sabc", "one", "two")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -504,7 +504,7 @@ func TestChildFlag(t *testing.T) {
 
 	output, err := executeCommand(rootCmd, "child", "-i7")
 	if output != "" {
-		t.Errorf("Unexpected output: %v", err)
+		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -1097,6 +1097,39 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	}
 
 	checkStringContains(t, output, "customized version: 1.0.0")
+}
+
+func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.SetErrPrefix("root error prefix:")
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+
+	output, err := executeCommand(rootCmd, "sub", "--unknown-flag")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, output, "root error prefix: unknown flag: --unknown-flag")
+}
+
+func TestRootAndSubErrPrefix(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	subCmd := &Command{Use: "sub", Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.SetErrPrefix("root error prefix:")
+	subCmd.SetErrPrefix("sub error prefix:")
+
+	if output, err := executeCommand(rootCmd, "--unknown-root-flag"); err == nil {
+		t.Errorf("Expected error")
+	} else {
+		checkStringContains(t, output, "root error prefix: unknown flag: --unknown-root-flag")
+	}
+
+	if output, err := executeCommand(rootCmd, "sub", "--unknown-sub-flag"); err == nil {
+		t.Errorf("Expected error")
+	} else {
+		checkStringContains(t, output, "sub error prefix: unknown flag: --unknown-sub-flag")
+	}
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {

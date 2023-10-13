@@ -1,4 +1,4 @@
-// Copyright 2013-2022 The Cobra Authors
+// Copyright 2013-2023 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,6 +117,8 @@ type Command struct {
 	//   * PostRun()
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name.
+	// The *PreRun and *PostRun functions will only be executed if the Run function of the current
+	// command has been declared.
 	//
 	// PersistentPreRun: children of this command will inherit and execute.
 	PersistentPreRun func(cmd *Command, args []string)
@@ -184,6 +186,9 @@ type Command struct {
 
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
+
+	// errPrefix is the error message prefix defined by user.
+	errPrefix string
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
@@ -348,6 +353,11 @@ func (c *Command) SetHelpTemplate(s string) {
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
 func (c *Command) SetVersionTemplate(s string) {
 	c.versionTemplate = s
+}
+
+// SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
+func (c *Command) SetErrPrefix(s string) {
+	c.errPrefix = s
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
@@ -599,6 +609,18 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
+// ErrPrefix return error message prefix for the command
+func (c *Command) ErrPrefix() string {
+	if c.errPrefix != "" {
+		return c.errPrefix
+	}
+
+	if c.HasParent() {
+		return c.parent.ErrPrefix()
+	}
+	return "Error:"
+}
+
 func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	flag := fs.Lookup(name)
 	if flag == nil {
@@ -756,7 +778,9 @@ func (c *Command) findNext(next string) *Command {
 	}
 
 	if len(matches) == 1 {
-		return matches[0]
+		// Temporarily disable gosec G602, which produces a false positive.
+		// See https://github.com/securego/gosec/issues/1005.
+		return matches[0] // #nosec G602
 	}
 
 	return nil
@@ -1069,7 +1093,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1098,7 +1122,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			c.PrintErrln(cmd.ErrPrefix(), err.Error())
 		}
 
 		// If root command has SilenceUsage flagged,
