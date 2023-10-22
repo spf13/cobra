@@ -687,6 +687,10 @@ Inside subCmd PostRun with args: [arg1 arg2]
 Inside subCmd PersistentPostRun with args: [arg1 arg2]
 ```
 
+By default, only the first persistent hook found in the command chain is executed.
+That is why in the above output, the `rootCmd PersistentPostRun` was not called for a child command.
+Set `EnableTraverseRunHooks` global variable to `true` if you want to execute all parents' persistent hooks.
+
 ## Suggestions when "unknown command" happens
 
 Cobra will print automatic suggestions when "unknown command" errors happen. This allows Cobra to behave similarly to the `git` command when a typo happens. For example:
