@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
+func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -43,7 +43,6 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 		parentFlags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}
-	return nil
 }
 
 // GenMarkdown creates markdown output.
@@ -75,9 +74,8 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.Example))
 	}
 
-	if err := printOptions(buf, cmd, name); err != nil {
-		return err
-	}
+	printOptions(buf, cmd, name)
+
 	if hasSeeAlso(cmd) {
 		buf.WriteString("### SEE ALSO\n\n")
 		if cmd.HasParent() {
