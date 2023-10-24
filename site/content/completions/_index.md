@@ -393,6 +393,9 @@ $ source <(helm completion bash --no-descriptions)
 $ helm completion [tab][tab]
 bash        fish        powershell  zsh
 ```
+
+Setting the `<PROGRAM>_COMPLETION_DESCRIPTIONS` environment variable (falling back to `COBRA_COMPLETION_DESCRIPTIONS` if empty or not set) to `off` achieves the same. `<PROGRAM>` is the name of your program with all non-ASCII-alphanumeric characters replaced by `_`.
+
 ## Bash completions
 
 ### Dependencies

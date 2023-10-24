@@ -212,7 +212,7 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
-			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
+			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd || GetEnvConfig(cmd, configEnvVarSuffixDescriptions) == configEnvVarDescriptionsOff
 			noActiveHelp := GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable
 			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
@@ -901,8 +901,12 @@ func CompErrorln(msg string) {
 	CompError(fmt.Sprintf("%s\n", msg))
 }
 
-// configEnvVarGlobalPrefix should not be changed: users will be using it explicitly.
-const configEnvVarGlobalPrefix = "COBRA"
+// These values should not be changed: users will be using them explicitly.
+const (
+	configEnvVarGlobalPrefix       = "COBRA"
+	configEnvVarSuffixDescriptions = "COMPLETION_DESCRIPTIONS"
+	configEnvVarDescriptionsOff    = "off"
+)
 
 var configEnvVarPrefixSubstRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 
