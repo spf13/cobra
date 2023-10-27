@@ -2622,8 +2622,6 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	expected := strings.Join([]string{
 		"--persistent",
 		"-p",
-		"--help",
-		"-h",
 		"--nonPersistent",
 		"-n",
 		"--flag",
@@ -3053,8 +3051,26 @@ func TestCompletionCobraFlags(t *testing.T) {
 				return []string{"extra3"}, ShellCompDirectiveNoFileComp
 			},
 		}
+		childCmd4 := &Command{
+			Use:     "child4",
+			Version: "1.1.1",
+			Run:     emptyRun,
+			ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+				return []string{"extra4"}, ShellCompDirectiveNoFileComp
+			},
+			DisableFlagParsing: true,
+		}
+		childCmd5 := &Command{
+			Use:     "child5",
+			Version: "1.1.1",
+			Run:     emptyRun,
+			ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+				return []string{"extra5"}, ShellCompDirectiveNoFileComp
+			},
+			DisableFlagParsing: true,
+		}
 
-		rootCmd.AddCommand(childCmd, childCmd2, childCmd3)
+		rootCmd.AddCommand(childCmd, childCmd2, childCmd3, childCmd4, childCmd5)
 
 		_ = childCmd.Flags().Bool("bool", false, "A bool flag")
 		_ = childCmd.MarkFlagRequired("bool")
@@ -3065,6 +3081,10 @@ func TestCompletionCobraFlags(t *testing.T) {
 
 		// Have a command that only adds its own -v flag
 		_ = childCmd3.Flags().BoolP("verbose", "v", false, "Not a version flag")
+
+		// Have a command that DisablesFlagParsing but that also adds its own help and version flags
+		_ = childCmd5.Flags().BoolP("help", "h", false, "My own help")
+		_ = childCmd5.Flags().BoolP("version", "v", false, "My own version")
 
 		return rootCmd
 	}
@@ -3193,6 +3213,26 @@ func TestCompletionCobraFlags(t *testing.T) {
 			args: []string{"child3", "-v", ""},
 			expectedOutput: strings.Join([]string{
 				"extra3",
+				":4",
+				"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n"),
+		},
+		{
+			desc: "no completion for --help/-h and --version/-v flags when DisableFlagParsing=true",
+			args: []string{"child4", "-"},
+			expectedOutput: strings.Join([]string{
+				"extra4",
+				":4",
+				"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n"),
+		},
+		{
+			desc: "completions for program-defined --help/-h and --version/-v flags even when DisableFlagParsing=true",
+			args: []string{"child5", "-"},
+			expectedOutput: strings.Join([]string{
+				"--help",
+				"-h",
+				"--version",
+				"-v",
+				"extra5",
 				":4",
 				"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n"),
 		},
