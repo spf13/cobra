@@ -1446,6 +1446,7 @@ func (c *Command) UseLine() string {
 
 // DebugFlags used to determine which flags have been assigned to which commands
 // and which persist.
+// nolint:goconst
 func (c *Command) DebugFlags() {
 	c.Println("DebugFlags called on", c.Name())
 	var debugflags func(*Command)
