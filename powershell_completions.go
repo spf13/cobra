@@ -284,7 +284,7 @@ $available%[2]s = Get-Command -Name '%[1]s' -All -ErrorAction SilentlyContinue |
 # Enumerate extant aliases for %[1]s (already set by user)
 ${__%[2]sAliases} = @()
 foreach($__%[2]sCmd in $available%[2]s){
-	$__%[2]sAliases += Get-Alias | Where-Object { $_.Definition -eq ($__%[2]sCmd | Resolve-Path) -or $_.Definition -eq (Get-Command -Name $__%[2]sCmd -ErrorAction SilentlyContinue).Definition } 
+	$__%[2]sAliases += Get-Alias | Where-Object { $_.Definition -eq ($__%[2]sCmd | Resolve-Path -ErrorAction SilentlyContinue) -or $_.Definition -eq (Get-Command -Name $__%[2]sCmd -ErrorAction SilentlyContinue).Definition } 
 }
 # Register args completer for all cmds and aliases
 [string[]]$joint%[2]snames = [array]$available%[2]s.Name + [array]${__%[2]sAliases}.Name + @('%[1]s')
