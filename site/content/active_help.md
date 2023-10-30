@@ -92,7 +92,7 @@ Allowing to configure Active Help is entirely optional; you can use Active Help 
 
 The way to configure Active Help is to use the program's Active Help environment
 variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where `<PROGRAM>` is the name of your 
-program in uppercase with any `-` replaced by an `_`.  The variable should be set by the user to whatever
+program in uppercase with any non-ASCII-alphanumeric characters replaced by an `_`.  The variable should be set by the user to whatever
 Active Help configuration values are supported by the program.
 
 For example, say `helm` has chosen to support three levels for Active Help: `on`, `off`, `local`.  Then a user
@@ -140,7 +140,7 @@ details for your users.
 
 Debugging your Active Help code is done in the same way as debugging your dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](shell_completions.md#debugging) for details.
 
-When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any `-` is replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
+When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any non-ASCII-alphanumeric characters are replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
 ```
 $ HELM_ACTIVE_HELP=1 bin/helm __complete install wordpress bitnami/h<ENTER>
 bitnami/haproxy

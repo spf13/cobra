@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: >-
           docker run
@@ -39,17 +39,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '^1.20'
+          go-version: '^1.21'
           check-latest: true
           cache: true
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: golangci/golangci-lint-action@v3.5.0
+      - uses: golangci/golangci-lint-action@v3.7.0
         with:
           version: latest
           args: --verbose
@@ -67,13 +67,14 @@ jobs:
         - 18
         - 19
         - 20
+        - 21
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     steps:
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: 1.${{ matrix.go }}.x
         cache: true
@@ -107,7 +108,7 @@ jobs:
           unzip
           mingw-w64-x86_64-go
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/cache@v3
       with:
