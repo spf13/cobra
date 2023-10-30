@@ -30,7 +30,10 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+const (
+	FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+	trueString               = "true"
+)
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
@@ -1153,7 +1156,7 @@ func (c *Command) ValidateRequiredFlags() error {
 		if !found {
 			return
 		}
-		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+		if (requiredAnnotation[0] == trueString) && !pflag.Changed {
 			missingFlagNames = append(missingFlagNames, pflag.Name)
 		}
 	})
@@ -1190,7 +1193,7 @@ func (c *Command) InitDefaultHelpFlag() {
 			usage += c.Name()
 		}
 		c.Flags().BoolP("help", "h", false, usage)
-		_ = c.Flags().SetAnnotation("help", FlagSetByCobraAnnotation, []string{"true"})
+		_ = c.Flags().SetAnnotation("help", FlagSetByCobraAnnotation, []string{trueString})
 	}
 }
 
@@ -1216,7 +1219,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			c.Flags().Bool("version", false, usage)
 		}
-		_ = c.Flags().SetAnnotation("version", FlagSetByCobraAnnotation, []string{"true"})
+		_ = c.Flags().SetAnnotation("version", FlagSetByCobraAnnotation, []string{trueString})
 	}
 }
 
@@ -1252,6 +1255,23 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					}
 				}
 				return completions, ShellCompDirectiveNoFileComp
+			},
+			PersistentPreRunE: func(cmd *Command, args []string) error {
+				cmd.Flags().VisitAll(func(pflag *flag.Flag) {
+					requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
+					if found && requiredAnnotation[0] == trueString {
+						// Disable any persistent required flags for the help command
+						pflag.Annotations[BashCompOneRequiredFlag] = []string{"false"}
+					}
+				})
+				// Adding PersistentPreRun on sub-commands prevents root's PersistentPreRun from being called.
+				// So it is intentionally called here.
+				if cmd.Root().PersistentPreRunE != nil {
+					return cmd.Root().PersistentPreRunE(cmd, args)
+				} else if cmd.Root().PersistentPreRun != nil {
+					cmd.Root().PersistentPreRun(cmd, args)
+				}
+				return nil
 			},
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
