@@ -145,23 +145,18 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	return nil
 }
 
-// GetFlagCompletion returns the completion function for the given flag, if available.
-func GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+// GetFlagCompletionFunc returns the completion function for the given flag of the command, if available.
+func (c *Command) GetFlagCompletionFunc(flagName string) (func(*Command, []string, string) ([]string, ShellCompDirective), bool) {
+	flag := c.Flag(flagName)
+	if flag == nil {
+		return nil, false
+	}
+
 	flagCompletionMutex.RLock()
 	defer flagCompletionMutex.RUnlock()
 
 	completionFunc, exists := flagCompletionFunctions[flag]
 	return completionFunc, exists
-}
-
-// GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
-func (c *Command) GetFlagCompletionByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
-	flag := c.Flags().Lookup(flagName)
-	if flag == nil {
-		return nil, false
-	}
-
-	return GetFlagCompletion(flag)
 }
 
 // Returns a string listing the different directive enabled in the specified parameter
