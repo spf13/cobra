@@ -366,6 +366,36 @@ func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = defaultPrefixMatching
 }
 
+// TestPlugin checks usage as plugin for another command such as kubectl.  The
+// executable is `kubectl-plugin`, but we run it as `kubectl plugin`. The help
+// text should reflect the way we run the command.
+func TestPlugin(t *testing.T) {
+	rootCmd := &Command{
+		Use:  "plugin",
+		Args: NoArgs,
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+	}
+
+	subCmd := &Command{Use: "sub [flags]", Args: NoArgs, Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+
+	rootHelp, err := executeCommand(rootCmd, "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, rootHelp, "kubectl plugin [command]")
+
+	childHelp, err := executeCommand(rootCmd, "sub", "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, childHelp, "kubectl plugin sub [flags]")
+}
+
 // TestChildSameName checks the correct behaviour of cobra in cases,
 // when an application with name "foo" and with subcommand "foo"
 // is executed with args "foo foo".
@@ -1530,57 +1560,73 @@ func TestHooks(t *testing.T) {
 }
 
 func TestPersistentHooks(t *testing.T) {
-	var (
-		parentPersPreArgs  string
-		parentPreArgs      string
-		parentRunArgs      string
-		parentPostArgs     string
-		parentPersPostArgs string
-	)
+	EnableTraverseRunHooks = true
+	testPersistentHooks(t, []string{
+		"parent PersistentPreRun",
+		"child PersistentPreRun",
+		"child PreRun",
+		"child Run",
+		"child PostRun",
+		"child PersistentPostRun",
+		"parent PersistentPostRun",
+	})
 
-	var (
-		childPersPreArgs  string
-		childPreArgs      string
-		childRunArgs      string
-		childPostArgs     string
-		childPersPostArgs string
-	)
+	EnableTraverseRunHooks = false
+	testPersistentHooks(t, []string{
+		"child PersistentPreRun",
+		"child PreRun",
+		"child Run",
+		"child PostRun",
+		"child PersistentPostRun",
+	})
+}
+
+func testPersistentHooks(t *testing.T, expectedHookRunOrder []string) {
+	var hookRunOrder []string
+
+	validateHook := func(args []string, hookName string) {
+		hookRunOrder = append(hookRunOrder, hookName)
+		got := strings.Join(args, " ")
+		if onetwo != got {
+			t.Errorf("Expected %s %q, got %q", hookName, onetwo, got)
+		}
+	}
 
 	parentCmd := &Command{
 		Use: "parent",
 		PersistentPreRun: func(_ *Command, args []string) {
-			parentPersPreArgs = strings.Join(args, " ")
+			validateHook(args, "parent PersistentPreRun")
 		},
 		PreRun: func(_ *Command, args []string) {
-			parentPreArgs = strings.Join(args, " ")
+			validateHook(args, "parent PreRun")
 		},
 		Run: func(_ *Command, args []string) {
-			parentRunArgs = strings.Join(args, " ")
+			validateHook(args, "parent Run")
 		},
 		PostRun: func(_ *Command, args []string) {
-			parentPostArgs = strings.Join(args, " ")
+			validateHook(args, "parent PostRun")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
-			parentPersPostArgs = strings.Join(args, " ")
+			validateHook(args, "parent PersistentPostRun")
 		},
 	}
 
 	childCmd := &Command{
 		Use: "child",
 		PersistentPreRun: func(_ *Command, args []string) {
-			childPersPreArgs = strings.Join(args, " ")
+			validateHook(args, "child PersistentPreRun")
 		},
 		PreRun: func(_ *Command, args []string) {
-			childPreArgs = strings.Join(args, " ")
+			validateHook(args, "child PreRun")
 		},
 		Run: func(_ *Command, args []string) {
-			childRunArgs = strings.Join(args, " ")
+			validateHook(args, "child Run")
 		},
 		PostRun: func(_ *Command, args []string) {
-			childPostArgs = strings.Join(args, " ")
+			validateHook(args, "child PostRun")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
-			childPersPostArgs = strings.Join(args, " ")
+			validateHook(args, "child PersistentPostRun")
 		},
 	}
 	parentCmd.AddCommand(childCmd)
@@ -1593,41 +1639,13 @@ func TestPersistentHooks(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	for _, v := range []struct {
-		name string
-		got  string
-	}{
-		// TODO: currently PersistentPreRun* defined in parent does not
-		// run if the matching child subcommand has PersistentPreRun.
-		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-		// this test must be fixed.
-		{"parentPersPreArgs", parentPersPreArgs},
-		{"parentPreArgs", parentPreArgs},
-		{"parentRunArgs", parentRunArgs},
-		{"parentPostArgs", parentPostArgs},
-		// TODO: currently PersistentPostRun* defined in parent does not
-		// run if the matching child subcommand has PersistentPostRun.
-		// If the behavior changes (https://github.com/spf13/cobra/issues/252)
-		// this test must be fixed.
-		{"parentPersPostArgs", parentPersPostArgs},
-	} {
-		if v.got != "" {
-			t.Errorf("Expected blank %s, got %q", v.name, v.got)
-		}
-	}
-
-	for _, v := range []struct {
-		name string
-		got  string
-	}{
-		{"childPersPreArgs", childPersPreArgs},
-		{"childPreArgs", childPreArgs},
-		{"childRunArgs", childRunArgs},
-		{"childPostArgs", childPostArgs},
-		{"childPersPostArgs", childPersPostArgs},
-	} {
-		if v.got != onetwo {
-			t.Errorf("Expected %s %q, got %q", v.name, onetwo, v.got)
+	for idx, exp := range expectedHookRunOrder {
+		if len(hookRunOrder) > idx {
+			if act := hookRunOrder[idx]; act != exp {
+				t.Errorf("Expected %q at %d, got %q", exp, idx, act)
+			}
+		} else {
+			t.Errorf("Expected %q at %d, got nothing", exp, idx)
 		}
 	}
 }
