@@ -366,6 +366,36 @@ func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = defaultPrefixMatching
 }
 
+// TestPlugin checks usage as plugin for another command such as kubectl.  The
+// executable is `kubectl-plugin`, but we run it as `kubectl plugin`. The help
+// text should reflect the way we run the command.
+func TestPlugin(t *testing.T) {
+	rootCmd := &Command{
+		Use:  "plugin",
+		Args: NoArgs,
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+	}
+
+	subCmd := &Command{Use: "sub [flags]", Args: NoArgs, Run: emptyRun}
+	rootCmd.AddCommand(subCmd)
+
+	rootHelp, err := executeCommand(rootCmd, "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, rootHelp, "kubectl plugin [command]")
+
+	childHelp, err := executeCommand(rootCmd, "sub", "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, childHelp, "kubectl plugin sub [flags]")
+}
+
 // TestChildSameName checks the correct behaviour of cobra in cases,
 // when an application with name "foo" and with subcommand "foo"
 // is executed with args "foo foo".
