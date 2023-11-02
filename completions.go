@@ -144,7 +144,7 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 }
 
 // GetFlagCompletion returns the completion function for the given flag, if available.
-func (c *Command) GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+func (c *Command) GetFlagCompletionFunc(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
 	c.initializeCompletionStorage()
 
 	c.flagCompletionMutex.RLock()
@@ -163,17 +163,17 @@ func (c *Command) GetFlagCompletion(flag *pflag.Flag) (func(cmd *Command, args [
 	}
 
 	// Or walk up the command tree.
-	return c.Parent().GetFlagCompletion(flag)
+	return c.Parent().GetFlagCompletionFunc(flag)
 }
 
 // GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
-func (c *Command) GetFlagCompletionByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+func (c *Command) GetFlagCompletionFuncByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
 	flag := c.Flags().Lookup(flagName)
 	if flag == nil {
 		return nil, false
 	}
 
-	return c.GetFlagCompletion(flag)
+	return c.GetFlagCompletionFunc(flag)
 }
 
 // initializeCompletionStorage is (and should be) called in all
@@ -531,7 +531,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
-		completionFn, _ = finalCmd.GetFlagCompletion(flag)
+		completionFn, _ = finalCmd.GetFlagCompletionFunc(flag)
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}
