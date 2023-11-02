@@ -33,12 +33,6 @@ const (
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
 
-// Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-// var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
-//
-// // lock for reading and writing from flagCompletionFunctions
-// var flagCompletionMutex = &sync.RWMutex{}
-
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
 type ShellCompDirective int
@@ -190,10 +184,8 @@ func (c *Command) initializeCompletionStorage() {
 		c.flagCompletionMutex = new(sync.RWMutex)
 	}
 
-	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
-
 	if c.flagCompletionFunctions == nil {
-		c.flagCompletionFunctions = make(map[*flag.Flag]completionFn, 0)
+		c.flagCompletionFunctions = make(map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), 0)
 	}
 }
 
@@ -907,7 +899,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
 		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)
