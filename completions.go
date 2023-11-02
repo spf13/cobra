@@ -167,13 +167,27 @@ func (c *Command) GetFlagCompletionFunc(flag *pflag.Flag) (func(cmd *Command, ar
 }
 
 // GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
+// If the flag is not found in the command's local flags, it looks into the persistent flags, which might belong to one of the command's parents.
 func (c *Command) GetFlagCompletionFuncByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
-	flag := c.Flags().Lookup(flagName)
-	if flag == nil {
-		return nil, false
+	// Attempt to find it in the local flags.
+	if flag := c.Flags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
 	}
 
-	return c.GetFlagCompletionFunc(flag)
+	// Or try to find it in the "command-specific" persistent flags.
+	if flag := c.PersistentFlags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
+	}
+
+	// Else, check all persistent flags belonging to one of the parents.
+	// This ensures that we won't return the completion function of a
+	// parent's LOCAL flag.
+	if flag := c.InheritedFlags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
+	}
+
+	// No flag exists either locally, or as one of the parent persistent flags.
+	return nil, false
 }
 
 // initializeCompletionStorage is (and should be) called in all

@@ -3581,21 +3581,30 @@ func TestGetFlagCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
 	rootCmd.Flags().String("rootflag", "", "root flag")
-	_ = rootCmd.RegisterFlagCompletionFunc("rootflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	err := rootCmd.RegisterFlagCompletionFunc("rootflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return []string{"rootvalue"}, ShellCompDirectiveKeepOrder
 	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	rootCmd.PersistentFlags().String("persistentflag", "", "persistent flag")
-	_ = rootCmd.RegisterFlagCompletionFunc("persistentflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	err = rootCmd.RegisterFlagCompletionFunc("persistentflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return []string{"persistentvalue"}, ShellCompDirectiveDefault
 	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	childCmd := &Command{Use: "child", Run: emptyRun}
 
 	childCmd.Flags().String("childflag", "", "child flag")
-	_ = childCmd.RegisterFlagCompletionFunc("childflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	err = childCmd.RegisterFlagCompletionFunc("childflag", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return []string{"childvalue"}, ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
 	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	rootCmd.AddCommand(childCmd)
 
