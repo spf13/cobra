@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/spf13/pflag"
-	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -185,7 +184,7 @@ func (c *Command) initializeCompletionStorage() {
 	}
 
 	if c.flagCompletionFunctions == nil {
-		c.flagCompletionFunctions = make(map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), 0)
+		c.flagCompletionFunctions = make(map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), 0)
 	}
 }
 
