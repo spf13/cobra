@@ -532,11 +532,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
-		c.initializeCompletionStorage()
-
-		finalCmd.flagCompletionMutex.RLock()
-		completionFn = finalCmd.flagCompletionFunctions[flag]
-		finalCmd.flagCompletionMutex.RUnlock()
+		completionFn, _ = finalCmd.GetFlagCompletion(flag)
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}
