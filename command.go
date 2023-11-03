@@ -153,10 +153,6 @@ type Command struct {
 	flags *flag.FlagSet
 	// pflags contains persistent flags.
 	pflags *flag.FlagSet
-	// lflags contains local flags.
-	lflags *flag.FlagSet
-	// iflags contains inherited flags.
-	iflags *flag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
 	parentsPflags *flag.FlagSet
 	// globNormFunc is the global normalization function
@@ -1653,6 +1649,7 @@ func (c *Command) Flags() *flag.FlagSet {
 }
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 	persistentFlags := c.PersistentFlags()
 
@@ -1666,58 +1663,57 @@ func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) LocalFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
-	if c.lflags == nil {
-		c.lflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		if c.flagErrorBuf == nil {
-			c.flagErrorBuf = new(bytes.Buffer)
-		}
-		c.lflags.SetOutput(c.flagErrorBuf)
+	lflags := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	if c.flagErrorBuf == nil {
+		c.flagErrorBuf = new(bytes.Buffer)
 	}
-	c.lflags.SortFlags = c.Flags().SortFlags
+	lflags.SetOutput(c.flagErrorBuf)
+	lflags.SortFlags = c.Flags().SortFlags
 	if c.globNormFunc != nil {
-		c.lflags.SetNormalizeFunc(c.globNormFunc)
+		lflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
 	addToLocal := func(f *flag.Flag) {
 		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
-		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
-			c.lflags.AddFlag(f)
+		if lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
+			lflags.AddFlag(f)
 		}
 	}
 	c.Flags().VisitAll(addToLocal)
 	c.PersistentFlags().VisitAll(addToLocal)
-	return c.lflags
+	return lflags
 }
 
 // InheritedFlags returns all flags which were inherited from parent commands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) InheritedFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
-	if c.iflags == nil {
-		c.iflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		if c.flagErrorBuf == nil {
-			c.flagErrorBuf = new(bytes.Buffer)
-		}
-		c.iflags.SetOutput(c.flagErrorBuf)
+	iflags := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	if c.flagErrorBuf == nil {
+		c.flagErrorBuf = new(bytes.Buffer)
 	}
+	iflags.SetOutput(c.flagErrorBuf)
 
 	local := c.LocalFlags()
 	if c.globNormFunc != nil {
-		c.iflags.SetNormalizeFunc(c.globNormFunc)
+		iflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
 	c.parentsPflags.VisitAll(func(f *flag.Flag) {
-		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
-			c.iflags.AddFlag(f)
+		if iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
+			iflags.AddFlag(f)
 		}
 	})
-	return c.iflags
+	return iflags
 }
 
 // NonInheritedFlags returns all flags which were not inherited from parent commands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) NonInheritedFlags() *flag.FlagSet {
 	return c.LocalFlags()
 }
@@ -1743,8 +1739,6 @@ func (c *Command) ResetFlags() {
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
 
-	c.lflags = nil
-	c.iflags = nil
 	c.parentsPflags = nil
 }
 
