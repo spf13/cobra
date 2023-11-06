@@ -39,7 +39,7 @@ func TestGenMdDoc(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
-	checkStringContains(t, output, "Flags inherited from parent commands")
+	checkStringContains(t, output, "Global Flags")
 }
 
 func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
@@ -52,7 +52,7 @@ func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
 
 	checkStringContains(t, output, dummyCmd.Example)
 	checkStringContains(t, output, dummyCmd.Short)
-	checkStringContains(t, output, "Flags inherited from parent commands")
+	checkStringContains(t, output, "Global Flags")
 	checkStringOmits(t, output, "### Synopsis")
 }
 
@@ -76,7 +76,7 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
-	checkStringOmits(t, output, "Flags inherited from parent commands")
+	checkStringOmits(t, output, "Global Flags")
 }
 
 func TestGenMdNoTag(t *testing.T) {

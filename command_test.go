@@ -921,7 +921,7 @@ Flags:
       --foo    child foo usage
   -h, --help   help for child
 
-Flags inherited from parent commands:
+Global Flags:
       --bar   parent bar usage
 `
 

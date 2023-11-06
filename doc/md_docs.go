@@ -39,7 +39,7 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 	parentFlags := cmd.InheritedFlags()
 	parentFlags.SetOutput(buf)
 	if parentFlags.HasAvailableFlags() {
-		buf.WriteString("### Flags inherited from parent commands\n\n```\n")
+		buf.WriteString("### Global Flags\n\n```\n")
 		parentFlags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}
