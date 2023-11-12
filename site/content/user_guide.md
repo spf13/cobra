@@ -748,3 +748,57 @@ Read more about it in [Shell Completions](completions/_index.md).
 Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.
 Active Help are messages (hints, warnings, etc) printed as the program is being used.
 Read more about it in [Active Help](active_help.md).
+
+## Creating a plugin
+
+When creating a plugin for tools like *kubectl*, the executable is named
+`kubectl-myplugin`, but it is used as `kubectl myplugin`. To fix help
+messages and completions, annotate the root command with the
+`cobra.CommandDisplayNameAnnotation` annotation.
+
+### Example kubectl plugin
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+func main() {
+	rootCmd := &cobra.Command{
+		Use: "kubectl-myplugin",
+		Annotations: map[string]string{
+			cobra.CommandDisplayNameAnnotation: "kubectl myplugin",
+		},
+	}
+	subCmd := &cobra.Command{
+		Use: "subcmd",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("kubectl myplugin subcmd")
+		},
+	}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.Execute()
+}
+```
+
+Example run as a kubectl plugin:
+
+```
+$ kubectl myplugin
+Usage:
+  kubectl myplugin [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  subcmd
+
+Flags:
+  -h, --help   help for kubectl myplugin
+
+Use "kubectl myplugin [command] --help" for more information about a command.
+```
