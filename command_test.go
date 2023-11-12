@@ -371,7 +371,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 // text should reflect the way we run the command.
 func TestPlugin(t *testing.T) {
 	rootCmd := &Command{
-		Use:  "plugin",
+		Use:  "kubectl-plugin",
 		Args: NoArgs,
 		Annotations: map[string]string{
 			CommandDisplayNameAnnotation: "kubectl plugin",
@@ -387,6 +387,8 @@ func TestPlugin(t *testing.T) {
 	}
 
 	checkStringContains(t, rootHelp, "kubectl plugin [command]")
+	checkStringContains(t, rootHelp, "help for kubectl plugin")
+	checkStringContains(t, rootHelp, "kubectl plugin [command] --help")
 
 	childHelp, err := executeCommand(rootCmd, "sub", "-h")
 	if err != nil {
@@ -394,6 +396,15 @@ func TestPlugin(t *testing.T) {
 	}
 
 	checkStringContains(t, childHelp, "kubectl plugin sub [flags]")
+	checkStringContains(t, childHelp, "help for sub")
+
+	helpHelp, err := executeCommand(rootCmd, "help", "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, helpHelp, "kubectl plugin help [path to command]")
+	checkStringContains(t, helpHelp, "kubectl plugin help [command]")
 }
 
 // TestChildSameName checks the correct behaviour of cobra in cases,
