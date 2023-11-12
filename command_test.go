@@ -370,6 +370,26 @@ func TestAliasPrefixMatching(t *testing.T) {
 // executable is `kubectl-plugin`, but we run it as `kubectl plugin`. The help
 // text should reflect the way we run the command.
 func TestPlugin(t *testing.T) {
+	cmd := &Command{
+		Use:  "kubectl-plugin",
+		Args: NoArgs,
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+		Run: emptyRun,
+	}
+
+	cmdHelp, err := executeCommand(cmd, "-h")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, cmdHelp, "kubectl plugin [flags]")
+	checkStringContains(t, cmdHelp, "help for kubectl plugin")
+}
+
+// TestPlugin checks usage as plugin with sub commands.
+func TestPluginWithSubCommands(t *testing.T) {
 	rootCmd := &Command{
 		Use:  "kubectl-plugin",
 		Args: NoArgs,

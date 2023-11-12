@@ -1441,10 +1441,11 @@ func (c *Command) displayName() string {
 // UseLine puts out the full usage for a given command (including parents).
 func (c *Command) UseLine() string {
 	var useline string
+	use := strings.Replace(c.Use, c.Name(), c.displayName(), 1)
 	if c.HasParent() {
-		useline = c.parent.CommandPath() + " " + c.Use
+		useline = c.parent.CommandPath() + " " + use
 	} else {
-		useline = c.Use
+		useline = use
 	}
 	if c.DisableFlagsInUseLine {
 		return useline
