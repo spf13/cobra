@@ -30,6 +30,7 @@
 - [Kubescape](https://github.com/kubescape/kubescape)
 - [KubeVirt](https://github.com/kubevirt/kubevirt)
 - [Linkerd](https://linkerd.io/)
+- [LXC](https://github.com/canonical/lxd)
 - [Mattermost-server](https://github.com/mattermost/mattermost-server)
 - [Mercure](https://mercure.rocks/)
 - [Meroxa CLI](https://github.com/meroxa/cli)
