@@ -19,6 +19,9 @@ _cgo_export.*
 
 _testmain.go
 
+# Translation files
+translations/translate.*.toml
+
 # Vim files https://github.com/github/gitignore/blob/master/Global/Vim.gitignore
 # swap
 [._]*.s[a-w][a-z]

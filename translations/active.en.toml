@@ -1,0 +1,128 @@
+[Command]
+description = "lowercase"
+other = "command"
+
+[CommandDeprecatedWarning]
+description = "printed when a deprecated command is executed (cmd, deprecation message)"
+other = "Command %q is deprecated, %s"
+
+[CommandHelpLong]
+description = "long help for command help (cmd example)"
+other = "Help provides help for any command in the application.\nSimply type %s for full details."
+
+[CommandHelpShort]
+description = "short help for command help"
+other = "Help about any command"
+
+[CommandHelpUnknownTopicError]
+description = "shown when help topic is unknown (args)"
+other = "Unknown help topic %#q"
+
+[DidYouMeanThis]
+description = "shown as suggestion"
+other = "Did you mean this?"
+
+[Error]
+description = "prefix of error messages"
+other = "Error"
+
+[ExactArgsValidationError]
+description = "error shown when arg count is not exact (expected amount, actual amount)"
+one = "accepts %d arg, received %d"
+other = "accepts %d args, received %d"
+
+[ExclusiveFlagsValidationError]
+description = "error shown when multiple exclusive flags are provided (group flags, offending flags)"
+other = "if any flags in the group [%v] are set none of the others can be; %v were all set"
+
+[FlagNotSetError]
+description = "error shown when required flags are not set (flags)"
+one = "required flag \"%s\" is not set"
+other = "required flags \"%s\" are not set"
+
+[ForInfoAboutCommand]
+description = "end of a sentence"
+other = "for more information about a command"
+
+[HelpFor]
+description = "lowercase, beginning of sentence"
+other = "help for"
+
+[LegacyArgsValidationError]
+description = "error shown when args are not understood (subcmd, cmd, suggestion)"
+other = "unknown command %q for %q%s"
+
+[MaximumNArgsValidationError]
+description = "error shown when arg count is too low (expected amount, actual amount)"
+one = "accepts at most %d arg, received %d"
+other = "accepts at most %d args, received %d"
+
+[MinimumNArgsValidationError]
+description = "error shown when arg count is too low (expected amount, actual amount)"
+one = "requires at least %d arg, only received %d"
+other = "requires at least %d args, only received %d"
+
+[NoArgsValidationError]
+description = "error shown when args are present but should not (subcmd, cmd)"
+other = "unknown command %q for %q"
+
+[OnlyValidArgsValidationError]
+description = "error shown when arg is invalid (arg, cmd, suggestion)"
+other = "invalid argument %q for %q%s"
+
+[PathToCommand]
+description = "lowercase"
+other = "path to command"
+
+[RangeArgsValidationError]
+description = "error shown when arg count is not in range (expected min, expected max, actual amount)"
+one = "accepts between %d and %d arg, received %d"
+other = "accepts between %d and %d args, received %d"
+
+[RunHelpTip]
+description = "tip shown when a command fails (command path)"
+other = "Run '%v --help' for usage."
+
+[SectionAdditionalCommands]
+description = "title of the section in the usage template"
+other = "Additional Commands"
+
+[SectionAdditionalHelpTopics]
+description = "title of the section in the usage template"
+other = "Additional Help Topics"
+
+[SectionAliases]
+description = "title of the section in the usage template"
+other = "Aliases"
+
+[SectionAvailableCommands]
+description = "title of the section in the usage template"
+other = "Available Commands"
+
+[SectionExamples]
+description = "title of the section in the usage template"
+other = "Examples"
+
+[SectionFlags]
+description = "title of the section in the usage template"
+other = "Flags"
+
+[SectionGlobalFlags]
+description = "title of the section in the usage template"
+other = "Global Flags"
+
+[SectionUsage]
+description = "title of the section in the usage template"
+other = "Usage"
+
+[ThisCommand]
+description = "lowercase, end of sentence, used when command name is undefined"
+other = "this command"
+
+[Use]
+description = "beginning of a sentence like 'Use <this> to do <that>'"
+other = "Use"
+
+[VersionFor]
+description = "lowercase, beginning of sentence"
+other = "version for"

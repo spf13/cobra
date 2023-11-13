@@ -33,3 +33,12 @@ install_deps:
 
 clean:
 	rm -rf $(BIN)
+
+i18n_extract:
+	$(info ******************** extracting translation files ********************)
+	goi18n extract -outdir translations
+	goi18n merge -outdir translations translations/*
+
+i18n_merge:
+	$(info ******************** merging translation files ********************)
+	goi18n merge -outdir translations translations/*
