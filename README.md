@@ -21,7 +21,7 @@ Cobra provides:
 * Fully POSIX-compliant flags (including short & long versions)
 * Nested subcommands
 * Global, local and cascading flags
-* Intelligent suggestions (`app srver`... did you mean `app server`?)
+* Intelligent suggestions (`app server`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Grouping help for subcommands
 * Automatic help flag recognition of `-h`, `--help`, etc.
