@@ -174,8 +174,8 @@ cmd := &cobra.Command{
 	Use:   "status RELEASE_NAME",
 	Short: "Display the status of the named release",
 	Long:  status_long,
-	RunE: func(cmd *cobra.Command, args []string) {
-		RunGet(args[0])
+	Run: func(cmd *cobra.Command, args []string) {
+		RunStatus(args[0])
 	},
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if len(args) != 0 {
@@ -185,14 +185,38 @@ cmd := &cobra.Command{
 	},
 }
 ```
-Where `getReleasesFromCluster()` is a Go function that obtains the list of current Helm releases running on the Kubernetes cluster.
-Notice we put the `ValidArgsFunction` on the `status` sub-command. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
+Where `getReleasesFromCluster()` is a Go function that returns the list of current Helm release names running on the Kubernetes cluster.
+
+Notice we define the `ValidArgsFunction` on the `status` sub-command, as it provides completions for this sub-command specifically. The `ValidArgsFunction` is called when the user presses `[tab]` to trigger shell completion. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
 
 ```bash
 $ helm status [tab][tab]
 harbor notary rook thanos
 ```
-You may have noticed the use of `cobra.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp`
+
+Similarly as for `Run`, the `ValidArgsFunction` function receives the current cobra command and the arguments currently present on the command-line; the `toComplete` parameter represents the final argument on the command-line, the one which the user is trying to complete.  For example if we have:
+```
+$ helm status harbor th[tab][tab]
+```
+the `cmd` parameter will be the `status` command, `args` will be `[]string{"harbor"}` which is the only full argument for the command currently on the command-line.  Finally, `toComplete` will be `"th"` as it represents the argument the user is trying to complete.  Note that the `toComplete` parameter will be an empty string when the user has requested completions right after typing a space (e.g., `helm status harbor [tab][tab]`).
+
+The `args` parameter can be useful to determine the completions to return.  For example:
+```bash
+$ kubectl get pods [tab][tab]
+```
+Above, `args` will be `[]string{"pods"}` and should be used to know that only pod names should be returned as completion choices.
+
+Using `len(args)` is also very useful to avoid (or to allow) repeating completion choices for each argument.  For example:
+```bash
+$ helm status nginx [tab][tab]
+```
+Above since an argument is already present for the `status` command, and that the command only accepts a single argument, the `ValidArgsFunction` checks `if len(args) != 0` and if true, no more completions will be returned. 
+
+The `toComplete` parameter can be used to filter completions choices to ones that match what the user has started to type.
+However, when possible, it is recommended to avoid doing such filtering and let the shell do it itself; this enables fuzzy shell completion.  Please refer to the [Fuzzy completions](_index.md#fuzzy-completions) section.
+
+You may have noticed the use of `cobra.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp`.
+
 ```go
 // Indicates that the shell will perform its default behavior after completions
 // have been provided (this implies none of the other directives).
@@ -304,6 +328,8 @@ $ helm status --output [tab][tab]
 json table yaml
 ```
 
+Please refer to the [Dynamic completion of nouns](_index.md#dynamic-completion-of-nouns) section for information about the different parameters received by `RegisterFlagCompletionFunc()`.
+
 #### Debugging
 
 You can also easily debug your Go completion code for flags:
@@ -393,6 +419,55 @@ $ source <(helm completion bash --no-descriptions)
 $ helm completion [tab][tab]
 bash        fish        powershell  zsh
 ```
+
+### Fuzzy completions
+
+When doing shell completion, it is often assumed that completion choices must have for prefix what the user has typed.  For instance it may seem like `helm status ngin[tab][tab]` should only match choices that start with `ngin`. However, the `zsh` and `fish` shells have more advanced matching which first matches on prefix, but when no match is found, attempt other types of matching such as sub-string matching; `fish` even does sub-string matching with the description of completion choices.
+
+For example, with both `zsh` and `fish`:
+```bash
+$ bin/helm status [tab][tab]
+test-api          test-api-jwt      test-jaeger       test-node-api     test-nodelts-api
+$ bin/helm status jae[tab][tab]
+$ bin/helm status test-jaeger
+```
+As can be seen above, fuzzy matching allows the user to avoid typing (or completing) the common prefix `test-` before reaching the differentiating part of the release name. Instead they can simply type the differentiating string (`jae` in this case) and the shell will figure out the rest.
+
+Such fuzzy matching can make shell completion even more efficient for users.
+
+The way to enable fuzzy matching for your program is to return all completion choices no matter what the user has already typed, or put another way, not to filter on the `toComplete` argument.  Filtering is then performed by the shell, based on whatever matching scheme it supports.
+
+Concretely, if you have a `ValidArgsFunction` that does its own prefix-filtering:
+```go
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		
+		var comps []string
+		rel := getAllReleases()
+		for _, rel := range releases {
+			// Only match releases that start with toComplete
+			if strings.HasPrefix(rel, toComplete) {
+				comps = append(comps, rel)
+			}		
+		}
+		return comps, cobra.ShellCompDirectiveNoFileComp
+	},
+```
+you can enable fuzzy matching by re-writing the function more simply:
+```go
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		
+		// Always return all valid releases to enable fuzzy matching
+		return getAllReleases(), cobra.ShellCompDirectiveNoFileComp
+	},
+```
+This simpler approach to `ValidArgsFunction()` is the recommended approach.
+
 ## Bash completions
 
 ### Dependencies
