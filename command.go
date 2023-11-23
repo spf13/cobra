@@ -706,7 +706,7 @@ Loop:
 			// This is not a flag or a flag value. Check to see if it matches what we're looking for, and if so,
 			// return the args, excluding the one at this position.
 			if s == x {
-				ret := []string{}
+				ret := make([]string, 0, len(args)-1)
 				ret = append(ret, args[:pos]...)
 				ret = append(ret, args[pos+1:]...)
 				return ret
@@ -754,14 +754,14 @@ func (c *Command) findSuggestions(arg string) string {
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
-	suggestionsString := ""
+	var sb strings.Builder
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		suggestionsString += "\n\nDid you mean this?\n"
+		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
-			suggestionsString += fmt.Sprintf("\t%v\n", s)
+			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
 		}
 	}
-	return suggestionsString
+	return sb.String()
 }
 
 func (c *Command) findNext(next string) *Command {

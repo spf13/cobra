@@ -212,23 +212,23 @@ func (c *Command) initCompleteCmd(args []string) {
 			}
 
 			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
+			noActiveHelp := GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable
+			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
-				if GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable {
-					// Remove all activeHelp entries in this case
-					if strings.HasPrefix(comp, activeHelpMarker) {
-						continue
-					}
+				if noActiveHelp && strings.HasPrefix(comp, activeHelpMarker) {
+					// Remove all activeHelp entries if it's disabled.
+					continue
 				}
 				if noDescriptions {
 					// Remove any description that may be included following a tab character.
-					comp = strings.Split(comp, "\t")[0]
+					comp = strings.SplitN(comp, "\t", 2)[0]
 				}
 
 				// Make sure we only write the first line to the output.
 				// This is needed if a description contains a linebreak.
 				// Otherwise the shell scripts will interpret the other lines as new flags
 				// and could therefore provide a wrong completion.
-				comp = strings.Split(comp, "\n")[0]
+				comp = strings.SplitN(comp, "\n", 2)[0]
 
 				// Finally trim the completion.  This is especially important to get rid
 				// of a trailing tab when there are no description following it.
@@ -237,14 +237,14 @@ func (c *Command) initCompleteCmd(args []string) {
 				// although there is no description).
 				comp = strings.TrimSpace(comp)
 
-				// Print each possible completion to stdout for the completion script to consume.
-				fmt.Fprintln(finalCmd.OutOrStdout(), comp)
+				// Print each possible completion to the output for the completion script to consume.
+				fmt.Fprintln(out, comp)
 			}
 
 			// As the last printout, print the completion directive for the completion script to parse.
 			// The directive integer must be that last character following a single colon (:).
 			// The completion script expects :<directive>
-			fmt.Fprintf(finalCmd.OutOrStdout(), ":%d\n", directive)
+			fmt.Fprintf(out, ":%d\n", directive)
 
 			// Print some helpful info to stderr for the user to understand.
 			// Output from stderr must be ignored by the completion script.
