@@ -1830,6 +1830,12 @@ func (c *Command) ParseFlags(args []string) error {
 	// do it here after merging all flags and just before parse
 	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
 
+	// if flag has been parsed, we should reset flags' value to default
+	if c.Flags().Parsed() {
+		c.Flags().Visit(func(f *flag.Flag) {
+			f.Value.Set(f.DefValue)
+		})
+	}
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {

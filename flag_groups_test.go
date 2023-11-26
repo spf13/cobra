@@ -15,6 +15,7 @@
 package cobra
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -192,4 +193,55 @@ func TestValidateFlagGroups(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetArgs(t *testing.T) {
+	getCMD := func() *Command {
+		cmd := &Command{
+			Use: "testcmd",
+			RunE: func(cmd *Command, args []string) error {
+				a, _ := cmd.Flags().GetBool("a")
+				b, _ := cmd.Flags().GetBool("b")
+				c, _ := cmd.Flags().GetBool("c")
+				switch {
+				case a && b, a && c, b && c:
+					return fmt.Errorf("a,b,c only one could be true")
+				}
+				return nil
+			},
+		}
+		f := cmd.Flags()
+		f.BoolP("a", "a", false, "a,b,c only one could be true")
+		f.BoolP("b", "b", false, "a,b,c only one could be true")
+		f.Bool("c", false, "a,b,c only one could be true")
+		return cmd
+	}
+
+	cmd := getCMD()
+
+	// step 1
+	cmd.SetArgs([]string{
+		"--a=true",
+	})
+	assertNoErr(t, cmd.Execute())
+	// step 2
+	cmd.SetArgs([]string{
+		"--b=true",
+	})
+	t.Log(cmd.Flags().Changed("a"))
+	assertNoErr(t, cmd.Execute())
+
+	// step 3
+	cmd.SetArgs([]string{
+		"--c=true",
+	})
+	assertNoErr(t, cmd.Execute())
+
+	// step 4
+	cmd.SetArgs([]string{
+		"--a=false",
+		"--b=false",
+		"--c=true",
+	})
+	assertNoErr(t, cmd.Execute())
 }
