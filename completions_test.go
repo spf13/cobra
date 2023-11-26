@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -3515,5 +3516,80 @@ func TestGetFlagCompletion(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGetEnvConfig(t *testing.T) {
+	testCases := []struct {
+		use       string
+		suffix    string
+		cmdVar    string
+		globalVar string
+		cmdVal    string
+		globalVal string
+		expected  string
+	}{
+		{
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "global",
+			expected:  "global",
+		},
+		{
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "",
+			expected:  "",
+		},
+		{
+			use:       "foo.bar",
+			suffix:    "test",
+			cmdVar:    "FOO_BAR_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			use:       "quux-BAZ",
+			suffix:    "test",
+			cmdVar:    "QUUX_BAZ_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+	}
+
+	for _, tc := range testCases {
+		// Could make env handling cleaner with t.Setenv with Go >= 1.17
+		func() {
+			err := os.Setenv(tc.cmdVar, tc.cmdVal)
+			defer assertNoErr(t, os.Unsetenv(tc.cmdVar))
+			assertNoErr(t, err)
+			err = os.Setenv(tc.globalVar, tc.globalVal)
+			defer assertNoErr(t, os.Unsetenv(tc.globalVar))
+			assertNoErr(t, err)
+			cmd := &Command{Use: tc.use}
+			got := GetEnvConfig(cmd, tc.suffix)
+			if got != tc.expected {
+				t.Errorf("expected: %q, got: %q", tc.expected, got)
+			}
+		}()
 	}
 }
