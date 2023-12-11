@@ -3580,10 +3580,14 @@ func TestGetEnvConfig(t *testing.T) {
 		// Could make env handling cleaner with t.Setenv with Go >= 1.17
 		func() {
 			err := os.Setenv(tc.cmdVar, tc.cmdVal)
-			defer assertNoErr(t, os.Unsetenv(tc.cmdVar))
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.cmdVar))
+			}()
 			assertNoErr(t, err)
 			err = os.Setenv(tc.globalVar, tc.globalVal)
-			defer assertNoErr(t, os.Unsetenv(tc.globalVar))
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.globalVar))
+			}()
 			assertNoErr(t, err)
 			cmd := &Command{Use: tc.use}
 			got := getEnvConfig(cmd, tc.suffix)
