@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -212,7 +213,12 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
-			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd || getEnvConfig(cmd, configEnvVarSuffixDescriptions) == configEnvVarDescriptionsOff
+			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd
+			if !noDescriptions {
+				if doDescriptions, err := strconv.ParseBool(getEnvConfig(cmd, configEnvVarSuffixDescriptions)); err == nil {
+					noDescriptions = !doDescriptions
+				}
+			}
 			noActiveHelp := GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable
 			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
@@ -905,7 +911,6 @@ func CompErrorln(msg string) {
 const (
 	configEnvVarGlobalPrefix       = "COBRA"
 	configEnvVarSuffixDescriptions = "COMPLETION_DESCRIPTIONS"
-	configEnvVarDescriptionsOff    = "off"
 )
 
 var configEnvVarPrefixSubstRegexp = regexp.MustCompile(`[^A-Z0-9_]`)

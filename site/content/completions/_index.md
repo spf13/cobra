@@ -394,7 +394,7 @@ $ helm completion [tab][tab]
 bash        fish        powershell  zsh
 ```
 
-Setting the `<PROGRAM>_COMPLETION_DESCRIPTIONS` environment variable (falling back to `COBRA_COMPLETION_DESCRIPTIONS` if empty or not set) to `off` achieves the same. `<PROGRAM>` is the name of your program with all non-ASCII-alphanumeric characters replaced by `_`.
+Setting the `<PROGRAM>_COMPLETION_DESCRIPTIONS` environment variable (falling back to `COBRA_COMPLETION_DESCRIPTIONS` if empty or not set) to a [falsey value](https://pkg.go.dev/strconv#ParseBool) achieves the same. `<PROGRAM>` is the name of your program with all non-ASCII-alphanumeric characters replaced by `_`.
 
 ## Bash completions
 
