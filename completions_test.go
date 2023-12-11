@@ -3603,3 +3603,109 @@ func TestGetEnvConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestDisableDescriptions(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	childCmd := &Command{
+		Use:   "thechild",
+		Short: "The child command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	specificDescriptionsEnvVar := configEnvVar(rootCmd.Name(), configEnvVarSuffixDescriptions)
+	globalDescriptionsEnvVar := configEnvVar(configEnvVarGlobalPrefix, configEnvVarSuffixDescriptions)
+
+	const (
+		descLineWithDescription    = "first\tdescription"
+		descLineWithoutDescription = "first"
+	)
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		comps := []string{descLineWithDescription}
+		return comps, ShellCompDirectiveDefault
+	}
+
+	testCases := []struct {
+		desc             string
+		globalEnvValue   string
+		specificEnvValue string
+		expectedLine     string
+	}{
+		{
+			"No env variables set",
+			"",
+			"",
+			descLineWithDescription,
+		},
+		{
+			"Global value false",
+			"false",
+			"",
+			descLineWithoutDescription,
+		},
+		{
+			"Specific value false",
+			"",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values false",
+			"false",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values true",
+			"true",
+			"true",
+			descLineWithDescription,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			if err := os.Setenv(specificDescriptionsEnvVar, tc.specificEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", specificDescriptionsEnvVar, err)
+			}
+			if err := os.Setenv(globalDescriptionsEnvVar, tc.globalEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", globalDescriptionsEnvVar, err)
+			}
+
+			var run = func() {
+				output, err := executeCommand(rootCmd, ShellCompRequestCmd, "thechild", "")
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				expected := strings.Join([]string{
+					tc.expectedLine,
+					":0",
+					"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+				if output != expected {
+					t.Errorf("expected: %q, got: %q", expected, output)
+				}
+			}
+
+			run()
+
+			// For empty cases, test also unset state
+			if tc.specificEnvValue == "" {
+				if err := os.Unsetenv(specificDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", specificDescriptionsEnvVar, err)
+				}
+				run()
+			}
+			if tc.globalEnvValue == "" {
+				if err := os.Unsetenv(globalDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", globalDescriptionsEnvVar, err)
+				}
+				run()
+			}
+		})
+	}
+}
