@@ -212,7 +212,7 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
-			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd || GetEnvConfig(cmd, configEnvVarSuffixDescriptions) == configEnvVarDescriptionsOff
+			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd || getEnvConfig(cmd, configEnvVarSuffixDescriptions) == configEnvVarDescriptionsOff
 			noActiveHelp := GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable
 			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
@@ -920,12 +920,12 @@ func configEnvVar(name, suffix string) string {
 	return v
 }
 
-// GetEnvConfig returns the value of the configuration environment variable
+// getEnvConfig returns the value of the configuration environment variable
 // <PROGRAM>_<SUFFIX> where <PROGRAM> is the name of the root command in upper
 // case, with all non-ASCII-alphanumeric characters replaced by `_`.
 // If the value is empty or not set, the value of the environment variable
 // COBRA_<SUFFIX> is returned instead.
-func GetEnvConfig(cmd *Command, suffix string) string {
+func getEnvConfig(cmd *Command, suffix string) string {
 	v := os.Getenv(configEnvVar(cmd.Root().Name(), suffix))
 	if v == "" {
 		v = os.Getenv(configEnvVar(configEnvVarGlobalPrefix, suffix))

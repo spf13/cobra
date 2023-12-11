@@ -3586,7 +3586,7 @@ func TestGetEnvConfig(t *testing.T) {
 			defer assertNoErr(t, os.Unsetenv(tc.globalVar))
 			assertNoErr(t, err)
 			cmd := &Command{Use: tc.use}
-			got := GetEnvConfig(cmd, tc.suffix)
+			got := getEnvConfig(cmd, tc.suffix)
 			if got != tc.expected {
 				t.Errorf("expected: %q, got: %q", tc.expected, got)
 			}
