@@ -3521,6 +3521,7 @@ func TestGetFlagCompletion(t *testing.T) {
 
 func TestGetEnvConfig(t *testing.T) {
 	testCases := []struct {
+		desc      string
 		use       string
 		suffix    string
 		cmdVar    string
@@ -3530,6 +3531,7 @@ func TestGetEnvConfig(t *testing.T) {
 		expected  string
 	}{
 		{
+			desc:      "Command envvar overrides global",
 			use:       "root",
 			suffix:    "test",
 			cmdVar:    "ROOT_TEST",
@@ -3539,6 +3541,7 @@ func TestGetEnvConfig(t *testing.T) {
 			expected:  "cmd",
 		},
 		{
+			desc:      "Missing/empty command envvar falls back to global",
 			use:       "root",
 			suffix:    "test",
 			cmdVar:    "ROOT_TEST",
@@ -3548,6 +3551,7 @@ func TestGetEnvConfig(t *testing.T) {
 			expected:  "global",
 		},
 		{
+			desc:      "Missing/empty command and global envvars fall back to empty",
 			use:       "root",
 			suffix:    "test",
 			cmdVar:    "ROOT_TEST",
@@ -3557,6 +3561,7 @@ func TestGetEnvConfig(t *testing.T) {
 			expected:  "",
 		},
 		{
+			desc:      "Periods in command use transform to underscores in env var name",
 			use:       "foo.bar",
 			suffix:    "test",
 			cmdVar:    "FOO_BAR_TEST",
@@ -3566,6 +3571,7 @@ func TestGetEnvConfig(t *testing.T) {
 			expected:  "cmd",
 		},
 		{
+			desc:      "Dashes in command use transform to underscores in env var name",
 			use:       "quux-BAZ",
 			suffix:    "test",
 			cmdVar:    "QUUX_BAZ_TEST",
@@ -3577,8 +3583,8 @@ func TestGetEnvConfig(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		// Could make env handling cleaner with t.Setenv with Go >= 1.17
-		func() {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Could make env handling cleaner with t.Setenv with Go >= 1.17
 			err := os.Setenv(tc.cmdVar, tc.cmdVal)
 			defer func() {
 				assertNoErr(t, os.Unsetenv(tc.cmdVar))
@@ -3594,6 +3600,6 @@ func TestGetEnvConfig(t *testing.T) {
 			if got != tc.expected {
 				t.Errorf("expected: %q, got: %q", tc.expected, got)
 			}
-		}()
+		})
 	}
 }
