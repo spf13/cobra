@@ -12,6 +12,7 @@
 - [Datree](https://github.com/datreeio/datree)
 - [Delve](https://github.com/derekparker/delve)
 - [Docker (distribution)](https://github.com/docker/distribution)
+- [Encore](https://encore.dev)
 - [Etcd](https://etcd.io/)
 - [Gardener](https://github.com/gardener/gardenctl)
 - [Giant Swarm's gsctl](https://github.com/giantswarm/gsctl)
