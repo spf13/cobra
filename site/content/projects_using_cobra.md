@@ -1,4 +1,8 @@
-## Projects using Cobra
+---
+weight: 32
+---
+
+# Projects using Cobra
 
 - [Allero](https://github.com/allero-io/allero)
 - [Arewefastyet](https://benchmark.vitess.io)
