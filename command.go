@@ -155,6 +155,8 @@ type Command struct {
 	pflags *flag.FlagSet
 	// lflags contains local flags.
 	lflags *flag.FlagSet
+	// lnpflags contains local non persistent flags
+	lnpflags *flag.FlagSet
 	// iflags contains inherited flags.
 	iflags *flag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
@@ -1074,7 +1076,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	c.checkCommandGroups()
 
 	args := c.args
-
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
 	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
 		args = os.Args[1:]
@@ -1654,15 +1655,19 @@ func (c *Command) Flags() *flag.FlagSet {
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
 func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
-	persistentFlags := c.PersistentFlags()
+	if c.lnpflags == nil {
+		persistentFlags := c.PersistentFlags()
 
-	out := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	c.LocalFlags().VisitAll(func(f *flag.Flag) {
-		if persistentFlags.Lookup(f.Name) == nil {
-			out.AddFlag(f)
-		}
-	})
-	return out
+		c.lnpflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.LocalFlags().VisitAll(func(f *flag.Flag) {
+			if persistentFlags.Lookup(f.Name) == nil {
+				f.Changed = false
+				c.lnpflags.AddFlag(f)
+			}
+		})
+	}
+
+	return c.lnpflags
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
@@ -1684,6 +1689,7 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 	addToLocal := func(f *flag.Flag) {
 		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
 		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
+			f.Changed = false
 			c.lflags.AddFlag(f)
 		}
 	}
@@ -1815,12 +1821,97 @@ func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
 	return
 }
 
+func (c *Command) parseLongArgs(s string, args []string, flags *flag.FlagSet) (passedArgs, restArgs []string) {
+	restArgs = args
+	name := s[2:]
+	if len(name) == 0 {
+		passedArgs = append(passedArgs, s)
+		return
+	}
+
+	split := strings.SplitN(s[2:], "=", 2)
+	name = split[0]
+	searchedFlag := flags.Lookup(name)
+	if searchedFlag == nil {
+		// ignore the flag that is not registered in passed flags but is registered in c.parentsPflags
+		c.parentsPflags.VisitAll(func(f *flag.Flag) {
+			if name == f.Name {
+				if len(split) == 1 && f.NoOptDefVal == "" && len(args) > 0 {
+					// '--flag arg'
+					restArgs = args[1:]
+				}
+			}
+		})
+		return
+	}
+
+	passedArgs = append(passedArgs, fmt.Sprintf("--%s", s[2:]))
+	if len(split) == 1 && searchedFlag.NoOptDefVal == "" && len(args) > 0 {
+		passedArgs = append(passedArgs, args[0])
+		restArgs = args[1:]
+	}
+
+	return
+}
+
+func (c *Command) parseShortArgs(s string, args []string, flags *flag.FlagSet) (passedArgs []string, restArgs []string) {
+	restArgs = args
+
+	shorthands := s[1:]
+	shorthand := string(s[1])
+
+	searchedFlag := flags.ShorthandLookup(shorthand)
+	if searchedFlag == nil {
+		// ignore the flag that is not registered in passed flags but is registered in c.parentsPflags
+		c.parentsPflags.VisitAll(func(f *flag.Flag) {
+			if shorthand == f.Shorthand {
+				if len(shorthands) == 1 && f.NoOptDefVal == "" && len(args) > 0 {
+					// '-f arg'
+					restArgs = args[1:]
+				}
+			}
+		})
+		return
+	}
+
+	passedArgs = append(passedArgs, s)
+	if len(shorthands) == 1 && searchedFlag.NoOptDefVal == "" && len(args) > 0 {
+		// '-f arg'
+		passedArgs = append(passedArgs, args[0])
+		restArgs = args[1:]
+	}
+
+	return
+}
+
+func (c *Command) removeParentPersistentArgs(args []string, flags *flag.FlagSet) (newArgs []string) {
+	for len(args) > 0 {
+		s := args[0]
+		args = args[1:]
+		if len(s) == 0 || s[0] != '-' {
+			newArgs = append(newArgs, s)
+			continue
+		}
+
+		var passedArgs, restArgs []string
+		if s[1] == '-' {
+			passedArgs, restArgs = c.parseLongArgs(s, args, flags)
+		} else {
+			passedArgs, restArgs = c.parseShortArgs(s, args, flags)
+		}
+		if len(passedArgs) > 0 {
+			newArgs = append(newArgs, passedArgs...)
+		}
+		args = restArgs
+	}
+	return
+}
+
 // ParseFlags parses persistent flag tree and local flags.
 func (c *Command) ParseFlags(args []string) error {
 	if c.DisableFlagParsing {
 		return nil
 	}
-
 	if c.flagErrorBuf == nil {
 		c.flagErrorBuf = new(bytes.Buffer)
 	}
@@ -1830,7 +1921,34 @@ func (c *Command) ParseFlags(args []string) error {
 	// do it here after merging all flags and just before parse
 	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
 
+	// parse Flags
 	err := c.Flags().Parse(args)
+	// Print warnings if they occurred (e.g. deprecated flag messages).
+	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
+		c.Print(c.flagErrorBuf.String())
+	}
+	if err != nil {
+		return err
+	}
+
+	// parse Local Flags
+	c.LocalFlags() // need to execute LocalFlags() to set the value in c.lflags before executing removeParentPersistentArgs
+	c.lflags.ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
+	localArgs := c.removeParentPersistentArgs(args, c.lflags) // get only arguments related to c.lflags
+	err = c.lflags.Parse(localArgs)
+	// Print warnings if they occurred (e.g. deprecated flag messages).
+	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
+		c.Print(c.flagErrorBuf.String())
+	}
+	if err != nil {
+		return err
+	}
+
+	// parse local non persistent flags
+	c.LocalNonPersistentFlags() // need to execute LocalNonPersistentFlags() to set the value in c.lnpflags before executing removeParentPersistentArgs
+	c.lnpflags.ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
+	localNonPersistentArgs := c.removeParentPersistentArgs(args, c.lnpflags)
+	err = c.lnpflags.Parse(localNonPersistentArgs)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
 		c.Print(c.flagErrorBuf.String())
