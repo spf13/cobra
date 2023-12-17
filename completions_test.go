@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -3513,6 +3514,197 @@ func TestGetFlagCompletion(t *testing.T) {
 				if tc.directive != directive {
 					t.Errorf("Unexpected directive %q", directive)
 				}
+			}
+		})
+	}
+}
+
+func TestGetEnvConfig(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		use       string
+		suffix    string
+		cmdVar    string
+		globalVar string
+		cmdVal    string
+		globalVal string
+		expected  string
+	}{
+		{
+			desc:      "Command envvar overrides global",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			desc:      "Missing/empty command envvar falls back to global",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "global",
+			expected:  "global",
+		},
+		{
+			desc:      "Missing/empty command and global envvars fall back to empty",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "",
+			expected:  "",
+		},
+		{
+			desc:      "Periods in command use transform to underscores in env var name",
+			use:       "foo.bar",
+			suffix:    "test",
+			cmdVar:    "FOO_BAR_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			desc:      "Dashes in command use transform to underscores in env var name",
+			use:       "quux-BAZ",
+			suffix:    "test",
+			cmdVar:    "QUUX_BAZ_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Could make env handling cleaner with t.Setenv with Go >= 1.17
+			err := os.Setenv(tc.cmdVar, tc.cmdVal)
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.cmdVar))
+			}()
+			assertNoErr(t, err)
+			err = os.Setenv(tc.globalVar, tc.globalVal)
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.globalVar))
+			}()
+			assertNoErr(t, err)
+			cmd := &Command{Use: tc.use}
+			got := getEnvConfig(cmd, tc.suffix)
+			if got != tc.expected {
+				t.Errorf("expected: %q, got: %q", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestDisableDescriptions(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	childCmd := &Command{
+		Use:   "thechild",
+		Short: "The child command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	specificDescriptionsEnvVar := configEnvVar(rootCmd.Name(), configEnvVarSuffixDescriptions)
+	globalDescriptionsEnvVar := configEnvVar(configEnvVarGlobalPrefix, configEnvVarSuffixDescriptions)
+
+	const (
+		descLineWithDescription    = "first\tdescription"
+		descLineWithoutDescription = "first"
+	)
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		comps := []string{descLineWithDescription}
+		return comps, ShellCompDirectiveDefault
+	}
+
+	testCases := []struct {
+		desc             string
+		globalEnvValue   string
+		specificEnvValue string
+		expectedLine     string
+	}{
+		{
+			"No env variables set",
+			"",
+			"",
+			descLineWithDescription,
+		},
+		{
+			"Global value false",
+			"false",
+			"",
+			descLineWithoutDescription,
+		},
+		{
+			"Specific value false",
+			"",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values false",
+			"false",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values true",
+			"true",
+			"true",
+			descLineWithDescription,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			if err := os.Setenv(specificDescriptionsEnvVar, tc.specificEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", specificDescriptionsEnvVar, err)
+			}
+			if err := os.Setenv(globalDescriptionsEnvVar, tc.globalEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", globalDescriptionsEnvVar, err)
+			}
+
+			var run = func() {
+				output, err := executeCommand(rootCmd, ShellCompRequestCmd, "thechild", "")
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				expected := strings.Join([]string{
+					tc.expectedLine,
+					":0",
+					"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+				if output != expected {
+					t.Errorf("expected: %q, got: %q", expected, output)
+				}
+			}
+
+			run()
+
+			// For empty cases, test also unset state
+			if tc.specificEnvValue == "" {
+				if err := os.Unsetenv(specificDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", specificDescriptionsEnvVar, err)
+				}
+				run()
+			}
+			if tc.globalEnvValue == "" {
+				if err := os.Unsetenv(globalDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", globalDescriptionsEnvVar, err)
+				}
+				run()
 			}
 		})
 	}

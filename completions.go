@@ -17,6 +17,8 @@ package cobra
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -211,7 +213,12 @@ func (c *Command) initCompleteCmd(args []string) {
 				// 2- Even without completions, we need to print the directive
 			}
 
-			noDescriptions := (cmd.CalledAs() == ShellCompNoDescRequestCmd)
+			noDescriptions := cmd.CalledAs() == ShellCompNoDescRequestCmd
+			if !noDescriptions {
+				if doDescriptions, err := strconv.ParseBool(getEnvConfig(cmd, configEnvVarSuffixDescriptions)); err == nil {
+					noDescriptions = !doDescriptions
+				}
+			}
 			noActiveHelp := GetActiveHelpConfig(finalCmd) == activeHelpGlobalDisable
 			out := finalCmd.OutOrStdout()
 			for _, comp := range completions {
@@ -898,4 +905,35 @@ func CompError(msg string) {
 // CompErrorln prints the specified completion message to stderr with a newline at the end.
 func CompErrorln(msg string) {
 	CompError(fmt.Sprintf("%s\n", msg))
+}
+
+// These values should not be changed: users will be using them explicitly.
+const (
+	configEnvVarGlobalPrefix       = "COBRA"
+	configEnvVarSuffixDescriptions = "COMPLETION_DESCRIPTIONS"
+)
+
+var configEnvVarPrefixSubstRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
+
+// configEnvVar returns the name of the program-specific configuration environment
+// variable.  It has the format <PROGRAM>_<SUFFIX> where <PROGRAM> is the name of the
+// root command in upper case, with all non-ASCII-alphanumeric characters replaced by `_`.
+func configEnvVar(name, suffix string) string {
+	// This format should not be changed: users will be using it explicitly.
+	v := strings.ToUpper(fmt.Sprintf("%s_%s", name, suffix))
+	v = configEnvVarPrefixSubstRegexp.ReplaceAllString(v, "_")
+	return v
+}
+
+// getEnvConfig returns the value of the configuration environment variable
+// <PROGRAM>_<SUFFIX> where <PROGRAM> is the name of the root command in upper
+// case, with all non-ASCII-alphanumeric characters replaced by `_`.
+// If the value is empty or not set, the value of the environment variable
+// COBRA_<SUFFIX> is returned instead.
+func getEnvConfig(cmd *Command, suffix string) string {
+	v := os.Getenv(configEnvVar(cmd.Root().Name(), suffix))
+	if v == "" {
+		v = os.Getenv(configEnvVar(configEnvVarGlobalPrefix, suffix))
+	}
+	return v
 }
