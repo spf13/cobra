@@ -1833,7 +1833,9 @@ func (c *Command) ParseFlags(args []string) error {
 	// if flag has been parsed, we should reset flags' value to default
 	if c.Flags().Parsed() {
 		c.Flags().Visit(func(f *flag.Flag) {
-			f.Value.Set(f.DefValue)
+			if err := f.Value.Set(f.DefValue); err != nil {
+				c.PrintErrf("reset argument[%s] value error %v", f.Name, err)
+			}
 		})
 	}
 	err := c.Flags().Parse(args)
