@@ -1,17 +1,24 @@
 # changes to documentation generation
-"area/docs-generation": doc/**/*
+"area/docs-generation": 
+- changed-files:
+  - any-glob-to-any-file: 'doc/**'
 
 # changes to the core cobra command
 "area/cobra-command":
-- any: ['./cobra.go', './cobra_test.go', './*command*.go']
+- changed-files:
+  - any-glob-to-any-file: ['./cobra.go', './cobra_test.go', './*command*.go']
 
 # changes made to command flags/args
-"area/flags": ./args*.go
+"area/flags":
+- changed-files:
+  - any-glob-to-any-file: './args*.go'
 
 # changes to Github workflows
-"area/github": .github/**/*
+"area/github":
+- changed-files:
+  - any-glob-to-any-file: '.github/**'
 
 # changes to shell completions
 "area/shell-completion":
-  - ./*completions*
-
+- changed-files:
+  - any-glob-to-any-file: './*completions*'
