@@ -63,4 +63,5 @@
 - [Vitess](https://vitess.io)
 - VMware's [Tanzu Community Edition](https://github.com/vmware-tanzu/community-edition) & [Tanzu Framework](https://github.com/vmware-tanzu/tanzu-framework)
 - [Werf](https://werf.io/)
+- [Zarf](https://github.com/defenseunicorns/zarf)
 - [ZITADEL](https://github.com/zitadel/zitadel)
