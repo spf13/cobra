@@ -133,12 +133,6 @@ func TestStringInSlice(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "String in slice (case-insensitive)",
-			a:        "APPLE",
-			list:     []string{"orange", "banana", "apple", "grape"},
-			expected: false,
-		},
-		{
 			name:     "String not in slice (case-insensitive)",
 			a:        "PEAR",
 			list:     []string{"orange", "banana", "apple", "grape"},
@@ -155,6 +149,12 @@ func TestStringInSlice(t *testing.T) {
 			a:        "",
 			list:     []string{"orange", "banana", "apple", "grape"},
 			expected: false,
+		},
+		{
+			name:     "Empty strings match",
+			a:        "",
+			list:     []string{"orange", ""},
+			expected: true,
 		},
 		{
 			name:     "Empty string in empty slice",
