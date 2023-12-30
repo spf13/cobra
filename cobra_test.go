@@ -133,8 +133,8 @@ func TestStringInSlice(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "String not in slice (case-insensitive)",
-			a:        "PEAR",
+			name:     "String in slice (case-insensitive)",
+			a:        "APPLE",
 			list:     []string{"orange", "banana", "apple", "grape"},
 			expected: false,
 		},
