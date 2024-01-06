@@ -621,7 +621,7 @@ func writeRequiredNouns(buf io.StringWriter, cmd *Command) {
 	for _, value := range cmd.ValidArgs {
 		// Remove any description that may be included following a tab character.
 		// Descriptions are not supported by bash completion.
-		value = strings.Split(value, "\t")[0]
+		value = strings.SplitN(value, "\t", 2)[0]
 		WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_noun+=(%q)\n", value))
 	}
 	if cmd.ValidArgsFunction != nil {
