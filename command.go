@@ -154,8 +154,10 @@ type Command struct {
 	// pflags contains persistent flags.
 	pflags *flag.FlagSet
 	// lflags contains local flags.
+	// This field does not represent internal state, it's used as a cache to optimise LocalFlags function call
 	lflags *flag.FlagSet
 	// iflags contains inherited flags.
+	// This field does not represent internal state, it's used as a cache to optimise InheritedFlags function call
 	iflags *flag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
 	parentsPflags *flag.FlagSet
@@ -1653,6 +1655,7 @@ func (c *Command) Flags() *flag.FlagSet {
 }
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 	persistentFlags := c.PersistentFlags()
 
@@ -1666,6 +1669,7 @@ func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) LocalFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
@@ -1693,6 +1697,7 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 }
 
 // InheritedFlags returns all flags which were inherited from parent commands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) InheritedFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
@@ -1718,6 +1723,7 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 }
 
 // NonInheritedFlags returns all flags which were not inherited from parent commands.
+// This function does not modify the flags of the current command, it's purpose is to return the current state.
 func (c *Command) NonInheritedFlags() *flag.FlagSet {
 	return c.LocalFlags()
 }
