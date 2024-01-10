@@ -21,12 +21,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/leonelquinteros/gotext"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/leonelquinteros/gotext"
 
 	flag "github.com/spf13/pflag"
 )

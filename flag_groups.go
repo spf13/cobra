@@ -16,9 +16,10 @@ package cobra
 
 import (
 	"fmt"
-	"github.com/leonelquinteros/gotext"
 	"sort"
 	"strings"
+
+	"github.com/leonelquinteros/gotext"
 
 	flag "github.com/spf13/pflag"
 )

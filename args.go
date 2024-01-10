@@ -16,8 +16,9 @@ package cobra
 
 import (
 	"fmt"
-	"github.com/leonelquinteros/gotext"
 	"strings"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 type PositionalArgs func(cmd *Command, args []string) error

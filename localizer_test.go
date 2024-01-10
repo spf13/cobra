@@ -15,9 +15,10 @@
 package cobra
 
 import (
-	"github.com/leonelquinteros/gotext"
 	"os"
 	"testing"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 // resetLocalization resets to the vendor defaults

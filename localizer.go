@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/leonelquinteros/gotext"
 	"golang.org/x/text/language"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 var defaultLanguage = language.English

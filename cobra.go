@@ -19,7 +19,6 @@ package cobra
 
 import (
 	"fmt"
-	"github.com/leonelquinteros/gotext"
 	"io"
 	"os"
 	"reflect"
@@ -28,6 +27,8 @@ import (
 	"text/template"
 	"time"
 	"unicode"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 var templateFuncs = template.FuncMap{
