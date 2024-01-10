@@ -21,7 +21,8 @@ lint:
 
 test: install_deps
 	$(info ******************** running tests ********************)
-	LANGUAGE="en" go test -v ./...
+	go test -v ./...
+	LANGUAGE="en" go test -tags locales -v ./...
 
 richtest: install_deps
 	$(info ******************** running tests with kyoh86/richgo ********************)
