@@ -560,6 +560,21 @@ func ExampleWithUsage() {
 	cmd := &Command{
 		Use:  "example <arg>",
 		Args: WithUsage(ExactArgs(1)),
+		Run: func(*Command, []string) {
+			panic("not reached")
+		},
 	}
-	_ = cmd // ignore unused
+
+	cmd.SetArgs([]string{"1", "2"})
+	err := cmd.Execute()
+	fmt.Print(err)
+
+	// Output:
+	// accepts 1 arg(s), received 2
+	//
+	// Usage:
+	//   example <arg> [flags]
+	//
+	// Flags:
+	//   -h, --help   help for example
 }
