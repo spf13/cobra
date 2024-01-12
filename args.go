@@ -129,3 +129,16 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 func ExactValidArgs(n int) PositionalArgs {
 	return MatchAll(ExactArgs(n), OnlyValidArgs)
 }
+
+// WithUsage wraps another PositionalArgs function. If the function fails
+// (returns a non-nil error), the error is supplemented with the command's
+// usage message, providing the user with the information required to run the
+// command correctly.
+func WithUsage(wrapped PositionalArgs) PositionalArgs {
+	return func(cmd *Command, args []string) error {
+		if err := wrapped(cmd, args); err != nil {
+			return fmt.Errorf("%w\n\n%s", err, cmd.UsageString())
+		}
+		return nil
+	}
+}

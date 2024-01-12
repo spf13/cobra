@@ -539,3 +539,27 @@ func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 }
+
+// WithUsage
+
+func TestWithUsage(t *testing.T) {
+	c := getCommand(WithUsage(ExactArgs(1)), false)
+
+	_, err := executeCommand(c /* no args */)
+	if err == nil {
+		t.Fatalf("Expected error, got nil")
+	}
+
+	got, want := err.Error(), c.UsageString()
+	if !strings.Contains(got, want) {
+		t.Errorf("Expected error containing %q, got %q", want, got)
+	}
+}
+
+func ExampleWithUsage() {
+	cmd := &Command{
+		Use:  "example <arg>",
+		Args: WithUsage(ExactArgs(1)),
+	}
+	_ = cmd // ignore unused
+}
