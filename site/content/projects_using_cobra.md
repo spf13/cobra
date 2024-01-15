@@ -57,6 +57,7 @@
 - [Scaleway CLI](https://github.com/scaleway/scaleway-cli)
 - [Sia](https://github.com/SiaFoundation/siad)
 - [Skaffold](https://skaffold.dev/)
+- [Taikun](https://taikun.cloud/)
 - [Tendermint](https://github.com/tendermint/tendermint)
 - [Twitch CLI](https://github.com/twitchdev/twitch-cli)
 - [UpCloud CLI (`upctl`)](https://github.com/UpCloudLtd/upcloud-cli)
