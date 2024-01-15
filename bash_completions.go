@@ -597,19 +597,16 @@ func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 		if nonCompletableFlag(flag) {
 			return
 		}
-		for key := range flag.Annotations {
-			switch key {
-			case BashCompOneRequiredFlag:
-				format := "    must_have_one_flag+=(\"--%s"
-				if flag.Value.Type() != "bool" {
-					format += "="
-				}
-				format += cbn
-				WriteStringAndCheck(buf, fmt.Sprintf(format, flag.Name))
+		if _, ok := flag.Annotations[BashCompOneRequiredFlag]; ok {
+			format := "    must_have_one_flag+=(\"--%s"
+			if flag.Value.Type() != "bool" {
+				format += "="
+			}
+			format += cbn
+			WriteStringAndCheck(buf, fmt.Sprintf(format, flag.Name))
 
-				if len(flag.Shorthand) > 0 {
-					WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_flag+=(\"-%s"+cbn, flag.Shorthand))
-				}
+			if len(flag.Shorthand) > 0 {
+				WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_flag+=(\"-%s"+cbn, flag.Shorthand))
 			}
 		}
 	})

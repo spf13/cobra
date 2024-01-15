@@ -2777,7 +2777,7 @@ func TestFind(t *testing.T) {
 
 func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 	testCases := [][]string{
-		//{"--unknown", "--namespace", "foo", "child", "--bar"}, // FIXME: This test case fails, returning the error `unknown command "foo" for "root"` instead of the expected error `unknown flag: --unknown`
+		// {"--unknown", "--namespace", "foo", "child", "--bar"}, // FIXME: This test case fails, returning the error `unknown command "foo" for "root"` instead of the expected error `unknown flag: --unknown`
 		{"--namespace", "foo", "--unknown", "child", "--bar"},
 		{"--namespace", "foo", "child", "--unknown", "--bar"},
 		{"--namespace", "foo", "child", "--bar", "--unknown"},
