@@ -364,6 +364,15 @@ In these cases:
   - a flag may appear in multiple groups
   - a group may contain any number of flags
 
+### Flag Prerequisite
+
+If some flags are only effective when some other flags are set, use `MarkFlagsPrerequisite`.
+```go
+rootCmd.Flags().StringVarP(&o, "output", "o", "", "write output to file")
+rootCmd.Flags().BoolVarP(&c, "truncate", "c", false, "truncate file before writing")
+rootCmd.MarkFlagsPrerequisite([]string{"output"}, []string{"truncate"}, PREREQUISITE_MISSING_MURMUR /* show warning, but continue */)
+```
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field of `Command`.

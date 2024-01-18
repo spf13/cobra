@@ -16,16 +16,22 @@ package cobra
 
 import (
 	"fmt"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/ghetzel/go-stockutil/sliceutil"
 	flag "github.com/spf13/pflag"
 )
 
 const (
-	requiredAsGroup   = "cobra_annotation_required_if_others_set"
-	oneRequired       = "cobra_annotation_one_required"
-	mutuallyExclusive = "cobra_annotation_mutually_exclusive"
+	requiredAsGroup                         = "cobra_annotation_required_if_others_set"
+	oneRequired                             = "cobra_annotation_one_required"
+	mutuallyExclusive                       = "cobra_annotation_mutually_exclusive"
+	_ANNOTATION_PREREQUISITE                = "cobra_annotation_prerequisite"
+	_ANNOTATION_DEPENDANT                   = "cobra_annotation_dependant"
+	_ANNOTATION_PREREQUISITE_MISSING_ACTION = "cobra_annotation_prerequisite_missing_action"
 )
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
@@ -76,6 +82,46 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
+const (
+	PREREQUISITE_MISSING_IGNORE = 0
+	PREREQUISITE_MISSING_PANIC  = 1
+	PREREQUISITE_MISSING_MURMUR = 2
+)
+
+func (c *Command) MarkFlagsPrerequisite(prerequisites, dependants []string, l int) {
+	if len(prerequisites) <= 0 || len(dependants) <= 0 {
+		panic("Prerequisite or dependant flags cannot be empty")
+	}
+	var invalidPrerequisites []interface{} = sliceutil.Intersect(prerequisites, dependants)
+	if len(invalidPrerequisites) > 0 {
+		panic(fmt.Sprintf("Flags %v cannot be prerequisite of themselves", invalidPrerequisites))
+	}
+	c.mergePersistentFlags()
+	for _, flagNameDep := range dependants { // check dependant flags
+		fDep := c.Flags().Lookup(flagNameDep)
+		if fDep == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark its prerequisites", flagNameDep))
+		}
+		if _, ok := fDep.Annotations[_ANNOTATION_PREREQUISITE]; !ok {
+			fDep.Annotations = map[string][]string{}
+		}
+		fDep.Annotations[_ANNOTATION_PREREQUISITE] = append(fDep.Annotations[_ANNOTATION_PREREQUISITE], prerequisites...)
+		if errAnno := c.Flags().SetAnnotation(flagNameDep, _ANNOTATION_PREREQUISITE_MISSING_ACTION, []string{strconv.Itoa(l)}); errAnno != nil {
+			panic(errAnno)
+		}
+	}
+	for _, flagNamePre := range prerequisites { // check prerequisite flags
+		fPre := c.Flags().Lookup(flagNamePre)
+		if fPre == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark it as prerequisite of other flags", flagNamePre))
+		}
+		if _, ok := fPre.Annotations[_ANNOTATION_DEPENDANT]; !ok {
+			fPre.Annotations = map[string][]string{}
+		}
+		fPre.Annotations[_ANNOTATION_DEPENDANT] = append(fPre.Annotations[_ANNOTATION_DEPENDANT], dependants...)
+	}
+}
+
 // ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the
 // first error encountered.
 func (c *Command) ValidateFlagGroups() error {
@@ -90,12 +136,13 @@ func (c *Command) ValidateFlagGroups() error {
 	groupStatus := map[string]map[string]bool{}
 	oneRequiredGroupStatus := map[string]map[string]bool{}
 	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
+	prerequisiteGroupStatus := map[string]map[string]bool{}
 	flags.VisitAll(func(pflag *flag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroup, groupStatus)
 		processFlagForGroupAnnotation(flags, pflag, oneRequired, oneRequiredGroupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusive, mutuallyExclusiveGroupStatus)
+		processFlagForGroupAnnotation(flags, pflag, _ANNOTATION_DEPENDANT, prerequisiteGroupStatus)
 	})
-
 	if err := validateRequiredFlagGroups(groupStatus); err != nil {
 		return err
 	}
@@ -104,6 +151,9 @@ func (c *Command) ValidateFlagGroups() error {
 	}
 	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus); err != nil {
 		return err
+	}
+	if errPrereq := c.validatePrerequisiteFlagGroups(prerequisiteGroupStatus); errPrereq != nil {
+		return errPrereq
 	}
 	return nil
 }
@@ -202,6 +252,36 @@ func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
 		return fmt.Errorf("if any flags in the group [%v] are set none of the others can be; %v were all set", flagList, set)
+	}
+	return nil
+}
+
+func (c *Command) validatePrerequisiteFlagGroups(data map[string]map[string]bool) error {
+	for flagNameDep, flagPrereqExistence := range data {
+		fDep := c.Flags().Lookup(flagNameDep)
+		isPrerequisiteFound := false
+		flagsetPrerequisite := fDep.Annotations[_ANNOTATION_PREREQUISITE]
+		for _, flagNamePre := range flagsetPrerequisite {
+			if v, b := flagPrereqExistence[flagNamePre]; b && v {
+				isPrerequisiteFound = true
+				break
+			}
+		}
+		if !isPrerequisiteFound {
+			iPrereqMissingAction, _ := strconv.Atoi(fDep.Annotations[_ANNOTATION_PREREQUISITE_MISSING_ACTION][0])
+			errMsg := fmt.Sprintf("flag %q is only effective if any of the flags in the group %v is set", flagNameDep, flagsetPrerequisite)
+			switch iPrereqMissingAction {
+			case PREREQUISITE_MISSING_PANIC:
+				return fmt.Errorf(errMsg)
+			case PREREQUISITE_MISSING_MURMUR:
+				fmt.Fprintln(os.Stderr, errMsg)
+				fallthrough
+			case PREREQUISITE_MISSING_IGNORE:
+				fallthrough
+			default:
+
+			}
+		}
 	}
 	return nil
 }

@@ -47,6 +47,7 @@ func TestValidateFlagGroups(t *testing.T) {
 		flagGroupsRequired          []string
 		flagGroupsOneRequired       []string
 		flagGroupsExclusive         []string
+		flagGroupsPrerequisite      [][]string
 		subCmdFlagGroupsRequired    []string
 		subCmdFlagGroupsOneRequired []string
 		subCmdFlagGroupsExclusive   []string
@@ -159,6 +160,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			subCmdFlagGroupsRequired: []string{"e subonly"},
 			args:                     []string{"--e=foo"},
 		},
+		{
+			desc:                   "prerequisite",
+			flagGroupsPrerequisite: [][]string{{"a", "b"}, {"c", "d"}},
+			args:                   []string{"--c=sam80180", "--d=bar"},
+			expectErr:              `flag "c" is only effective if any of the flags in the group [a b] is set`,
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -172,6 +179,9 @@ func TestValidateFlagGroups(t *testing.T) {
 			}
 			for _, flagGroup := range tc.flagGroupsExclusive {
 				c.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
+			}
+			if tc.flagGroupsPrerequisite != nil && len(tc.flagGroupsPrerequisite) == 2 {
+				c.MarkFlagsPrerequisite(tc.flagGroupsPrerequisite[0], tc.flagGroupsPrerequisite[1], PREREQUISITE_MISSING_PANIC)
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsRequired {
 				sub.MarkFlagsRequiredTogether(strings.Split(flagGroup, " ")...)
