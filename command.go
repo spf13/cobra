@@ -247,6 +247,11 @@ type Command struct {
 	// line of a command when printing help or generating docs
 	DisableFlagsInUseLine bool
 
+	// DisableVerboseFlagsInUseLine will add only [flags] to the usage line of
+	// a command when printing help or generating docs instead of a more verbose
+	// form showing the actual available flags
+	DisableVerboseFlagsInUseLine bool
+
 	// DisableSuggestions disables the suggestions based on Levenshtein distance
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
@@ -1449,13 +1454,101 @@ func (c *Command) UseLine() string {
 	} else {
 		useline = use
 	}
+	return useline + c.uselineFlags(useline)
+}
+
+func (c *Command) uselineFlags(useline string) string {
 	if c.DisableFlagsInUseLine {
-		return useline
+		return ""
 	}
-	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
-		useline += " [flags]"
+	if !c.HasAvailableFlags() {
+		return ""
 	}
-	return useline
+	if strings.Contains(useline, "[flags]") {
+		return ""
+	}
+	if c.DisableVerboseFlagsInUseLine {
+		return " [flags]"
+	}
+
+	included := map[*flag.Flag]struct{}{}
+	flagsLine := ""
+
+	c.flags.VisitAll(func(f *flag.Flag) {
+		if _, ok := included[f]; ok || f.Hidden {
+			return
+		}
+		included[f] = struct{}{}
+
+		rag := flagsFromAnnotation(c, f, requiredAsGroup)
+		me := flagsFromAnnotation(c, f, mutuallyExclusive)
+		or := flagsFromAnnotation(c, f, oneRequired)
+
+		if len(rag) > 0 {
+			gr := []string{}
+			for _, fl := range rag {
+				included[fl] = struct{}{}
+				gr = append(gr, shortUsage(fl))
+			}
+			flagsLine += " [" + strings.Join(gr, " ") + "]"
+		} else if len(me) > 0 {
+			gr := []string{}
+			for _, fl := range me {
+				included[fl] = struct{}{}
+				gr = append(gr, shortUsage(fl))
+			}
+			if sameFlags(me, or) {
+				flagsLine += " {" + strings.Join(gr, " | ") + "}"
+			} else {
+				flagsLine += " [" + strings.Join(gr, " | ") + "]"
+			}
+		} else if req, found := f.Annotations[BashCompOneRequiredFlag]; found && req[0] == "true" {
+			flagsLine += " " + shortUsage(f)
+		} else {
+			flagsLine += " [" + shortUsage(f) + "]"
+		}
+	})
+	return flagsLine
+}
+
+func shortUsage(f *flag.Flag) (usage string) {
+	if f.Shorthand != "" {
+		usage = "-" + f.Shorthand
+	} else {
+		usage = "--" + f.Name
+	}
+
+	varname, _ := flag.UnquoteUsage(f)
+	if varname != "" {
+		usage += " " + varname
+	}
+	return
+}
+
+func flagsFromAnnotation(c *Command, f *flag.Flag, name string) map[string]*flag.Flag {
+	flags := map[string]*flag.Flag{}
+	a := f.Annotations[name]
+	for _, s := range a {
+		for _, name := range strings.Split(s, " ") {
+			fl := c.flags.Lookup(name)
+			if fl != nil {
+				flags[name] = fl
+			}
+		}
+	}
+	return flags
+}
+
+func sameFlags(a, b map[string]*flag.Flag) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 // DebugFlags used to determine which flags have been assigned to which commands
