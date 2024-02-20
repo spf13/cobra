@@ -337,15 +337,15 @@ If your command has multiple required flags that are not [grouped](#flag-groups)
 when one or more flags have not been set, mark them as required:
 ```go
 rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
-rootCmd.Flags().StringVarP(&Region, "failoverRegion", "f", "", "AWS failover region (required)")
-rootCmd.MarkFlagsRequired("region", "failoverRegion")
+rootCmd.Flags().StringVarP(&Failover, "failover", "f", "", "AWS failover region (required)")
+rootCmd.MarkFlagsRequired("region", "failover")
 ```
 
 Or, for multiple persistent flags:
 ```go
 rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
-rootCmd.PersistentFlags().StringVarP(&Region, "failoverRegion", "f", "", "AWS failover region (required)")
-rootCmd.MarkPersistentFlagsRequired("region", "failoverRegion")
+rootCmd.PersistentFlags().StringVarP(&Failover, "failover", "f", "", "AWS failover region (required)")
+rootCmd.MarkPersistentFlagsRequired("region", "failover")
 ```
 
 
