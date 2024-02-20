@@ -58,7 +58,7 @@ func MarkFlagRequired(flags *pflag.FlagSet, name string) error {
 // and causes your command to report an error if invoked without any of the flags.
 func MarkFlagsRequired(flags *pflag.FlagSet, names ...string) error {
 	for _, name := range names {
-		if err := flags.SetAnnotation(name, BashCompOneRequiredFlag, []string{"true"}); err != nil {
+		if err := MarkFlagRequired(flags, name); err != nil {
 			return err
 		}
 	}
