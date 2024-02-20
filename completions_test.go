@@ -828,13 +828,17 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
 	rootCmd.PersistentFlags().IntP("requiredPersistent", "p", -1, "required persistent")
-	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("requiredPersistent"))
+	rootCmd.PersistentFlags().Float64P("requiredPersistentFloat", "f", -1, "required persistent float")
+	assertNoErr(t, rootCmd.MarkPersistentFlagsRequired("requiredPersistent", "requiredPersistentFloat"))
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
+	requiredPersistentFloat := rootCmd.PersistentFlags().Lookup("requiredPersistentFloat")
 
 	rootCmd.Flags().StringP("release", "R", "", "Release name")
 
-	childCmd.Flags().BoolP("subRequired", "s", false, "sub required flag")
-	assertNoErr(t, childCmd.MarkFlagRequired("subRequired"))
+	childCmd.Flags().BoolP("subRequiredOne", "s", false, "first sub required flag")
+	childCmd.Flags().BoolP("subRequiredTwo", "z", false, "second sub required flag")
+	assertNoErr(t, childCmd.MarkFlagsRequired("subRequiredOne", "subRequiredTwo"))
+
 	childCmd.Flags().BoolP("subNotRequired", "n", false, "sub not required flag")
 
 	// Test that a required flag is suggested even without the - prefix
@@ -851,6 +855,8 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		"-r",
 		"--requiredPersistent",
 		"-p",
+		"--requiredPersistentFloat",
+		"-f",
 		"realArg",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -870,6 +876,8 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		"-r",
 		"--requiredPersistent",
 		"-p",
+		"--requiredPersistentFloat",
+		"-f",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
@@ -901,8 +909,12 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	expected = strings.Join([]string{
 		"--requiredPersistent",
 		"-p",
-		"--subRequired",
+		"--requiredPersistentFloat",
+		"-f",
+		"--subRequiredOne",
 		"-s",
+		"--subRequiredTwo",
+		"-z",
 		"subArg",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -919,8 +931,12 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	expected = strings.Join([]string{
 		"--requiredPersistent",
 		"-p",
-		"--subRequired",
+		"--requiredPersistentFloat",
+		"-f",
+		"--subRequiredOne",
 		"-s",
+		"--subRequiredTwo",
+		"-z",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
@@ -953,6 +969,8 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	expected = strings.Join([]string{
 		"--requiredPersistent",
 		"-p",
+		"--requiredPersistentFloat",
+		"-f",
 		"realArg",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -962,12 +980,13 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that when a persistent required flag is present, it is not suggested anymore
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "")
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "--requiredPersistentFloat", "1.0", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	// Reset the flag for the next command
 	requiredPersistent.Changed = false
+	requiredPersistentFloat.Changed = false
 
 	expected = strings.Join([]string{
 		"childCmd",
@@ -984,13 +1003,14 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that when all required flags are present, normal completion is done
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "")
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "--requiredPersistentFloat", "1.0", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	// Reset the flags for the next command
 	requiredFlag.Changed = false
 	requiredPersistent.Changed = false
+	requiredPersistentFloat.Changed = false
 
 	expected = strings.Join([]string{
 		"realArg",
