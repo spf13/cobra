@@ -24,6 +24,7 @@
 - [GoReleaser](https://goreleaser.com)
 - [Helm](https://helm.sh)
 - [Hugo](https://gohugo.io)
+- [Incus](https://linuxcontainers.org/incus/)
 - [Infracost](https://github.com/infracost/infracost)
 - [Istio](https://istio.io)
 - [Kool](https://github.com/kool-dev/kool)
