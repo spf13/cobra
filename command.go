@@ -1861,7 +1861,7 @@ func (c *Command) Parent() *Command {
 func (c *Command) mergePersistentFlags() {
 	c.updateParentsPflags()
 	c.Flags().AddFlagSet(c.PersistentFlags())
-	c.Flags().AddFlagSet(c.parentsPflags)
+	c.Flags().AddParentFlagSet(c.parentsPflags)
 }
 
 // updateParentsPflags updates c.parentsPflags by adding
