@@ -920,6 +920,82 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	}
 }
 
+func TestFlagHelpGroups(t *testing.T) {
+
+	t.Run("add flag to non-existing flag help group", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+		b := "b"
+
+		rootCmd.Flags().Bool(b, false, "bool flag")
+
+		err := rootCmd.AddFlagToHelpGroupID(b, "id")
+		if err == nil {
+			t.Error("Expected error when adding a flag to non-existent flag help group")
+		}
+	})
+
+	t.Run("add non-existing flag to flag help group", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+
+		group := Group{ID: "id", Title: "GroupTitle"}
+		rootCmd.AddFlagHelpGroup(&group)
+
+		err := rootCmd.AddFlagToHelpGroupID("", "id")
+		if err == nil {
+			t.Error("Expected error when adding a non-existent flag to flag help group")
+		}
+
+	})
+
+	t.Run("add flag to flag help group", func(t *testing.T) {
+		child := &Command{Use: "child", Run: emptyRun}
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+
+		rootCmd.AddCommand(child)
+
+		b := "b"
+		s := "s"
+		i := "i"
+		g := "g"
+
+		child.Flags().Bool(b, false, "bool flag")
+		child.Flags().String(s, "", "string flag")
+		child.Flags().Int(i, 0, "int flag")
+		rootCmd.PersistentFlags().String(g, "", "global flag")
+
+		group := Group{ID: "groupId", Title: "GroupTitle"}
+
+		child.AddFlagHelpGroup(&group)
+
+		_ = child.AddFlagToHelpGroupID(b, group.ID)
+		_ = child.AddFlagToHelpGroupID(s, group.ID)
+		x := `Usage:
+  root child [flags]
+
+Flags:
+  -h, --help    help for child
+      --i int   int flag
+
+GroupTitle Flags:
+      --b          bool flag
+      --s string   string flag
+
+Global Flags:
+      --g string   global flag
+`
+
+		got, err := executeCommand(rootCmd, "help", "child")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if got != x {
+			t.Errorf("Help text mismatch.\nExpected:\n%s\n\nGot:\n%s\n", x, got)
+		}
+	})
+
+}
+
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
 	rootCmd := &Command{Use: "root"}
