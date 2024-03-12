@@ -384,7 +384,7 @@ func TestPlugin(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	checkStringContains(t, cmdHelp, "kubectl plugin [flags]")
+	checkStringContains(t, cmdHelp, "kubectl plugin [-h]")
 	checkStringContains(t, cmdHelp, "help for kubectl plugin")
 }
 
@@ -398,7 +398,7 @@ func TestPluginWithSubCommands(t *testing.T) {
 		},
 	}
 
-	subCmd := &Command{Use: "sub [flags]", Args: NoArgs, Run: emptyRun}
+	subCmd := &Command{Use: "sub [-h]", Args: NoArgs, Run: emptyRun}
 	rootCmd.AddCommand(subCmd)
 
 	rootHelp, err := executeCommand(rootCmd, "-h")
@@ -415,7 +415,7 @@ func TestPluginWithSubCommands(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	checkStringContains(t, childHelp, "kubectl plugin sub [flags]")
+	checkStringContains(t, childHelp, "kubectl plugin sub [-h]")
 	checkStringContains(t, childHelp, "help for sub")
 
 	helpHelp, err := executeCommand(rootCmd, "help", "-h")
@@ -975,7 +975,7 @@ func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
 	}
 
 	expected := `Usage:
-  parent child [flags]
+  parent child [--bar] [--baz] [--foo] [-h]
 
 Flags:
       --baz    child baz usage
@@ -1053,17 +1053,83 @@ func TestHelpFlagInHelp(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	checkStringContains(t, output, "[flags]")
+	checkStringContains(t, output, "[-h]")
 }
 
 func TestFlagsInUsage(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}, DisableVerboseFlagsInUseLine: true}
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
 	checkStringContains(t, output, "[flags]")
+}
+
+func TestMutuallyExclusiveFlagsInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd.Flags().SortFlags = false
+	rootCmd.Flags().Bool("foo", false, "foo desc")
+	rootCmd.Flags().Bool("bar", false, "bar desc")
+	rootCmd.MarkFlagsMutuallyExclusive("foo", "bar")
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "[--foo | --bar]")
+}
+
+func TestMutuallyExclusiveRequiredFlagsInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd.Flags().SortFlags = false
+	rootCmd.Flags().Bool("foo", false, "foo desc")
+	rootCmd.Flags().Bool("bar", false, "bar desc")
+	rootCmd.MarkFlagsMutuallyExclusive("foo", "bar")
+	rootCmd.MarkFlagsOneRequired("foo", "bar")
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "{--foo | --bar}")
+}
+
+func TestRequiredFlagInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd.Flags().Bool("foo", false, "foo desc")
+	rootCmd.MarkFlagRequired("foo")
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, " --foo ")
+}
+
+func TestRequiredTogetherFlagsInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd.Flags().SortFlags = false
+	rootCmd.Flags().Bool("foo", false, "foo desc")
+	rootCmd.Flags().Bool("bar", false, "bar desc")
+	rootCmd.MarkFlagsRequiredTogether("foo", "bar")
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "[--foo --bar]")
+}
+
+func TestFlagWithArgInUsage(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
+	rootCmd.Flags().String("output", "", "the output `file`")
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "[--output file]")
 }
 
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
@@ -2141,7 +2207,7 @@ func TestFlagErrorFuncHelp(t *testing.T) {
 	}
 
 	expected := `Usage:
-  c [flags]
+  c [--help]
 
 Flags:
       --help   help for c
