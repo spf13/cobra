@@ -29,7 +29,7 @@ linters:
     - gas
     #- gochecknoinits
     - goconst
-    #- gocritic
+    - gocritic
     #- gocyclo
     #- gofmt
     - goimports
@@ -37,7 +37,7 @@ linters:
     #- gomnd
     #- goprintffuncname
     #- gosec
-    #- gosimple
+    - gosimple
     - govet
     - ineffassign
     - interfacer
