@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -2092,12 +2092,12 @@ func TestCommandPrintRedirection(t *testing.T) {
 		t.Error(err)
 	}
 
-	gotErrBytes, err := ioutil.ReadAll(errBuff)
+	gotErrBytes, err := io.ReadAll(errBuff)
 	if err != nil {
 		t.Error(err)
 	}
 
-	gotOutBytes, err := ioutil.ReadAll(outBuff)
+	gotOutBytes, err := io.ReadAll(outBuff)
 	if err != nil {
 		t.Error(err)
 	}
