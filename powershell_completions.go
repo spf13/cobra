@@ -279,7 +279,12 @@ filter __%[1]s_escapeStringWithSpecialChars {
     }
 }
 
-Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock ${__%[2]sCompleterBlock}
+# Register the completer for the command and for all aliases of the command
+'%[1]s', (Get-Alias -Definition '%[1]s' -ErrorAction Ignore).Name | ForEach-Object {
+    if ($_) {
+        Register-ArgumentCompleter -CommandName $_ -ScriptBlock ${__%[2]sCompleterBlock}
+    }
+}
 `, name, nameForVar, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
