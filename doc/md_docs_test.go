@@ -39,11 +39,12 @@ func TestGenMdDoc(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
+	checkStringContains(t, output, "Available commands")
 	checkStringContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
-	// We generate on subcommand so we have both subcommands and parents.
+	// Use a simple subcommand without long and without synopsis, no own subcommands.
 	buf := new(bytes.Buffer)
 	if err := GenMarkdown(dummyCmd, buf); err != nil {
 		t.Fatal(err)
@@ -76,6 +77,7 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
+	checkStringContains(t, output, "Available commands")
 	checkStringOmits(t, output, "Options inherited from parent commands")
 }
 
