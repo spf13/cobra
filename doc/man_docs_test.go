@@ -165,6 +165,45 @@ func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 	}
 }
 
+func TestGenManCommands(t *testing.T) {
+	header := &GenManHeader{
+		Title:   "Project",
+		Section: "2",
+	}
+
+	// Root command
+	buf := new(bytes.Buffer)
+	if err := GenMan(rootCmd, header, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, ".SH COMMANDS")
+	checkStringMatch(t, output, "\\\\fBecho\\\\fP\n[ \t]+Echo anything to the screen\n[ \t]+See \\\\fBroot-echo\\(2\\)\\\\fP\\\\&\\.")
+	checkStringOmits(t, output, ".PP\n\\fBprint\\fP\n")
+
+	// Echo command
+	buf = new(bytes.Buffer)
+	if err := GenMan(echoCmd, header, buf); err != nil {
+		t.Fatal(err)
+	}
+	output = buf.String()
+
+	checkStringContains(t, output, ".SH COMMANDS")
+	checkStringMatch(t, output, "\\\\fBtimes\\\\fP\n[ \t]+Echo anything to the screen more times\n[ \t]+See \\\\fBroot-echo-times\\(2\\)\\\\fP\\\\&\\.")
+	checkStringMatch(t, output, "\\\\fBechosub\\\\fP\n[ \t]+second sub command for echo\n[ \t]+See \\\\fBroot-echo-echosub\\(2\\)\\\\fP\\\\&\\.")
+	checkStringOmits(t, output, ".PP\n\\fBdeprecated\\fP\n")
+
+	// Time command as echo's subcommand
+	buf = new(bytes.Buffer)
+	if err := GenMan(timesCmd, header, buf); err != nil {
+		t.Fatal(err)
+	}
+	output = buf.String()
+
+	checkStringOmits(t, output, ".SH COMMANDS")
+}
+
 func TestGenManTree(t *testing.T) {
 	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
 	header := &GenManHeader{Section: "2"}
