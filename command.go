@@ -819,7 +819,10 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 		cmd := c.findNext(arg)
 		if cmd == nil {
-			return c, args, nil
+			if c.Runnable() {
+				return c, args, nil
+			}
+			return c, args, legacySubCommandArgs(c, args)
 		}
 
 		if err := c.ParseFlags(flags); err != nil {
