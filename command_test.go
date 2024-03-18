@@ -2817,3 +2817,103 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+func TestUseLine(t *testing.T) {
+	var testFlagSet pflag.FlagSet
+	testFlagSet.AddFlag(&pflag.Flag{
+		Name: "flag_0",
+	})
+	testArgs := func(cmd *Command, args []string) error { return nil }
+	testCases := []struct {
+		Cmd     *Command
+		UseLine string
+	}{
+		{
+			&Command{
+				DisableFlagsInUseLine: true,
+				DisableArgsInUseLine:  true,
+				parent: &Command{
+					Use: "parent_use_0",
+				},
+				flags: &testFlagSet,
+				Args:  testArgs,
+				Use:   "use_0",
+			},
+			"parent_use_0 use_0",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				parent: &Command{
+					Use: "parent_use_1",
+				},
+				Use: "use_1",
+			},
+			"parent_use_1 use_1",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				Use:                   "use_2",
+			},
+			"use_2",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  true,
+				parent: &Command{
+					Use: "parent_use_3",
+				},
+				flags: &testFlagSet,
+				Args:  testArgs,
+				Use:   "use_3",
+			},
+			"parent_use_3 use_3 [flags]",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				flags:                 &testFlagSet,
+				Args:                  testArgs,
+				Use:                   "use_4",
+			},
+			"use_4 [flags] [args]",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				Args:                  testArgs,
+				Use:                   "use_5",
+			},
+			"use_5 [args]",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				flags:                 &testFlagSet,
+				Use:                   "[flags] use_6",
+			},
+			"[flags] use_6",
+		},
+		{
+			&Command{
+				DisableFlagsInUseLine: false,
+				DisableArgsInUseLine:  false,
+				Args:                  testArgs,
+				Use:                   "[args] use_7",
+			},
+			"[args] use_7",
+		},
+	}
+	for i, tc := range testCases {
+		if tc.Cmd.UseLine() != tc.UseLine {
+			t.Errorf("test case no. %d mismatch.\nResult: %s\nExpect: %s", i, tc.Cmd.UseLine(), tc.UseLine)
+		}
+	}
+}
