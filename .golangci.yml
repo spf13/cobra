@@ -16,47 +16,105 @@ run:
   deadline: 5m
 
 linters:
+  fast: false
   disable-all: true
   enable:
-    #- bodyclose
+   # Enabled by Default
     # - deadcode ! deprecated since v1.49.0; replaced by 'unused'
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    # - varcheck ! deprecated since v1.49.0; replaced by 'unused'
+   # Disabled by Default
+    #- asasalint
+    #- asciicheck
+    #- bidichk
+    #- bodyclose
+    #- containedctx
+    #- contextcheck
+    #- cyclop
+    #- decorder
     #- depguard
     #- dogsled
     #- dupl
-    - errcheck
+    #- durationcheck
+    #- errchkjson
+    #- errname
+    #- errorlint
+    #- execinquery
     #- exhaustive
+    #- exhaustivestruct !
+    #- exhaustruct
+    #- exportloopref
+    #- forbidigo
+    #- forcetypeassert
     #- funlen
     - gas
+    #- gci
+    #- gochecknoglobals
     #- gochecknoinits
+    #- gocognit
     - goconst
     #- gocritic
     #- gocyclo
-    #- gofmt
+    #- godot
+    #- godox
+    #- goerr113
+    - gofmt
+    #- gofumpt
+    #- goheader
     - goimports
-    - golint
+    #- golint ! Use revive instead
     #- gomnd
+    #- gomoddirectives
+    #- gomodguard
     #- goprintffuncname
     #- gosec
-    #- gosimple
-    - govet
-    - ineffassign
-    - interfacer
+    #- grouper
+    #- ifshort !
+    #- importas
+    - interfacer # !
+    #- ireturn
     #- lll
-    - maligned
+    #- maintidx
+    #- makezero
+    #- maligned # Replaced by govet 'fieldalignment'
     - megacheck
     #- misspell
     #- nakedret
+    #- nestif
+    #- nilerr
+    #- nilnil
+    #- nlreturn
     #- noctx
     #- nolintlint
+    #- nonamedreturns
+    #- nosnakecase !
+    #- nosprintfhostport
+    #- paralleltest
+    #- prealloc
+    #- predeclared
+    #- promlinter
+    - revive
     #- rowserrcheck
-    #- scopelint
-    #- staticcheck
+    #- scopelint !
+    #- sqlclosecheck
     #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
     #- stylecheck
-    #- typecheck
+    #- tagliatelle
+    #- tenv
+    #- testpackage
+    #- thelper
+    #- tparallel
     - unconvert
     #- unparam
-    - unused
-    # - varcheck ! deprecated since v1.49.0; replaced by 'unused'
+    #- usestdlibvars
+    #- varnamelen
+    #- wastedassign
     #- whitespace
-  fast: false
+    #- wrapcheck
+    #- wsl
