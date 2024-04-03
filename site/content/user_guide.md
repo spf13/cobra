@@ -3,7 +3,7 @@
 While you are welcome to provide your own organization, typically a Cobra-based
 application will follow the following organizational structure:
 
-```
+```test
   ▾ appName/
     ▾ cmd/
         add.go
@@ -301,6 +301,7 @@ command := cobra.Command{
 ### Bind Flags with Config
 
 You can also bind your flags with [viper](https://github.com/spf13/viper):
+
 ```go
 var author string
 
@@ -320,12 +321,14 @@ More in [viper documentation](https://github.com/spf13/viper#working-with-flags)
 
 Flags are optional by default. If instead you wish your command to report an error
 when a flag has not been set, mark it as required:
+
 ```go
 rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkFlagRequired("region")
 ```
 
 Or, for persistent flags:
+
 ```go
 rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkPersistentFlagRequired("region")
@@ -335,6 +338,7 @@ rootCmd.MarkPersistentFlagRequired("region")
 
 If you have different flags that must be provided together (e.g. if they provide the `--username` flag they MUST provide the `--password` flag as well) then
 Cobra can enforce that requirement:
+
 ```go
 rootCmd.Flags().StringVarP(&u, "username", "u", "", "Username (required if password is set)")
 rootCmd.Flags().StringVarP(&pw, "password", "p", "", "Password (required if username is set)")
@@ -343,6 +347,7 @@ rootCmd.MarkFlagsRequiredTogether("username", "password")
 
 You can also prevent different flags from being provided together if they represent mutually
 exclusive options such as specifying an output format as either `--json` or `--yaml` but never both:
+
 ```go
 rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
 rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
@@ -351,6 +356,7 @@ rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 
 If you want to require at least one flag from a group to be present, you can use `MarkFlagsOneRequired`.
 This can be combined with `MarkFlagsMutuallyExclusive` to enforce exactly one flag from a given group:
+
 ```go
 rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
 rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
@@ -428,7 +434,7 @@ by not providing a 'Run' for the 'rootCmd'.
 
 We have only defined one flag for a single command.
 
-More documentation about flags is available at https://github.com/spf13/pflag
+More documentation about flags is available at https://github.com/spf13/pflag.
 
 ```go
 package main
@@ -722,7 +728,7 @@ command.SuggestionsMinimumDistance = 1
 You can also explicitly set names for which a given command will be suggested using the `SuggestFor` attribute. This allows suggestions for strings that are not close in terms of string distance, but make sense in your set of commands but for which
 you don't want aliases. Example:
 
-```
+```bash
 $ kubectl remove
 Error: unknown command "remove" for "kubectl"
 
@@ -787,7 +793,7 @@ func main() {
 
 Example run as a kubectl plugin:
 
-```
+```bash
 $ kubectl myplugin
 Usage:
   kubectl myplugin [command]
