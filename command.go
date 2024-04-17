@@ -254,6 +254,12 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// InfluencedByPermissions indicates that the output is influenced by the
+	// permission it is run with. Thus, when a command such as sudo appears on the
+	// command-line, it will use commands like sudo or doas to gain extra privileges
+	// when retrieving information for completion. Available only to Zsh.
+	InfluencedByPermissions bool
 }
 
 // Context returns underlying command context. If command was executed
