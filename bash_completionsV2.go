@@ -68,13 +68,6 @@ __%[1]s_get_completion_results() {
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __%[1]s_debug "lastParam ${lastParam}, lastChar ${lastChar}"
 
-    if [[ -z ${cur} && ${lastChar} != = ]]; then
-        # If the last parameter is complete (there is a space following it)
-        # We add an extra empty parameter so we can indicate this to the go method.
-        __%[1]s_debug "Adding extra empty parameter"
-        requestComp="${requestComp} ''"
-    fi
-
     # When completing a flag with an = (e.g., %[1]s -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
     # the flag part from $cur
