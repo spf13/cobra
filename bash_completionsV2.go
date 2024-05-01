@@ -220,24 +220,15 @@ __%[1]s_handle_completion_types() {
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
         local tab=$'\t' comp
-        local matches=()
         for comp in "${completions[@]}"; do
             [[ -z $comp ]] && continue
             # Strip any description
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
-                # Strictly speaking we could append directly to COMPREPLY here.
-                # But there's a pretty big performance hit involved with
-                # creating one subshell to printf %%q for each completion that
-                # matches. Instead, batch all the matches up so we can quote
-                # them all at once in a single printf call.
-                matches+=( "$comp" )
+                COMPREPLY+=( "$comp" )
            fi
         done
-        while IFS='' read -r comp; do
-            COMPREPLY+=( "$comp" )
-        done < <(printf "%%q\n" "${matches[@]}")
         ;;
 
     *)
