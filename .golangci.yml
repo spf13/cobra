@@ -33,16 +33,13 @@ linters:
     #- gocyclo
     #- gofmt
     - goimports
-    - golint
     #- gomnd
     #- goprintffuncname
     #- gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     #- lll
-    - maligned
     - megacheck
     #- misspell
     #- nakedret
