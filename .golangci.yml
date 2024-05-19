@@ -33,16 +33,13 @@ linters:
     #- gocyclo
     #- gofmt
     - goimports
-    - golint
     #- gomnd
     #- goprintffuncname
     #- gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     #- lll
-    - maligned
     - megacheck
     #- misspell
     #- nakedret
@@ -52,7 +49,7 @@ linters:
     #- scopelint
     #- staticcheck
     #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
-    #- stylecheck
+    - stylecheck
     #- typecheck
     - unconvert
     #- unparam
