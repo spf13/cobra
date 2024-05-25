@@ -3,7 +3,7 @@
 While you are welcome to provide your own organization, typically a Cobra-based
 application will follow the following organizational structure:
 
-```
+```test
   ▾ appName/
     ▾ cmd/
         add.go
@@ -301,6 +301,7 @@ command := cobra.Command{
 ### Bind Flags with Config
 
 You can also bind your flags with [viper](https://github.com/spf13/viper):
+
 ```go
 var author string
 
@@ -320,12 +321,14 @@ More in [viper documentation](https://github.com/spf13/viper#working-with-flags)
 
 Flags are optional by default. If instead you wish your command to report an error
 when a flag has not been set, mark it as required:
+
 ```go
 rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkFlagRequired("region")
 ```
 
 Or, for persistent flags:
+
 ```go
 rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
 rootCmd.MarkPersistentFlagRequired("region")
@@ -335,6 +338,7 @@ rootCmd.MarkPersistentFlagRequired("region")
 
 If you have different flags that must be provided together (e.g. if they provide the `--username` flag they MUST provide the `--password` flag as well) then
 Cobra can enforce that requirement:
+
 ```go
 rootCmd.Flags().StringVarP(&u, "username", "u", "", "Username (required if password is set)")
 rootCmd.Flags().StringVarP(&pw, "password", "p", "", "Password (required if username is set)")
@@ -343,13 +347,24 @@ rootCmd.MarkFlagsRequiredTogether("username", "password")
 
 You can also prevent different flags from being provided together if they represent mutually
 exclusive options such as specifying an output format as either `--json` or `--yaml` but never both:
+
 ```go
 rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
 rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
 rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
 ```
 
-In both of these cases:
+If you want to require at least one flag from a group to be present, you can use `MarkFlagsOneRequired`.
+This can be combined with `MarkFlagsMutuallyExclusive` to enforce exactly one flag from a given group:
+
+```go
+rootCmd.Flags().BoolVar(&ofJson, "json", false, "Output in JSON")
+rootCmd.Flags().BoolVar(&ofYaml, "yaml", false, "Output in YAML")
+rootCmd.MarkFlagsOneRequired("json", "yaml")
+rootCmd.MarkFlagsMutuallyExclusive("json", "yaml")
+```
+
+In these cases:
   - both local and persistent flags can be used
     - **NOTE:** the group is only enforced on commands where every flag is defined
   - a flag may appear in multiple groups
@@ -419,7 +434,7 @@ by not providing a 'Run' for the 'rootCmd'.
 
 We have only defined one flag for a single command.
 
-More documentation about flags is available at https://github.com/spf13/pflag
+More documentation about flags is available at https://github.com/spf13/pflag.
 
 ```go
 package main
@@ -587,9 +602,15 @@ Running an application with the '--version' flag will print the version to stdou
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
 
+## Error Message Prefix
+
+Cobra prints an error message when receiving a non-nil error value.
+The default error message is `Error: <error contents>`.
+The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` function.
+
 ## PreRun and PostRun Hooks
 
-It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  These functions are run in the following order:
+It is possible to run functions before or after the main `Run` function of your command. The `PersistentPreRun` and `PreRun` functions will be executed before `Run`. `PersistentPostRun` and `PostRun` will be executed after `Run`.  The `Persistent*Run` functions will be inherited by children if they do not declare their own.  The `*PreRun` and `*PostRun` functions will only be executed if the `Run` function of the current command has been declared.  These functions are run in the following order:
 
 - `PersistentPreRun`
 - `PreRun`
@@ -672,6 +693,10 @@ Inside subCmd PostRun with args: [arg1 arg2]
 Inside subCmd PersistentPostRun with args: [arg1 arg2]
 ```
 
+By default, only the first persistent hook found in the command chain is executed.
+That is why in the above output, the `rootCmd PersistentPostRun` was not called for a child command.
+Set `EnableTraverseRunHooks` global variable to `true` if you want to execute all parents' persistent hooks.
+
 ## Suggestions when "unknown command" happens
 
 Cobra will print automatic suggestions when "unknown command" errors happen. This allows Cobra to behave similarly to the `git` command when a typo happens. For example:
@@ -703,7 +728,7 @@ command.SuggestionsMinimumDistance = 1
 You can also explicitly set names for which a given command will be suggested using the `SuggestFor` attribute. This allows suggestions for strings that are not close in terms of string distance, but make sense in your set of commands but for which
 you don't want aliases. Example:
 
-```
+```bash
 $ kubectl remove
 Error: unknown command "remove" for "kubectl"
 
@@ -729,3 +754,57 @@ Read more about it in [Shell Completions](completions/_index.md).
 Cobra makes use of the shell-completion system to define a framework allowing you to provide Active Help to your users.
 Active Help are messages (hints, warnings, etc) printed as the program is being used.
 Read more about it in [Active Help](active_help.md).
+
+## Creating a plugin
+
+When creating a plugin for tools like *kubectl*, the executable is named
+`kubectl-myplugin`, but it is used as `kubectl myplugin`. To fix help
+messages and completions, annotate the root command with the
+`cobra.CommandDisplayNameAnnotation` annotation.
+
+### Example kubectl plugin
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+func main() {
+	rootCmd := &cobra.Command{
+		Use: "kubectl-myplugin",
+		Annotations: map[string]string{
+			cobra.CommandDisplayNameAnnotation: "kubectl myplugin",
+		},
+	}
+	subCmd := &cobra.Command{
+		Use: "subcmd",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("kubectl myplugin subcmd")
+		},
+	}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.Execute()
+}
+```
+
+Example run as a kubectl plugin:
+
+```bash
+$ kubectl myplugin
+Usage:
+  kubectl myplugin [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  subcmd
+
+Flags:
+  -h, --help   help for kubectl myplugin
+
+Use "kubectl myplugin [command] --help" for more information about a command.
+```

@@ -19,7 +19,7 @@ linters:
   disable-all: true
   enable:
     #- bodyclose
-    - deadcode
+    # - deadcode ! deprecated since v1.49.0; replaced by 'unused'
     #- depguard
     #- dogsled
     #- dupl
@@ -29,20 +29,17 @@ linters:
     - gas
     #- gochecknoinits
     - goconst
-    #- gocritic
+    - gocritic
     #- gocyclo
     #- gofmt
     - goimports
-    - golint
     #- gomnd
     #- goprintffuncname
     #- gosec
-    #- gosimple
+    - gosimple
     - govet
     - ineffassign
-    - interfacer
     #- lll
-    - maligned
     - megacheck
     #- misspell
     #- nakedret
@@ -51,12 +48,12 @@ linters:
     #- rowserrcheck
     #- scopelint
     #- staticcheck
-    - structcheck
-    #- stylecheck
+    #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
+    - stylecheck
     #- typecheck
     - unconvert
     #- unparam
-    #- unused
-    - varcheck
+    - unused
+    # - varcheck ! deprecated since v1.49.0; replaced by 'unused'
     #- whitespace
   fast: false
