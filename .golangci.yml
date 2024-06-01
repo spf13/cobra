@@ -30,7 +30,7 @@ linters:
     - goconst
     - gocritic
     #- gocyclo
-    #- gofmt
+    - gofmt
     - goimports
     #- gomnd
     #- goprintffuncname
@@ -39,10 +39,10 @@ linters:
     - govet
     - ineffassign
     #- lll
-    #- misspell
+    - misspell
     #- nakedret
     #- noctx
-    #- nolintlint
+    - nolintlint
     #- rowserrcheck
     #- scopelint
     - staticcheck
