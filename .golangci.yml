@@ -26,7 +26,6 @@ linters:
     - errcheck
     #- exhaustive
     #- funlen
-    - gas
     #- gochecknoinits
     - goconst
     - gocritic
@@ -35,19 +34,18 @@ linters:
     - goimports
     #- gomnd
     #- goprintffuncname
-    #- gosec
+    - gosec
     - gosimple
     - govet
     - ineffassign
     #- lll
-    - megacheck
     #- misspell
     #- nakedret
     #- noctx
     #- nolintlint
     #- rowserrcheck
     #- scopelint
-    #- staticcheck
+    - staticcheck
     #- structcheck ! deprecated since v1.49.0; replaced by 'unused'
     - stylecheck
     #- typecheck
