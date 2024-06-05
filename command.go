@@ -1058,7 +1058,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// Regardless of what command execute is called on, run on Root only
 	if c.HasParent() {
-		return c.Root().ExecuteC()
+		return c.Root().ExecuteContextC(c.ctx)
 	}
 
 	// windows hook
@@ -1108,11 +1108,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		cmd.commandCalledAs.name = cmd.Name()
 	}
 
-	// We have to pass global context to children command
-	// if context is present on the parent command.
-	if cmd.ctx == nil {
-		cmd.ctx = c.ctx
-	}
+	// Pass context of root command to child command.
+	cmd.ctx = c.ctx
 
 	err = cmd.execute(flags)
 	if err != nil {
