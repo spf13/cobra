@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	flag "github.com/spf13/pflag"
 )
@@ -164,6 +165,13 @@ type Command struct {
 	// globNormFunc is the global normalization function
 	// that we can use on every pflag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
+
+	// flagsCompletions contrains completions for arbitrary lists of flags.
+	// Those flags may or may not actually strictly belong to the command in the function,
+	// but registering completions for them through the command allows for garbage-collecting.
+	flagCompletionFunctions map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+	// lock for reading and writing from flagCompletionFunctions
+	flagCompletionMutex *sync.RWMutex
 
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
