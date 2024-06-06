@@ -334,6 +334,24 @@ rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (re
 rootCmd.MarkPersistentFlagRequired("region")
 ```
 
+### Multiple Required flags
+
+If your command has multiple required flags that are not [grouped](#flag-groups) to report an error
+when one or more flags have not been set, mark them as required:
+```go
+rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.Flags().StringVarP(&Failover, "failover", "f", "", "AWS failover region (required)")
+rootCmd.MarkFlagsRequired("region", "failover")
+```
+
+Or, for multiple persistent flags:
+```go
+rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.PersistentFlags().StringVarP(&Failover, "failover", "f", "", "AWS failover region (required)")
+rootCmd.MarkPersistentFlagsRequired("region", "failover")
+```
+
+
 ### Flag Groups
 
 If you have different flags that must be provided together (e.g. if they provide the `--username` flag they MUST provide the `--password` flag as well) then
