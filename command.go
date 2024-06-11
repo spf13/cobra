@@ -469,10 +469,8 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 }
 
-// Help puts out the help for the command.
+// Help invokes the HelpFunc without arguments.
 // Kept for backwards compatibility.
-// No longer used because it does not allow
-// to pass arguments to the help command.
 // Can be a simple way to trigger the help
 // if arguments are not needed.
 func (c *Command) Help() error {
@@ -1124,11 +1122,14 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if errors.Is(err, flag.ErrHelp) {
 			// The call to execute() above has parsed the flags.
 			// We therefore only pass the remaining arguments to the help function.
-			argWoFlags := cmd.Flags().Args()
+			remainingArgs := cmd.Flags().Args()
 			if cmd.DisableFlagParsing {
-				argWoFlags = flags
+				// For commands that have DisableFlagParsing == true, the flag parsing
+				// was not done and cmd.Flags().Args() is not filled.  We therefore
+				// use the full set of arguments, which include flags.
+				remainingArgs = flags
 			}
-			cmd.HelpFunc()(cmd, argWoFlags)
+			cmd.HelpFunc()(cmd, remainingArgs)
 			return cmd, nil
 		}
 

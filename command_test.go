@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:goconst
 package cobra
 
 import (
@@ -1080,83 +1079,108 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
+type overridingHelp struct {
+	expectedCmdName string
+	expectedArgs    []string
+
+	helpCalled bool
+	err        error
+}
+
+func (o *overridingHelp) helpFunc() func(c *Command, args []string) {
+	return func(c *Command, args []string) {
+		o.helpCalled = true
+		if c.Name() != o.expectedCmdName {
+			o.err = fmt.Errorf("Expected command name: %q, got %q", o.expectedCmdName, c.Name())
+			return
+		}
+
+		if len(args) != len(o.expectedArgs) {
+			o.err = fmt.Errorf("Expected args %v, got %v", o.expectedArgs, args)
+			return
+		}
+
+		for i, arg := range o.expectedArgs {
+			if args[i] != arg {
+				o.err = fmt.Errorf("Expected args %v, got %v", o.expectedArgs, args)
+				return
+			}
+		}
+	}
+}
+
+func (o *overridingHelp) checkError() error {
+	if o.err != nil {
+		return o.err
+	}
+	if !o.helpCalled {
+		return fmt.Errorf("Overridden help function not called")
+	}
+	return nil
+}
+
 func TestHelpOverrideOnRoot(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
-	rootCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "root" {
-			t.Errorf(`Expected command name: "root", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+
+	override := overridingHelp{
+		expectedCmdName: rootCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	rootCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "arg1", "arg2", "--help")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpOverrideOnChild(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child"}
 	rootCmd.AddCommand(subCmd)
 
-	subCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	subCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "child", "arg1", "arg2", "--help")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpOverrideOnRootWithChild(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child"}
 	rootCmd.AddCommand(subCmd)
 
-	rootCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	rootCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "child", "arg1", "arg2", "--help")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpOverrideOnRootWithChildAndFlags(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child"}
 	rootCmd.AddCommand(subCmd)
@@ -1164,28 +1188,23 @@ func TestHelpOverrideOnRootWithChildAndFlags(t *testing.T) {
 	var myFlag bool
 	subCmd.Flags().BoolVar(&myFlag, "myflag", false, "")
 
-	rootCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	rootCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "child", "arg1", "--myflag", "arg2", "--help")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpOverrideOnRootWithChildAndFlagsButParsingDisabled(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child", DisableFlagParsing: true}
 	rootCmd.AddCommand(subCmd)
@@ -1193,76 +1212,61 @@ func TestHelpOverrideOnRootWithChildAndFlagsButParsingDisabled(t *testing.T) {
 	var myFlag bool
 	subCmd.Flags().BoolVar(&myFlag, "myflag", false, "")
 
-	rootCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 4 ||
-			args[0] != "arg1" || args[1] != "--myflag" || args[2] != "arg2" || args[3] != "--help" {
-			t.Errorf("Expected args [args1 --myflag arg2 --help], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "--myflag", "arg2", "--help"},
+	}
+	rootCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "child", "arg1", "--myflag", "arg2", "--help")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpCommandOverrideOnChild(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child"}
 	rootCmd.AddCommand(subCmd)
 
-	subCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	subCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "help", "child", "arg1", "arg2")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
 func TestHelpCommandOverrideOnRootWithChild(t *testing.T) {
-	var helpCalled bool
 	rootCmd := &Command{Use: "root"}
 	subCmd := &Command{Use: "child"}
 	rootCmd.AddCommand(subCmd)
 
-	rootCmd.SetHelpFunc(func(c *Command, args []string) {
-		helpCalled = true
-		if c.Name() != "child" {
-			t.Errorf(`Expected command name: "child", got %q`, c.Name())
-		}
-		if len(args) != 2 || args[0] != "arg1" || args[1] != "arg2" {
-			t.Errorf("Expected args [args1 arg2], got %v", args)
-		}
-	})
+	override := overridingHelp{
+		expectedCmdName: subCmd.Name(),
+		expectedArgs:    []string{"arg1", "arg2"},
+	}
+	rootCmd.SetHelpFunc(override.helpFunc())
 
 	_, err := executeCommand(rootCmd, "help", "child", "arg1", "arg2")
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error executing command: %v", err)
 	}
 
-	if !helpCalled {
-		t.Error("Overridden help function not called")
+	if err = override.checkError(); err != nil {
+		t.Errorf("Unexpected error from help function: %v", err)
 	}
 }
 
