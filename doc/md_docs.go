@@ -157,6 +157,8 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	return nil
 }
 
+// GenMarkdownTreeCustomWithFooter is the same as GenMarkdownTree, but
+// with custom filePrepender, fileAppender, and linkHandler.
 func GenMarkdownTreeCustomWithFooter(
 	cmd *cobra.Command, dir string, filePrepender, fileAppender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
