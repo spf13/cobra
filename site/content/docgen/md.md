@@ -80,6 +80,12 @@ func GenMarkdownTreeCustom(cmd *Command, dir string, filePrepender, linkHandler 
 ```
 
 ```go
+func GenMarkdownTreeCustomWithFooter(cmd *Command, dir string, filePrepender, fileAppender, linkHandler func(string) string) error {
+	//...
+}
+```
+
+```go
 func GenMarkdownCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string) string) error {
 	//...
 }
@@ -104,6 +110,8 @@ filePrepender := func(filename string) string {
 	return fmt.Sprintf(fmTemplate, now, strings.Replace(base, "_", " ", -1), base, url)
 }
 ```
+
+The `fileAppender` will append the return value given the full filepath to the rendered Markdown file.
 
 The `linkHandler` can be used to customize the rendered internal links to the commands, given a filename:
 
