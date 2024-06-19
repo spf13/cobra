@@ -133,7 +133,7 @@ func TestGenMdTreeCustomWithFooter(t *testing.T) {
 	defer os.RemoveAll(tmpdir)
 
 	prepender := func(s string) string { return "Prepended" }
-	appender := func(s string) string { return "Postpended" }
+	appender := func(s string) string { return "Appended" }
 	identity := func(s string) string { return s }
 
 	if err := GenMarkdownTreeCustomWithFooter(rootCmd, tmpdir, prepender, appender, identity); err != nil {
@@ -143,17 +143,17 @@ func TestGenMdTreeCustomWithFooter(t *testing.T) {
 	gotRoot := fileContents(t, tmpdir, "root.md")
 	checkStringContains(t, gotRoot, "Prepended")
 	checkStringContains(t, gotRoot, rootCmd.Long)
-	checkStringContains(t, gotRoot, "Postpended")
+	checkStringContains(t, gotRoot, "Appended")
 
 	gotEcho := fileContents(t, tmpdir, "root_echo.md")
 	checkStringContains(t, gotEcho, "Prepended")
 	checkStringContains(t, gotEcho, echoCmd.Long)
-	checkStringContains(t, gotEcho, "Postpended")
+	checkStringContains(t, gotEcho, "Appended")
 
 	gotEchoSub := fileContents(t, tmpdir, "root_echo_echosub.md")
 	checkStringContains(t, gotEchoSub, "Prepended")
 	checkStringContains(t, gotEchoSub, echoSubCmd.Long)
-	checkStringContains(t, gotEchoSub, "Postpended")
+	checkStringContains(t, gotEchoSub, "Appended")
 }
 
 func fileContents(t *testing.T, dir, filename string) string {
