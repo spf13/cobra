@@ -141,7 +141,7 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 	// OnKillRun: run if a commands execution is exited
-	OnKillRun func(cmd *Command, args []string)
+	OnKillRun func(cmd *Command, args []string, os.Signal)
 
 	// groups for subcommands
 	commandgroups []*Group
@@ -939,15 +939,14 @@ func (c *Command) execute(a []string) (err error) {
 		signal.Notify(
 			sigchan,
 			syscall.SIGINT,
-			syscall.SIGKILL,
 			syscall.SIGTERM,
 			syscall.SIGQUIT,
 		)
 
 		go func() {
-			_ = <-sigchan
+			s := <-sigchan
 
-			c.OnKillRun(c, argWoFlags)
+			c.OnKillRun(c, argWoFlags, s)
 		}()
 	}
 
