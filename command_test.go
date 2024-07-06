@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -169,6 +170,94 @@ func TestSubcommandExecuteC(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
+	if c.Name() != "child" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+}
+
+func TestSubcommandExecuteMissingSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: nil, ErrorOnUnknownSubcommand: false}
+	child2Cmd := &Command{Use: "child2", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.AddCommand(child2Cmd)
+
+	// test existing command
+	c, output, err := executeCommandC(rootCmd, "child")
+	if !strings.HasPrefix(output, "Usage:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != "child" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test existing sub command
+	c, output, err = executeCommandC(rootCmd, "child", "child2")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != "child2" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// now test a command which does not exist, we will get no error, just "Usage:" is printed
+	c, output, err = executeCommandC(rootCmd, "child", "unknownChild")
+	if !strings.HasPrefix(output, "Usage:") {
+		t.Errorf("Expected: 'Usage: ...'\nGot:\n %q\n", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != "child" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+}
+
+func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: nil, ErrorOnUnknownSubcommand: true}
+	child2Cmd := &Command{Use: "child2", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.AddCommand(child2Cmd)
+
+	// test existing command
+	c, output, err := executeCommandC(rootCmd, "child")
+	if !strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if !errors.Is(err, ErrUnknownSubcommand) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != "child" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test existing sub command
+	c, output, err = executeCommandC(rootCmd, "child", "child2")
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != "child2" {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// now test a command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
+	c, output, err = executeCommandC(rootCmd, "child", "unknownChild")
+	if !strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if !errors.Is(err, ErrUnknownSubcommand) {
+		t.Errorf("Unexpected error: %v", err)
+	}
 	if c.Name() != "child" {
 		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
 	}
