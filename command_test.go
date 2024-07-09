@@ -179,7 +179,9 @@ func TestSubcommandExecuteMissingSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	const childName = "child"
 	const grandchildName = "grandchild"
-	childCmd := &Command{Use: childName, Run: nil, ErrorOnUnknownSubcommand: false}
+	EnableErrorOnUnknownSubcommand = false
+	defer func() { EnableErrorOnUnknownSubcommand = defaultErrorOnUnknownSubcommand }()
+	childCmd := &Command{Use: childName, Run: nil}
 	child2Cmd := &Command{Use: grandchildName, Run: emptyRun}
 	rootCmd.AddCommand(childCmd)
 	childCmd.AddCommand(child2Cmd)
@@ -225,7 +227,9 @@ func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testi
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	const childName = "child"
 	const grandchildName = "grandchild"
-	childCmd := &Command{Use: childName, Run: nil, ErrorOnUnknownSubcommand: true}
+	EnableErrorOnUnknownSubcommand = true
+	defer func() { EnableErrorOnUnknownSubcommand = defaultErrorOnUnknownSubcommand }()
+	childCmd := &Command{Use: childName, Run: nil}
 	child2Cmd := &Command{Use: grandchildName, Run: emptyRun}
 	rootCmd.AddCommand(childCmd)
 	childCmd.AddCommand(child2Cmd)

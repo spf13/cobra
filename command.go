@@ -258,17 +258,6 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
-
-	// ErrorOnUnknownSubcommand controls the behavior of subcommand handling.
-	// When the flag is set true the behavior of Command.Execute() will change:
-	// If a sub-subcommand is not found ErrUnknownSubcommand will be returned on calling
-	// Command.Exec() instead of the old behavior where a nil error was sent.
-	// If the flag is false (default) the old behavior is performed.
-	// For this behavior the child subcommand must be nil.
-	// Example: in root/service/run - there would be an existing subcommand `run`
-	// in root/service/unknown - there would be an unknown subcommand `unknown` therefore returning an error
-	// `service` must have a nil Command.Run() function for this.
-	ErrorOnUnknownSubcommand bool
 }
 
 // Context returns underlying command context. If command was executed
@@ -939,7 +928,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if !c.Runnable() {
-		if c.ErrorOnUnknownSubcommand {
+		if EnableErrorOnUnknownSubcommand {
 			return ErrUnknownSubcommand
 		} else {
 			return flag.ErrHelp
