@@ -1188,7 +1188,7 @@ func (c *Command) checkCommandGroups() {
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
-		usage := "help for "
+		usage := "Help for "
 		name := c.displayName()
 		if name == "" {
 			usage += "this command"
