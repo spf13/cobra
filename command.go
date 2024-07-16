@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -1079,7 +1078,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	args := c.args
 
 	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
-	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
+	if c.args == nil && !isTesting() {
 		args = os.Args[1:]
 	}
 
