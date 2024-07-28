@@ -401,8 +401,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			doCompleteFlags := func(flag *pflag.Flag) {
 				if !flag.Changed ||
 					strings.Contains(flag.Value.Type(), "Slice") ||
-					strings.Contains(flag.Value.Type(), "Array") {
-					// If the flag is not already present, or if it can be specified multiple times (Array or Slice)
+					strings.Contains(flag.Value.Type(), "Array") ||
+					strings.HasPrefix(flag.Value.Type(), "stringTo") {
+					// If the flag is not already present, or if it can be specified multiple times (Array, Slice, or stringTo)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
 				}
