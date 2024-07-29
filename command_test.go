@@ -959,6 +959,103 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
+func TestErrorOnShadowedFlagsOnShadowedFlag(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun, ErrorOnShadowedFlags: true}
+	child := &Command{Use: "child", Run: emptyRun}
+	parent.AddCommand(child)
+
+	parent.PersistentFlags().Bool("foo", false, "parent foo usage")
+	parent.PersistentFlags().Bool("bar", false, "parent bar usage")
+	child.Flags().Bool("foo", false, "child foo usage") // This shadows parent's foo flag
+	child.Flags().Bool("baz", false, "child baz usage")
+
+	_, err := executeCommand(parent, "child")
+	if err == nil {
+		t.Errorf("Expected an error")
+		return
+	}
+
+	expectedErrorStrings := []string{
+		" - Flag 'foo' with usage 'parent foo usage'",
+		" - Flag 'foo' with usage 'child foo usage'",
+	}
+
+	errorString := err.Error()
+	for _, expectedErrorString := range expectedErrorStrings {
+		if !strings.Contains(errorString, expectedErrorString) {
+			t.Errorf("Expected the string \"%s\" in the error", expectedErrorString)
+		}
+	}
+}
+
+func TestErrorOnShadowedFlagsOnSelfShadowedFlag(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun, ErrorOnShadowedFlags: true}
+
+	parent.PersistentFlags().Bool("foo", false, "parent persistent foo usage")
+	parent.Flags().Bool("foo", false, "parent foo usage")
+
+	_, err := executeCommand(parent, "parent")
+	if err == nil {
+		t.Errorf("Expected an error")
+		return
+	}
+
+	expectedErrorStrings := []string{
+		" - Flag 'foo' with usage 'parent persistent foo usage'",
+		" - Flag 'foo' with usage 'parent foo usage'",
+	}
+
+	errorString := err.Error()
+	for _, expectedErrorString := range expectedErrorStrings {
+		if !strings.Contains(errorString, expectedErrorString) {
+			t.Errorf("String %q is not present in error: %q", expectedErrorString, err)
+		}
+	}
+}
+
+func TestErrorOnShadowedFlagsOnNoShadowedFlag(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun, ErrorOnShadowedFlags: true}
+
+	parent.PersistentFlags().Bool("foo", false, "parent persistent foo usage")
+	parent.Flags().Bool("bar", false, "parent bar usage")
+
+	_, err := executeCommand(parent, "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestErrorOnShadowedOnShadowedFlagParentAndChild(t *testing.T) {
+	parent := &Command{Use: "parent", Run: emptyRun, ErrorOnShadowedFlags: true}
+	child := &Command{Use: "child", Run: emptyRun}
+	grandchild := &Command{Use: "grandchild", Run: emptyRun}
+	parent.AddCommand(child)
+	child.AddCommand(grandchild)
+
+	parent.PersistentFlags().Bool("foo", false, "parent foo usage")
+	parent.PersistentFlags().Bool("bar", false, "parent bar usage")
+	child.PersistentFlags().Bool("bar", false, "child bar usage")
+	grandchild.Flags().Bool("baz", false, "grandchild baz usage")
+
+	_, err := executeCommand(parent, "child", "grandchild")
+	if err == nil {
+		t.Errorf("Expected an error")
+		return
+	}
+
+	expectedErrorStrings := []string{
+		" - Flag 'bar' with usage 'parent bar usage'",
+		" - Flag 'bar' with usage 'child bar usage'",
+	}
+
+	errorString := err.Error()
+	for _, expectedErrorString := range expectedErrorStrings {
+		if !strings.Contains(errorString, expectedErrorString) {
+			t.Errorf("Expected the string \"%s\" in the error", expectedErrorString)
+		}
+	}
+}
+
 func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	child := &Command{Use: "child", Run: emptyRun}
