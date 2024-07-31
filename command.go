@@ -341,10 +341,23 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	c.helpCommandGroupID = groupID
 }
 
+// resetHelpCommandGroupID resets the group id of the help command.
+func (c *Command) resetHelpCommandGroupID() {
+	if c.helpCommand != nil {
+		c.helpCommand.GroupID = ""
+	}
+	c.helpCommandGroupID = ""
+}
+
 // SetCompletionCommandGroupID sets the group id of the completion command.
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
 	// completionCommandGroupID is used if no completion command is defined by the user
 	c.Root().completionCommandGroupID = groupID
+}
+
+// resetCompletionCommandGroupID resets the group id of the completion command.
+func (c *Command) resetCompletionCommandGroupID() {
+	c.Root().completionCommandGroupID = ""
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -1360,6 +1373,47 @@ func (c *Command) ContainsGroup(groupID string) bool {
 // AddGroup adds one or more command groups to this parent command.
 func (c *Command) AddGroup(groups ...*Group) {
 	c.commandgroups = append(c.commandgroups, groups...)
+}
+
+// RemoveGroup removes one or more command groups to this parent command.
+func (c *Command) RemoveGroup(groupIDs ...string) error {
+	// remove groups from commandgroups
+	groups := []*Group{}
+	hasRemoved := false
+main:
+	for _, group := range c.commandgroups {
+		for _, groupID := range groupIDs {
+			if group.ID == groupID {
+				hasRemoved = true
+				continue main
+			}
+		}
+		groups = append(groups, group)
+	}
+	if !hasRemoved {
+		return fmt.Errorf("following group ID does not exist; %s", strings.Join(groupIDs, ", "))
+	}
+	c.commandgroups = groups
+	// remove the groupID from the target commands
+	for _, command := range c.commands {
+		for _, groupID := range groupIDs {
+			if command.GroupID == groupID {
+				command.GroupID = ""
+			}
+			if command.helpCommandGroupID == groupID {
+				command.resetHelpCommandGroupID()
+			}
+		}
+	}
+	for _, groupID := range groupIDs {
+		if c.helpCommandGroupID == groupID {
+			c.resetHelpCommandGroupID()
+		}
+		if c.Root().completionCommandGroupID == groupID {
+			c.resetCompletionCommandGroupID()
+		}
+	}
+	return nil
 }
 
 // RemoveCommand removes one or more commands from a parent command.
