@@ -193,10 +193,17 @@ type Command struct {
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
-	// outWriter is a writer defined by the user that replaces stdout
-	outWriter io.Writer
-	// errWriter is a writer defined by the user that replaces stderr
-	errWriter io.Writer
+	// legacyOutWriter is a writer defined by the user that replaces stdout.
+	// Deprecated: use outStreamWriter instead (see https://github.com/spf13/cobra/issues/1708)
+	legacyOutWriter io.Writer
+	// legacyErrWriter is a writer defined by the user that replaces stderr.
+	// Deprecated: use errStreamWriter instead (see https://github.com/spf13/cobra/issues/1708)
+	legacyErrWriter io.Writer
+
+	// outStreamWriter is a writer defined by the user that replaces stdout
+	outStreamWriter io.Writer
+	// errStreamWriter is a writer defined by the user that replaces stderr
+	errStreamWriter io.Writer
 
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
@@ -284,20 +291,36 @@ func (c *Command) SetArgs(a []string) {
 //
 // Deprecated: Use SetOut and/or SetErr instead
 func (c *Command) SetOutput(output io.Writer) {
-	c.outWriter = output
-	c.errWriter = output
+	c.legacyOutWriter = output
+	c.legacyErrWriter = output
 }
 
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
+// Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetOut(newOut io.Writer) {
-	c.outWriter = newOut
+	c.legacyOutWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
 // If newErr is nil, os.Stderr is used.
+// Deprecated: Use SetOutFallback and/or SetErrFallback instead (see https://github.com/spf13/cobra/issues/1708)
 func (c *Command) SetErr(newErr io.Writer) {
-	c.errWriter = newErr
+	c.legacyErrWriter = newErr
+}
+
+// SetOutStream sets the destination for usage messages.
+// It includes (at least): --help, --version, completion.
+// If newOut is nil, os.Stdout is used.
+func (c *Command) SetOutStream(newOut io.Writer) {
+	c.outStreamWriter = newOut
+}
+
+// SetErrStream sets the destination for error messages.
+// It includes (at least): errors, usage, deprecations msgs, unknowns cmds/flags/topics msgs, DebugFlags.
+// If newErr is nil, os.Stderr is used.
+func (c *Command) SetErrStream(newErr io.Writer) {
+	c.errStreamWriter = newErr
 }
 
 // SetIn sets the source for input data
@@ -379,9 +402,10 @@ func (c *Command) OutOrStdout() io.Writer {
 	return c.getOut(os.Stdout)
 }
 
-// OutOrStderr returns output to stderr
+// OutOrStderr returns output to stderr.
+// Deprecated: Use OutOrStdout or ErrOrStderr instead
 func (c *Command) OutOrStderr() io.Writer {
-	return c.getOut(os.Stderr)
+	return c.getErrOrLegacyOutFallbackToStderr()
 }
 
 // ErrOrStderr returns output to stderr
@@ -395,8 +419,11 @@ func (c *Command) InOrStdin() io.Reader {
 }
 
 func (c *Command) getOut(def io.Writer) io.Writer {
-	if c.outWriter != nil {
-		return c.outWriter
+	if c.outStreamWriter != nil {
+		return c.outStreamWriter
+	}
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
 	}
 	if c.HasParent() {
 		return c.parent.getOut(def)
@@ -405,13 +432,32 @@ func (c *Command) getOut(def io.Writer) io.Writer {
 }
 
 func (c *Command) getErr(def io.Writer) io.Writer {
-	if c.errWriter != nil {
-		return c.errWriter
+	if c.legacyErrWriter != nil {
+		return c.legacyErrWriter
+	}
+	if c.errStreamWriter != nil {
+		return c.errStreamWriter
 	}
 	if c.HasParent() {
 		return c.parent.getErr(def)
 	}
 	return def
+}
+
+// getErrOrLegacyOutFallbackToStderr should only be used inside OutOrStderr.
+// Deprecated: this function exists to allow for backwards compatibility only
+// (see https://github.com/spf13/cobra/issues/1708)
+func (c *Command) getErrOrLegacyOutFallbackToStderr() io.Writer {
+	if c.errStreamWriter != nil {
+		return c.errStreamWriter
+	}
+	if c.legacyOutWriter != nil {
+		return c.legacyOutWriter
+	}
+	if c.HasParent() {
+		return c.parent.getErrOrLegacyOutFallbackToStderr()
+	}
+	return os.Stderr
 }
 
 func (c *Command) getIn(def io.Reader) io.Reader {
@@ -481,18 +527,18 @@ func (c *Command) Help() error {
 // UsageString returns usage string.
 func (c *Command) UsageString() string {
 	// Storing normal writers
-	tmpOutput := c.outWriter
-	tmpErr := c.errWriter
+	tmpOutput := c.legacyOutWriter
+	tmpErr := c.legacyErrWriter
 
 	bb := new(bytes.Buffer)
-	c.outWriter = bb
-	c.errWriter = bb
+	c.legacyOutWriter = bb
+	c.legacyErrWriter = bb
 
 	CheckErr(c.Usage())
 
 	// Setting things back to normal
-	c.outWriter = tmpOutput
-	c.errWriter = tmpErr
+	c.legacyOutWriter = tmpOutput
+	c.legacyErrWriter = tmpErr
 
 	return bb.String()
 }
@@ -1397,18 +1443,36 @@ main:
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOut or PrintErr instead.
 func (c *Command) Print(i ...interface{}) {
 	fmt.Fprint(c.OutOrStderr(), i...)
 }
 
 // Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOutln or PrintErrln instead.
 func (c *Command) Println(i ...interface{}) {
 	c.Print(fmt.Sprintln(i...))
 }
 
 // Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
+// Deprecated: Use PrintOutf or PrintErrf instead.
 func (c *Command) Printf(format string, i ...interface{}) {
 	c.Print(fmt.Sprintf(format, i...))
+}
+
+// PrintOut is a convenience method to Print to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOut(i ...interface{}) {
+	fmt.Fprint(c.OutOrStdout(), i...)
+}
+
+// PrintOutln is a convenience method to Println to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOutln(i ...interface{}) {
+	c.PrintOut(fmt.Sprintln(i...))
+}
+
+// PrintOutf is a convenience method to Printf to the defined OutStream, fallback to Stdout if not set.
+func (c *Command) PrintOutf(format string, i ...interface{}) {
+	c.PrintOut(fmt.Sprintf(format, i...))
 }
 
 // PrintErr is a convenience method to Print to the defined Err output, fallback to Stderr if not set.
