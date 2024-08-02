@@ -32,6 +32,7 @@ import (
 
 const (
 	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
+	FlagHelpGroupAnnotation      = "cobra_annotation_flag_help_group"
 	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
 )
 
@@ -144,6 +145,9 @@ type Command struct {
 
 	// groups for subcommands
 	commandgroups []*Group
+
+	// groups for flags in usage text.
+	flagHelpGroups []*Group
 
 	// args is actual args parsed from flags.
 	args []string
@@ -569,13 +573,22 @@ Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help")
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
 Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{$cmd := .}}{{if eq (len .FlagHelpGroups) 0}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
 Global Flags:
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{else}}{{$flags := .LocalFlags}}{{range $helpGroup := .FlagHelpGroups}}{{if not (eq (len ($cmd.UsageByFlagHelpGroupID "")) 0)}}
+
+Flags:
+{{$cmd.UsageByFlagHelpGroupID "" | trimTrailingWhitespaces}}{{end}}
+
+{{.Title}} Flags:
+{{$cmd.UsageByFlagHelpGroupID $helpGroup.ID | trimTrailingWhitespaces}}{{if not (eq (len ($cmd.UsageByFlagHelpGroupID "global")) 0)}}
+
+Global Flags:
+{{$cmd.UsageByFlagHelpGroupID "global" | trimTrailingWhitespaces}}{{end}}{{end}}{{end}}{{if .HasHelpSubCommands}}
 
 Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
@@ -1335,6 +1348,80 @@ func (c *Command) AddCommand(cmds ...*Command) {
 // Groups returns a slice of child command groups.
 func (c *Command) Groups() []*Group {
 	return c.commandgroups
+}
+
+// FlagHelpGroups returns a slice of the command's flag help groups
+func (c *Command) FlagHelpGroups() []*Group {
+	return c.flagHelpGroups
+}
+
+// AddFlagHelpGroup adds one more flag help group do the command. Returns an error if the Group.ID is empty,
+// or if the "global" reserved ID is used
+func (c *Command) AddFlagHelpGroup(groups ...*Group) error {
+	for _, group := range groups {
+		if len(group.ID) == 0 {
+			return fmt.Errorf("flag help group ID must have at least one character")
+		}
+
+		if group.ID == "global" {
+			return fmt.Errorf(`"global" is a reserved flag help group ID`)
+		}
+
+		c.flagHelpGroups = append(c.flagHelpGroups, group)
+	}
+
+	return nil
+}
+
+func (c *Command) hasFlagHelpGroup(groupID string) bool {
+	for _, g := range c.flagHelpGroups {
+		if g.ID == groupID {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AddFlagToHelpGroupID adds associates a flag to a groupID. Returns an error if the flag or group is non-existent
+func (c *Command) AddFlagToHelpGroupID(flag, groupID string) error {
+	lf := c.Flags()
+
+	if !c.hasFlagHelpGroup(groupID) {
+		return fmt.Errorf("no such flag help group: %v", groupID)
+	}
+
+	err := lf.SetAnnotation(flag, FlagHelpGroupAnnotation, []string{groupID})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UsageByFlagHelpGroupID returns the command flag's usage split by flag help groups. Flags without groups associated
+// will appear under "Flags", and inherited flags will appear under "Global Flags"
+func (c *Command) UsageByFlagHelpGroupID(groupID string) string {
+	if groupID == "global" {
+		return c.InheritedFlags().FlagUsages()
+	}
+
+	fs := &flag.FlagSet{}
+
+	c.LocalFlags().VisitAll(func(f *flag.Flag) {
+		if _, ok := f.Annotations[FlagHelpGroupAnnotation]; !ok {
+			if groupID == "" {
+				fs.AddFlag(f)
+			}
+			return
+		}
+
+		if id := f.Annotations[FlagHelpGroupAnnotation][0]; id == groupID {
+			fs.AddFlag(f)
+		}
+	})
+
+	return fs.FlagUsages()
 }
 
 // AllChildCommandsHaveGroup returns if all subcommands are assigned to a group
