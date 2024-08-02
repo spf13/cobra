@@ -1069,12 +1069,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	// initialize help at the last point to allow for user overriding
 	c.InitDefaultHelpCmd()
-	// initialize completion at the last point to allow for user overriding
-	c.InitDefaultCompletionCmd()
-
-	// Now that all commands have been created, let's make sure all groups
-	// are properly created also
-	c.checkCommandGroups()
 
 	args := c.args
 
@@ -1083,8 +1077,15 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		args = os.Args[1:]
 	}
 
-	// initialize the hidden command to be used for shell completion
+	// initialize the __complete command to be used for shell completion
 	c.initCompleteCmd(args)
+
+	// initialize the default completion command
+	c.InitDefaultCompletionCmd(args)
+
+	// Now that all commands have been created, let's make sure all groups
+	// are properly created also
+	c.checkCommandGroups()
 
 	var flags []string
 	if c.TraverseChildren {
