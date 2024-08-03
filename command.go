@@ -49,6 +49,36 @@ type Group struct {
 // you to define the usage and description as part of your command
 // definition to ensure usability.
 type Command struct {
+	// Aliases is an array of aliases that can be used instead of the first word in Use.
+	Aliases []string
+
+	// SuggestFor is an array of command names for which this command will be suggested -
+	// similar to aliases but only suggests.
+	SuggestFor []string
+
+	// ValidArgs is list of all valid non-flag arguments that are accepted in shell completions
+	ValidArgs []string
+
+	// ArgAliases is List of aliases for ValidArgs.
+	// These are not suggested to the user in the shell completion,
+	// but accepted if entered manually.
+	ArgAliases []string
+
+	// groups for subcommands
+	commandgroups []*Group
+
+	// args is actual args parsed from flags.
+	args []string
+
+	// commandCalledAs is the name or alias value used to call this command.
+	commandCalledAs struct {
+		name   string
+		called bool
+	}
+
+	// commands is the list of commands supported by this program.
+	commands []*Command
+
 	// Use is the one-line usage message.
 	// Recommended syntax is as follows:
 	//   [ ] identifies an optional argument. Arguments that are not enclosed in brackets are required.
@@ -59,13 +89,6 @@ type Command struct {
 	//       optional, they are enclosed in brackets ([ ]).
 	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
-
-	// Aliases is an array of aliases that can be used instead of the first word in Use.
-	Aliases []string
-
-	// SuggestFor is an array of command names for which this command will be suggested -
-	// similar to aliases but only suggests.
-	SuggestFor []string
 
 	// Short is the short description shown in the 'help' output.
 	Short string
@@ -79,8 +102,44 @@ type Command struct {
 	// Example is examples of how to use the command.
 	Example string
 
-	// ValidArgs is list of all valid non-flag arguments that are accepted in shell completions
-	ValidArgs []string
+	// BashCompletionFunction is custom bash functions used by the legacy bash autocompletion generator.
+	// For portability with other shells, it is recommended to instead use ValidArgsFunction
+	BashCompletionFunction string
+
+	// Deprecated defines, if this command is deprecated and should print this string when used.
+	Deprecated string
+
+	// Version defines the version for this command. If this value is non-empty and the command does not
+	// define a "version" flag, a "version" boolean flag will be added to the command and, if specified,
+	// will print content of the "Version" variable. A shorthand "v" flag will also be added if the
+	// command does not define one.
+	Version string
+
+	// usageTemplate is usage template defined by user.
+	usageTemplate string
+
+	// helpTemplate is help template defined by user.
+	helpTemplate string
+
+	// helpCommandGroupID is the group id for the helpCommand
+	helpCommandGroupID string
+
+	// completionCommandGroupID is the group id for the completion command
+	completionCommandGroupID string
+
+	// versionTemplate is the version template defined by user.
+	versionTemplate string
+
+	// errPrefix is the error message prefix defined by user.
+	errPrefix string
+
+	// inReader is a reader defined by the user that replaces stdin
+	inReader io.Reader
+	// outWriter is a writer defined by the user that replaces stdout
+	outWriter io.Writer
+	// errWriter is a writer defined by the user that replaces stderr
+	errWriter io.Writer
+
 	// ValidArgsFunction is an optional function that provides valid non-flag arguments for shell completion.
 	// It is a dynamic version of using ValidArgs.
 	// Only one of ValidArgs and ValidArgsFunction can be used for a command.
@@ -89,27 +148,9 @@ type Command struct {
 	// Expected arguments
 	Args PositionalArgs
 
-	// ArgAliases is List of aliases for ValidArgs.
-	// These are not suggested to the user in the shell completion,
-	// but accepted if entered manually.
-	ArgAliases []string
-
-	// BashCompletionFunction is custom bash functions used by the legacy bash autocompletion generator.
-	// For portability with other shells, it is recommended to instead use ValidArgsFunction
-	BashCompletionFunction string
-
-	// Deprecated defines, if this command is deprecated and should print this string when used.
-	Deprecated string
-
 	// Annotations are key/value pairs that can be used by applications to identify or
 	// group commands or set special options.
 	Annotations map[string]string
-
-	// Version defines the version for this command. If this value is non-empty and the command does not
-	// define a "version" flag, a "version" boolean flag will be added to the command and, if specified,
-	// will print content of the "Version" variable. A shorthand "v" flag will also be added if the
-	// command does not define one.
-	Version string
 
 	// The *Run functions are executed in the following order:
 	//   * PersistentPreRun()
@@ -142,11 +183,6 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 
-	// groups for subcommands
-	commandgroups []*Group
-
-	// args is actual args parsed from flags.
-	args []string
 	// flagErrorBuf contains all error messages from pflag.
 	flagErrorBuf *bytes.Buffer
 	// flags is full set of flags.
@@ -167,36 +203,28 @@ type Command struct {
 
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
-	// usageTemplate is usage template defined by user.
-	usageTemplate string
 	// flagErrorFunc is func defined by user and it's called when the parsing of
 	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
-	// helpTemplate is help template defined by user.
-	helpTemplate string
 	// helpFunc is help func defined by user.
 	helpFunc func(*Command, []string)
 	// helpCommand is command with usage 'help'. If it's not defined by user,
 	// cobra uses default help command.
 	helpCommand *Command
-	// helpCommandGroupID is the group id for the helpCommand
-	helpCommandGroupID string
 
-	// completionCommandGroupID is the group id for the completion command
-	completionCommandGroupID string
+	// parent is a parent command for this command.
+	parent *Command
 
-	// versionTemplate is the version template defined by user.
-	versionTemplate string
+	ctx context.Context
 
-	// errPrefix is the error message prefix defined by user.
-	errPrefix string
+	// Max lengths of commands' string lengths for use in padding.
+	commandsMaxUseLen         int
+	commandsMaxCommandPathLen int
+	commandsMaxNameLen        int
 
-	// inReader is a reader defined by the user that replaces stdin
-	inReader io.Reader
-	// outWriter is a writer defined by the user that replaces stdout
-	outWriter io.Writer
-	// errWriter is a writer defined by the user that replaces stderr
-	errWriter io.Writer
+	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
+	// Must be > 0.
+	SuggestionsMinimumDistance int
 
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
@@ -206,22 +234,6 @@ type Command struct {
 
 	// commandsAreSorted defines, if command slice are sorted or not.
 	commandsAreSorted bool
-	// commandCalledAs is the name or alias value used to call this command.
-	commandCalledAs struct {
-		name   string
-		called bool
-	}
-
-	ctx context.Context
-
-	// commands is the list of commands supported by this program.
-	commands []*Command
-	// parent is a parent command for this command.
-	parent *Command
-	// Max lengths of commands' string lengths for use in padding.
-	commandsMaxUseLen         int
-	commandsMaxCommandPathLen int
-	commandsMaxNameLen        int
 
 	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
@@ -247,13 +259,13 @@ type Command struct {
 	// line of a command when printing help or generating docs
 	DisableFlagsInUseLine bool
 
+	// DisableArgsInUseLine will disable the addition of [args] to the usage
+	// line of a command when printing help or generating docs
+	DisableArgsInUseLine bool
+
 	// DisableSuggestions disables the suggestions based on Levenshtein distance
 	// that go along with 'unknown command' messages.
 	DisableSuggestions bool
-
-	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
-	// Must be > 0.
-	SuggestionsMinimumDistance int
 }
 
 // Context returns underlying command context. If command was executed
@@ -1450,11 +1462,11 @@ func (c *Command) UseLine() string {
 	} else {
 		useline = use
 	}
-	if c.DisableFlagsInUseLine {
-		return useline
-	}
-	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") {
+	if c.HasAvailableFlags() && !strings.Contains(useline, "[flags]") && !c.DisableFlagsInUseLine {
 		useline += " [flags]"
+	}
+	if c.HasAvailableArgs() && !strings.Contains(useline, "[args]") && !c.DisableArgsInUseLine {
+		useline += " [args]"
 	}
 	return useline
 }
@@ -1801,6 +1813,11 @@ func (c *Command) HasAvailableLocalFlags() bool {
 // not hidden or deprecated.
 func (c *Command) HasAvailableInheritedFlags() bool {
 	return c.InheritedFlags().HasAvailableFlags()
+}
+
+// HasAvailableArgs checks if the command has non-nil Args.
+func (c *Command) HasAvailableArgs() bool {
+	return c.Args != nil
 }
 
 // Flag climbs up the command tree looking for matching flag.
