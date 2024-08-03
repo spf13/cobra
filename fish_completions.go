@@ -45,7 +45,9 @@ function __%[1]s_perform_completion
     __%[1]s_debug "Starting __%[1]s_perform_completion"
 
     # Extract all args except the last one
-    set -l args (commandline -opc)
+    set -l args (
+	    commandline -xpc 2>/dev/null ||
+	    commandline -opc | string escape)
     # Extract the last arg and escape it in case it is a space
     set -l lastArg (string escape -- (commandline -ct))
 
