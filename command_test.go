@@ -147,12 +147,25 @@ func TestRootExecuteUnknownCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
 
-	output, _ := executeCommand(rootCmd, "unknown")
+	output, err := executeCommand(rootCmd, "unknown")
+	if _, ok := err.(UnknownCommandError); !ok {
+		t.Errorf("Expected:\n %T\nGot:\n %T\n", err, UnknownCommandError{})
+	}
 
 	expected := "Error: unknown command \"unknown\" for \"root\"\nRun 'root --help' for usage.\n"
 
 	if output != expected {
 		t.Errorf("Expected:\n %q\nGot:\n %q\n", expected, output)
+	}
+}
+
+func TestRootFindUnknownCommandErrorType(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	_, _, err := rootCmd.Find([]string{"unknown"})
+	if _, ok := err.(UnknownCommandError); !ok {
+		t.Errorf("Expected:\n %T\nGot:\n %T\n", err, UnknownCommandError{})
 	}
 }
 
