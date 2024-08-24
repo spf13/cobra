@@ -18,9 +18,7 @@ In a Cobra app, typically the main.go file is very bare. It serves one purpose: 
 ```go
 package main
 
-import (
-  "{pathToYourApp}/cmd"
-)
+import "{pathToYourApp}/cmd"
 
 func main() {
   cmd.Execute()
@@ -148,9 +146,7 @@ In a Cobra app, typically the main.go file is very bare. It serves one purpose: 
 ```go
 package main
 
-import (
-  "{pathToYourApp}/cmd"
-)
+import "{pathToYourApp}/cmd"
 
 func main() {
   cmd.Execute()
