@@ -1216,7 +1216,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		if c.Name() == "" {
 			usage += "this command"
 		} else {
-			usage += c.Name()
+			usage += c.displayName()
 		}
 		if c.Flags().ShorthandLookup("v") == nil {
 			c.Flags().BoolP("version", "v", false, usage)
