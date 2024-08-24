@@ -1094,6 +1094,24 @@ func TestVersionFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+func TestVersionFlagExecutedDiplayName(t *testing.T) {
+	rootCmd := &Command{
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+		Run: emptyRun,
+	}
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "kubectl plugin version 1.0.0")
+}
+
 func TestVersionFlagExecutedWithNoName(t *testing.T) {
 	rootCmd := &Command{Version: "1.0.0", Run: emptyRun}
 

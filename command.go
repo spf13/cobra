@@ -607,7 +607,7 @@ func (c *Command) VersionTemplate() string {
 	if c.HasParent() {
 		return c.parent.VersionTemplate()
 	}
-	return `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
+	return `{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
 }
 
