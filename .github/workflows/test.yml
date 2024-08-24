@@ -67,6 +67,7 @@ jobs:
         - 20
         - 21
         - 22
+        - 23
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     steps:
