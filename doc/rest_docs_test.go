@@ -16,7 +16,6 @@ package doc
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -81,7 +80,7 @@ func TestGenRSTNoTag(t *testing.T) {
 func TestGenRSTTree(t *testing.T) {
 	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
 
-	tmpdir, err := ioutil.TempDir("", "test-gen-rst-tree")
+	tmpdir, err := os.MkdirTemp("", "test-gen-rst-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
@@ -97,7 +96,7 @@ func TestGenRSTTree(t *testing.T) {
 }
 
 func BenchmarkGenReSTToFile(b *testing.B) {
-	file, err := ioutil.TempFile("", "")
+	file, err := os.CreateTemp("", "")
 	if err != nil {
 		b.Fatal(err)
 	}
