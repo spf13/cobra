@@ -693,6 +693,30 @@ func TestStripFlags(t *testing.T) {
 			[]string{"-p", "bar"},
 			[]string{"bar"},
 		},
+		{
+			[]string{"-s", "value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-s=value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-svalue", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-ps", "value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-ps=value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-psvalue", "bar"},
+			[]string{"bar"},
+		},
 	}
 
 	c := &Command{Use: "c", Run: emptyRun}
@@ -702,7 +726,7 @@ func TestStripFlags(t *testing.T) {
 	c.Flags().BoolP("bool", "b", false, "")
 
 	for i, test := range tests {
-		got := stripFlags(test.input, c)
+		got, _ := stripFlags(test.input, c)
 		if !reflect.DeepEqual(test.output, got) {
 			t.Errorf("(%v) Expected: %v, got: %v", i, test.output, got)
 		}
@@ -2688,11 +2712,13 @@ func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	var foo, bar string
+	var persist bool
 	root := &Command{
 		Use: "root",
 	}
 	root.PersistentFlags().StringVarP(&foo, "foo", "f", "", "")
 	root.PersistentFlags().StringVarP(&bar, "bar", "b", "something", "")
+	root.PersistentFlags().BoolVarP(&persist, "persist", "p", false, "")
 
 	child := &Command{
 		Use: "child",
@@ -2754,6 +2780,38 @@ func TestFind(t *testing.T) {
 		{
 			[]string{"--foo", "child", "--bar", "something", "child"},
 			[]string{"--foo", "child", "--bar", "something"},
+		},
+		{
+			[]string{"-f", "value", "child"},
+			[]string{"-f", "value"},
+		},
+		{
+			[]string{"-f=value", "child"},
+			[]string{"-f=value"},
+		},
+		{
+			[]string{"-fvalue", "child"},
+			[]string{"-fvalue"},
+		},
+		{
+			[]string{"-pf", "value", "child"},
+			[]string{"-pf", "value"},
+		},
+		{
+			[]string{"-pf=value", "child"},
+			[]string{"-pf=value"},
+		},
+		{
+			[]string{"-pfvalue", "child"},
+			[]string{"-pfvalue"},
+		},
+		{
+			[]string{"-pf", "child", "child"},
+			[]string{"-pf", "child"},
+		},
+		{
+			[]string{"-pf", "child", "-pb", "something", "child"},
+			[]string{"-pf", "child", "-pb", "something"},
 		},
 	}
 
