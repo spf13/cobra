@@ -851,6 +851,35 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		// A flag without a value, or with an `=` separated value
 		case isFlagArg(arg):
 			flags = append(flags, arg)
+
+			if !strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Contains(arg, "=") || len(arg) <= 2 {
+				continue // Not a shorthand combination, so nothing more to do.
+			}
+
+			shorthandCombination := arg[1:] // Skip leading "-"
+			lastPos := len(shorthandCombination) - 1
+			for i, shorthand := range shorthandCombination {
+				if shortHasNoOptDefVal(string(shorthand), c.Flags()) {
+					continue
+				}
+
+				// We found a shorthand that needs a value.
+
+				if i == lastPos {
+					// Since we're at the end of the shorthand combination, this means that the
+					// value for the shorthand is given in the next argument. (e.g. '-xyzf arg',
+					// where -x, -y, -z are boolean flags, and -f is a flag that needs a value).
+					inFlag = true
+				} else {
+					// Since the shorthand combination doesn't end here, this means that the
+					// value for the shorthand is given in the same argument, meaning we don't
+					// have to consume the next one. (e.g. '-xyzfarg', where -x, -y, -z are
+					// boolean flags, and -f is a flag that needs a value).
+				}
+
+				break
+			}
+
 			continue
 		}
 

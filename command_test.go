@@ -2253,11 +2253,67 @@ func TestTraverseWithParentFlags(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if len(args) != 1 && args[0] != "--add" {
+	if len(args) != 1 || args[0] != "--int" {
 		t.Errorf("Wrong args: %v", args)
 	}
 	if c.Name() != childCmd.Name() {
 		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+}
+
+func TestTraverseWithShorthandCombinationInParentFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
+	boolVal := rootCmd.Flags().BoolP("bool", "b", false, "")
+
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Int("int", -1, "")
+
+	rootCmd.AddCommand(childCmd)
+
+	c, args, err := rootCmd.Traverse([]string{"-bs", "ok", "child", "--int"})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(args) != 1 || args[0] != "--int" {
+		t.Errorf("Wrong args: %v", args)
+	}
+	if c.Name() != childCmd.Name() {
+		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+	if *stringVal != "ok" {
+		t.Errorf("Expected -s to be set to: %s, got: %s", "ok", *stringVal)
+	}
+	if !*boolVal {
+		t.Errorf("Expected -b to be set")
+	}
+}
+
+func TestTraverseWithArgumentIdenticalToCommandName(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
+	boolVal := rootCmd.Flags().BoolP("bool", "b", false, "")
+
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Int("int", -1, "")
+
+	rootCmd.AddCommand(childCmd)
+
+	c, args, err := rootCmd.Traverse([]string{"-bs", "child", "child", "--int"})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(args) != 1 || args[0] != "--int" {
+		t.Errorf("Wrong args: %v", args)
+	}
+	if c.Name() != childCmd.Name() {
+		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+	if *stringVal != "child" {
+		t.Errorf("Expected -s to be set to: %s, got: %s", "child", *stringVal)
+	}
+	if !*boolVal {
+		t.Errorf("Expected -b to be set")
 	}
 }
 
@@ -2312,7 +2368,7 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if len(args) != 1 && args[0] != "--str" {
+	if len(args) != 1 || args[0] != "--str" {
 		t.Errorf("Wrong args: %v", args)
 	}
 	if c.Name() != childCmd.Name() {
