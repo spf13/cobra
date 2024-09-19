@@ -643,6 +643,27 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
+func shorthandCombinationNeedsNextArg(combination string, flags *flag.FlagSet) bool {
+	lastPos := len(combination) - 1
+	for i, shorthand := range combination {
+		if !shortHasNoOptDefVal(string(shorthand), flags) {
+			// This shorthand needs a value.
+			//
+			// If we're at the end of the shorthand combination, this means that the
+			// value for the shorthand is given in the next argument. (e.g. '-xyzf arg',
+			// where -x, -y, -z are boolean flags, and -f is a flag that needs a value).
+			//
+			// Otherwise, if the shorthand combination doesn't end here, this means that the value
+			// for the shorthand is given in the same argument, meaning we don't have to consume the
+			// next one. (e.g. '-xyzfarg', where -x, -y, -z are boolean flags, and -f is a flag that
+			// needs a value).
+			return i == lastPos
+		}
+	}
+
+	return false
+}
+
 func stripFlags(args []string, c *Command) ([]string, []string) {
 	if len(args) == 0 {
 		return args, nil
@@ -675,36 +696,14 @@ Loop:
 				args = args[1:]
 			}
 		case strings.HasPrefix(s, "-") && !strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && len(s) > 2:
-			shorthandCombination := s[1:] // Skip the leading "-"
-			lastPos := len(shorthandCombination) - 1
-			for i, shorthand := range shorthandCombination {
-				if shortHasNoOptDefVal(string(shorthand), flags) {
-					continue
-				}
-
-				// We found a shorthand that needs a value.
-
-				if i == lastPos {
-					// Since we're at the end of the shorthand combination, this means that the
-					// value for the shorthand is given in the next argument. (e.g. '-xyzf arg',
-					// where -x, -y, -z are boolean flags, and -f is a flag that needs a value).
-
-					// The whole combination will take a value.
-					flagsThatConsumeNextArg = append(flagsThatConsumeNextArg, s)
-
-					if len(args) <= 1 {
-						break Loop
-					} else {
-						args = args[1:]
-					}
+			shorthandCombination := s[1:] // Skip leading "-"
+			if shorthandCombinationNeedsNextArg(shorthandCombination, flags) {
+				flagsThatConsumeNextArg = append(flagsThatConsumeNextArg, s)
+				if len(args) <= 1 {
+					break Loop
 				} else {
-					// Since the shorthand combination doesn't end here, this means that the
-					// value for the shorthand is given in the same argument, meaning we don't
-					// have to consume the next one. (e.g. '-xyzfarg', where -x, -y, -z are
-					// boolean flags, and -f is a flag that needs a value).
+					args = args[1:]
 				}
-
-				break
 			}
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
@@ -848,38 +847,16 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			inFlag = false
 			flags = append(flags, arg)
 			continue
-		// A flag without a value, or with an `=` separated value
+		// A flag with an `=` separated value, or a shorthand combination, possibly with a value
 		case isFlagArg(arg):
 			flags = append(flags, arg)
 
-			if !strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Contains(arg, "=") || len(arg) <= 2 {
+			if strings.HasPrefix(arg, "--") || strings.Contains(arg, "=") || len(arg) <= 2 {
 				continue // Not a shorthand combination, so nothing more to do.
 			}
 
 			shorthandCombination := arg[1:] // Skip leading "-"
-			lastPos := len(shorthandCombination) - 1
-			for i, shorthand := range shorthandCombination {
-				if shortHasNoOptDefVal(string(shorthand), c.Flags()) {
-					continue
-				}
-
-				// We found a shorthand that needs a value.
-
-				if i == lastPos {
-					// Since we're at the end of the shorthand combination, this means that the
-					// value for the shorthand is given in the next argument. (e.g. '-xyzf arg',
-					// where -x, -y, -z are boolean flags, and -f is a flag that needs a value).
-					inFlag = true
-				} else {
-					// Since the shorthand combination doesn't end here, this means that the
-					// value for the shorthand is given in the same argument, meaning we don't
-					// have to consume the next one. (e.g. '-xyzfarg', where -x, -y, -z are
-					// boolean flags, and -f is a flag that needs a value).
-				}
-
-				break
-			}
-
+			inFlag = shorthandCombinationNeedsNextArg(shorthandCombination, c.Flags())
 			continue
 		}
 
