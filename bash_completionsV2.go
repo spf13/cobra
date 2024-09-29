@@ -177,20 +177,62 @@ __%[1]s_process_completion_results() {
     __%[1]s_handle_special_char "$cur" =
 
     # Print the activeHelp statements before we finish
-    if ((${#activeHelp[*]} != 0)); then
-        printf "\n";
-        printf "%%s\n" "${activeHelp[@]}"
-        printf "\n"
+    __%[1]s_handle_activeHelp
+}
 
-        # The prompt format is only available from bash 4.4.
-        # We test if it is available before using it.
-        if (x=${PS1@P}) 2> /dev/null; then
-            printf "%%s" "${PS1@P}${COMP_LINE[@]}"
-        else
-            # Can't print the prompt.  Just print the
-            # text the user had typed, it is workable enough.
-            printf "%%s" "${COMP_LINE[@]}"
+__%[1]s_handle_activeHelp() {
+    # Print the activeHelp statements
+    if ((${#activeHelp[*]} != 0)); then
+        # Only print ActiveHelp on the second TAB press
+        if [ $COMP_TYPE -eq 63 ]; then
+            printf "\n"
+            printf "%%s\n" "${activeHelp[@]}"
+
+            if ((${#COMPREPLY[*]} == 0)); then
+                # When there are no completion choices from the program, file completion
+                # may kick in if the program has not disabled it; in such a case, we want
+                # to know if any files will match what the user typed, so that we know if
+                # there will be completions presented, so that we know how to handle ActiveHelp.
+                # To find out, we actually trigger the file completion ourselves;
+                # the call to _filedir will fill COMPREPLY if files match.
+                if (((directive & shellCompDirectiveNoFileComp) == 0)); then
+                    __%[1]s_debug "Listing files"
+                    _filedir
+                fi
+            fi
+
+            if ((${#COMPREPLY[*]} != 0)); then
+                # If there are completion choices to be shown, print a delimiter.
+                # Re-printing the command-line will automatically be done
+                # by the shell when it prints the completion choices.
+                printf -- "--"
+            else
+                # When there are no completion choices at all, we need    
+                # to re-print the command-line since the shell will
+                # not be doing it itself.
+                __%[1]s_reprint_commandLine
+            fi
+        elif [ $COMP_TYPE -eq 37 ] || [ $COMP_TYPE -eq 42 ]; then
+            # For completion type: menu-complete/menu-complete-backward and insert-completions
+            # the completions are immediately inserted into the command-line, so we first
+            # print the activeHelp message and reprint the command-line since the shell won't.
+            printf "\n"
+            printf "%%s\n" "${activeHelp[@]}"
+
+            __%[1]s_reprint_commandLine
         fi
+    fi
+}
+
+__%[1]s_reprint_commandLine() {
+    # The prompt format is only available from bash 4.4.
+    # We test if it is available before using it.
+    if (x=${PS1@P}) 2> /dev/null; then
+        printf "%%s" "${PS1@P}${COMP_LINE[@]}"
+    else
+        # Can't print the prompt.  Just print the
+        # text the user had typed, it is workable enough.
+        printf "%%s" "${COMP_LINE[@]}"
     fi
 }
 
