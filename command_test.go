@@ -2239,6 +2239,7 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	checkStringContains(t, output, "This flag is deprecated")
 }
 
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
 func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
@@ -2261,6 +2262,7 @@ func TestTraverseWithParentFlags(t *testing.T) {
 	}
 }
 
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
 func TestTraverseWithShorthandCombinationInParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
@@ -2289,6 +2291,7 @@ func TestTraverseWithShorthandCombinationInParentFlags(t *testing.T) {
 	}
 }
 
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
 func TestTraverseWithArgumentIdenticalToCommandName(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
