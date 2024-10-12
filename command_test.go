@@ -371,8 +371,9 @@ func TestAliasPrefixMatching(t *testing.T) {
 // text should reflect the way we run the command.
 func TestPlugin(t *testing.T) {
 	cmd := &Command{
-		Use:  "kubectl-plugin",
-		Args: NoArgs,
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Args:    NoArgs,
 		Annotations: map[string]string{
 			CommandDisplayNameAnnotation: "kubectl plugin",
 		},
@@ -386,13 +387,15 @@ func TestPlugin(t *testing.T) {
 
 	checkStringContains(t, cmdHelp, "kubectl plugin [flags]")
 	checkStringContains(t, cmdHelp, "help for kubectl plugin")
+	checkStringContains(t, cmdHelp, "version for kubectl plugin")
 }
 
 // TestPlugin checks usage as plugin with sub commands.
 func TestPluginWithSubCommands(t *testing.T) {
 	rootCmd := &Command{
-		Use:  "kubectl-plugin",
-		Args: NoArgs,
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Args:    NoArgs,
 		Annotations: map[string]string{
 			CommandDisplayNameAnnotation: "kubectl plugin",
 		},
@@ -408,6 +411,7 @@ func TestPluginWithSubCommands(t *testing.T) {
 
 	checkStringContains(t, rootHelp, "kubectl plugin [command]")
 	checkStringContains(t, rootHelp, "help for kubectl plugin")
+	checkStringContains(t, rootHelp, "version for kubectl plugin")
 	checkStringContains(t, rootHelp, "kubectl plugin [command] --help")
 
 	childHelp, err := executeCommand(rootCmd, "sub", "-h")
@@ -1088,6 +1092,24 @@ func TestVersionFlagExecuted(t *testing.T) {
 	}
 
 	checkStringContains(t, output, "root version 1.0.0")
+}
+
+func TestVersionFlagExecutedDiplayName(t *testing.T) {
+	rootCmd := &Command{
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+		Run: emptyRun,
+	}
+
+	output, err := executeCommand(rootCmd, "--version", "arg1")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "kubectl plugin version 1.0.0")
 }
 
 func TestVersionFlagExecutedWithNoName(t *testing.T) {
