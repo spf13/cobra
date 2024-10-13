@@ -21,6 +21,15 @@ import (
 	"os"
 )
 
+const (
+	// ZstyleGainPrivileges enables the use of commands like sudo or doas to
+	// gain extra privileges when retrieving information for completion.
+	ZstyleGainPrivileges = `zstyle ':completion:*:%s\*' gain-privileges yes`
+	// ZshCompRunCmdPermFlag indicates the command output is influenced by the
+	// permissions it is run with.
+	ZshCompRunCmdPermFlag = ` -p`
+)
+
 // GenZshCompletionFile generates zsh completion file including descriptions.
 func (c *Command) GenZshCompletionFile(filename string) error {
 	return c.genZshCompletionFile(filename, true)
@@ -79,16 +88,23 @@ func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error 
 
 func (c *Command) genZshCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
-	genZshComp(buf, c.Name(), includeDesc)
+	genZshComp(buf, c.Name(), includeDesc, c.InfluencedByPermissions)
 	_, err := buf.WriteTo(w)
 	return err
 }
 
-func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
+func genZshComp(buf io.StringWriter, name string, includeDesc bool, permission bool) {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
+	zstyleGain := ""
+	permFlag := ""
+	if permission {
+		zstyleGain = fmt.Sprintf(ZstyleGainPrivileges, name)
+		permFlag = ZshCompRunCmdPermFlag
+	}
+
 	WriteStringAndCheck(buf, fmt.Sprintf(`#compdef %[1]s
 compdef _%[1]s %[1]s
 
@@ -145,10 +161,14 @@ _%[1]s()
         requestComp="${requestComp} \"\""
     fi
 
-    __%[1]s_debug "About to call: eval ${requestComp}"
+    # Set zstyle if gain-privileges is requested
+    __%[1]s_debug "Setting zstyle: %[10]s"
+    %[10]s
 
-    # Use eval to handle any environment variables and such
-    out=$(eval ${requestComp} 2>/dev/null)
+    __%[1]s_debug "About to call: _call_program%[11]s %[1]s-tag ${requestComp}"
+
+    # Use _call_program to call the completion code
+    out=$(_call_program%[11]s %[1]s-tag ${requestComp})
     __%[1]s_debug "completion output: ${out}"
 
     # Extract the directive integer following a : from the last line
@@ -304,5 +324,5 @@ fi
 `, name, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder,
-		activeHelpMarker))
+		activeHelpMarker, zstyleGain, permFlag))
 }
