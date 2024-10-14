@@ -836,14 +836,44 @@ to your powershell profile.
 				return cmd.Root().GenPowerShellCompletion(out)
 			}
 			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
 		},
 	}
 	if haveNoDescFlag {
 		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
-	completionCmd.AddCommand(bash, zsh, fish, powershell)
+	nushell := &Command{
+		Use:   "nushell",
+		Short: fmt.Sprintf(shortDesc, "nushell"),
+		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
+
+To configure the Nushell cobra external completer for the first time:
+  # 1. Copy the output of the command below:
+  > %[1]s completion nushell
+  # 2. Edit the nushell config file:
+  > config nu
+  # 3. Paste above the "let-env config" line.
+  # 4. Change the config block's external_completer line to be external_completer: $cobra_completer
+  # 5. You will need to start a new shel for this setup to take effect.
+
+If you have already setup the cobra external completer for other Cobra-based applications:
+  # 1. Edit the nushell config file:
+  > config nu
+  # 2. Modify the cobra_apps variable to contain this new application:
+  > let cobra_apps = [ "othercobraapp", "%[1]s" ]
+  # 3. You will need to start a new shell for this setup to take effect.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenNushellCompletion(out, !noDesc)
+		},
+	}
+	if haveNoDescFlag {
+		nushell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	completionCmd.AddCommand(bash, zsh, fish, powershell, nushell)
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {
@@ -876,7 +906,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
 		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)
