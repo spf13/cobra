@@ -462,10 +462,20 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 				// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
 				for _, subCmd := range finalCmd.Commands() {
 					if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
+						directive = ShellCompDirectiveNoFileComp
+
+						// Only ever complete the name OR one of the aliases, no need to offer multiple matching ones
+						// for the same command.
 						if strings.HasPrefix(subCmd.Name(), toComplete) {
 							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+						} else {
+							for _, alias := range subCmd.Aliases {
+								if strings.HasPrefix(alias, toComplete) {
+									completions = append(completions, fmt.Sprintf("%s\t%s", alias, subCmd.Short))
+									break
+								}
+							}
 						}
-						directive = ShellCompDirectiveNoFileComp
 					}
 				}
 			}
