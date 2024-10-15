@@ -227,6 +227,20 @@ func TestRpad(t *testing.T) {
 	}
 }
 
+// TestDeadcodeElimination checks that a simple program using cobra in its
+// default configuration is linked taking full advantage of the linker's
+// deadcode elimination step.
+//
+// If reflect.Value.MethodByName/reflect.Value.Method are reachable the
+// linker will not always be able to prove that exported methods are
+// unreachable, making deadcode elimination less effective. Using
+// text/template and html/template makes reflect.Value.MethodByName
+// reachable.
+// Since cobra can use text/template templates this test checks that in its
+// default configuration that code path can be proven to be unreachable by
+// the linker.
+//
+// See also: https://github.com/spf13/cobra/pull/1956
 func TestDeadcodeElimination(t *testing.T) {
 	// check that a simple program using cobra in its default configuration is
 	// linked with deadcode elimination enabled.
@@ -234,7 +248,8 @@ func TestDeadcodeElimination(t *testing.T) {
 		dirname  = "test_deadcode"
 		progname = "test_deadcode_elimination"
 	)
-	os.Mkdir(dirname, 0770)
+	_ = os.Mkdir(dirname, 0770)
+	defer os.RemoveAll(dirname)
 	filename := filepath.Join(dirname, progname+".go")
 	err := os.WriteFile(filename, []byte(`package main
 
@@ -262,11 +277,10 @@ func main() {
 		os.Exit(1)
 	}
 }
-`), 0660)
+`), 0600)
 	if err != nil {
 		t.Fatalf("could not write test program: %v", err)
 	}
-	defer os.RemoveAll(dirname)
 	buf, err := exec.Command("go", "build", filename).CombinedOutput()
 	if err != nil {
 		t.Fatalf("could not compile test program: %s", string(buf))
