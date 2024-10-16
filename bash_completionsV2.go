@@ -59,18 +59,14 @@ __%[1]s_get_completion_results() {
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows handling aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} %[2]s ${args[*]}"
+    requestComp="${words[0]} %[2]s"
+    if [[ "${#args[@]}" -gt 0 ]]; then
+        requestComp+="$(printf " %%q" "${args[@]}")"
+    fi
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __%[1]s_debug "lastParam ${lastParam}, lastChar ${lastChar}"
-
-    if [[ -z ${cur} && ${lastChar} != = ]]; then
-        # If the last parameter is complete (there is a space following it)
-        # We add an extra empty parameter so we can indicate this to the go method.
-        __%[1]s_debug "Adding extra empty parameter"
-        requestComp="${requestComp} ''"
-    fi
 
     # When completing a flag with an = (e.g., %[1]s -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
@@ -224,15 +220,15 @@ __%[1]s_handle_completion_types() {
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
         local tab=$'\t' comp
-        while IFS='' read -r comp; do
+        for comp in "${completions[@]}"; do
             [[ -z $comp ]] && continue
             # Strip any description
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
-                COMPREPLY+=("$comp")
-            fi
-        done < <(printf "%%s\n" "${completions[@]}")
+                COMPREPLY+=( "$comp" )
+           fi
+        done
         ;;
 
     *)
@@ -247,7 +243,12 @@ __%[1]s_handle_standard_completion_case() {
 
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
+        # compgen's -W option respects shell quoting, so we need to escape.
+        local compgen_words="$(printf "%%q\n" "${completions[@]}")"
+        # compgen appears to respect shell quoting _after_ checking whether
+        # they have the right prefix, so we also need to quote cur.
+        local compgen_cur="$(printf "%%q" "${cur}")"
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${compgen_cur}")
         return 0
     fi
 
@@ -271,7 +272,7 @@ __%[1]s_handle_standard_completion_case() {
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY[0]=$comp
+        COMPREPLY[0]="$(printf "%%q" "${comp}")"
     else # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
     fi
