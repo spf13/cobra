@@ -3,6 +3,7 @@
 - [Allero](https://github.com/allero-io/allero)
 - [Arewefastyet](https://benchmark.vitess.io)
 - [Arduino CLI](https://github.com/arduino/arduino-cli)
+- [Azion](https://github.com/aziontech/azion)
 - [Bleve](https://blevesearch.com/)
 - [Cilium](https://cilium.io/)
 - [CloudQuery](https://github.com/cloudquery/cloudquery)
