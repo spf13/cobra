@@ -712,6 +712,23 @@ See each sub-command's help for details on how to use the generated script.
 		ValidArgsFunction: NoFileCompletions,
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
 		GroupID:           c.completionCommandGroupID,
+		PersistentPreRunE: func(cmd *Command, args []string) error {
+			cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				requiredAnnotation, found := flag.Annotations[BashCompOneRequiredFlag]
+				if found && requiredAnnotation[0] == "true" {
+					// Disable any persistent required flags for the completion command
+					flag.Annotations[BashCompOneRequiredFlag] = []string{"false"}
+				}
+			})
+			// Adding PersistentPreRun on sub-commands prevents root's PersistentPreRun from being called.
+			// So it is intentionally called here.
+			if cmd.Root().PersistentPreRunE != nil {
+				return cmd.Root().PersistentPreRunE(cmd, args)
+			} else if cmd.Root().PersistentPreRun != nil {
+				cmd.Root().PersistentPreRun(cmd, args)
+			}
+			return nil
+		},
 	}
 	c.AddCommand(completionCmd)
 
