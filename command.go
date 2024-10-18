@@ -188,6 +188,11 @@ type Command struct {
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
 
+	// errHandler is a function that a user can define to handle errors in a
+	// custom way. The function will be called only if the error is received and
+	// SilenceErrors isn't set. By default, it prints the error with a prefix
+	// on standard error stream.
+	errHandler func(err error)
 	// errPrefix is the error message prefix defined by user.
 	errPrefix string
 
@@ -355,6 +360,12 @@ func (c *Command) SetHelpTemplate(s string) {
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
 func (c *Command) SetVersionTemplate(s string) {
 	c.versionTemplate = s
+}
+
+// SetErrHandler sets a custom error handler to be used. The function will be
+// called only if the error is received and SilenceErrors isn't set.
+func (c *Command) SetErrHandler(fn func(err error)) {
+	c.errHandler = fn
 }
 
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
@@ -609,6 +620,31 @@ func (c *Command) VersionTemplate() string {
 	}
 	return `{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
+}
+
+// ErrHandler return the error handler for the command.
+func (c *Command) ErrHandler() func(err error) {
+	if handler := c.errHandlerOrNil(); handler != nil {
+		return handler
+	}
+
+	return c.defaultErrHandler
+}
+
+func (c *Command) errHandlerOrNil() func(err error) {
+	if c.errHandler != nil {
+		return c.errHandler
+	}
+
+	if c.HasParent() {
+		return c.parent.errHandlerOrNil()
+	}
+
+	return nil
+}
+
+func (c *Command) defaultErrHandler(err error) {
+	c.PrintErrln(c.ErrPrefix(), err.Error())
 }
 
 // ErrPrefix return error message prefix for the command
@@ -1098,7 +1134,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln(c.ErrPrefix(), err.Error())
+			c.ErrHandler()(err)
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1127,7 +1163,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln(cmd.ErrPrefix(), err.Error())
+			cmd.ErrHandler()(err)
 		}
 
 		// If root command has SilenceUsage flagged,

@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -2836,6 +2837,61 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 				t.Error("expected unknown flag error")
 			}
 			checkStringContains(t, output, "unknown flag: --unknown")
+		})
+	}
+}
+
+func TestErrHandler(t *testing.T) {
+	type testErrHandlerTestCase struct {
+		name string
+		root bool
+		sub  bool
+	}
+	testCases := []testErrHandlerTestCase{
+		{"CustomOnRootAndSub", true, true},
+		{"CustomOnRoot", true, false},
+		{"CustomOnSub", false, true},
+		{"DefaultOnBoth", false, false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			want := errors.New("expected")
+			root := &Command{
+				SilenceUsage: true,
+			}
+			sub := &Command{
+				Use:          "sub",
+				SilenceUsage: true,
+				RunE: func(cmd *Command, args []string) error {
+					return fmt.Errorf("%w: foo", want)
+				},
+			}
+			root.AddCommand(sub)
+			called := false
+			handler := func(got error) {
+				called = true
+				if !errors.Is(got, want) {
+					t.Errorf("error missmatch,\nwant = %#v\n got = %#v",
+						want, got)
+				}
+			}
+			if tc.root {
+				root.SetErrHandler(handler)
+			}
+			if tc.sub {
+				sub.SetErrHandler(handler)
+			}
+			output, got := executeCommand(root, "sub")
+			if (tc.root || tc.sub) && !called {
+				t.Error("expecting the custom error handler be called")
+			}
+			if !errors.Is(got, want) {
+				t.Errorf("error missmatch,\nwant = %#v\n got = %#v",
+					want, got)
+			}
+			if (tc.root || tc.sub) && output != "" {
+				t.Error("unexpected output: ", output)
+			}
 		})
 	}
 }
