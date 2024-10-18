@@ -643,13 +643,35 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
-func stripFlags(args []string, c *Command) []string {
+func shorthandCombinationNeedsNextArg(combination string, flags *flag.FlagSet) bool {
+	lastPos := len(combination) - 1
+	for i, shorthand := range combination {
+		if !shortHasNoOptDefVal(string(shorthand), flags) {
+			// This shorthand needs a value.
+			//
+			// If we're at the end of the shorthand combination, this means that the
+			// value for the shorthand is given in the next argument. (e.g. '-xyzf arg',
+			// where -x, -y, -z are boolean flags, and -f is a flag that needs a value).
+			//
+			// Otherwise, if the shorthand combination doesn't end here, this means that the value
+			// for the shorthand is given in the same argument, meaning we don't have to consume the
+			// next one. (e.g. '-xyzfarg', where -x, -y, -z are boolean flags, and -f is a flag that
+			// needs a value).
+			return i == lastPos
+		}
+	}
+
+	return false
+}
+
+func stripFlags(args []string, c *Command) ([]string, []string) {
 	if len(args) == 0 {
-		return args
+		return args, nil
 	}
 	c.mergePersistentFlags()
 
 	commands := []string{}
+	flagsThatConsumeNextArg := []string{} // We use this to avoid repeating the same lengthy logic for parsing shorthand combinations in argsMinusFirstX
 	flags := c.Flags()
 
 Loop:
@@ -665,31 +687,48 @@ Loop:
 			// delete arg from args.
 			fallthrough // (do the same as below)
 		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+			flagsThatConsumeNextArg = append(flagsThatConsumeNextArg, s)
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
 			if len(args) <= 1 {
 				break Loop
 			} else {
 				args = args[1:]
-				continue
+			}
+		case strings.HasPrefix(s, "-") && !strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && len(s) > 2:
+			shorthandCombination := s[1:] // Skip leading "-"
+			if shorthandCombinationNeedsNextArg(shorthandCombination, flags) {
+				flagsThatConsumeNextArg = append(flagsThatConsumeNextArg, s)
+				if len(args) <= 1 {
+					break Loop
+				} else {
+					args = args[1:]
+				}
 			}
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
 		}
 	}
 
-	return commands
+	return commands, flagsThatConsumeNextArg
 }
 
 // argsMinusFirstX removes only the first x from args.  Otherwise, commands that look like
 // openshift admin policy add-role-to-user admin my-user, lose the admin argument (arg[4]).
 // Special care needs to be taken not to remove a flag value.
-func (c *Command) argsMinusFirstX(args []string, x string) []string {
+func (c *Command) argsMinusFirstX(args, flagsThatConsumeNextArg []string, x string) []string {
 	if len(args) == 0 {
 		return args
 	}
-	c.mergePersistentFlags()
-	flags := c.Flags()
+
+	consumesNextArg := func(flag string) bool {
+		for _, f := range flagsThatConsumeNextArg {
+			if flag == f {
+				return true
+			}
+		}
+		return false
+	}
 
 Loop:
 	for pos := 0; pos < len(args); pos++ {
@@ -698,13 +737,8 @@ Loop:
 		case s == "--":
 			// -- means we have reached the end of the parseable args. Break out of the loop now.
 			break Loop
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
-			fallthrough
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
-			// This is a flag without a default value, and an equal sign is not used. Increment pos in order to skip
-			// over the next arg, because that is the value of this flag.
+		case consumesNextArg(s):
 			pos++
-			continue
 		case !strings.HasPrefix(s, "-"):
 			// This is not a flag or a flag value. Check to see if it matches what we're looking for, and if so,
 			// return the args, excluding the one at this position.
@@ -730,7 +764,7 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	var innerfind func(*Command, []string) (*Command, []string)
 
 	innerfind = func(c *Command, innerArgs []string) (*Command, []string) {
-		argsWOflags := stripFlags(innerArgs, c)
+		argsWOflags, flagsThatConsumeNextArg := stripFlags(innerArgs, c)
 		if len(argsWOflags) == 0 {
 			return c, innerArgs
 		}
@@ -738,14 +772,15 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 
 		cmd := c.findNext(nextSubCmd)
 		if cmd != nil {
-			return innerfind(cmd, c.argsMinusFirstX(innerArgs, nextSubCmd))
+			return innerfind(cmd, c.argsMinusFirstX(innerArgs, flagsThatConsumeNextArg, nextSubCmd))
 		}
 		return c, innerArgs
 	}
 
 	commandFound, a := innerfind(c, args)
 	if commandFound.Args == nil {
-		return commandFound, a, legacyArgs(commandFound, stripFlags(a, commandFound))
+		argsWOflags, _ := stripFlags(a, commandFound)
+		return commandFound, a, legacyArgs(commandFound, argsWOflags)
 	}
 	return commandFound, a, nil
 }
@@ -812,9 +847,16 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			inFlag = false
 			flags = append(flags, arg)
 			continue
-		// A flag without a value, or with an `=` separated value
+		// A flag with an `=` separated value, or a shorthand combination, possibly with a value
 		case isFlagArg(arg):
 			flags = append(flags, arg)
+
+			if strings.HasPrefix(arg, "--") || strings.Contains(arg, "=") || len(arg) <= 2 {
+				continue // Not a shorthand combination, so nothing more to do.
+			}
+
+			shorthandCombination := arg[1:] // Skip leading "-"
+			inFlag = shorthandCombinationNeedsNextArg(shorthandCombination, c.Flags())
 			continue
 		}
 
