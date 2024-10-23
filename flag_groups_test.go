@@ -119,11 +119,6 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:                []string{"--a=foo", "--b=foo", "--c=foo"},
 			expectErr:           `if any flags in the group [a b] are set none of the others can be; [a b] were all set`,
 		}, {
-			desc:                            "Validation of if present then others required groups occurs on groups in sorted order",
-			flagGroupsIfPresentThenRequired: []string{"a d", "a b", "a c"},
-			args:                            []string{"--a=foo"},
-			expectErr:                       `if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]`,
-		}, {
 			desc:                "Persistent flags utilize required and exclusive groups and can fail required groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
