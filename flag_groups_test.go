@@ -43,22 +43,25 @@ func TestValidateFlagGroups(t *testing.T) {
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                        string
-		flagGroupsRequired          []string
-		flagGroupsOneRequired       []string
-		flagGroupsExclusive         []string
-		subCmdFlagGroupsRequired    []string
-		subCmdFlagGroupsOneRequired []string
-		subCmdFlagGroupsExclusive   []string
-		args                        []string
-		expectErr                   string
+		desc                                  string
+		flagGroupsRequired                    []string
+		flagGroupsOneRequired                 []string
+		flagGroupsExclusive                   []string
+		flagGroupsIfPresentThenRequired       []string
+		subCmdFlagGroupsRequired              []string
+		subCmdFlagGroupsOneRequired           []string
+		subCmdFlagGroupsExclusive             []string
+		subCmdFlagGroupsIfPresentThenRequired []string
+		args                                  []string
+		expectErr                             string
 	}{
 		{
 			desc: "No flags no problem",
 		}, {
-			desc:                "No flags no problem even with conflicting groups",
-			flagGroupsRequired:  []string{"a b"},
-			flagGroupsExclusive: []string{"a b"},
+			desc:                            "No flags no problem even with conflicting groups",
+			flagGroupsRequired:              []string{"a b"},
+			flagGroupsExclusive:             []string{"a b"},
+			flagGroupsIfPresentThenRequired: []string{"a b"},
 		}, {
 			desc:               "Required flag group not satisfied",
 			flagGroupsRequired: []string{"a b c"},
@@ -75,6 +78,11 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:                []string{"--a=foo", "--b=foo"},
 			expectErr:           "if any flags in the group [a b c] are set none of the others can be; [a b] were all set",
 		}, {
+			desc:                            "If present then others required flag group not satisfied",
+			flagGroupsIfPresentThenRequired: []string{"a b"},
+			args:                            []string{"--a=foo"},
+			expectErr:                       "if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]",
+		}, {
 			desc:               "Multiple required flag group not satisfied returns first error",
 			flagGroupsRequired: []string{"a b c", "a d"},
 			args:               []string{"--c=foo", "--d=foo"},
@@ -89,6 +97,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsExclusive: []string{"a b c", "a d"},
 			args:                []string{"--a=foo", "--c=foo", "--d=foo"},
 			expectErr:           `if any flags in the group [a b c] are set none of the others can be; [a c] were all set`,
+		},
+		{
+			desc:                            "Multiple if present then others required flag group not satisfied returns first error",
+			flagGroupsIfPresentThenRequired: []string{"a b", "d e"},
+			args:                            []string{"--a=foo", "--f=foo"},
+			expectErr:                       `if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]`,
 		}, {
 			desc:               "Validation of required groups occurs on groups in sorted order",
 			flagGroupsRequired: []string{"a d", "a b", "a c"},
@@ -104,6 +118,11 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsExclusive: []string{"a d", "a b", "a c"},
 			args:                []string{"--a=foo", "--b=foo", "--c=foo"},
 			expectErr:           `if any flags in the group [a b] are set none of the others can be; [a b] were all set`,
+		}, {
+			desc:                            "Validation of if present then others required groups occurs on groups in sorted order",
+			flagGroupsIfPresentThenRequired: []string{"a d", "a b", "a c"},
+			args:                            []string{"--a=foo"},
+			expectErr:                       `if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]`,
 		}, {
 			desc:                "Persistent flags utilize required and exclusive groups and can fail required groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
@@ -181,6 +200,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			}
 			for _, flagGroup := range tc.subCmdFlagGroupsExclusive {
 				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.flagGroupsIfPresentThenRequired {
+				c.MarkIfFlagPresentThenOthersRequired(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.subCmdFlagGroupsIfPresentThenRequired {
+				sub.MarkIfFlagPresentThenOthersRequired(strings.Split(flagGroup, " ")...)
 			}
 			c.SetArgs(tc.args)
 			err := c.Execute()
