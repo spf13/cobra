@@ -68,7 +68,7 @@ var EnableTraverseRunHooks = defaultTraverseRunHooks
 
 // EnableErrorOnUnknownSubcommand controls the behavior of subcommand handling.
 // When the flag is set true the behavior of Command.Execute() will change:
-// If a sub-subcommand is not found ErrUnknownSubcommand will be returned on calling
+// If a sub-subcommand is not found an error will be returned on calling
 // Command.Exec() instead of the old behavior where a nil error was sent.
 // If the flag is false (default) the old behavior is performed.
 // For this behavior the child subcommand must be nil.

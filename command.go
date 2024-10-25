@@ -44,10 +44,6 @@ type Group struct {
 	Title string
 }
 
-// ErrUnknownSubcommand is returned by Command.Execute() when the subcommand was not found.
-// Hereto, the ErrorOnUnknownSubcommand flag must be set true.
-var ErrUnknownSubcommand = errors.New("subcommand is unknown")
-
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -927,9 +923,14 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
+	argWoFlags := c.Flags().Args()
+	if c.DisableFlagParsing {
+		argWoFlags = a
+	}
+
 	if !c.Runnable() {
-		if EnableErrorOnUnknownSubcommand {
-			return ErrUnknownSubcommand
+		if EnableErrorOnUnknownSubcommand && len(argWoFlags) > 0 {
+			return fmt.Errorf("unknown command %q for %q%s", argWoFlags[0], c.CommandPath(), c.findSuggestions(argWoFlags[0]))
 		} else {
 			return flag.ErrHelp
 		}
@@ -937,11 +938,6 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 
 	defer c.postRun()
-
-	argWoFlags := c.Flags().Args()
-	if c.DisableFlagParsing {
-		argWoFlags = a
-	}
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err

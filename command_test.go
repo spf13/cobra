@@ -17,7 +17,6 @@ package cobra
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -224,7 +223,8 @@ func TestSubcommandExecuteMissingSubcommand(t *testing.T) {
 }
 
 func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", Run: emptyRun}
+	const rootName = "root"
+	rootCmd := &Command{Use: rootName, Run: emptyRun}
 	const childName = "child"
 	const grandchildName = "grandchild"
 	EnableErrorOnUnknownSubcommand = true
@@ -236,10 +236,10 @@ func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testi
 
 	// test existing command
 	c, output, err := executeCommandC(rootCmd, childName)
-	if !strings.HasPrefix(output, "Error:") {
+	if strings.HasPrefix(output, "Error:") {
 		t.Errorf("Unexpected output: %v", output)
 	}
-	if !errors.Is(err, ErrUnknownSubcommand) {
+	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if c.Name() != childName {
@@ -258,12 +258,30 @@ func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testi
 		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
 	}
 
-	// now test a command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
-	c, output, err = executeCommandC(rootCmd, childName, "unknownChild")
+	// test a child command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
+	c, output, err = executeCommandC(rootCmd, "unknownChild")
 	if !strings.HasPrefix(output, "Error:") {
 		t.Errorf("Unexpected output: %v", output)
 	}
-	if !errors.Is(err, ErrUnknownSubcommand) {
+	if err == nil {
+		t.Error("Expected error")
+	}
+	if err != nil && !strings.HasPrefix(err.Error(), "unknown command") {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != rootName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test a grandchild command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
+	c, output, err = executeCommandC(rootCmd, childName, "unknownGrandChild")
+	if !strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err == nil {
+		t.Error("Expected error")
+	}
+	if err != nil && !strings.HasPrefix(err.Error(), "unknown command") {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if c.Name() != childName {
