@@ -43,10 +43,10 @@ var initializers []func()
 var finalizers []func()
 
 const (
-	defaultPrefixMatching   = false
-	defaultCommandSorting   = true
-	defaultCaseInsensitive  = false
-	defaultTraverseRunHooks = false
+	defaultPrefixMatching           = false
+	defaultCommandSorting           = true
+	defaultCaseInsensitive          = false
+	defaultTraverseRunHooks         = false
 	defaultErrorOnUnknownSubcommand = false
 )
 
