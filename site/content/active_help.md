@@ -18,12 +18,12 @@ bin/    internal/    scripts/    pkg/     testdata/
 ## Supported shells
 
 Active Help is currently only supported for the following shells:
-- Bash (using [bash completion V2](shell_completions.md#bash-completion-v2) only). Note that bash 4.4 or higher is required for the prompt to appear when an Active Help message is printed.
+- Bash (using [bash completion V2](completions/_index.md#bash-completion-v2) only). Note that bash 4.4 or higher is required for the prompt to appear when an Active Help message is printed.
 - Zsh
 
 ## Adding Active Help messages
 
-As Active Help uses the shell completion system, the implementation of Active Help messages is done by enhancing custom dynamic completions.  If you are not familiar with dynamic completions, please refer to [Shell Completions](shell_completions.md).
+As Active Help uses the shell completion system, the implementation of Active Help messages is done by enhancing custom dynamic completions.  If you are not familiar with dynamic completions, please refer to [Shell Completions](completions/_index.md).
 
 Adding Active Help is done through the use of the `cobra.AppendActiveHelp(...)` function, where the program repeatedly adds Active Help messages to the list of completions.  Keep reading for details.
 
@@ -138,7 +138,7 @@ details for your users.
 
 ## Debugging Active Help
 
-Debugging your Active Help code is done in the same way as debugging your dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](shell_completions.md#debugging) for details.
+Debugging your Active Help code is done in the same way as debugging your dynamic completion code, which is with Cobra's hidden `__complete` command.  Please refer to [debugging shell completion](completions/_index.md#debugging) for details.
 
 When debugging with the `__complete` command, if you want to specify different Active Help configurations, you should use the active help environment variable.  That variable is named `<PROGRAM>_ACTIVE_HELP` where any non-ASCII-alphanumeric characters are replaced by an `_`.  For example, we can test deactivating some Active Help as shown below:
 ```
