@@ -34,12 +34,6 @@ const (
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
 
-// Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
-
-// lock for reading and writing from flagCompletionFunctions
-var flagCompletionMutex = &sync.RWMutex{}
-
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
 type ShellCompDirective int
@@ -137,28 +131,77 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
 	}
-	flagCompletionMutex.Lock()
-	defer flagCompletionMutex.Unlock()
+	// Ensure none of our relevant fields are nil.
+	c.initializeCompletionStorage()
 
-	if _, exists := flagCompletionFunctions[flag]; exists {
+	c.flagCompletionMutex.Lock()
+	defer c.flagCompletionMutex.Unlock()
+
+	// And attempt to bind the completion.
+	if _, exists := c.flagCompletionFunctions[flag]; exists {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
-	flagCompletionFunctions[flag] = f
+	c.flagCompletionFunctions[flag] = f
 	return nil
 }
 
-// GetFlagCompletionFunc returns the completion function for the given flag of the command, if available.
-func (c *Command) GetFlagCompletionFunc(flagName string) (func(*Command, []string, string) ([]string, ShellCompDirective), bool) {
-	flag := c.Flag(flagName)
-	if flag == nil {
+// GetFlagCompletion returns the completion function for the given flag, if available.
+func (c *Command) GetFlagCompletionFunc(flag *pflag.Flag) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	c.initializeCompletionStorage()
+
+	c.flagCompletionMutex.RLock()
+	defer c.flagCompletionMutex.RUnlock()
+
+	completionFunc, exists := c.flagCompletionFunctions[flag]
+
+	// If found it here, return now
+	if completionFunc != nil && exists {
+		return completionFunc, exists
+	}
+
+	// If we are already at the root command level, return anyway
+	if !c.HasParent() {
 		return nil, false
 	}
 
-	flagCompletionMutex.RLock()
-	defer flagCompletionMutex.RUnlock()
+	// Or walk up the command tree.
+	return c.Parent().GetFlagCompletionFunc(flag)
+}
 
-	completionFunc, exists := flagCompletionFunctions[flag]
-	return completionFunc, exists
+// GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
+// If the flag is not found in the command's local flags, it looks into the persistent flags, which might belong to one of the command's parents.
+func (c *Command) GetFlagCompletionFuncByName(flagName string) (func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), bool) {
+	// Attempt to find it in the local flags.
+	if flag := c.Flags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
+	}
+
+	// Or try to find it in the "command-specific" persistent flags.
+	if flag := c.PersistentFlags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
+	}
+
+	// Else, check all persistent flags belonging to one of the parents.
+	// This ensures that we won't return the completion function of a
+	// parent's LOCAL flag.
+	if flag := c.InheritedFlags().Lookup(flagName); flag != nil {
+		return c.GetFlagCompletionFunc(flag)
+	}
+
+	// No flag exists either locally, or as one of the parent persistent flags.
+	return nil, false
+}
+
+// initializeCompletionStorage is (and should be) called in all
+// functions that make use of the command's flag completion functions.
+func (c *Command) initializeCompletionStorage() {
+	if c.flagCompletionMutex == nil {
+		c.flagCompletionMutex = new(sync.RWMutex)
+	}
+
+	if c.flagCompletionFunctions == nil {
+		c.flagCompletionFunctions = make(map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective), 0)
+	}
 }
 
 // Returns a string listing the different directive enabled in the specified parameter
@@ -510,9 +553,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Find the completion function for the flag or command
 	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 	if flag != nil && flagCompletion {
-		flagCompletionMutex.RLock()
-		completionFn = flagCompletionFunctions[flag]
-		flagCompletionMutex.RUnlock()
+		completionFn, _ = finalCmd.GetFlagCompletionFunc(flag)
 	} else {
 		completionFn = finalCmd.ValidArgsFunction
 	}
@@ -836,7 +877,6 @@ to your powershell profile.
 				return cmd.Root().GenPowerShellCompletion(out)
 			}
 			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
 		},
 	}
 	if haveNoDescFlag {
@@ -876,7 +916,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
 		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)
