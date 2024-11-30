@@ -30,6 +30,7 @@ let cobra_completer = {|spans|
     let ShellCompDirectiveNoFileComp = %[3]d
     let ShellCompDirectiveFilterFileExt = %[4]d
     let ShellCompDirectiveFilterDirs = %[5]d
+    let ShellCompDirectiveKeepOrder = %[6]d
 
     let cmd = $spans | first 
     let rest = $spans | skip
@@ -109,7 +110,7 @@ let cobra_completer = {|spans|
     }
 }
 `, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-        ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs))
+        ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder))
 
     _, err := buf.WriteTo(w)
     return err
