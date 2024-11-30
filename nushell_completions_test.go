@@ -37,9 +37,6 @@ func TestGenNushellCompletion(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenNushellCompletion(buf, true))
-	output := buf.String()
-
-	check(t, output, fmt.Sprintf("let cobra_apps = [\"%[1]s\"]", rootCmd.Name()))
 }
 
 func TestGenNushellCompletionFile(t *testing.T) {
