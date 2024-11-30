@@ -95,3 +95,15 @@ func TestFailGenNushellCompletionFile(t *testing.T) {
 		}
 	}
 }
+
+func TestNushellCompletionNoActiveHelp(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenNushellCompletion(buf, true))
+	output := buf.String()
+
+	// check that active help is being disabled
+	activeHelpVar := activeHelpGlobalEnvVar
+	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+}

@@ -15,15 +15,15 @@
 package cobra
 
 import (
-    "bytes"
-    "fmt"
-    "io"
-    "os"
+	"bytes"
+	"fmt"
+	"io"
+	"os"
 )
 
 func (c *Command) GenNushellCompletion(w io.Writer, includeDesc bool) error {
-    buf := new(bytes.Buffer)
-    WriteStringAndCheck(buf, fmt.Sprintf(`
+	buf := new(bytes.Buffer)
+	WriteStringAndCheck(buf, fmt.Sprintf(`
 let cobra_completer = {|spans|
     let ShellCompDirectiveError = %[1]d
     let ShellCompDirectiveNoSpace = %[2]d
@@ -40,7 +40,7 @@ let cobra_completer = {|spans|
     ] {
         # This will catch the stderr message related to the directive and any other errors,
         # such as the command not being a cobra based command
-        let result = do --ignore-errors { cobra_active_help=0 run-external $cmd "__complete" ...$spans | complete }
+        let result = do --ignore-errors { COBRA_ACTIVE_HELP=0 run-external $cmd "__complete" ...$spans | complete }
 
         if $result != null and $result.exit_code == 0 {
             let completions = $result.stdout | lines
@@ -110,18 +110,18 @@ let cobra_completer = {|spans|
     }
 }
 `, ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
-        ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder))
+		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder))
 
-    _, err := buf.WriteTo(w)
-    return err
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 func (c *Command) GenNushellCompletionFile(filename string, includeDesc bool) error {
-    outFile, err := os.Create(filename)
-    if err != nil {
-        return err
-    }
-    defer outFile.Close()
+	outFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
 
-    return c.GenNushellCompletion(outFile, includeDesc)
+	return c.GenNushellCompletion(outFile, includeDesc)
 }
