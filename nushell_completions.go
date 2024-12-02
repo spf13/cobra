@@ -23,6 +23,7 @@ import (
 
 func (c *Command) GenNushellCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
+	WriteStringAndCheck(buf, "# nushell completion -*- shell-script -*- \n")
 	WriteStringAndCheck(buf, fmt.Sprintf(`
 let cobra_completer = {|spans|
     let ShellCompDirectiveError = %[1]d
