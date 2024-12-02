@@ -848,21 +848,20 @@ to your powershell profile.
 		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
 
 To configure the Nushell cobra external completer for the first time:
-  # 1. Copy the output of the command below:
-  > %[1]s completion nushell
-  # 2. Edit the nushell config file:
-  > config nu
-  # 3. Paste above the "let-env config" line.
-  # 4. Change the config block's external_completer line to be external_completer: $cobra_completer
-  # 5. You will need to start a new shel for this setup to take effect.
-
-If you have already setup the cobra external completer for other Cobra-based applications:
   # 1. Edit the nushell config file:
   > config nu
-  # 2. Modify the cobra_apps variable to contain this new application:
-  > let cobra_apps = [ "othercobraapp", "%[1]s" ]
-  # 3. You will need to start a new shell for this setup to take effect.
-`, c.Root().Name()),
+  # 2. Copy the completer to at the end of the file.
+  # 3. Add a section like the following below at the end of the file:
+    $env.config.completions.external = {
+        enable: true
+        max_results: 100
+        completer: $cobra_completer
+    }
+
+NOTE: This completer will work for all cobra based commands.
+More information can be found in the External Completions (https://www.nushell.sh/book/custom_completions.html#custom-descriptions) section of the Nushell book.
+Information on setting up more than one external completer can be found in the Multiple completer (https://www.nushell.sh/cookbook/external_completers.html#multiple-completer) section of the Nushell cookbook.
+`),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {

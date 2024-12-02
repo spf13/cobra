@@ -83,7 +83,9 @@ Nushell:
         completer: $cobra_completer
     }
 
-NOTE: This completer will work for all cobra based commands. More information can be found in the External Completions (https://www.nushell.sh/book/custom_completions.html#custom-descriptions) section of the Nushell book. Information on setting up more than one external completer can be found in the Multiple completer (https://www.nushell.sh/cookbook/external_completers.html#multiple-completer) section of the Nushell cookbook.
+NOTE: This completer will work for all cobra based commands. 
+More information can be found in the External Completions (https://www.nushell.sh/book/custom_completions.html#custom-descriptions) section of the Nushell book. 
+Information on setting up more than one external completer can be found in the Multiple completer (https://www.nushell.sh/cookbook/external_completers.html#multiple-completer) section of the Nushell cookbook.
 
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
