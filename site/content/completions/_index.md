@@ -6,6 +6,7 @@ The currently supported shells are:
 - Zsh
 - fish
 - PowerShell
+- Nushell
 
 Cobra will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command.
@@ -28,7 +29,7 @@ and then modifying the generated `cmd/completion.go` file to look something like
 
 ```go
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
+	Use:   "completion [bash|zsh|fish|powershell|nushell]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
 
@@ -68,9 +69,27 @@ PowerShell:
   # To load completions for every new session, run:
   PS> %[1]s completion powershell > %[1]s.ps1
   # and source this file from your PowerShell profile.
+
+Nushell:
+  
+  # To configure the Nushell cobra external completer for the first time:
+  # 1. Edit the nushell config file:
+  > config nu
+  # 2. Copy the completer to at the end of the file.
+  # 3. Add a section like the following below at the end of the file:
+    $env.config.completions.external = {
+        enable: true
+        max_results: 100
+        completer: $cobra_completer
+    }
+
+NOTE: This completer will work for all cobra based commands. 
+More information can be found in the External Completions (https://www.nushell.sh/book/custom_completions.html#custom-descriptions) section of the Nushell book. 
+Information on setting up more than one external completer can be found in the Multiple completer (https://www.nushell.sh/cookbook/external_completers.html#multiple-completer) section of the Nushell cookbook.
+
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell", "nushell"},
 	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
@@ -82,6 +101,8 @@ PowerShell:
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
 			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		case "nushell":
+			cmd.Root().GenNushellCompletion(os.Stdout, true)
 		}
 	},
 }
