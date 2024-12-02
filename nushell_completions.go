@@ -76,28 +76,28 @@ let cobra_completer = {|spans|
 
         # Add space at the end of each completion
         let completions = if $directive != $ShellCompDirectiveNoSpace {
-          $completions | each {|it| {value: $"($it.value) ", description: $it.description}}
+            $completions | each {|it| {value: $"($it.value) ", description: $it.description}}
         } else {
-          $completions
+            $completions
         }
 
         # Cobra returns a list of completions that are supported with this directive
         # There is no way to currently support this in a nushell external completer
         let completions = if $directive == $ShellCompDirectiveFilterFileExt {
-          []
+            []
         } else {
-          $completions
+            $completions
         }
 
         if $directive == $ShellCompDirectiveNoFileComp {
-          # Allow empty results as this will stop file completion
-          $completions
+            # Allow empty results as this will stop file completion
+            $completions
         } else if ($completions | is-empty)  or  $directive == $ShellCompDirectiveError {
-          # Not returning null causes file completions to break
-          # Return null if there are no completions or ShellCompDirectiveError
-          null
-        } else {
-          $completions
+            # Not returning null causes file completions to break
+            # Return null if there are no completions or ShellCompDirectiveError
+             null
+          } else {
+            $completions
         }
             
         if ($completions | is-empty) {
