@@ -226,9 +226,11 @@ __%[1]s_handle_completion_types() {
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
-                COMPREPLY+=( "$comp" )
+                COMPREPLY+=("$comp")
            fi
         done
+
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
         ;;
 
     *)
@@ -249,6 +251,12 @@ __%[1]s_handle_standard_completion_case() {
         # they have the right prefix, so we also need to quote cur.
         local compgen_cur="$(printf "%%q" "${cur}")"
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${compgen_cur}")
+
+        # If there is a single completion left, escape the completion
+        if ((${#COMPREPLY[*]} == 1)); then
+            COMPREPLY[0]=$(printf %%q "${COMPREPLY[0]}")
+        fi
+
         return 0
     fi
 
