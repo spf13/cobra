@@ -258,7 +258,6 @@ __%[1]s_handle_standard_completion_case() {
         # they have the right prefix, so we also need to quote cur.
         local compgen_cur="$(printf "%%q" "${cur}")"
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${compgen_cur}")
-
         return 0
     fi
 
