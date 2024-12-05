@@ -169,8 +169,9 @@ __%[1]s_process_completion_results() {
         __%[1]s_handle_completion_types
     fi
 
-    __%[1]s_handle_special_char "$cur" :
-    __%[1]s_handle_special_char "$cur" =
+    __%[1]s_handle_wordbreaks "$cur"
+
+    __%[1]s_debug "The final COMPREPLY: $(printf "%%s\n" "${COMPREPLY[@]}")"
 
     # Print the activeHelp statements before we finish
     if ((${#activeHelp[*]} != 0)); then
@@ -236,6 +237,12 @@ __%[1]s_handle_completion_types() {
     *)
         # Type: complete (normal completion)
         __%[1]s_handle_standard_completion_case
+
+        # If there is a single completion left, escape the completion
+        if ((${#COMPREPLY[@]} == 1)); then
+            COMPREPLY[0]="$(printf "%%q" "${COMPREPLY[0]}")"
+        fi
+
         ;;
     esac
 }
@@ -251,11 +258,6 @@ __%[1]s_handle_standard_completion_case() {
         # they have the right prefix, so we also need to quote cur.
         local compgen_cur="$(printf "%%q" "${cur}")"
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${compgen_cur}")
-
-        # If there is a single completion left, escape the completion
-        if ((${#COMPREPLY[*]} == 1)); then
-            COMPREPLY[0]=$(printf %%q "${COMPREPLY[0]}")
-        fi
 
         return 0
     fi
@@ -280,21 +282,30 @@ __%[1]s_handle_standard_completion_case() {
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY[0]="$(printf "%%q" "${comp}")"
+        COMPREPLY[0]="${comp}"
     else # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
     fi
 }
 
-__%[1]s_handle_special_char()
+__%[1]s_handle_wordbreaks()
 {
+    if ((${#COMPREPLY[@]} == 0)); then
+        return;
+    fi
+
     local comp="$1"
-    local char=$2
-    if [[ "$comp" == *${char}* && "$COMP_WORDBREAKS" == *${char}* ]]; then
-        local word=${comp%%"${comp##*${char}}"}
-        local idx=${#COMPREPLY[*]}
-        while ((--idx >= 0)); do
-            COMPREPLY[idx]=${COMPREPLY[idx]#"$word"}
+    local i prefix
+    for ((i=0; i < ${#comp}; i++)); do
+        local char="${comp:$i:1}"
+        if [[ "${COMP_WORDBREAKS}" == *"${char}"* ]]; then
+            prefix="${comp::$i+1}"
+        fi
+    done
+
+    if [[ -n "${prefix}" ]]; then
+        for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
+            COMPREPLY[i]=${COMPREPLY[i]#$prefix}
         done
     fi
 }
@@ -350,6 +361,21 @@ __start_%[1]s()
     local cur prev words cword split
 
     COMPREPLY=()
+
+    # Omit wordbreaks that would need to be escaped.
+    local wordbreaks i
+    for ((i=0; i < ${#COMP_WORDBREAKS}; i++)); do
+        local char="${COMP_WORDBREAKS:$i:1}"
+        if [[ $'\n\t ' == *"${char}"* ]]; then
+            wordbreaks+="${char}"
+            continue
+        fi
+        if [[ "${char}" == "$(printf "%%q" "${char}")" ]]; then
+            wordbreaks+="${char}"
+            continue
+        fi
+    done
+    COMP_WORDBREAKS="${wordbreaks}"
 
     # Call _init_completion from the bash-completion package
     # to prepare the arguments properly
