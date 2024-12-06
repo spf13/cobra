@@ -61,7 +61,10 @@ __%[1]s_get_completion_results() {
     args=("${words[@]:1}")
     requestComp="${words[0]} %[2]s"
     if [[ "${#args[@]}" -gt 0 ]]; then
-        requestComp+="$(printf " %%q" "${args[@]}")"
+        # Previous args should already be escaped...
+        requestComp+=" ${args[*]::${#args[@]}-1}"
+        # ...but the current arg might not yet be escaped.
+        requestComp+=" $(printf "%%q" "${args[${#args[@]}-1]}")"
     fi
 
     lastParam=${words[$((${#words[@]}-1))]}
