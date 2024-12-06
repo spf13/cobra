@@ -33,6 +33,8 @@ import (
 const (
 	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
 	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
+
+	helpFlagName = "help"
 )
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
@@ -1168,7 +1170,7 @@ func (c *Command) checkCommandGroups() {
 // If c already has help flag, it will do nothing.
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
-	if c.Flags().Lookup("help") == nil {
+	if c.Flags().Lookup(helpFlagName) == nil {
 		usage := "help for "
 		name := c.DisplayName()
 		if name == "" {
@@ -1176,8 +1178,8 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += name
 		}
-		c.Flags().BoolP("help", "h", false, usage)
-		_ = c.Flags().SetAnnotation("help", FlagSetByCobraAnnotation, []string{"true"})
+		c.Flags().BoolP(helpFlagName, "h", false, usage)
+		_ = c.Flags().SetAnnotation(helpFlagName, FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
 
