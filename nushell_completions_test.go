@@ -79,7 +79,7 @@ func TestFailGenNushellCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	got := rootCmd.GenFishCompletionFile(f.Name(), false)
+	got := rootCmd.GenNushellCompletionFile(f.Name(), false)
 	if !errors.Is(got, os.ErrPermission) {
 		t.Errorf("got: %s, want: %s", got.Error(), os.ErrPermission.Error())
 	}
