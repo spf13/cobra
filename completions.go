@@ -850,7 +850,7 @@ to your powershell profile.
 To configure the Nushell cobra external completer for the first time:
   # 1. Edit the nushell config file:
   > config nu
-  # 2. Copy the completer to at the end of the file.
+  # 2. Copy the completer to the end of the file.
   # 3. Add a section like the following below at the end of the file:
     $env.config.completions.external = {
         enable: true
