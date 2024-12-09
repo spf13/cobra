@@ -850,7 +850,7 @@ to your powershell profile.
 To configure the Nushell cobra external completer for the first time:
   # 1. Edit the nushell config file:
   > config nu
-  # 2. Copy the completer to the end of the file.
+  # 2. Copy the output of %[1]s completion nushell to the end of the file.
   # 3. Add a section like the following below at the end of the file:
     $env.config.completions.external = {
         enable: true
@@ -861,7 +861,7 @@ To configure the Nushell cobra external completer for the first time:
 NOTE: This completer will work for all cobra based commands.
 More information can be found in the External Completions (https://www.nushell.sh/book/custom_completions.html#custom-descriptions) section of the Nushell book.
 Information on setting up more than one external completer can be found in the Multiple completer (https://www.nushell.sh/cookbook/external_completers.html#multiple-completer) section of the Nushell cookbook.
-`),
+`, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
