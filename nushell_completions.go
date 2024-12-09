@@ -36,6 +36,15 @@ let cobra_completer = {|spans|
     let cmd = $spans | first 
     let rest = $spans | skip
 
+    def cobra_log [message] {
+        let file = do -i {$env | get NUSHELL_COMP_DEBUG_FILE}
+        if $file != null {
+            echo $"($message)\n" | save $file --append
+        }
+    }
+
+    cobra_log $"External Completer called for cmd ($cmd)"
+
     def exec_complete [
         spans: list<string>
     ] {
