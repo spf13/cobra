@@ -109,12 +109,6 @@ let cobra_completer = {|spans|
           } else {
             $completions
         }
-            
-        if ($completions | is-empty) {
-            null
-        } else {
-            $completions
-        }
     } else {
         null
     }
