@@ -2558,6 +2558,42 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.HiddenDefaultCmd = false
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
+
+	// Test that required flag will be ignored
+	rootCmd.PersistentFlags().Bool("foo", false, "")
+	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("foo"))
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
+		if _, err = executeCommand(rootCmd, compCmdName, shell); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	}
+	// Remove completion command for the next test
+	removeCompCmd(rootCmd)
+}
+
+func TestPersistentPreRunHooksForCompletionCommand(t *testing.T) {
+	executed := false
+
+	rootCmd := &Command{
+		Use:              "root",
+		PersistentPreRun: func(*Command, []string) { executed = true },
+		Run:              emptyRun,
+	}
+	subCmd := &Command{
+		Use: "sub",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(subCmd)
+
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
+		if _, err := executeCommand(rootCmd, compCmdName, shell); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		if !executed {
+			t.Error("Root PersistentPreRun should have been executed")
+		}
+		executed = false
+	}
 }
 
 func TestCompleteCompletion(t *testing.T) {
