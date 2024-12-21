@@ -2287,6 +2287,69 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 	}
 }
 
+func TestCommandAliasesCompletionInGo(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	subCmd := &Command{
+		Use:     "sandstone",
+		Aliases: []string{"slate", "pumice", "pegmatite"},
+		Run:     emptyRun,
+	}
+
+	rootCmd.AddCommand(subCmd)
+
+	testcases := []struct {
+		desc               string
+		toComplete         string
+		expectedCompletion string
+	}{
+		{
+			desc:               "command name",
+			toComplete:         "sand",
+			expectedCompletion: "sandstone",
+		},
+		{
+			desc:               "command name if an alias also matches",
+			toComplete:         "s",
+			expectedCompletion: "sandstone",
+		},
+		{
+			desc:               "alias if command name does not match",
+			toComplete:         "sla",
+			expectedCompletion: "slate",
+		},
+		{
+			desc:               "only one alias if multiple match",
+			toComplete:         "p",
+			expectedCompletion: "pumice",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.desc, func(t *testing.T) {
+			args := append([]string{ShellCompRequestCmd}, tc.toComplete)
+			output, err := executeCommand(rootCmd, args...)
+
+			expectedCompletion := strings.Join([]string{
+				tc.expectedCompletion,
+				":4",
+				"Completion ended with directive: ShellCompDirectiveNoFileComp",
+				"",
+			}, "\n")
+
+			switch {
+			case err == nil && output != expectedCompletion:
+				t.Errorf("expected: %q, got: %q", expectedCompletion, output)
+			case err != nil:
+				t.Errorf("Unexpected error %q", err)
+			}
+		})
+	}
+}
+
 func TestArgAliasesCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:        "root",
