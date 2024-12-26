@@ -33,7 +33,8 @@ const (
 	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
 	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
 
-	helpFlagName = "help"
+	helpFlagName    = "help"
+	helpCommandName = "help"
 )
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
@@ -872,7 +873,7 @@ func (c *Command) execute(a []string) (err error) {
 
 	// If help is called, regardless of other flags, return we want help.
 	// Also say we need help if the command isn't runnable.
-	helpVal, err := c.Flags().GetBool("help")
+	helpVal, err := c.Flags().GetBool(helpFlagName)
 	if err != nil {
 		// should be impossible to get here as we always declare a help
 		// flag in InitDefaultHelpFlag()
@@ -1942,7 +1943,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		if len(c.Groups()) == 0 {
 			fmt.Fprintf(w, "\n\nAvailable Commands:")
 			for _, subcmd := range cmds {
-				if subcmd.IsAvailableCommand() || subcmd.Name() == "help" {
+				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
 					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 				}
 			}
@@ -1950,7 +1951,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			for _, group := range c.Groups() {
 				fmt.Fprintf(w, "\n\n%s", group.Title)
 				for _, subcmd := range cmds {
-					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || subcmd.Name() == "help") {
+					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
@@ -1958,7 +1959,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			if !c.AllChildCommandsHaveGroup() {
 				fmt.Fprintf(w, "\n\nAdditional Commands:")
 				for _, subcmd := range cmds {
-					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == "help") {
+					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
