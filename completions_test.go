@@ -675,7 +675,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 // but does not include "Slice" or "Array" in its "Type" string.
 type customMultiString []string
 
-var _ sliceValue = (*customMultiString)(nil)
+var _ SliceValue = (*customMultiString)(nil)
 
 func (s *customMultiString) String() string {
 	return fmt.Sprintf("%v", *s)

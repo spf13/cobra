@@ -270,10 +270,10 @@ func (c *Command) initCompleteCmd(args []string) {
 	}
 }
 
-// sliceValue is a reduced version of [pflag.SliceValue]. It is used to detect
+// SliceValue is a reduced version of [pflag.SliceValue]. It is used to detect
 // flags that accept multiple values and therefore can provide completion
 // multiple times.
-type sliceValue interface {
+type SliceValue interface {
 	// GetSlice returns the flag value list as an array of strings.
 	GetSlice() []string
 }
@@ -407,13 +407,13 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		// If we have not found any required flags, only then can we show regular flags
 		if len(completions) == 0 {
 			doCompleteFlags := func(flag *pflag.Flag) {
-				_, acceptsMultiple := flag.Value.(sliceValue)
-
-				if !flag.Changed ||
-					acceptsMultiple ||
+				_, acceptsMultiple := flag.Value.(SliceValue)
+				acceptsMultiple = acceptsMultiple ||
 					strings.Contains(flag.Value.Type(), "Slice") ||
 					strings.Contains(flag.Value.Type(), "Array") ||
-					strings.HasPrefix(flag.Value.Type(), "stringTo") {
+					strings.HasPrefix(flag.Value.Type(), "stringTo")
+
+				if !flag.Changed || acceptsMultiple {
 					// If the flag is not already present, or if it can be specified multiple times (Array, Slice, or stringTo)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
