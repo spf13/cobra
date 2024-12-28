@@ -671,6 +671,29 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 }
 
+// customMultiString is a custom Value type that accepts multiple values,
+// but does not include "Slice" or "Array" in its "Type" string.
+type customMultiString []string
+
+var _ sliceValue = (*customMultiString)(nil)
+
+func (s *customMultiString) String() string {
+	return fmt.Sprintf("%v", *s)
+}
+
+func (s *customMultiString) Set(v string) error {
+	*s = append(*s, v)
+	return nil
+}
+
+func (s *customMultiString) Type() string {
+	return "multi string"
+}
+
+func (s *customMultiString) GetSlice() []string {
+	return *s
+}
+
 func TestFlagNameCompletionRepeat(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -693,6 +716,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	sliceFlag := rootCmd.Flags().Lookup("slice")
 	rootCmd.Flags().BoolSliceP("bslice", "b", nil, "bool slice flag")
 	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+	rootCmd.Flags().VarP(&customMultiString{}, "multi", "m", "multi string flag")
+	multiFlag := rootCmd.Flags().Lookup("multi")
 
 	// Test that flag names are not repeated unless they are an array or slice
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
@@ -706,6 +731,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"--array",
 		"--bslice",
 		"--help",
+		"--multi",
 		"--second",
 		"--slice",
 		":4",
@@ -728,6 +754,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"--array",
 		"--bslice",
 		"--help",
+		"--multi",
 		"--slice",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -737,7 +764,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--")
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--multi", "val", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -745,12 +772,14 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
 	bsliceFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"--array",
 		"--bslice",
 		"--first",
 		"--help",
+		"--multi",
 		"--second",
 		"--slice",
 		":4",
@@ -768,6 +797,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"--array",
@@ -778,6 +808,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"-f",
 		"--help",
 		"-h",
+		"--multi",
+		"-m",
 		"--second",
 		"-s",
 		"--slice",
@@ -797,6 +829,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"-a",
