@@ -552,7 +552,8 @@ cmd.SetHelpFunc(f func(*Command, []string))
 cmd.SetHelpTemplate(s string)
 ```
 
-The latter two will also apply to any children commands.
+The latter two will also apply to any children commands. Templates specified with SetHelpTemplate are evaluated using
+`text/template` which can increase the size of the compiled executable.
 
 ## Usage Message
 
