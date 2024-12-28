@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -1078,8 +1077,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	args := c.args
 
-	// Workaround FAIL with "go test -v" or "cobra.test -test.v", see #155
-	if c.args == nil && filepath.Base(os.Args[0]) != "cobra.test" {
+	// If running unit tests, we don't want to take the os.Args, see #155 and #2173.
+	// For example, the following would fail:
+	//   go test -c -o foo.test
+	//   ./foo.test -test.run TestNoArgs
+	if c.args == nil && !isTesting() {
 		args = os.Args[1:]
 	}
 
