@@ -2839,3 +2839,16 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+// This tests verifies that when running unit tests, os.Args are not used.
+// This is because we don't want to process any arguments that are provided
+// by "go test"; instead, unit tests must set the arguments they need using
+// rootCmd.SetArgs().
+func TestNoOSArgsWhenTesting(t *testing.T) {
+	root := &Command{Use: "root", Run: emptyRun}
+	os.Args = append(os.Args, "--unknown")
+
+	if _, err := root.ExecuteC(); err != nil {
+		t.Errorf("error: %v", err)
+	}
+}

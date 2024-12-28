@@ -1,4 +1,4 @@
-// Copyright 2013-2023 The Cobra Authors
+// Copyright 2013-2024 The Cobra Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ import (
 )
 
 // based on golang.org/x/mod/internal/lazyregexp: https://cs.opensource.google/go/x/mod/+/refs/tags/v0.19.0:internal/lazyregexp/lazyre.go;l=66
+// For a non-go-test program which still has a name ending with ".test[.exe]", it will need to either:
+// 1- Use go >= 1.21, or
+// 2- call "rootCmd.SetArgs(os.Args[1:])" before calling "rootCmd.Execute()"
 var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test")
 
 func isTesting() bool {
