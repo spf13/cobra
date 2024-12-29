@@ -21,7 +21,7 @@ import (
 	"os"
 )
 
-func (c *Command) GenNushellCompletion(w io.Writer, includeDesc bool) error {
+func (c *Command) GenNushellCompletion(w io.Writer) error {
 	buf := new(bytes.Buffer)
 	WriteStringAndCheck(buf, "# nushell completion -*- shell-script -*- \n")
 	WriteStringAndCheck(buf, fmt.Sprintf(`
@@ -120,12 +120,12 @@ let cobra_completer = {|spans|
 	return err
 }
 
-func (c *Command) GenNushellCompletionFile(filename string, includeDesc bool) error {
+func (c *Command) GenNushellCompletionFile(filename string) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer outFile.Close()
 
-	return c.GenNushellCompletion(outFile, includeDesc)
+	return c.GenNushellCompletion(outFile)
 }

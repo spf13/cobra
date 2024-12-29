@@ -868,7 +868,7 @@ https://www.nushell.sh/cookbook/external_completers.html#multiple-completer
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenNushellCompletion(out, !noDesc)
+			return cmd.Root().GenNushellCompletion(out)
 		},
 	}
 	if haveNoDescFlag {

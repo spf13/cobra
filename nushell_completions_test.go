@@ -38,7 +38,7 @@ func TestGenNushellCompletion(t *testing.T) {
 	rootCmd.AddCommand(getCmd)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenNushellCompletion(buf, true))
+	assertNoErr(t, rootCmd.GenNushellCompletion(buf))
 }
 
 func TestGenNushellCompletionFile(t *testing.T) {
@@ -57,7 +57,7 @@ func TestGenNushellCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	assertNoErr(t, rootCmd.GenNushellCompletionFile(tmpFile.Name(), true))
+	assertNoErr(t, rootCmd.GenNushellCompletionFile(tmpFile.Name()))
 }
 
 func TestFailGenNushellCompletionFile(t *testing.T) {
@@ -79,7 +79,7 @@ func TestFailGenNushellCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	got := rootCmd.GenNushellCompletionFile(f.Name(), false)
+	got := rootCmd.GenNushellCompletionFile(f.Name())
 	if !errors.Is(got, os.ErrPermission) {
 		t.Errorf("got: %s, want: %s", got.Error(), os.ErrPermission.Error())
 	}
@@ -89,7 +89,7 @@ func TestNushellCompletionNoActiveHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, c.GenNushellCompletion(buf, true))
+	assertNoErr(t, c.GenNushellCompletion(buf))
 	output := buf.String()
 
 	// check that active help is being disabled
