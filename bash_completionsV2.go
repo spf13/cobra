@@ -173,8 +173,9 @@ __%[1]s_process_completion_results() {
         __%[1]s_handle_completion_types
     fi
 
-    __%[1]s_handle_special_char "$cur" :
-    __%[1]s_handle_special_char "$cur" =
+    __%[1]s_handle_wordbreaks "$cur"
+
+    __%[1]s_debug "The final COMPREPLY: $(printf "%%s\n" "${COMPREPLY[@]}")"
 
     # Print the activeHelp statements before we finish
     if ((${#activeHelp[*]} != 0)); then
@@ -224,20 +225,28 @@ __%[1]s_handle_completion_types() {
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
         local tab=$'\t' comp
-        while IFS='' read -r comp; do
+        for comp in "${completions[@]}"; do
             [[ -z $comp ]] && continue
             # Strip any description
             comp=${comp%%%%$tab*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
                 COMPREPLY+=("$comp")
-            fi
-        done < <(printf "%%s\n" "${completions[@]}")
+           fi
+        done
+
+        __%[1]s_escape_compreply
+        ;;
+
+    63)
+        # Type: Listing completions after successive tabs
+        __%[1]s_handle_standard_completion_case
         ;;
 
     *)
         # Type: complete (normal completion)
         __%[1]s_handle_standard_completion_case
+        __%[1]s_escape_compreply
         ;;
     esac
 }
@@ -247,7 +256,13 @@ __%[1]s_handle_standard_completion_case() {
 
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
+        # compgen's -W option respects shell quoting, so we need to escape.
+        local compgen_words="$(__%[1]s_escape_suggestions "${completions[@]}")"
+        if [[ "${BASH_VERSION}" = 3* ]]; then
+            # bash3 compgen doesn't handle escaped # symbols correctly.
+            compgen_words="${compgen_words//\\#/#}"
+        fi
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${cur}")
         return 0
     fi
 
@@ -271,21 +286,49 @@ __%[1]s_handle_standard_completion_case() {
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY[0]=$comp
+        COMPREPLY[0]="${comp}"
     else # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
     fi
 }
 
-__%[1]s_handle_special_char()
+__%[1]s_escape_compreply() {
+    IFS=$'\n' read -ra COMPREPLY -d '' < <(__%[1]s_escape_suggestions "${COMPREPLY[@]}")
+}
+
+__%[1]s_escape_suggestions() {
+    if (( $# == 0 )); then
+        return
+    fi
+    local suggestions=( "$@" )
+
+    IFS=$'\n' read -ra suggestions -d '' < <(printf "%%q\n" "${suggestions[@]}")
+
+    # Additionally escape # symbols.
+    local suggestion
+    for suggestion in "${suggestions[@]}"; do
+        echo "${suggestion//#/\\#}"
+    done
+}
+
+__%[1]s_handle_wordbreaks()
 {
+    if ((${#COMPREPLY[@]} == 0)); then
+        return
+    fi
+
     local comp="$1"
-    local char=$2
-    if [[ "$comp" == *${char}* && "$COMP_WORDBREAKS" == *${char}* ]]; then
-        local word=${comp%%"${comp##*${char}}"}
-        local idx=${#COMPREPLY[*]}
-        while ((--idx >= 0)); do
-            COMPREPLY[idx]=${COMPREPLY[idx]#"$word"}
+    local i prefix
+    for ((i=0; i < ${#comp}; i++)); do
+        local char="${comp:$i:1}"
+        if [[ "${COMP_WORDBREAKS}" == *"${char}"* ]]; then
+            prefix="${comp::$i+1}"
+        fi
+    done
+
+    if [[ -n "${prefix}" ]]; then
+        for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
+            COMPREPLY[i]=${COMPREPLY[i]#$prefix}
         done
     fi
 }
