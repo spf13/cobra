@@ -59,17 +59,18 @@ __%[1]s_get_completion_results() {
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows handling aliases
     args=("${words[@]:1}")
-    requestComp="${words[0]} %[2]s"
-    if [[ "${#args[@]}" -gt 0 ]]; then
-        # Previous args should already be escaped...
-        requestComp+=" ${args[*]::${#args[@]}-1}"
-        # ...but the current arg might not yet be escaped.
-        requestComp+=" $(printf "%%q" "${args[${#args[@]}-1]}")"
-    fi
+    requestComp="${words[0]} %[2]s ${args[*]}"
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __%[1]s_debug "lastParam ${lastParam}, lastChar ${lastChar}"
+
+    if [[ -z ${cur} && ${lastChar} != = ]]; then
+        # If the last parameter is complete (there is a space following it)
+        # We add an extra empty parameter so we can indicate this to the go method.
+        __%[1]s_debug "Adding extra empty parameter"
+        requestComp="${requestComp} ''"
+    fi
 
     # When completing a flag with an = (e.g., %[1]s -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
@@ -234,18 +235,18 @@ __%[1]s_handle_completion_types() {
            fi
         done
 
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
+        __%[1]s_escape_compreply
+        ;;
+
+    63)
+        # Type: Listing completions after successive tabs
+        __%[1]s_handle_standard_completion_case
         ;;
 
     *)
         # Type: complete (normal completion)
         __%[1]s_handle_standard_completion_case
-
-        # If there is a single completion left, escape the completion
-        if ((${#COMPREPLY[@]} == 1)); then
-            COMPREPLY[0]="$(printf "%%q" "${COMPREPLY[0]}")"
-        fi
-
+        __%[1]s_escape_compreply
         ;;
     esac
 }
@@ -256,11 +257,12 @@ __%[1]s_handle_standard_completion_case() {
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
         # compgen's -W option respects shell quoting, so we need to escape.
-        local compgen_words="$(printf "%%q\n" "${completions[@]}")"
-        # compgen appears to respect shell quoting _after_ checking whether
-        # they have the right prefix, so we also need to quote cur.
-        local compgen_cur="$(printf "%%q" "${cur}")"
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${compgen_cur}")
+        local compgen_words="$(__%[1]s_escape_suggestions "${completions[@]}")"
+        if [[ "${BASH_VERSION}" = 3* ]]; then
+            # bash3 compgen doesn't handle escaped # symbols correctly.
+            compgen_words="${compgen_words//\\#/#}"
+        fi
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${compgen_words}" -- "${cur}")
         return 0
     fi
 
@@ -290,10 +292,29 @@ __%[1]s_handle_standard_completion_case() {
     fi
 }
 
+__%[1]s_escape_compreply() {
+    IFS=$'\n' read -ra COMPREPLY -d '' < <(__%[1]s_escape_suggestions "${COMPREPLY[@]}")
+}
+
+__%[1]s_escape_suggestions() {
+    if (( $# == 0 )); then
+        return
+    fi
+    local suggestions=( "$@" )
+
+    IFS=$'\n' read -ra suggestions -d '' < <(printf "%%q\n" "${suggestions[@]}")
+
+    # Additionally escape # symbols.
+    local suggestion
+    for suggestion in "${suggestions[@]}"; do
+        echo "${suggestion//#/\\#}"
+    done
+}
+
 __%[1]s_handle_wordbreaks()
 {
     if ((${#COMPREPLY[@]} == 0)); then
-        return;
+        return
     fi
 
     local comp="$1"
@@ -363,21 +384,6 @@ __start_%[1]s()
     local cur prev words cword split
 
     COMPREPLY=()
-
-    # Omit wordbreaks that would need to be escaped.
-    local wordbreaks i
-    for ((i=0; i < ${#COMP_WORDBREAKS}; i++)); do
-        local char="${COMP_WORDBREAKS:$i:1}"
-        if [[ $'\n\t ' == *"${char}"* ]]; then
-            wordbreaks+="${char}"
-            continue
-        fi
-        if [[ "${char}" == "$(printf "%%q" "${char}")" ]]; then
-            wordbreaks+="${char}"
-            continue
-        fi
-    done
-    COMP_WORDBREAKS="${wordbreaks}"
 
     # Call _init_completion from the bash-completion package
     # to prepare the arguments properly
