@@ -390,7 +390,7 @@ func TestPlugin(t *testing.T) {
 	checkStringContains(t, cmdHelp, "version for kubectl plugin")
 }
 
-// TestPlugin checks usage as plugin with sub commands.
+// TestPluginWithSubCommands checks usage as plugin with sub commands.
 func TestPluginWithSubCommands(t *testing.T) {
 	rootCmd := &Command{
 		Use:     "kubectl-plugin",
