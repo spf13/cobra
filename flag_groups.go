@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	requiredAsGroup             = "cobra_annotation_required_if_others_set"
-	oneRequired                 = "cobra_annotation_one_required"
-	mutuallyExclusive           = "cobra_annotation_mutually_exclusive"
-	ifPresentThenOthersRequired = "cobra_annotation_if_present_then_others_required"
+	requiredAsGroupAnnotation             = "cobra_annotation_required_if_others_set"
+	oneRequiredAnnotation                 = "cobra_annotation_one_required"
+	mutuallyExclusiveAnnotation           = "cobra_annotation_mutually_exclusive"
+	ifPresentThenOthersRequiredAnnotation = "cobra_annotation_if_present_then_others_required"
 )
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
@@ -90,7 +90,7 @@ func (c *Command) MarkIfFlagPresentThenOthersRequired(flagNames ...string) {
 			panic(fmt.Sprintf("Failed to find flag %q and mark it as being in an if present then others required flag group", v))
 		}
 		// Each time this is called is a single new entry; this allows it to be a member of multiple groups if needed.
-		if err := c.Flags().SetAnnotation(v, ifPresentThenOthersRequired, append(f.Annotations[ifPresentThenOthersRequired], strings.Join(flagNames, " "))); err != nil {
+		if err := c.Flags().SetAnnotation(v, ifPresentThenOthersRequiredAnnotation, append(f.Annotations[ifPresentThenOthersRequiredAnnotation], strings.Join(flagNames, " "))); err != nil {
 			panic(err)
 		}
 	}
@@ -115,7 +115,7 @@ func (c *Command) ValidateFlagGroups() error {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, groupStatus)
 		processFlagForGroupAnnotation(flags, pflag, oneRequiredAnnotation, oneRequiredGroupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
-		processFlagForGroupAnnotation(flags, pflag, ifPresentThenOthersRequired, ifPresentThenOthersRequiredGroupStatus)
+		processFlagForGroupAnnotation(flags, pflag, ifPresentThenOthersRequiredAnnotation, ifPresentThenOthersRequiredGroupStatus)
 	})
 
 	if err := validateRequiredFlagGroups(groupStatus); err != nil {
@@ -255,7 +255,7 @@ func validateIfPresentThenRequiredFlagGroups(data map[string]map[string]bool) er
 			if len(unset) > 0 {
 				return fmt.Errorf(
 					"%v is set, the following flags must be provided: %v",
-					flagList[0], unset,
+					primaryFlag, unset,
 				)
 			}
 		}
@@ -294,7 +294,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, groupStatus)
 		processFlagForGroupAnnotation(flags, pflag, oneRequiredAnnotation, oneRequiredGroupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
-		processFlagForGroupAnnotation(flags, pflag, ifPresentThenOthersRequired, ifPresentThenRequiredGroupStatus)
+		processFlagForGroupAnnotation(flags, pflag, ifPresentThenOthersRequiredAnnotation, ifPresentThenRequiredGroupStatus)
 	})
 
 	// If a flag that is part of a group is present, we make all the other flags
@@ -347,7 +347,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 			}
 		}
 	}
-	
+
 	// If a flag that is marked as if-present-then-required is present, make other flags in the group required
 	for flagList, flagnameAndStatus := range ifPresentThenRequiredGroupStatus {
 		flags := strings.Split(flagList, " ")

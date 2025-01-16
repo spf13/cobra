@@ -81,7 +81,7 @@ func TestValidateFlagGroups(t *testing.T) {
 			desc:                            "If present then others required flag group not satisfied",
 			flagGroupsIfPresentThenRequired: []string{"a b"},
 			args:                            []string{"--a=foo"},
-			expectErr:                       "if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]",
+			expectErr:                       "a is set, the following flags must be provided: [b]",
 		}, {
 			desc:               "Multiple required flag group not satisfied returns first error",
 			flagGroupsRequired: []string{"a b c", "a d"},
@@ -102,7 +102,7 @@ func TestValidateFlagGroups(t *testing.T) {
 			desc:                            "Multiple if present then others required flag group not satisfied returns first error",
 			flagGroupsIfPresentThenRequired: []string{"a b", "d e"},
 			args:                            []string{"--a=foo", "--f=foo"},
-			expectErr:                       `if the first flag in the group [a b] is set, all other flags must be set; the following flags are not set: [b]`,
+			expectErr:                       `a is set, the following flags must be provided: [b]`,
 		}, {
 			desc:               "Validation of required groups occurs on groups in sorted order",
 			flagGroupsRequired: []string{"a d", "a b", "a c"},
