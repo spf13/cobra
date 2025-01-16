@@ -61,7 +61,7 @@ func TestValidateFlagGroups(t *testing.T) {
 			desc:                            "No flags no problem even with conflicting groups",
 			flagGroupsRequired:              []string{"a b"},
 			flagGroupsExclusive:             []string{"a b"},
-			flagGroupsIfPresentThenRequired: []string{"a b"},
+			flagGroupsIfPresentThenRequired: []string{"a b", "b a"},
 		}, {
 			desc:               "Required flag group not satisfied",
 			flagGroupsRequired: []string{"a b c"},
