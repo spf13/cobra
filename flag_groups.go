@@ -278,7 +278,7 @@ func sortedKeys(m map[string]map[string]bool) []string {
 // - when a flag in a group is present, other flags in the group will be marked required
 // - when none of the flags in a one-required group are present, all flags in the group will be marked required
 // - when a flag in a mutually exclusive group is present, other flags in the group will be marked as hidden
-// - when the first flag in an if-present-then-required group is present, the second flag will be marked as required
+// - when the first flag in an if-present-then-required group is present, the other flags will be marked as required
 // This allows the standard completion logic to behave appropriately for flag groups
 func (c *Command) enforceFlagGroupsForCompletion() {
 	if c.DisableFlagParsing {
