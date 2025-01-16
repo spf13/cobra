@@ -254,8 +254,8 @@ func validateIfPresentThenRequiredFlagGroups(data map[string]map[string]bool) er
 			// If any dependent flags are unset, trigger an error
 			if len(unset) > 0 {
 				return fmt.Errorf(
-					"if the first flag in the group [%v] is set, all other flags must be set; the following flags are not set: %v",
-					flagList, unset,
+					"%v is set, the following flags must be provided: %v",
+					flagList[0], unset,
 				)
 			}
 		}
