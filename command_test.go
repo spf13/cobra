@@ -390,7 +390,7 @@ func TestPlugin(t *testing.T) {
 	checkStringContains(t, cmdHelp, "version for kubectl plugin")
 }
 
-// TestPlugin checks usage as plugin with sub commands.
+// TestPluginWithSubCommands checks usage as plugin with sub commands.
 func TestPluginWithSubCommands(t *testing.T) {
 	rootCmd := &Command{
 		Use:     "kubectl-plugin",
@@ -2837,5 +2837,18 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 			}
 			checkStringContains(t, output, "unknown flag: --unknown")
 		})
+	}
+}
+
+// This tests verifies that when running unit tests, os.Args are not used.
+// This is because we don't want to process any arguments that are provided
+// by "go test"; instead, unit tests must set the arguments they need using
+// rootCmd.SetArgs().
+func TestNoOSArgsWhenTesting(t *testing.T) {
+	root := &Command{Use: "root", Run: emptyRun}
+	os.Args = append(os.Args, "--unknown")
+
+	if _, err := root.ExecuteC(); err != nil {
+		t.Errorf("error: %v", err)
 	}
 }
