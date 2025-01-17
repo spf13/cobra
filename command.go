@@ -180,6 +180,8 @@ type Command struct {
 	helpCommand *Command
 	// helpCommandGroupID is the group id for the helpCommand
 	helpCommandGroupID string
+	// suggestFunc is suggest func defined by the user.
+	suggestFunc func(string) string
 
 	// completionCommandGroupID is the group id for the completion command
 	completionCommandGroupID string
@@ -340,6 +342,10 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	c.helpCommandGroupID = groupID
 }
 
+func (c *Command) SetSuggestFunc(f func(string) string) {
+	c.suggestFunc = f
+}
+
 // SetCompletionCommandGroupID sets the group id of the completion command.
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
 	// completionCommandGroupID is used if no completion command is defined by the user
@@ -475,6 +481,18 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 func (c *Command) Help() error {
 	c.HelpFunc()(c, []string{})
 	return nil
+}
+
+// SuggestFunc returns either the function set by SetSuggestFunc for this command
+// or a parent, or it returns a function with default suggestion behavior.
+func (c *Command) SuggestFunc() func(string) string {
+	if c.suggestFunc != nil && !c.DisableSuggestions {
+		return c.suggestFunc
+	}
+	if c.HasParent() {
+		return c.Parent().SuggestFunc()
+	}
+	return c.findSuggestions
 }
 
 // UsageString returns usage string.

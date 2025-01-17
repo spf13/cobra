@@ -1393,6 +1393,48 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestCustomSuggestions(t *testing.T) {
+	templateWithCustomSuggestions := "Error: unknown command \"%s\" for \"root\"\nSome custom suggestion.\n\nRun 'root --help' for usage.\n"
+	templateWithDefaultSuggestions := "Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n"
+	templateWithoutSuggestions := "Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n"
+
+	for typo, suggestion := range map[string]string{"time": "times", "timse": "times"} {
+		for _, suggestionsDisabled := range []bool{true, false} {
+			for _, setCustomSuggest := range []bool{true, false} {
+				rootCmd := &Command{Use: "root", Run: emptyRun}
+				timesCmd := &Command{
+					Use: "times",
+					Run: emptyRun,
+				}
+				rootCmd.AddCommand(timesCmd)
+
+				rootCmd.DisableSuggestions = suggestionsDisabled
+
+				if setCustomSuggest {
+					rootCmd.SetSuggestFunc(func(a string) string {
+						return "\nSome custom suggestion.\n"
+					})
+				}
+
+				var expected string
+				if suggestionsDisabled {
+					expected = fmt.Sprintf(templateWithoutSuggestions, typo)
+				} else if setCustomSuggest {
+					expected = fmt.Sprintf(templateWithCustomSuggestions, typo)
+				} else {
+					expected = fmt.Sprintf(templateWithDefaultSuggestions, typo, suggestion)
+				}
+
+				output, _ := executeCommand(rootCmd, typo)
+
+				if output != expected {
+					t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expected, output)
+				}
+			}
+		}
+	}
+}
+
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
