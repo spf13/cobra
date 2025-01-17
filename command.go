@@ -483,16 +483,16 @@ func (c *Command) Help() error {
 	return nil
 }
 
-// SuggestFunc returns either the function set by SetSuggestFunc for this command
-// or a parent, or it returns a function with default suggestion behavior.
-func (c *Command) SuggestFunc() func(string) string {
+// SuggestFunc returns suggestions for the provided typedName using either
+// the function set by SetSuggestFunc for this command, parent's or a default one.
+func (c *Command) SuggestFunc(typedName string) string {
 	if c.suggestFunc != nil && !c.DisableSuggestions {
-		return c.suggestFunc
+		return c.suggestFunc(typedName)
 	}
 	if c.HasParent() {
-		return c.Parent().SuggestFunc()
+		return c.Parent().SuggestFunc(typedName)
 	}
-	return c.findSuggestions
+	return c.findSuggestions(typedName)
 }
 
 // UsageString returns usage string.
