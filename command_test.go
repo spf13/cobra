@@ -1394,44 +1394,122 @@ func TestSuggestions(t *testing.T) {
 }
 
 func TestCustomSuggestions(t *testing.T) {
-	templateWithCustomSuggestions := "Error: unknown command \"%s\" for \"root\"\nSome custom suggestion.\n\nRun 'root --help' for usage.\n"
-	templateWithDefaultSuggestions := "Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n"
-	templateWithoutSuggestions := "Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n"
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	timesCmd := &Command{Use: "times", Run: emptyRun}
+	rootCmd.AddCommand(timesCmd)
 
-	for typo, suggestion := range map[string]string{"time": "times", "timse": "times"} {
-		for _, suggestionsDisabled := range []bool{true, false} {
-			for _, setCustomSuggest := range []bool{true, false} {
-				rootCmd := &Command{Use: "root", Run: emptyRun}
-				timesCmd := &Command{
-					Use: "times",
-					Run: emptyRun,
-				}
-				rootCmd.AddCommand(timesCmd)
+	var expected, output string
 
-				rootCmd.DisableSuggestions = suggestionsDisabled
+	expected = ""
+	output, _ = executeCommand(rootCmd, "times")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
 
-				if setCustomSuggest {
-					rootCmd.SetSuggestFunc(func(a string) string {
-						return "\nSome custom suggestion.\n"
-					})
-				}
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n", "time", "times")
+	output, _ = executeCommand(rootCmd, "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
 
-				var expected string
-				if suggestionsDisabled {
-					expected = fmt.Sprintf(templateWithoutSuggestions, typo)
-				} else if setCustomSuggest {
-					expected = fmt.Sprintf(templateWithCustomSuggestions, typo)
-				} else {
-					expected = fmt.Sprintf(templateWithDefaultSuggestions, typo, suggestion)
-				}
+	rootCmd.DisableSuggestions = true
 
-				output, _ := executeCommand(rootCmd, typo)
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n", "time")
+	output, _ = executeCommand(rootCmd, "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
 
-				if output != expected {
-					t.Errorf("Unexpected response.\nExpected:\n %q\nGot:\n %q\n", expected, output)
-				}
-			}
-		}
+	rootCmd.DisableSuggestions = false
+	rootCmd.SetSuggestFunc(func(typedName string) string {
+		return "\nSome custom suggestion.\n"
+	})
+
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\nSome custom suggestion.\n\nRun 'root --help' for usage.\n", "time")
+	output, _ = executeCommand(rootCmd, "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+}
+
+func TestCustomSuggestions_OnlyValidArgs(t *testing.T) {
+	validArgs := []string{"a"}
+	rootCmd := &Command{Use: "root", Args: OnlyValidArgs, Run: emptyRun, ValidArgs: validArgs}
+	grandparentCmd := &Command{Use: "grandparent", Args: OnlyValidArgs, Run: emptyRun, ValidArgs: validArgs}
+	parentCmd := &Command{Use: "parent", Args: OnlyValidArgs, Run: emptyRun, ValidArgs: validArgs}
+	timesCmd := &Command{Use: "times", Run: emptyRun}
+	parentCmd.AddCommand(timesCmd)
+	grandparentCmd.AddCommand(parentCmd)
+	rootCmd.AddCommand(grandparentCmd)
+
+	var expected, output string
+
+	// No typos.
+	expected = ""
+	output, _ = executeCommand(rootCmd, "grandparent")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	expected = ""
+	output, _ = executeCommand(rootCmd, "grandparent", "parent")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	expected = ""
+	output, _ = executeCommand(rootCmd, "grandparent", "parent", "times")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	// 1st level typo.
+	expected = "Error: invalid argument \"grandparen\" for \"root\"\n\nDid you mean this?\n\tgrandparent\n\nUsage:\n  root [flags]\n  root [command]\n\nAvailable Commands:\n  completion  Generate the autocompletion script for the specified shell\n  grandparent \n  help        Help about any command\n\nFlags:\n  -h, --help   help for root\n\nUse \"root [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparen")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	// 2nd level typo.
+	expected = "Error: invalid argument \"paren\" for \"root grandparent\"\nUsage:\n  root grandparent [flags]\n  root grandparent [command]\n\nAvailable Commands:\n  parent      \n\nFlags:\n  -h, --help   help for grandparent\n\nUse \"root grandparent [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparent", "paren")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	// 3rd level typo.
+	expected = "Error: invalid argument \"time\" for \"root grandparent parent\"\nUsage:\n  root grandparent parent [flags]\n  root grandparent parent [command]\n\nAvailable Commands:\n  times       \n\nFlags:\n  -h, --help   help for parent\n\nUse \"root grandparent parent [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparent", "parent", "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	// Custom suggestion on root function.
+	rootCmd.SetSuggestFunc(func(typedName string) string {
+		return "\nRoot custom suggestion.\n"
+	})
+
+	expected = "Error: invalid argument \"grandparen\" for \"root\"\nRoot custom suggestion.\n\nUsage:\n  root [flags]\n  root [command]\n\nAvailable Commands:\n  completion  Generate the autocompletion script for the specified shell\n  grandparent \n  help        Help about any command\n\nFlags:\n  -h, --help   help for root\n\nUse \"root [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparen")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	expected = "Error: invalid argument \"time\" for \"root grandparent parent\"\nRoot custom suggestion.\n\nUsage:\n  root grandparent parent [flags]\n  root grandparent parent [command]\n\nAvailable Commands:\n  times       \n\nFlags:\n  -h, --help   help for parent\n\nUse \"root grandparent parent [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparent", "parent", "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
+	}
+
+	// Custom suggestion on parent function (kept root's to make sure this one is prioritised).
+	parentCmd.SetSuggestFunc(func(typedName string) string {
+		return "\nParent custom suggestion.\n"
+	})
+
+	expected = "Error: invalid argument \"time\" for \"root grandparent parent\"\nParent custom suggestion.\n\nUsage:\n  root grandparent parent [flags]\n  root grandparent parent [command]\n\nAvailable Commands:\n  times       \n\nFlags:\n  -h, --help   help for parent\n\nUse \"root grandparent parent [command] --help\" for more information about a command.\n\n"
+	output, _ = executeCommand(rootCmd, "grandparent", "parent", "time")
+	if output != expected {
+		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
 	}
 }
 

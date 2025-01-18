@@ -485,12 +485,31 @@ func (c *Command) Help() error {
 
 // SuggestFunc returns suggestions for the provided typedName using either
 // the function set by SetSuggestFunc for this command, parent's or a default one.
+// When searching for a parent's function, it recursively checks towards the root
+// and returns the first one found. If none found, uses direct parent's default.
 func (c *Command) SuggestFunc(typedName string) string {
-	if c.suggestFunc != nil && !c.DisableSuggestions {
+	if c.DisableSuggestions {
+		return ""
+	}
+	if c.suggestFunc != nil {
 		return c.suggestFunc(typedName)
 	}
 	if c.HasParent() {
-		return c.Parent().SuggestFunc(typedName)
+		var getParentFunc func(*Command) func(string) string
+		getParentFunc = func(parent *Command) func(string) string {
+			if parent.suggestFunc != nil {
+				return parent.suggestFunc
+			}
+			if parent.HasParent() {
+				return getParentFunc(parent.Parent())
+			}
+			return nil
+		}
+		parentFunc := getParentFunc(c.Parent())
+		if parentFunc != nil {
+			return parentFunc(typedName)
+		}
+		return c.Parent().findSuggestions(typedName)
 	}
 	return c.findSuggestions(typedName)
 }
