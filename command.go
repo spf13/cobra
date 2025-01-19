@@ -500,10 +500,10 @@ func (c *Command) SuggestFunc(typedName string) string {
 			if parent.suggestFunc != nil {
 				return parent.suggestFunc
 			}
-			if parent.HasParent() {
-				return getParentFunc(parent.Parent())
+			if !parent.HasParent() {
+				return nil
 			}
-			return nil
+			return getParentFunc(parent.Parent())
 		}
 		parentFunc := getParentFunc(c.Parent())
 		if parentFunc != nil {
