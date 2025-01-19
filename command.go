@@ -83,7 +83,7 @@ type Command struct {
 	// ValidArgsFunction is an optional function that provides valid non-flag arguments for shell completion.
 	// It is a dynamic version of using ValidArgs.
 	// Only one of ValidArgs and ValidArgsFunction can be used for a command.
-	ValidArgsFunction func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+	ValidArgsFunction CompletionFunc
 
 	// Expected arguments
 	Args PositionalArgs
