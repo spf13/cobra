@@ -115,6 +115,9 @@ type CompletionOptions struct {
 	DisableDescriptions bool
 	// HiddenDefaultCmd makes the default 'completion' command hidden
 	HiddenDefaultCmd bool
+	// DefaultShellCompDirective sets the ShellCompDirective that is returned
+	// if no special directive can be determined
+	DefaultShellCompDirective ShellCompDirective
 }
 
 // NoFileCompletions can be used to disable file completion for commands that should
@@ -451,7 +454,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			return finalCmd, completions, directive, nil
 		}
 	} else {
-		directive = ShellCompDirectiveDefault
+		directive = finalCmd.CompletionOptions.DefaultShellCompDirective
 		if flag == nil {
 			foundLocalNonPersistentFlag := false
 			// If TraverseChildren is true on the root command we don't check for
