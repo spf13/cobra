@@ -180,8 +180,8 @@ type Command struct {
 	helpCommand *Command
 	// helpCommandGroupID is the group id for the helpCommand
 	helpCommandGroupID string
-	// suggestFunc is suggest func defined by the user.
-	suggestFunc func(string) string
+	// suggestOutputFunc is user's override for the suggestion output.
+	suggestOutputFunc func([]string) string
 
 	// completionCommandGroupID is the group id for the completion command
 	completionCommandGroupID string
@@ -342,8 +342,8 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	c.helpCommandGroupID = groupID
 }
 
-func (c *Command) SetSuggestFunc(f func(string) string) {
-	c.suggestFunc = f
+func (c *Command) SetSuggestOutputFunc(f func([]string) string) {
+	c.suggestOutputFunc = f
 }
 
 // SetCompletionCommandGroupID sets the group id of the completion command.
@@ -481,37 +481,6 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 func (c *Command) Help() error {
 	c.HelpFunc()(c, []string{})
 	return nil
-}
-
-// SuggestFunc returns suggestions for the provided typedName using either
-// the function set by SetSuggestFunc for this command, parent's or a default one.
-// When searching for a parent's function, it recursively checks towards the root
-// and returns the first one found. If none found, uses direct parent's default.
-func (c *Command) SuggestFunc(typedName string) string {
-	if c.DisableSuggestions {
-		return ""
-	}
-	if c.suggestFunc != nil {
-		return c.suggestFunc(typedName)
-	}
-	if c.HasParent() {
-		var getParentFunc func(*Command) func(string) string
-		getParentFunc = func(parent *Command) func(string) string {
-			if parent.suggestFunc != nil {
-				return parent.suggestFunc
-			}
-			if !parent.HasParent() {
-				return nil
-			}
-			return getParentFunc(parent.Parent())
-		}
-		parentFunc := getParentFunc(c.Parent())
-		if parentFunc != nil {
-			return parentFunc(typedName)
-		}
-		return c.Parent().findSuggestions(typedName)
-	}
-	return c.findSuggestions(typedName)
 }
 
 // UsageString returns usage string.
@@ -786,15 +755,41 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	return commandFound, a, nil
 }
 
-func (c *Command) findSuggestions(arg string) string {
+// findSuggestions returns suggestions for the provided typedName if suggestions aren't disabled.
+// The output building function can be overridden by setting it with the SetSuggestOutputFunc.
+// If the output override is, instead, set on a parent, it uses the first one found.
+// If none is set, a default is used.
+func (c *Command) findSuggestions(typedName string) string {
 	if c.DisableSuggestions {
 		return ""
 	}
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
+
+	suggestions := c.SuggestionsFor(typedName)
+
+	if c.suggestOutputFunc != nil {
+		return c.suggestOutputFunc(suggestions)
+	}
+	if c.HasParent() {
+		var getParentFunc func(*Command) func([]string) string
+		getParentFunc = func(parent *Command) func([]string) string {
+			if parent.suggestOutputFunc != nil {
+				return parent.suggestOutputFunc
+			}
+			if !parent.HasParent() {
+				return nil
+			}
+			return getParentFunc(parent.Parent())
+		}
+		if parentFunc := getParentFunc(c.Parent()); parentFunc != nil {
+			return parentFunc(suggestions)
+		}
+	}
+
 	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
+	if len(suggestions) > 0 {
 		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
 			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
