@@ -454,7 +454,13 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			return finalCmd, completions, directive, nil
 		}
 	} else {
-		directive = finalCmd.CompletionOptions.DefaultShellCompDirective
+		customShellCompDirective := finalCmd.CompletionOptions.DefaultShellCompDirective
+		if customShellCompDirective != ShellCompDirectiveDefault {
+			directive = customShellCompDirective
+		} else {
+			directive = ShellCompDirectiveDefault
+		}
+
 		if flag == nil {
 			foundLocalNonPersistentFlag := false
 			// If TraverseChildren is true on the root command we don't check for
