@@ -123,7 +123,8 @@ type CompletionFunc func(cmd *Command, args []string, toComplete string) ([]stri
 // NoFileCompletions can be used to disable file completion for commands that should
 // not trigger file completions.
 //
-// This method satisfies [CompletionFunc] and can be used with [Command.RegisterFlagCompletionFunc]
+// This method satisfies [CompletionFunc].
+// It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
 func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	return nil, ShellCompDirectiveNoFileComp
 }
@@ -131,7 +132,8 @@ func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string
 // FixedCompletions can be used to create a completion function which always
 // returns the same results.
 //
-// This method returns a function that satisfies [CompletionFunc] and can be used with [Command.RegisterFlagCompletionFunc]
+// This method returns a function that satisfies [CompletionFunc]
+// It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
 func FixedCompletions(choices []string, directive ShellCompDirective) CompletionFunc {
 	return func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return choices, directive
@@ -140,7 +142,8 @@ func FixedCompletions(choices []string, directive ShellCompDirective) Completion
 
 // RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
 //
-// You can use [FixedCompletions] or [NoFileCompletions] as completion functions.
+// You can use pre-defined completion functions such as [FixedCompletions] or [NoFileCompletions],
+// or you can define your own.
 func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) error {
 	flag := c.Flag(flagName)
 	if flag == nil {
