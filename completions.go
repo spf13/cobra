@@ -35,7 +35,7 @@ const (
 )
 
 // Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+var flagCompletionFunctions = map[*pflag.Flag]CompletionFunc{}
 
 // lock for reading and writing from flagCompletionFunctions
 var flagCompletionMutex = &sync.RWMutex{}
@@ -117,22 +117,34 @@ type CompletionOptions struct {
 	HiddenDefaultCmd bool
 }
 
+// CompletionFunc is a function that provides completion results.
+type CompletionFunc func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
 // NoFileCompletions can be used to disable file completion for commands that should
 // not trigger file completions.
+//
+// This method satisfies [CompletionFunc].
+// It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
 func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	return nil, ShellCompDirectiveNoFileComp
 }
 
 // FixedCompletions can be used to create a completion function which always
 // returns the same results.
-func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+//
+// This method returns a function that satisfies [CompletionFunc]
+// It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
+func FixedCompletions(choices []string, directive ShellCompDirective) CompletionFunc {
 	return func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return choices, directive
 	}
 }
 
 // RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
-func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)) error {
+//
+// You can use pre-defined completion functions such as [FixedCompletions] or [NoFileCompletions],
+// or you can define your own.
+func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) error {
 	flag := c.Flag(flagName)
 	if flag == nil {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
@@ -148,7 +160,7 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Comman
 }
 
 // GetFlagCompletionFunc returns the completion function for the given flag of the command, if available.
-func (c *Command) GetFlagCompletionFunc(flagName string) (func(*Command, []string, string) ([]string, ShellCompDirective), bool) {
+func (c *Command) GetFlagCompletionFunc(flagName string) (CompletionFunc, bool) {
 	flag := c.Flag(flagName)
 	if flag == nil {
 		return nil, false
@@ -519,7 +531,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	}
 
 	// Find the completion function for the flag or command
-	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+	var completionFn CompletionFunc
 	if flag != nil && flagCompletion {
 		flagCompletionMutex.RLock()
 		completionFn = flagCompletionFunctions[flag]
