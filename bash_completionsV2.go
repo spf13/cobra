@@ -201,6 +201,8 @@ __%[1]s_extract_activeHelp() {
     local endIndex=${#activeHelpMarker}
 
     while IFS='' read -r comp; do
+        [[ -z $comp ]] && continue
+
         if [[ ${comp:0:endIndex} == $activeHelpMarker ]]; then
             comp=${comp:endIndex}
             __%[1]s_debug "ActiveHelp found: $comp"
@@ -223,16 +225,21 @@ __%[1]s_handle_completion_types() {
         # If the user requested inserting one completion at a time, or all
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
-        local tab=$'\t' comp
-        while IFS='' read -r comp; do
-            [[ -z $comp ]] && continue
-            # Strip any description
-            comp=${comp%%%%$tab*}
-            # Only consider the completions that match
-            if [[ $comp == "$cur"* ]]; then
-                COMPREPLY+=("$comp")
-            fi
-        done < <(printf "%%s\n" "${completions[@]}")
+
+        # If there are no completions, we don't need to do anything
+        (( ${#completions[@]} == 0 )) && return 0
+
+        local tab=$'\t'
+
+        # Strip any description and escape the completion to handled special characters
+        IFS=$'\n' read -ra completions -d '' < <(printf "%%q\n" "${completions[@]%%%%$tab*}")
+
+        # Only consider the completions that match
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${completions[*]}" -- "${cur}")
+
+        # compgen looses the escaping so we need to escape all completions again since they will
+        # all be inserted on the command-line.
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
         ;;
 
     *)
@@ -243,11 +250,25 @@ __%[1]s_handle_completion_types() {
 }
 
 __%[1]s_handle_standard_completion_case() {
-    local tab=$'\t' comp
+    local tab=$'\t'
+
+    # If there are no completions, we don't need to do anything
+    (( ${#completions[@]} == 0 )) && return 0
 
     # Short circuit to optimize if we don't have descriptions
     if [[ "${completions[*]}" != *$tab* ]]; then
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(compgen -W "${completions[*]}" -- "$cur")
+        # First, escape the completions to handle special characters
+        IFS=$'\n' read -ra completions -d '' < <(printf "%%q\n" "${completions[@]}")
+        # Only consider the completions that match what the user typed
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${completions[*]}" -- "${cur}")
+
+        # compgen looses the escaping so, if there is only a single completion, we need to
+        # escape it again because it will be inserted on the command-line.  If there are multiple
+        # completions, we don't want to escape them because they will be printed in a list
+        # and we don't want to show escape characters in that list.
+        if (( ${#COMPREPLY[@]} == 1 )); then
+            COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]}")
+        fi
         return 0
     fi
 
@@ -256,23 +277,39 @@ __%[1]s_handle_standard_completion_case() {
     # Look for the longest completion so that we can format things nicely
     while IFS='' read -r compline; do
         [[ -z $compline ]] && continue
-        # Strip any description before checking the length
-        comp=${compline%%%%$tab*}
+
+        # Before checking if the completion matches what the user typed,
+        # we need to strip any description and escape the completion to handle special
+        # characters because those escape characters are part of what the user typed.
+        # Don't call "printf" in a sub-shell because it will be much slower
+        # since we are in a loop.
+        printf -v comp "%%q" "${compline%%%%$tab*}" &>/dev/null || comp=$(printf "%%q" "${compline%%%%$tab*}")
+
         # Only consider the completions that match
         [[ $comp == "$cur"* ]] || continue
+
+        # The completions matches.  Add it to the list of full completions including
+        # its description.  We don't escape the completion because it may get printed
+        # in a list if there are more than one and we don't want show escape characters
+        # in that list.
         COMPREPLY+=("$compline")
+
+        # Strip any description before checking the length, and again, don't escape
+        # the completion because this length is only used when printing the completions
+        # in a list and we don't want show escape characters in that list.
+        comp=${compline%%%%$tab*}
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
     done < <(printf "%%s\n" "${completions[@]}")
 
-    # If there is a single completion left, remove the description text
+    # If there is a single completion left, remove the description text and escape any special characters
     if ((${#COMPREPLY[*]} == 1)); then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
-        comp="${COMPREPLY[0]%%%%$tab*}"
-        __%[1]s_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY[0]=$comp
-    else # Format the descriptions
+        COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]%%%%$tab*}")
+        __%[1]s_debug "Removed description from single completion, which is now: ${COMPREPLY[0]}"
+    else
+        # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
     fi
 }
