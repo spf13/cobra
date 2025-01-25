@@ -552,7 +552,9 @@ cmd.SetHelpFunc(f func(*Command, []string))
 cmd.SetHelpTemplate(s string)
 ```
 
-The latter two will also apply to any children commands. Templates specified with SetHelpTemplate are evaluated using
+The latter two will also apply to any children commands.
+
+Note that templates specified with `SetHelpTemplate` are evaluated using
 `text/template` which can increase the size of the compiled executable.
 
 ## Usage Message
@@ -587,6 +589,7 @@ Use "cobra [command] --help" for more information about a command.
 ```
 
 ### Defining your own usage
+
 You can provide your own usage function or template for Cobra to use.
 Like help, the function and template are overridable through public methods:
 
@@ -595,12 +598,18 @@ cmd.SetUsageFunc(f func(*Command) error)
 cmd.SetUsageTemplate(s string)
 ```
 
+Note that templates specified with `SetUsageTemplate` are evaluated using
+`text/template` which can increase the size of the compiled executable.
+
 ## Version Flag
 
 Cobra adds a top-level '--version' flag if the Version field is set on the root command.
 Running an application with the '--version' flag will print the version to stdout using
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
+
+Note that templates specified with `SetVersionTemplate` are evaluated using
+`text/template` which can increase the size of the compiled executable.
 
 ## Error Message Prefix
 

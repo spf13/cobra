@@ -1978,7 +1978,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		fmt.Fprintf(w, "\n\nAdditional help topcis:")
 		for _, subcmd := range c.Commands() {
 			if subcmd.IsAdditionalHelpTopicCommand() {
-				fmt.Fprintf(w, "\n %s %s", rpad(subcmd.CommandPath(), subcmd.CommandPathPadding()), subcmd.Short)
+				fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.CommandPath(), subcmd.CommandPathPadding()), subcmd.Short)
 			}
 		}
 	}
