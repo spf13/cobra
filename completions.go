@@ -455,7 +455,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		}
 	} else {
 		directive = ShellCompDirectiveDefault
-		
+
 		customShellCompDirective := finalCmd.CompletionOptions.DefaultShellCompDirective
 		if customShellCompDirective != ShellCompDirectiveDefault {
 			directive = customShellCompDirective
