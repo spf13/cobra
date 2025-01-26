@@ -242,6 +242,10 @@ func TestRpad(t *testing.T) {
 //
 // See also: https://github.com/spf13/cobra/pull/1956
 func TestDeadcodeElimination(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("go tool nm fails on windows")
+	}
+
 	// check that a simple program using cobra in its default configuration is
 	// linked with deadcode elimination enabled.
 	const (
