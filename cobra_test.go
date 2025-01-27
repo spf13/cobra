@@ -15,6 +15,11 @@
 package cobra
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"text/template"
 )
@@ -220,5 +225,77 @@ func TestRpad(t *testing.T) {
 				t.Errorf("Expected rpad: %v\nGot: %v", tt.expected, got)
 			}
 		})
+	}
+}
+
+// TestDeadcodeElimination checks that a simple program using cobra in its
+// default configuration is linked taking full advantage of the linker's
+// deadcode elimination step.
+//
+// If reflect.Value.MethodByName/reflect.Value.Method are reachable the
+// linker will not always be able to prove that exported methods are
+// unreachable, making deadcode elimination less effective. Using
+// text/template and html/template makes reflect.Value.MethodByName
+// reachable.
+// Since cobra can use text/template templates this test checks that in its
+// default configuration that code path can be proven to be unreachable by
+// the linker.
+//
+// See also: https://github.com/spf13/cobra/pull/1956
+func TestDeadcodeElimination(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("go tool nm fails on windows")
+	}
+
+	// check that a simple program using cobra in its default configuration is
+	// linked with deadcode elimination enabled.
+	const (
+		dirname  = "test_deadcode"
+		progname = "test_deadcode_elimination"
+	)
+	_ = os.Mkdir(dirname, 0770)
+	defer os.RemoveAll(dirname)
+	filename := filepath.Join(dirname, progname+".go")
+	err := os.WriteFile(filename, []byte(`package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Version: "1.0",
+	Use:     "example_program",
+	Short:   "example_program - test fixture to check that deadcode elimination is allowed",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("hello world")
+	},
+	Aliases: []string{"alias1", "alias2"},
+	Example: "stringer --help",
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Whoops. There was an error while executing your CLI '%s'", err)
+		os.Exit(1)
+	}
+}
+`), 0600)
+	if err != nil {
+		t.Fatalf("could not write test program: %v", err)
+	}
+	buf, err := exec.Command("go", "build", filename).CombinedOutput()
+	if err != nil {
+		t.Fatalf("could not compile test program: %s", string(buf))
+	}
+	defer os.Remove(progname)
+	buf, err = exec.Command("go", "tool", "nm", progname).CombinedOutput()
+	if err != nil {
+		t.Fatalf("could not run go tool nm: %v", err)
+	}
+	if strings.Contains(string(buf), "MethodByName") {
+		t.Error("compiled programs contains MethodByName symbol")
 	}
 }

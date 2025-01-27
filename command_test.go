@@ -1018,6 +1018,37 @@ func TestSetHelpCommand(t *testing.T) {
 	}
 }
 
+func TestSetHelpTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.SetHelpTemplate("WORKS {{.UseLine}}")
+
+	// Call the help on the root command and check the new template is used
+	got, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := "WORKS " + rootCmd.UseLine()
+	if got != expected {
+		t.Errorf("Expected %q, got %q", expected, got)
+	}
+
+	// Call the help on the child command and check
+	// the new template is inherited from the parent
+	got, err = executeCommand(rootCmd, "child", "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = "WORKS " + childCmd.UseLine()
+	if got != expected {
+		t.Errorf("Expected %q, got %q", expected, got)
+	}
+}
+
 func TestHelpFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 
@@ -1081,6 +1112,33 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	}
 
 	checkStringContains(t, output, childCmd.Long)
+}
+
+func TestSetUsageTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.SetUsageTemplate("WORKS {{.UseLine}}")
+
+	// Trigger the usage on the root command and check the new template is used
+	got, err := executeCommand(rootCmd, "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	expected := "WORKS " + rootCmd.UseLine()
+	checkStringContains(t, got, expected)
+
+	// Trigger the usage on the child command and check
+	// the new template is inherited from the parent
+	got, err = executeCommand(rootCmd, "child", "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	expected = "WORKS " + childCmd.UseLine()
+	checkStringContains(t, got, expected)
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
