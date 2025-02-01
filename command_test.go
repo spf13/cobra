@@ -1399,6 +1399,8 @@ func TestCustomSuggestions(t *testing.T) {
 	rootCmd.AddCommand(timesCmd)
 
 	var expected, output string
+	suggestion := "times"
+	typo := "time"
 
 	expected = ""
 	output, _ = executeCommand(rootCmd, "times")
@@ -1406,16 +1408,16 @@ func TestCustomSuggestions(t *testing.T) {
 		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
 	}
 
-	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n", "time", "times")
-	output, _ = executeCommand(rootCmd, "time")
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n", typo, suggestion)
+	output, _ = executeCommand(rootCmd, typo)
 	if output != expected {
 		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
 	}
 
 	rootCmd.DisableSuggestions = true
 
-	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n", "time")
-	output, _ = executeCommand(rootCmd, "time")
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n", typo)
+	output, _ = executeCommand(rootCmd, typo)
 	if output != expected {
 		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
 	}
@@ -1425,8 +1427,8 @@ func TestCustomSuggestions(t *testing.T) {
 		return fmt.Sprintf("\nSuggestions:\n\t%s\n", strings.Join(suggestions, "\n"))
 	})
 
-	expected = fmt.Sprintf("Error: unknown command \"time\" for \"root\"\nSuggestions:\n\ttimes\n\nRun 'root --help' for usage.\n")
-	output, _ = executeCommand(rootCmd, "time")
+	expected = fmt.Sprintf("Error: unknown command \"%s\" for \"root\"\nSuggestions:\n\t%s\n\nRun 'root --help' for usage.\n", typo, suggestion)
+	output, _ = executeCommand(rootCmd, typo)
 	if output != expected {
 		t.Errorf("\nExpected:\n %q\nGot:\n %q", expected, output)
 	}
