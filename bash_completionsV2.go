@@ -146,7 +146,7 @@ __%[1]s_process_completion_results() {
 
     if (((directive & shellCompDirectiveFilterFileExt) != 0)); then
         # File extension filtering
-        local fullFilter filter filteringCmd
+        local fullFilter="" filter filteringCmd
 
         # Do not use quotes around the $completions variable or else newline
         # characters will be kept.
