@@ -161,3 +161,7 @@ msgstr ""
 #: command.go:1249
 msgid "command"
 msgstr ""
+
+
+msgid "PathToCommand"
+msgstr ""

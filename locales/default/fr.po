@@ -168,5 +168,5 @@ msgstr "version pour"
 msgid "command"
 msgstr "commande"
 
-#~ msgid "PathToCommand"
-#~ msgstr "command"
+msgid "PathToCommand"
+msgstr "chemin vers la commande"

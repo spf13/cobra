@@ -446,11 +446,14 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	return func(c *Command) error {
 		c.mergePersistentFlags()
 		fn := c.getUsageTemplateFunc()
-		data := CommandUsageTemplateData{
-			Command: c,
-			I18n:    getCommandGlossary(),
-		}
-		err := fn(c.OutOrStderr(), data)
+		// FIXME: this breaks the template func signature ; we need another approach ?
+		//data := CommandUsageTemplateData{
+		//	Command: c,
+		//	I18n:    getCommandGlossary(),
+		//}
+		//err := fn(c.OutOrStderr(), data)
+		//////////////////////////////////////////////////////////////////////////////
+		err := fn(c.OutOrStderr(), c)
 		if err != nil {
 			c.PrintErrln(err)
 		}
@@ -1270,7 +1273,7 @@ func (c *Command) InitDefaultHelpCmd() {
 		c.helpCommand = &Command{
 			Use:   fmt.Sprintf("help [%s]", gotext.Get("command")),
 			Short: gotext.Get("CommandHelpShort"),
-			Long:  fmt.Sprintf(gotext.Get("CommandHelpLong"), c.DisplayName()+fmt.Sprintf(" help [%s]", gotext.Get("command"))),
+			Long:  fmt.Sprintf(gotext.Get("CommandHelpLong"), c.DisplayName()+fmt.Sprintf(" help [%s]", gotext.Get("PathToCommand"))),
 			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 				var completions []string
 				cmd, _, e := c.Root().Find(args)
