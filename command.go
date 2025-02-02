@@ -48,12 +48,6 @@ type Group struct {
 	Title string
 }
 
-// CommandUsageTemplateData is the data passed to the template of command usage
-type CommandUsageTemplateData struct {
-	*Command
-	I18n *i18nCommandGlossary
-}
-
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -446,13 +440,6 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	return func(c *Command) error {
 		c.mergePersistentFlags()
 		fn := c.getUsageTemplateFunc()
-		// FIXME: this breaks the template func signature ; we need another approach ?
-		//data := CommandUsageTemplateData{
-		//	Command: c,
-		//	I18n:    getCommandGlossary(),
-		//}
-		//err := fn(c.OutOrStderr(), data)
-		//////////////////////////////////////////////////////////////////////////////
 		err := fn(c.OutOrStderr(), c)
 		if err != nil {
 			c.PrintErrln(err)
@@ -1937,35 +1924,35 @@ type tmplFunc struct {
 	fn   func(io.Writer, interface{}) error
 }
 
-var defaultUsageTemplate = `{{.I18n.SectionUsage}}:{{if .Runnable}}
+var defaultUsageTemplate = `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
-{{.I18n.SectionAliases}}:
+Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
-{{.I18n.SectionExamples}}:
+Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-{{.I18n.SectionAvailableCommands}}:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
 {{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
-{{.I18n.SectionAdditionalCommands}}:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
-{{.I18n.SectionFlags}}:
+Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
-{{.I18n.SectionGlobalFlags}}:
+Global Flags:
 {{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
 
-{{.I18n.SectionAdditionalHelpTopics}}:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
-{{.I18n.Use}} "{{.CommandPath}} [command] --help" {{.I18n.ForInfoAboutCommand}}.{{end}}
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
 `
 
 // defaultUsageFunc is equivalent to executing defaultUsageTemplate. The two should be changed in sync.
