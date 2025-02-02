@@ -1047,6 +1047,18 @@ func TestSetHelpTemplate(t *testing.T) {
 	if got != expected {
 		t.Errorf("Expected %q, got %q", expected, got)
 	}
+
+	// Reset the root command help template and make sure
+	// it falls back to the default
+	rootCmd.SetHelpTemplate("")
+	got, err = executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !strings.Contains(got, "Usage:") {
+		t.Errorf("Expected to contain %q, got %q", "Usage:", got)
+	}
 }
 
 func TestHelpFlagExecuted(t *testing.T) {
@@ -1139,6 +1151,18 @@ func TestSetUsageTemplate(t *testing.T) {
 
 	expected = "WORKS " + childCmd.UseLine()
 	checkStringContains(t, got, expected)
+
+	// Reset the root command usage template and make sure
+	// it falls back to the default
+	rootCmd.SetUsageTemplate("")
+	got, err = executeCommand(rootCmd, "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	if !strings.Contains(got, "Usage:") {
+		t.Errorf("Expected to contain %q, got %q", "Usage:", got)
+	}
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
