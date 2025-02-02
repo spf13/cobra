@@ -1971,25 +1971,25 @@ var defaultUsageTemplate = `{{.I18n.SectionUsage}}:{{if .Runnable}}
 // defaultUsageFunc is equivalent to executing defaultUsageTemplate. The two should be changed in sync.
 func defaultUsageFunc(w io.Writer, in interface{}) error {
 	c := in.(*Command)
-	fmt.Fprint(w, "Usage:")
+	fmt.Fprintf(w, "%s:", gotext.Get("SectionUsage"))
 	if c.Runnable() {
 		fmt.Fprintf(w, "\n  %s", c.UseLine())
 	}
 	if c.HasAvailableSubCommands() {
-		fmt.Fprintf(w, "\n  %s [command]", c.CommandPath())
+		fmt.Fprintf(w, "\n  %s [%s]", c.CommandPath(), gotext.Get("command"))
 	}
 	if len(c.Aliases) > 0 {
-		fmt.Fprintf(w, "\n\nAliases:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionAliases"))
 		fmt.Fprintf(w, "  %s", c.NameAndAliases())
 	}
 	if c.HasExample() {
-		fmt.Fprintf(w, "\n\nExamples:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionExamples"))
 		fmt.Fprintf(w, "%s", c.Example)
 	}
 	if c.HasAvailableSubCommands() {
 		cmds := c.Commands()
 		if len(c.Groups()) == 0 {
-			fmt.Fprintf(w, "\n\nAvailable Commands:")
+			fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAvailableCommands"))
 			for _, subcmd := range cmds {
 				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
 					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
@@ -2005,7 +2005,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				}
 			}
 			if !c.AllChildCommandsHaveGroup() {
-				fmt.Fprintf(w, "\n\nAdditional Commands:")
+				fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAdditionalCommands"))
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
@@ -2015,15 +2015,15 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		}
 	}
 	if c.HasAvailableLocalFlags() {
-		fmt.Fprintf(w, "\n\nFlags:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionFlags"))
 		fmt.Fprint(w, trimRightSpace(c.LocalFlags().FlagUsages()))
 	}
 	if c.HasAvailableInheritedFlags() {
-		fmt.Fprintf(w, "\n\nGlobal Flags:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionGlobalFlags"))
 		fmt.Fprint(w, trimRightSpace(c.InheritedFlags().FlagUsages()))
 	}
 	if c.HasHelpSubCommands() {
-		fmt.Fprintf(w, "\n\nAdditional help topcis:")
+		fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAdditionalHelpTopics"))
 		for _, subcmd := range c.Commands() {
 			if subcmd.IsAdditionalHelpTopicCommand() {
 				fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.CommandPath(), subcmd.CommandPathPadding()), subcmd.Short)
@@ -2031,7 +2031,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		}
 	}
 	if c.HasAvailableSubCommands() {
-		fmt.Fprintf(w, "\n\nUse \"%s [command] --help\" for more information about a command.", c.CommandPath())
+		fmt.Fprintf(w, "\n\n%s \"%s [command] --help\" %s.", gotext.Get("Use"), c.CommandPath(), gotext.Get("ForInfoAboutCommand"))
 	}
 	fmt.Fprintln(w)
 	return nil
