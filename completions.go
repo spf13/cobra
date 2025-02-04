@@ -115,6 +115,13 @@ type CompletionOptions struct {
 	DisableDescriptions bool
 	// HiddenDefaultCmd makes the default 'completion' command hidden
 	HiddenDefaultCmd bool
+	// DefaultShellCompDirective sets the ShellCompDirective that is returned
+	// if no special directive can be determined
+	DefaultShellCompDirective *ShellCompDirective
+}
+
+func (receiver *CompletionOptions) SetDefaultShellCompDirective(directive ShellCompDirective) {
+	receiver.DefaultShellCompDirective = &directive
 }
 
 // Completion is a string that can be used for completions
@@ -480,6 +487,14 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 		}
 	} else {
 		directive = ShellCompDirectiveDefault
+		// check current and parent commands for a custom DefaultShellCompDirective
+		for cmd := finalCmd; cmd != nil; cmd = cmd.parent {
+			if cmd.CompletionOptions.DefaultShellCompDirective != nil {
+				directive = *cmd.CompletionOptions.DefaultShellCompDirective
+				break
+			}
+		}
+
 		if flag == nil {
 			foundLocalNonPersistentFlag := false
 			// If TraverseChildren is true on the root command we don't check for
