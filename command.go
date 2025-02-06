@@ -26,6 +26,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/leonelquinteros/gotext"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -786,7 +788,7 @@ func (c *Command) findSuggestions(arg string) string {
 	}
 	var sb strings.Builder
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		sb.WriteString("\n\nDid you mean this?\n")
+		sb.WriteString("\n\n" + gotext.Get("DidYouMeanThis") + "\n")
 		for _, s := range suggestions {
 			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
 		}
@@ -907,7 +909,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		c.Printf(gotext.Get("CommandDeprecatedWarning")+"\n", c.Name(), c.Deprecated)
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
@@ -1130,7 +1132,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.PrintErrln(c.ErrPrefix(), err.Error())
-			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
+			c.PrintErrf(gotext.Get("RunHelpTip")+"\n", c.CommandPath())
 		}
 		return c, err
 	}
@@ -1196,7 +1198,7 @@ func (c *Command) ValidateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+		return fmt.Errorf(gotext.GetN("FlagNotSetError", "FlagNotSetErrorPlural", len(missingFlagNames)), strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
 }
@@ -1220,10 +1222,10 @@ func (c *Command) checkCommandGroups() {
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup(helpFlagName) == nil {
-		usage := "help for "
+		usage := gotext.Get("HelpFor") + " "
 		name := c.DisplayName()
 		if name == "" {
-			usage += "this command"
+			usage += gotext.Get("ThisCommand")
 		} else {
 			usage += name
 		}
@@ -1243,9 +1245,9 @@ func (c *Command) InitDefaultVersionFlag() {
 
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("version") == nil {
-		usage := "version for "
+		usage := gotext.Get("VersionFor") + " "
 		if c.Name() == "" {
-			usage += "this command"
+			usage += gotext.Get("ThisCommand")
 		} else {
 			usage += c.DisplayName()
 		}
@@ -1268,10 +1270,9 @@ func (c *Command) InitDefaultHelpCmd() {
 
 	if c.helpCommand == nil {
 		c.helpCommand = &Command{
-			Use:   "help [command]",
-			Short: "Help about any command",
-			Long: `Help provides help for any command in the application.
-Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
+			Use:   fmt.Sprintf("help [%s]", gotext.Get("command")),
+			Short: gotext.Get("CommandHelpShort"),
+			Long:  fmt.Sprintf(gotext.Get("CommandHelpLong"), c.DisplayName()+fmt.Sprintf(" help [%s]", gotext.Get("PathToCommand"))),
 			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 				var completions []string
 				cmd, _, e := c.Root().Find(args)
@@ -1294,7 +1295,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unknown help topic %#q\n", args)
+					c.Printf(gotext.Get("CommandHelpUnknownTopicError")+"\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
 					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
@@ -1969,25 +1970,25 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 // defaultUsageFunc is equivalent to executing defaultUsageTemplate. The two should be changed in sync.
 func defaultUsageFunc(w io.Writer, in interface{}) error {
 	c := in.(*Command)
-	fmt.Fprint(w, "Usage:")
+	fmt.Fprintf(w, "%s:", gotext.Get("SectionUsage"))
 	if c.Runnable() {
 		fmt.Fprintf(w, "\n  %s", c.UseLine())
 	}
 	if c.HasAvailableSubCommands() {
-		fmt.Fprintf(w, "\n  %s [command]", c.CommandPath())
+		fmt.Fprintf(w, "\n  %s [%s]", c.CommandPath(), gotext.Get("command"))
 	}
 	if len(c.Aliases) > 0 {
-		fmt.Fprintf(w, "\n\nAliases:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionAliases"))
 		fmt.Fprintf(w, "  %s", c.NameAndAliases())
 	}
 	if c.HasExample() {
-		fmt.Fprintf(w, "\n\nExamples:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionExamples"))
 		fmt.Fprintf(w, "%s", c.Example)
 	}
 	if c.HasAvailableSubCommands() {
 		cmds := c.Commands()
 		if len(c.Groups()) == 0 {
-			fmt.Fprintf(w, "\n\nAvailable Commands:")
+			fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAvailableCommands"))
 			for _, subcmd := range cmds {
 				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
 					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
@@ -2003,7 +2004,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				}
 			}
 			if !c.AllChildCommandsHaveGroup() {
-				fmt.Fprintf(w, "\n\nAdditional Commands:")
+				fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAdditionalCommands"))
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
@@ -2013,15 +2014,15 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		}
 	}
 	if c.HasAvailableLocalFlags() {
-		fmt.Fprintf(w, "\n\nFlags:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionFlags"))
 		fmt.Fprint(w, trimRightSpace(c.LocalFlags().FlagUsages()))
 	}
 	if c.HasAvailableInheritedFlags() {
-		fmt.Fprintf(w, "\n\nGlobal Flags:\n")
+		fmt.Fprintf(w, "\n\n%s:\n", gotext.Get("SectionGlobalFlags"))
 		fmt.Fprint(w, trimRightSpace(c.InheritedFlags().FlagUsages()))
 	}
 	if c.HasHelpSubCommands() {
-		fmt.Fprintf(w, "\n\nAdditional help topcis:")
+		fmt.Fprintf(w, "\n\n%s:", gotext.Get("SectionAdditionalHelpTopics"))
 		for _, subcmd := range c.Commands() {
 			if subcmd.IsAdditionalHelpTopicCommand() {
 				fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.CommandPath(), subcmd.CommandPathPadding()), subcmd.Short)
@@ -2029,7 +2030,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		}
 	}
 	if c.HasAvailableSubCommands() {
-		fmt.Fprintf(w, "\n\nUse \"%s [command] --help\" for more information about a command.", c.CommandPath())
+		fmt.Fprintf(w, "\n\n%s \"%s [command] --help\" %s.", gotext.Get("Use"), c.CommandPath(), gotext.Get("ForInfoAboutCommand"))
 	}
 	fmt.Fprintln(w)
 	return nil

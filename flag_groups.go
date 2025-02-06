@@ -19,6 +19,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/leonelquinteros/gotext"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -201,7 +203,7 @@ func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
-		return fmt.Errorf("if any flags in the group [%v] are set none of the others can be; %v were all set", flagList, set)
+		return fmt.Errorf(gotext.Get("ExclusiveFlagsValidationError"), flagList, set)
 	}
 	return nil
 }

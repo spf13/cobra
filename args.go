@@ -17,6 +17,8 @@ package cobra
 import (
 	"fmt"
 	"strings"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 type PositionalArgs func(cmd *Command, args []string) error
@@ -33,7 +35,7 @@ func legacyArgs(cmd *Command, args []string) error {
 
 	// root command with subcommands, do subcommand checking.
 	if !cmd.HasParent() && len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
+		return fmt.Errorf(gotext.Get("LegacyArgsValidationError"), args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
 	}
 	return nil
 }
@@ -41,7 +43,7 @@ func legacyArgs(cmd *Command, args []string) error {
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		return fmt.Errorf(gotext.Get("NoArgsValidationError"), args[0], cmd.CommandPath())
 	}
 	return nil
 }
@@ -58,7 +60,7 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 		}
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {
-				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
+				return fmt.Errorf(gotext.Get("OnlyValidArgsValidationError"), v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
 			}
 		}
 	}
@@ -74,7 +76,7 @@ func ArbitraryArgs(cmd *Command, args []string) error {
 func MinimumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < n {
-			return fmt.Errorf("requires at least %d arg(s), only received %d", n, len(args))
+			return fmt.Errorf(gotext.GetN("MinimumNArgsValidationError", "MinimumNArgsValidationErrorPlural", n), n, len(args))
 		}
 		return nil
 	}
@@ -84,7 +86,7 @@ func MinimumNArgs(n int) PositionalArgs {
 func MaximumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) > n {
-			return fmt.Errorf("accepts at most %d arg(s), received %d", n, len(args))
+			return fmt.Errorf(gotext.GetN("MaximumNArgsValidationError", "MaximumNArgsValidationErrorPlural", n), n, len(args))
 		}
 		return nil
 	}
@@ -94,7 +96,7 @@ func MaximumNArgs(n int) PositionalArgs {
 func ExactArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) != n {
-			return fmt.Errorf("accepts %d arg(s), received %d", n, len(args))
+			return fmt.Errorf(gotext.GetN("ExactArgsValidationError", "ExactArgsValidationErrorPlural", n), n, len(args))
 		}
 		return nil
 	}
@@ -104,7 +106,7 @@ func ExactArgs(n int) PositionalArgs {
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < min || len(args) > max {
-			return fmt.Errorf("accepts between %d and %d arg(s), received %d", min, max, len(args))
+			return fmt.Errorf(gotext.GetN("RangeArgsValidationError", "RangeArgsValidationErrorPlural", max), min, max, len(args))
 		}
 		return nil
 	}

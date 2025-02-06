@@ -22,14 +22,22 @@ lint:
 test: install_deps
 	$(info ******************** running tests ********************)
 	go test -v ./...
+	LANGUAGE="en" go test -tags locales -v ./...
 
 richtest: install_deps
 	$(info ******************** running tests with kyoh86/richgo ********************)
 	richgo test -v ./...
 
+i18n_extract: install_i18n_deps
+	$(info ******************** extracting translation files ********************)
+	xgotext -v -in . -out locales
+
 install_deps:
 	$(info ******************** downloading dependencies ********************)
 	go get -v ./...
+
+install_i18n_deps:
+	go install github.com/leonelquinteros/gotext/cli/xgotext
 
 clean:
 	rm -rf $(BIN)

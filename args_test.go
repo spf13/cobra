@@ -68,7 +68,7 @@ func minimumNArgsWithLessArgs(err error, t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := "requires at least 2 arg(s), only received 1"
+	expected := "requires at least 2 args, only received 1"
 	if got != expected {
 		t.Fatalf("Expected %q, got %q", expected, got)
 	}
@@ -79,7 +79,7 @@ func maximumNArgsWithMoreArgs(err error, t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := "accepts at most 2 arg(s), received 3"
+	expected := "accepts at most 2 args, received 3"
 	if got != expected {
 		t.Fatalf("Expected %q, got %q", expected, got)
 	}
@@ -90,7 +90,7 @@ func exactArgsWithInvalidCount(err error, t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := "accepts 2 arg(s), received 3"
+	expected := "accepts 2 args, received 3"
 	if got != expected {
 		t.Fatalf("Expected %q, got %q", expected, got)
 	}
@@ -101,7 +101,7 @@ func rangeArgsWithInvalidCount(err error, t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 	got := err.Error()
-	expected := "accepts between 2 and 4 arg(s), received 1"
+	expected := "accepts between 2 and 4 args, received 1"
 	if got != expected {
 		t.Fatalf("Expected %q, got %q", expected, got)
 	}
