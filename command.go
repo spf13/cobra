@@ -315,6 +315,10 @@ func (c *Command) SetUsageFunc(f func(*Command) error) {
 
 // SetUsageTemplate sets usage template. Can be defined by Application.
 func (c *Command) SetUsageTemplate(s string) {
+	if s == "" {
+		c.usageTemplate = nil
+		return
+	}
 	c.usageTemplate = tmpl(s)
 }
 
@@ -351,11 +355,19 @@ func (c *Command) SetCompletionCommandGroupID(groupID string) {
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
 func (c *Command) SetHelpTemplate(s string) {
+	if s == "" {
+		c.helpTemplate = nil
+		return
+	}
 	c.helpTemplate = tmpl(s)
 }
 
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
 func (c *Command) SetVersionTemplate(s string) {
+	if s == "" {
+		c.versionTemplate = nil
+		return
+	}
 	c.versionTemplate = tmpl(s)
 }
 
