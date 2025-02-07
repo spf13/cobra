@@ -304,6 +304,29 @@ $ helm status --output [tab][tab]
 json table yaml
 ```
 
+#### Change the default ShellCompDirective
+
+If Cobra cannot determine a special `ShellCompDirective` during flag parsing,
+it will return `ShellCompDirectiveDefault`, which will invoke the shell's filename completion.
+This is handy for flags that accept filenames, as they do not require a `FlagCompletionFunc`.
+
+For other flags where no meaningful completion can be provided, this requires extra work:
+You have to register a `FlagCompletionFunc` just to get rid of file completion.
+
+If you find yourself registering lots of handlers like
+
+```go
+cmd.RegisterFlagCompletionFunc("flag-name", cobra.NoFileCompletions)
+```
+
+you can change the default `ShellCompDirective` to `ShellCompDirectiveNoFileComp`:
+
+```go
+cmd.CompletionOptions.DefaultShellCompDirective = ShellCompDirectiveNoFileComp
+```
+
+Keep in mind that from now on you have to register handlers for every filename flag.
+
 #### Debugging
 
 You can also easily debug your Go completion code for flags:

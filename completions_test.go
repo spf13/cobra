@@ -3742,3 +3742,45 @@ func TestDisableDescriptions(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomDefaultShellCompDirective(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.Flags().String("string", "", "test string flag")
+	// use ShellCompDirectiveNoFileComp instead of the default, which is ShellCompDirectiveDefault
+	rootCmd.CompletionOptions.DefaultShellCompDirective = ShellCompDirectiveNoFileComp
+
+	testCases := []struct {
+		desc string
+		args []string
+	}{
+		{
+			"args completion with custom ShellCompDirective",
+			[]string{""},
+		},
+		{
+			"flag completion with custom ShellCompDirective",
+			[]string{"--string", ""},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			args := []string{ShellCompNoDescRequestCmd}
+			args = append(args, tc.args...)
+
+			output, err := executeCommand(rootCmd, args...)
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			expected := strings.Join([]string{
+				":4",
+				"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+			if output != expected {
+				t.Errorf("expected: %q, got: %q", expected, output)
+			}
+		})
+	}
+}
