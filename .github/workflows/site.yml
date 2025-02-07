@@ -1,0 +1,47 @@
+name: 'site'
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Get Hugo and Theme
+      run: |
+        curl -fsSL https://github.com/gohugoio/hugo/releases/download/v0.114.0/hugo_extended_0.114.0_Linux-64bit.tar.gz | sudo tar xzf - -C /usr/local/bin hugo
+        sudo chmod +x /usr/local/bin/hugo
+        mkdir -p site/themes
+        cd site/themes
+        git clone https://github.com/bep/docuapi
+        cd docuapi
+        npm install --only=dev
+        mv node_modules ../..
+
+    - name: Build site
+      run: |
+        cd site
+        hugo version
+        hugo
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: site
+        path: site/public
+
+    - name: Publish site to gh-pages
+      if: github.event_name != 'pull_request'
+      run: |
+        cd site/public/
+        touch .nojekyll
+        git init
+        cp ../../.git/config ./.git/config
+        git add .
+        git config --local user.email "push@gha"
+        git config --local user.name "GHA"
+        git commit -a -m "update ${{ github.sha }}"
+        git push -u origin +HEAD:gh-pages
