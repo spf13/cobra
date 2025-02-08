@@ -82,7 +82,7 @@ type Command struct {
 	Example string
 
 	// ValidArgs is list of all valid non-flag arguments that are accepted in shell completions
-	ValidArgs []CompletionChoice
+	ValidArgs []Completion
 	// ValidArgsFunction is an optional function that provides valid non-flag arguments for shell completion.
 	// It is a dynamic version of using ValidArgs.
 	// Only one of ValidArgs and ValidArgsFunction can be used for a command.

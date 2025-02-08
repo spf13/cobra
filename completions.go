@@ -117,22 +117,22 @@ type CompletionOptions struct {
 	HiddenDefaultCmd bool
 }
 
-// CompletionChoice is a string that can be used for completions
+// Completion is a string that can be used for completions
 //
 // two formats are supported:
 //   - the completion choice
 //   - the completion choice with a textual description (separated by a TAB).
 //
-// [CompletionChoiceWithDescription] can be used to create a completion string with a textual description.
+// [CompletionWithDesc] can be used to create a completion string with a textual description.
 //
 // Note: Go type alias is used to provide a more descriptive name in the documentation, but any string can be used.
-type CompletionChoice = string
+type Completion = string
 
 // CompletionFunc is a function that provides completion results.
-type CompletionFunc func(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective)
+type CompletionFunc func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective)
 
-// CompletionChoiceWithDescription returns a [CompletionChoice] with a description by using the TAB delimited format.
-func CompletionChoiceWithDescription(choice string, description string) CompletionChoice {
+// CompletionWithDesc returns a [Completion] with a description by using the TAB delimited format.
+func CompletionWithDesc(choice string, description string) Completion {
 	return choice + "\t" + description
 }
 
@@ -141,7 +141,7 @@ func CompletionChoiceWithDescription(choice string, description string) Completi
 //
 // This method satisfies [CompletionFunc].
 // It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
-func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective) {
+func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
 	return nil, ShellCompDirectiveNoFileComp
 }
 
@@ -150,8 +150,8 @@ func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]Comple
 //
 // This method returns a function that satisfies [CompletionFunc]
 // It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
-func FixedCompletions(choices []CompletionChoice, directive ShellCompDirective) CompletionFunc {
-	return func(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective) {
+func FixedCompletions(choices []Completion, directive ShellCompDirective) CompletionFunc {
+	return func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
 		return choices, directive
 	}
 }
@@ -306,7 +306,7 @@ type SliceValue interface {
 	GetSlice() []string
 }
 
-func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, ShellCompDirective, error) {
+func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCompDirective, error) {
 	// The last argument, which is not completely typed by the user,
 	// should not be part of the list of arguments
 	toComplete := args[len(args)-1]
@@ -334,7 +334,7 @@ func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, S
 	}
 	if err != nil {
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
-		return c, []CompletionChoice{}, ShellCompDirectiveDefault, fmt.Errorf("unable to find a command for arguments: %v", trimmedArgs)
+		return c, []Completion{}, ShellCompDirectiveDefault, fmt.Errorf("unable to find a command for arguments: %v", trimmedArgs)
 	}
 	finalCmd.ctx = c.ctx
 
@@ -364,7 +364,7 @@ func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, S
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
-		return finalCmd, []CompletionChoice{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
+		return finalCmd, []Completion{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
 	}
 
 	realArgCount := finalCmd.Flags().NArg()
@@ -376,14 +376,14 @@ func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, S
 	if flagErr != nil {
 		// If error type is flagCompError and we don't want flagCompletion we should ignore the error
 		if _, ok := flagErr.(*flagCompError); !(ok && !flagCompletion) {
-			return finalCmd, []CompletionChoice{}, ShellCompDirectiveDefault, flagErr
+			return finalCmd, []Completion{}, ShellCompDirectiveDefault, flagErr
 		}
 	}
 
 	// Look for the --help or --version flags.  If they are present,
 	// there should be no further completions.
 	if helpOrVersionFlagPresent(finalCmd) {
-		return finalCmd, []CompletionChoice{}, ShellCompDirectiveNoFileComp, nil
+		return finalCmd, []Completion{}, ShellCompDirectiveNoFileComp, nil
 	}
 
 	// We only remove the flags from the arguments if DisableFlagParsing is not set.
@@ -412,11 +412,11 @@ func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, S
 				return finalCmd, subDir, ShellCompDirectiveFilterDirs, nil
 			}
 			// Directory completion
-			return finalCmd, []CompletionChoice{}, ShellCompDirectiveFilterDirs, nil
+			return finalCmd, []Completion{}, ShellCompDirectiveFilterDirs, nil
 		}
 	}
 
-	var completions []CompletionChoice
+	var completions []Completion
 	var directive ShellCompDirective
 
 	// Enforce flag groups before doing flag completions
@@ -558,7 +558,7 @@ func (c *Command) getCompletions(args []string) (*Command, []CompletionChoice, S
 	if completionFn != nil {
 		// Go custom completion defined for this flag or command.
 		// Call the registered completion function to get the completions.
-		var comps []CompletionChoice
+		var comps []Completion
 		comps, directive = completionFn(finalCmd, finalArgs, toComplete)
 		completions = append(completions, comps...)
 	}
@@ -578,12 +578,12 @@ func helpOrVersionFlagPresent(cmd *Command) bool {
 	return false
 }
 
-func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []CompletionChoice {
+func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 	if nonCompletableFlag(flag) {
-		return []CompletionChoice{}
+		return []Completion{}
 	}
 
-	var completions []CompletionChoice
+	var completions []Completion
 	flagName := "--" + flag.Name
 	if strings.HasPrefix(flagName, toComplete) {
 		// Flag without the =
@@ -611,8 +611,8 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []CompletionCho
 	return completions
 }
 
-func completeRequireFlags(finalCmd *Command, toComplete string) []CompletionChoice {
-	var completions []CompletionChoice
+func completeRequireFlags(finalCmd *Command, toComplete string) []Completion {
+	var completions []Completion
 
 	doCompleteRequiredFlags := func(flag *pflag.Flag) {
 		if _, present := flag.Annotations[BashCompOneRequiredFlag]; present {

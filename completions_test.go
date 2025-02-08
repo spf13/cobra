@@ -2872,10 +2872,10 @@ func TestFixedCompletions(t *testing.T) {
 	}
 }
 
-func TestFixedCompletionsWithCompletionChoiceHelpers(t *testing.T) {
+func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	// here we are mixing string, CompletionChoice and CompletionChoiceWithDescription
-	choices := []string{"apple", CompletionChoice("banana"), CompletionChoiceWithDescription("orange", "orange are orange")}
+	// here we are mixing string, [Completion] and [CompletionWithDesc]
+	choices := []string{"apple", Completion("banana"), CompletionWithDesc("orange", "orange are orange")}
 	childCmd := &Command{
 		Use:               "child",
 		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
