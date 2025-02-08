@@ -2872,6 +2872,35 @@ func TestFixedCompletions(t *testing.T) {
 	}
 }
 
+func TestFixedCompletionsWithCompletionChoiceHelpers(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	// here we are mixing string, CompletionChoice and CompletionChoiceWithDescription
+	choices := []string{"apple", CompletionChoice("banana"), CompletionChoiceWithDescription("orange", "orange are orange")}
+	childCmd := &Command{
+		Use:               "child",
+		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"apple",
+		"banana",
+		"orange",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+	}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestCompletionForGroupedFlags(t *testing.T) {
 	getCmd := func() *Command {
 		rootCmd := &Command{
