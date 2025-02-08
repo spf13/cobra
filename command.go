@@ -82,7 +82,7 @@ type Command struct {
 	Example string
 
 	// ValidArgs is list of all valid non-flag arguments that are accepted in shell completions
-	ValidArgs []string
+	ValidArgs []CompletionChoice
 	// ValidArgsFunction is an optional function that provides valid non-flag arguments for shell completion.
 	// It is a dynamic version of using ValidArgs.
 	// Only one of ValidArgs and ValidArgsFunction can be used for a command.
@@ -94,7 +94,7 @@ type Command struct {
 	// ArgAliases is List of aliases for ValidArgs.
 	// These are not suggested to the user in the shell completion,
 	// but accepted if entered manually.
-	ArgAliases []string
+	ArgAliases []CompletionChoice
 
 	// BashCompletionFunction is custom bash functions used by the legacy bash autocompletion generator.
 	// For portability with other shells, it is recommended to instead use ValidArgsFunction
