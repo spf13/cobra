@@ -94,7 +94,7 @@ type Command struct {
 	// ArgAliases is List of aliases for ValidArgs.
 	// These are not suggested to the user in the shell completion,
 	// but accepted if entered manually.
-	ArgAliases []CompletionChoice
+	ArgAliases []string
 
 	// BashCompletionFunction is custom bash functions used by the legacy bash autocompletion generator.
 	// For portability with other shells, it is recommended to instead use ValidArgsFunction

@@ -129,11 +129,11 @@ type CompletionOptions struct {
 type CompletionChoice = string
 
 // CompletionFunc is a function that provides completion results.
-type CompletionFunc func(cmd *Command, args []CompletionChoice, toComplete string) ([]string, ShellCompDirective)
+type CompletionFunc func(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective)
 
-// CompletionChoiceWithDescription returns a CompletionChoice with a description
-func CompletionChoiceWithDescription(name, desc string) CompletionChoice {
-	return name + "\t" + desc
+// CompletionChoiceWithDescription returns a [CompletionChoice] with a description by using the TAB delimited format.
+func CompletionChoiceWithDescription(choice string, description string) CompletionChoice {
+	return choice + "\t" + description
 }
 
 // NoFileCompletions can be used to disable file completion for commands that should
@@ -141,7 +141,7 @@ func CompletionChoiceWithDescription(name, desc string) CompletionChoice {
 //
 // This method satisfies [CompletionFunc].
 // It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
-func NoFileCompletions(cmd *Command, args []CompletionChoice, toComplete string) ([]string, ShellCompDirective) {
+func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective) {
 	return nil, ShellCompDirectiveNoFileComp
 }
 
@@ -151,7 +151,7 @@ func NoFileCompletions(cmd *Command, args []CompletionChoice, toComplete string)
 // This method returns a function that satisfies [CompletionFunc]
 // It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
 func FixedCompletions(choices []CompletionChoice, directive ShellCompDirective) CompletionFunc {
-	return func(cmd *Command, args []CompletionChoice, toComplete string) ([]string, ShellCompDirective) {
+	return func(cmd *Command, args []string, toComplete string) ([]CompletionChoice, ShellCompDirective) {
 		return choices, directive
 	}
 }
