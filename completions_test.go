@@ -2872,6 +2872,56 @@ func TestFixedCompletions(t *testing.T) {
 	}
 }
 
+func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	// here we are mixing string, [Completion] and [CompletionWithDesc]
+	choices := []string{"apple", Completion("banana"), CompletionWithDesc("orange", "orange are orange")}
+	childCmd := &Command{
+		Use:               "child",
+		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	t.Run("completion with description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange\torange are orange", // this one has the description as expected with [ShellCompRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
+
+	t.Run("completion with no description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange", // the description is absent as expected with [ShellCompNoDescRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
+}
+
 func TestCompletionForGroupedFlags(t *testing.T) {
 	getCmd := func() *Command {
 		rootCmd := &Command{
