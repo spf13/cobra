@@ -2883,22 +2883,43 @@ func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd)
 
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	t.Run("completion with description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
 
-	expected := strings.Join([]string{
-		"apple",
-		"banana",
-		"orange",
-		":4",
-		"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
-	}, "\n")
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange\torange are orange", // this one has the description as expected with [ShellCompRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
 
-	if output != expected {
-		t.Errorf("expected: %q, got: %q", expected, output)
-	}
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
+
+	t.Run("completion with no description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange", // the description is absent as expected with [ShellCompNoDescRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
 }
 
 func TestCompletionForGroupedFlags(t *testing.T) {
