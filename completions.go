@@ -502,7 +502,7 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 				for _, subCmd := range finalCmd.Commands() {
 					if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
 						if strings.HasPrefix(subCmd.Name(), toComplete) {
-							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+							completions = append(completions, CompletionWithDesc(subCmd.Name(), subCmd.Short))
 						}
 						directive = ShellCompDirectiveNoFileComp
 					}
@@ -587,7 +587,7 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 	flagName := "--" + flag.Name
 	if strings.HasPrefix(flagName, toComplete) {
 		// Flag without the =
-		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+		completions = append(completions, CompletionWithDesc(flagName, flag.Usage))
 
 		// Why suggest both long forms: --flag and --flag= ?
 		// This forces the user to *always* have to type either an = or a space after the flag name.
@@ -599,13 +599,13 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 		// if len(flag.NoOptDefVal) == 0 {
 		// 	// Flag requires a value, so it can be suffixed with =
 		// 	flagName += "="
-		// 	completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+		// 	completions = append(completions, CompletionWithDesc(flagName, flag.Usage))
 		// }
 	}
 
 	flagName = "-" + flag.Shorthand
 	if len(flag.Shorthand) > 0 && strings.HasPrefix(flagName, toComplete) {
-		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
+		completions = append(completions, CompletionWithDesc(flagName, flag.Usage))
 	}
 
 	return completions

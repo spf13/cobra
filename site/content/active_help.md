@@ -41,8 +41,8 @@ cmd := &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return addRepo(args)
 	},
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var comps []string
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		var comps []cobra.Completion
 		if len(args) == 0 {
 			comps = cobra.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")
 		} else if len(args) == 1 {
@@ -75,7 +75,7 @@ This command does not take any more arguments
 Providing Active Help for flags is done in the same fashion as for nouns, but using the completion function registered for the flag.  For example:
 
 ```go
-_ = cmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+_ = cmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
 		if len(args) != 2 {
 			return cobra.AppendActiveHelp(nil, "You must first specify the chart to install before the --version flag can be completed"), cobra.ShellCompDirectiveNoFileComp
 		}
@@ -112,10 +112,10 @@ should or should not be added (instead of reading the environment variable direc
 For example:
 
 ```go
-ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
 	activeHelpLevel := cobra.GetActiveHelpConfig(cmd)
 
-	var comps []string
+	var comps []cobra.Completion
 	if len(args) == 0 {
 		if activeHelpLevel != "off"  {
 			comps = cobra.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")

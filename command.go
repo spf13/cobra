@@ -1272,8 +1272,8 @@ func (c *Command) InitDefaultHelpCmd() {
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
 Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
-			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-				var completions []string
+			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+				var completions []Completion
 				cmd, _, e := c.Root().Find(args)
 				if e != nil {
 					return nil, ShellCompDirectiveNoFileComp
@@ -1285,7 +1285,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 				for _, subCmd := range cmd.Commands() {
 					if subCmd.IsAvailableCommand() || subCmd == cmd.helpCommand {
 						if strings.HasPrefix(subCmd.Name(), toComplete) {
-							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
+							completions = append(completions, CompletionWithDesc(subCmd.Name(), subCmd.Short))
 						}
 					}
 				}
