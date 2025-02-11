@@ -1,4 +1,4 @@
-## Projects using Cobra
+# Projects using Cobra
 
 - [Allero](https://github.com/allero-io/allero)
 - [Arewefastyet](https://benchmark.vitess.io)

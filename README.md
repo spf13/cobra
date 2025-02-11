@@ -1,4 +1,4 @@
-![cobra logo](assets/CobraMain.png)
+![cobra logo](site/static/images/logo.png)
 
 Cobra is a library for creating powerful modern CLI applications.
 

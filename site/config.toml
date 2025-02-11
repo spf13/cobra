@@ -1,0 +1,45 @@
+theme = "docuapi"
+languageCode = "en-us"
+baseurl = "https://spf13.github.io/cobra/"
+title = "Cobra"
+
+disableKinds = ["taxonomyTerm"]
+
+# Code higlighting settings
+pygmentsCodefences = true
+pygmentsCodeFencesGuesSsyntax = false
+pygmentsOptions = ""
+pygmentsStyle = "monokai"
+pygmentsUseClasses = false
+
+defaultContentLanguage = "en"
+
+[module]
+[module.hugoVersion]
+[[module.imports]]
+# We need one module import for Hugo to detect us as a Hugo Module.
+path="github.com/bep/empty-hugo-module"
+
+[params]
+search = true
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.parser]
+      autoHeadingIDType = "github-ascii"
+    [markup.goldmark.renderer]
+      unsafe= true
+
+[languages]
+  [languages.en]
+    languageName = "English"
+    weight = 2
+    title = "Cobra documentation"
+    [languages.en.params]
+      toc_footers = [
+        "[![github.com/spf13/cobra](https://img.shields.io/badge/-spf13/cobra-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/spf13/cobra)",
+        "Built with [Hugo](https://gohugo.io/) theme [DocuAPI](https://github.com/bep/docuapi) by [bep](https://github.com/bep)"
+      ]
+      [languages.en.params.blackfriday]
+        angledQuotes = false
+        hrefTargetBlank = true
