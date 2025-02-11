@@ -114,7 +114,7 @@ type Command struct {
 	// Data are key/value pairs of arbitrary types that can be used by applications or "plugin" libraries
 	// that wish to store and use data associated with a given command. This data will thus share the same
 	// lifetime as the command itself.
-	Data map[string]any
+	Data map[string]interface{}
 
 	// The *Run functions are executed in the following order:
 	//   * PersistentPreRun()
