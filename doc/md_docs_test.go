@@ -23,6 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const doubleLineBreak = "\n\n"
+
 func TestGenMdDoc(t *testing.T) {
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
@@ -39,6 +41,7 @@ func TestGenMdDoc(t *testing.T) {
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
 	checkStringContains(t, output, "Options inherited from parent commands")
+	checkStringOmitsSuffix(t, output, doubleLineBreak)
 }
 
 func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
@@ -53,6 +56,7 @@ func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
 	checkStringContains(t, output, dummyCmd.Short)
 	checkStringContains(t, output, "Options inherited from parent commands")
 	checkStringOmits(t, output, "### Synopsis")
+	checkStringOmitsSuffix(t, output, doubleLineBreak)
 }
 
 func TestGenMdNoHiddenParents(t *testing.T) {
@@ -76,6 +80,7 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringOmits(t, output, deprecatedCmd.Short)
 	checkStringOmits(t, output, "Options inherited from parent commands")
+	checkStringOmitsSuffix(t, output, doubleLineBreak)
 }
 
 func TestGenMdNoTag(t *testing.T) {
@@ -89,6 +94,7 @@ func TestGenMdNoTag(t *testing.T) {
 	output := buf.String()
 
 	checkStringOmits(t, output, "Auto generated")
+	checkStringOmitsSuffix(t, output, doubleLineBreak)
 }
 
 func TestGenMdTree(t *testing.T) {
