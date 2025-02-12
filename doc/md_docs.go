@@ -72,6 +72,24 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.UseLine()))
 	}
 
+	if HasSubCommand(cmd) {
+		buf.WriteString("### Available commands\n\n")
+
+		children := cmd.Commands()
+		sort.Sort(byName(children))
+
+		for _, child := range children {
+			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
+				continue
+			}
+			cname := name + " " + child.Name()
+			link := cname + ".md"
+			link = strings.ReplaceAll(link, " ", "_")
+			buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", child.Name(), linkHandler(link), child.Short))
+		}
+		buf.WriteString("\n")
+	}
+
 	if len(cmd.Example) > 0 {
 		buf.WriteString("### Examples\n\n")
 		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.Example))
