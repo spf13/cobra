@@ -2885,11 +2885,97 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 		"arg1",
 		"arg2",
 		":4",
-		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+	}, "\n")
 
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
+}
+
+func TestCompletionFuncCompatibility(t *testing.T) {
+	t.Run("validate signature", func(t *testing.T) {
+		t.Run("format with []string", func(t *testing.T) {
+			var userComp func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			// check against new signature
+			var _ CompletionFunc = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("format with []Completion", func(t *testing.T) {
+			var userComp func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective)
+
+			// check against new signature
+			var _ CompletionFunc = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("format with CompletionFunc", func(t *testing.T) {
+			var userComp CompletionFunc
+
+			// check helper against old signature
+			var _ func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) = userComp
+			var _ func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+	})
+
+	t.Run("user defined completion helper", func(t *testing.T) {
+		t.Run("type helper", func(t *testing.T) {
+			// This is a type that may have been defined by the user of the library
+			// This replicates the issue https://github.com/docker/cli/issues/5827
+			// https://github.com/docker/cli/blob/b6e7eba4470ecdca460e4b63270fba8179674ad6/cli/command/completion/functions.go#L18
+			type UserCompletionTypeHelper func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			var userComp UserCompletionTypeHelper
+
+			// Here we are validating the existing type validates the CompletionFunc type
+			var _ CompletionFunc = userComp
+
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("type alias helper", func(t *testing.T) {
+			// This is a type that may have been defined by the user of the library
+			// This replicates the possible fix that was tried here https://github.com/docker/cli/pull/5828
+			// https://github.com/docker/cli/blob/ae3d4db9f658259dace9dee515718be7c1b1f517/cli/command/completion/functions.go#L18
+			type UserCompletionTypeAliasHelper = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			var userComp UserCompletionTypeAliasHelper
+
+			// Here we are validating the existing type validates the CompletionFunc type
+			var _ CompletionFunc = userComp
+
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+	})
 }
 
 func TestFixedCompletions(t *testing.T) {
