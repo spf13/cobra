@@ -260,7 +260,7 @@ Calling the `__complete` command directly allows you to run the Go debugger to t
 ```go
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and optionally prints to stderr.
-cobra.CompDebug(msg string, printToStdErr bool) {
+cobra.CompDebug(msg string, printToStdErr bool)
 cobra.CompDebugln(msg string, printToStdErr bool)
 
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
