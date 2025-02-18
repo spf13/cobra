@@ -213,3 +213,72 @@ func TestValidateFlagGroups(t *testing.T) {
 		})
 	}
 }
+
+func TestMarkIfFlagPresentThenOthersRequiredAnnotations(t *testing.T) {
+	// Create a new command with some flags.
+	cmd := &Command{
+		Use: "testcmd",
+	}
+	f := cmd.Flags()
+	f.String("a", "", "flag a")
+	f.String("b", "", "flag b")
+	f.String("c", "", "flag c")
+
+	// Call the function with one group: ["a", "b"].
+	cmd.MarkIfFlagPresentThenOthersRequired("a", "b")
+
+	// Check that flag "a" has the correct annotation.
+	aFlag := f.Lookup("a")
+	if aFlag == nil {
+		t.Fatal("Flag 'a' not found")
+	}
+	annA := aFlag.Annotations[annotationGroupDependent]
+	expected1 := "a b" // since strings.Join(["a","b"], " ") yields "a b"
+	if len(annA) != 1 || annA[0] != expected1 {
+		t.Errorf("Expected flag 'a' annotation to be [%q], got %v", expected1, annA)
+	}
+
+	// Also check that flag "b" has the correct annotation.
+	bFlag := f.Lookup("b")
+	if bFlag == nil {
+		t.Fatal("Flag 'b' not found")
+	}
+	annB := bFlag.Annotations[annotationGroupDependent]
+	if len(annB) != 1 || annB[0] != expected1 {
+		t.Errorf("Expected flag 'b' annotation to be [%q], got %v", expected1, annB)
+	}
+
+	// Now, call MarkIfFlagPresentThenOthersRequired again with a different group involving "a" and "c".
+	cmd.MarkIfFlagPresentThenOthersRequired("a", "c")
+
+	// The annotation for flag "a" should now have both groups: "a b" and "a c"
+	annA = aFlag.Annotations[annotationGroupDependent]
+	expectedAnnotations := []string{"a b", "a c"}
+	if len(annA) != 2 {
+		t.Errorf("Expected 2 annotations on flag 'a', got %v", annA)
+	}
+	// Check that both expected annotation strings are present.
+	for _, expected := range expectedAnnotations {
+		found := false
+		for _, ann := range annA {
+			if ann == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected annotation %q not found on flag 'a': %v", expected, annA)
+		}
+	}
+
+	// Similarly, check that flag "c" now has the annotation "a c".
+	cFlag := f.Lookup("c")
+	if cFlag == nil {
+		t.Fatal("Flag 'c' not found")
+	}
+	annC := cFlag.Annotations[annotationGroupDependent]
+	expected2 := "a c"
+	if len(annC) != 1 || annC[0] != expected2 {
+		t.Errorf("Expected flag 'c' annotation to be [%q], got %v", expected2, annC)
+	}
+}
