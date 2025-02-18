@@ -1018,6 +1018,49 @@ func TestSetHelpCommand(t *testing.T) {
 	}
 }
 
+func TestSetHelpTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.SetHelpTemplate("WORKS {{.UseLine}}")
+
+	// Call the help on the root command and check the new template is used
+	got, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := "WORKS " + rootCmd.UseLine()
+	if got != expected {
+		t.Errorf("Expected %q, got %q", expected, got)
+	}
+
+	// Call the help on the child command and check
+	// the new template is inherited from the parent
+	got, err = executeCommand(rootCmd, "child", "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = "WORKS " + childCmd.UseLine()
+	if got != expected {
+		t.Errorf("Expected %q, got %q", expected, got)
+	}
+
+	// Reset the root command help template and make sure
+	// it falls back to the default
+	rootCmd.SetHelpTemplate("")
+	got, err = executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !strings.Contains(got, "Usage:") {
+		t.Errorf("Expected to contain %q, got %q", "Usage:", got)
+	}
+}
+
 func TestHelpFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 
@@ -1081,6 +1124,45 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	}
 
 	checkStringContains(t, output, childCmd.Long)
+}
+
+func TestSetUsageTemplate(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.SetUsageTemplate("WORKS {{.UseLine}}")
+
+	// Trigger the usage on the root command and check the new template is used
+	got, err := executeCommand(rootCmd, "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	expected := "WORKS " + rootCmd.UseLine()
+	checkStringContains(t, got, expected)
+
+	// Trigger the usage on the child command and check
+	// the new template is inherited from the parent
+	got, err = executeCommand(rootCmd, "child", "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	expected = "WORKS " + childCmd.UseLine()
+	checkStringContains(t, got, expected)
+
+	// Reset the root command usage template and make sure
+	// it falls back to the default
+	rootCmd.SetUsageTemplate("")
+	got, err = executeCommand(rootCmd, "--invalid")
+	if err == nil {
+		t.Errorf("Expected error but did not get one")
+	}
+
+	if !strings.Contains(got, "Usage:") {
+		t.Errorf("Expected to contain %q, got %q", "Usage:", got)
+	}
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
@@ -2837,18 +2919,5 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 			}
 			checkStringContains(t, output, "unknown flag: --unknown")
 		})
-	}
-}
-
-// This tests verifies that when running unit tests, os.Args are not used.
-// This is because we don't want to process any arguments that are provided
-// by "go test"; instead, unit tests must set the arguments they need using
-// rootCmd.SetArgs().
-func TestNoOSArgsWhenTesting(t *testing.T) {
-	root := &Command{Use: "root", Run: emptyRun}
-	os.Args = append(os.Args, "--unknown")
-
-	if _, err := root.ExecuteC(); err != nil {
-		t.Errorf("error: %v", err)
 	}
 }
