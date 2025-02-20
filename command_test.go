@@ -2921,3 +2921,30 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+func TestHelpFuncExecuted(t *testing.T) {
+	helpText := "Long description"
+
+	child := &Command{Use: "child", Run: emptyRun}
+	child.SetHelpFunc(func(cmd *Command, args []string) {
+		_, err := cmd.OutOrStdout().Write([]byte(helpText))
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Test for https://github.com/spf13/cobra/issues/2240
+		if cmd.Context() == nil {
+			t.Error("Context is nil")
+		}
+	})
+
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(child)
+
+	output, err := executeCommand(rootCmd, "help", "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, helpText)
+}
