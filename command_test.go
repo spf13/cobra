@@ -2921,3 +2921,34 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 		})
 	}
 }
+
+func TestHelpFuncExecuted(t *testing.T) {
+	helpText := "Long description"
+
+	// Create a context that will be unique, not just the background context
+	//nolint:golint,staticcheck // We can safely use a basic type as key in tests.
+	executionCtx := context.WithValue(context.Background(), "testKey", "123")
+
+	child := &Command{Use: "child", Run: emptyRun}
+	child.SetHelpFunc(func(cmd *Command, args []string) {
+		_, err := cmd.OutOrStdout().Write([]byte(helpText))
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Test for https://github.com/spf13/cobra/issues/2240
+		if cmd.Context() != executionCtx {
+			t.Error("Context doesn't equal the execution context")
+		}
+	})
+
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(child)
+
+	output, err := executeCommandWithContext(executionCtx, rootCmd, "help", "child")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, helpText)
+}
