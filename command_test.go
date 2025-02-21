@@ -2925,6 +2925,9 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 func TestHelpFuncExecuted(t *testing.T) {
 	helpText := "Long description"
 
+	// Create a context that will be unique, not just the background context
+	executionCtx, _ := context.WithCancel(context.Background())
+
 	child := &Command{Use: "child", Run: emptyRun}
 	child.SetHelpFunc(func(cmd *Command, args []string) {
 		_, err := cmd.OutOrStdout().Write([]byte(helpText))
@@ -2933,15 +2936,15 @@ func TestHelpFuncExecuted(t *testing.T) {
 		}
 
 		// Test for https://github.com/spf13/cobra/issues/2240
-		if cmd.Context() == nil {
-			t.Error("Context is nil")
+		if cmd.Context() != executionCtx {
+			t.Error("Context doesn't equal the execution context")
 		}
 	})
 
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.AddCommand(child)
 
-	output, err := executeCommand(rootCmd, "help", "child")
+	output, err := executeCommandWithContext(executionCtx, rootCmd, "help", "child")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
