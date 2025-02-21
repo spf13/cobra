@@ -2926,7 +2926,8 @@ func TestHelpFuncExecuted(t *testing.T) {
 	helpText := "Long description"
 
 	// Create a context that will be unique, not just the background context
-	executionCtx, _ := context.WithCancel(context.Background())
+	executionCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	child := &Command{Use: "child", Run: emptyRun}
 	child.SetHelpFunc(func(cmd *Command, args []string) {
