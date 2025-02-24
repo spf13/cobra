@@ -103,3 +103,10 @@ func checkStringOmits(t *testing.T, got, expected string) {
 		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
 	}
 }
+
+func checkStringOmitsSuffix(t *testing.T, got, expected string) {
+	if strings.HasSuffix(got, expected) {
+		// Note this uses %q so things like line breaks can be seen in the printed output
+		t.Errorf("Expected to not have suffix: \n %q\nGot: %q", expected, got)
+	}
+}
