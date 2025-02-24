@@ -47,7 +47,7 @@ jobs:
           check-latest: true
           cache: true
 
-      - uses: golangci/golangci-lint-action@v4.0.0
+      - uses: golangci/golangci-lint-action@v6.0.1
         with:
           version: latest
           args: --verbose
