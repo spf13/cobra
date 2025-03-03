@@ -1609,6 +1609,17 @@ func (c *Command) HasSubCommands() bool {
 
 // IsAvailableCommand determines if a command is available as a non-help command
 // (this includes all non deprecated/hidden commands).
+func (c *Command) HasCustomFlagCompletion() bool {
+
+	if c.ValidArgsFunction == nil {
+		return false
+	}
+
+	return c.AllowCustomFlagCompletions
+}
+
+// IsAvailableCommand determines if a command is available as a non-help command
+// (this includes all non deprecated/hidden commands).
 func (c *Command) IsAvailableCommand() bool {
 	if len(c.Deprecated) != 0 || c.Hidden {
 		return false
