@@ -1607,10 +1607,11 @@ func (c *Command) HasSubCommands() bool {
 	return len(c.commands) > 0
 }
 
-// IsAvailableCommand determines if a command is available as a non-help command
-// (this includes all non deprecated/hidden commands).
+// HasCustomFlagCompletion determines if a command has a defined
+// ValidArgsFunction, if it does, then it returns the value of
+// the AllowCustomFlagCompletions field indicating if the function
+// should be used for handling custom flag completions.
 func (c *Command) HasCustomFlagCompletion() bool {
-
 	if c.ValidArgsFunction == nil {
 		return false
 	}
