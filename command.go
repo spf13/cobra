@@ -257,6 +257,11 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// When performing commandline completions specific to handling flags only, override
+	// Cobra's default behavior and allow ValidArgsFunction to be used if it exists, otherwise
+	// use the default behavior
+	AllowCustomFlagCompletions bool
 }
 
 // Context returns underlying command context. If command was executed
