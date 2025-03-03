@@ -358,7 +358,7 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// This works by counting the arguments. Normally -- is not counted as arg but
 	// if -- was already set or interspersed is false and there is already one arg then
 	// the extra added -- is counted as arg.
-	flagCompletion := true
+	flagCompletion := !finalCmd.HasCustomFlagCompletion()
 	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
 	newArgCount := finalCmd.Flags().NArg()
 
