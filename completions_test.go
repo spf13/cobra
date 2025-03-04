@@ -4016,3 +4016,294 @@ func TestInitDefaultCompletionCmd(t *testing.T) {
 		})
 	}
 }
+
+func TestFlagNameCompletionAllowWithoutValidFunc(t *testing.T) {
+	rootCmd := &Command{
+		Use:                        "root",
+		Run:                        emptyRun,
+		AllowCustomFlagCompletions: true,
+	}
+	childCmd := &Command{
+		Use:   "childCmd",
+		Short: "first command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	firstFlag := rootCmd.Flags().Lookup("first")
+
+	rootCmd.Flags().BoolP("second", "s", false, "second flag")
+	secondFlag := rootCmd.Flags().Lookup("second")
+
+	rootCmd.Flags().StringArrayP("array", "a", nil, "array flag")
+	arrayFlag := rootCmd.Flags().Lookup("array")
+
+	rootCmd.Flags().IntSliceP("slice", "l", nil, "slice flag")
+	sliceFlag := rootCmd.Flags().Lookup("slice")
+
+	rootCmd.Flags().BoolSliceP("bslice", "b", nil, "bool slice flag")
+	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+
+	rootCmd.Flags().VarP(&customMultiString{}, "multi", "m", "multi string flag")
+	multiFlag := rootCmd.Flags().Lookup("multi")
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+
+	expected := strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--help",
+		"--multi",
+		"--second",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+	secondFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--help",
+		"--multi",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--multi", "val", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	bsliceFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"--bslice",
+		"--first",
+		"--help",
+		"--multi",
+		"--second",
+		"--slice",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--array",
+		"-a",
+		"--bslice",
+		"-b",
+		"--first",
+		"-f",
+		"--help",
+		"-h",
+		"--multi",
+		"-m",
+		"--second",
+		"-s",
+		"--slice",
+		"-l",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"-a",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestFlagNameCompletionAllowWithValidFunc(t *testing.T) {
+	rootCmd := &Command{
+		Use:                        "root",
+		Run:                        emptyRun,
+		AllowCustomFlagCompletions: true,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"--bogus-flag", "-z", "non-match-value"}, ShellCompDirectiveNoFileComp
+		},
+	}
+	childCmd := &Command{
+		Use:   "childCmd",
+		Short: "first command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().IntP("first", "f", -1, "first flag")
+	firstFlag := rootCmd.Flags().Lookup("first")
+
+	rootCmd.Flags().BoolP("second", "s", false, "second flag")
+	secondFlag := rootCmd.Flags().Lookup("second")
+
+	rootCmd.Flags().StringArrayP("array", "a", nil, "array flag")
+	arrayFlag := rootCmd.Flags().Lookup("array")
+
+	rootCmd.Flags().IntSliceP("slice", "l", nil, "slice flag")
+	sliceFlag := rootCmd.Flags().Lookup("slice")
+
+	rootCmd.Flags().BoolSliceP("bslice", "b", nil, "bool slice flag")
+	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+
+	rootCmd.Flags().VarP(&customMultiString{}, "multi", "m", "multi string flag")
+	multiFlag := rootCmd.Flags().Lookup("multi")
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+
+	expected := strings.Join([]string{
+		"--bogus-flag",
+		"-z",
+		"non-match-value",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	firstFlag.Changed = false
+	secondFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--bogus-flag",
+		"-z",
+		"non-match-value",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--multi", "val", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	bsliceFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--bogus-flag",
+		"-z",
+		"non-match-value",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--bogus-flag",
+		"-z",
+		"non-match-value",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that flag names are not repeated unless they are an array or slice, using shortname with prefix
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a", "val", "-a")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flag for the next command
+	sliceFlag.Changed = false
+	arrayFlag.Changed = false
+	multiFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--bogus-flag",
+		"-z",
+		"non-match-value",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
