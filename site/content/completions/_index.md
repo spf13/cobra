@@ -319,7 +319,7 @@ cmd.RegisterFlagCompletionFunc("flag-name", cobra.NoFileCompletions)
 ```
 
 If you find that there are more situations where file completion should be turned off than
-when it is applicable, you can change the default `ShellCompDirective` for a command
+when it is applicable, you can recursively change the default `ShellCompDirective` for a command
 and its subcommands to `ShellCompDirectiveNoFileComp`:
 
 ```go
@@ -332,6 +332,8 @@ flags where file completion is applicable. For example:
 ```go
 cmd.RegisterFlagCompletionFunc("flag-name", cobra.FixedCompletions(nil, ShellCompDirectiveDefault))
 ```
+
+To change the default directive for the entire program, set the DefaultShellCompDirective on the root command.
 
 #### Debugging
 
