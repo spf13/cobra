@@ -2025,7 +2025,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		fmt.Fprint(w, trimRightSpace(c.InheritedFlags().FlagUsages()))
 	}
 	if c.HasHelpSubCommands() {
-		fmt.Fprintf(w, "\n\nAdditional help topcis:")
+		fmt.Fprintf(w, "\n\nAdditional help topics:")
 		for _, subcmd := range c.Commands() {
 			if subcmd.IsAdditionalHelpTopicCommand() {
 				fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.CommandPath(), subcmd.CommandPathPadding()), subcmd.Short)
