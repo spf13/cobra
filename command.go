@@ -257,6 +257,11 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// When performing commandline completions specific to handling flags only, override
+	// Cobra's default behavior and allow ValidArgsFunction to be used if it exists, otherwise
+	// use the default behavior
+	AllowCustomFlagCompletions bool
 }
 
 // Context returns underlying command context. If command was executed
@@ -1600,6 +1605,18 @@ func (c *Command) Runnable() bool {
 // HasSubCommands determines if the command has children commands.
 func (c *Command) HasSubCommands() bool {
 	return len(c.commands) > 0
+}
+
+// HasCustomFlagCompletion determines if a command has a defined
+// ValidArgsFunction, if it does, then it returns the value of
+// the AllowCustomFlagCompletions field indicating if the function
+// should be used for handling custom flag completions.
+func (c *Command) HasCustomFlagCompletion() bool {
+	if c.ValidArgsFunction == nil {
+		return false
+	}
+
+	return c.AllowCustomFlagCompletions
 }
 
 // IsAvailableCommand determines if a command is available as a non-help command
