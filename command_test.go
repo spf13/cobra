@@ -697,6 +697,30 @@ func TestStripFlags(t *testing.T) {
 			[]string{"-p", "bar"},
 			[]string{"bar"},
 		},
+		{
+			[]string{"-s", "value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-s=value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-svalue", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-ps", "value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-ps=value", "bar"},
+			[]string{"bar"},
+		},
+		{
+			[]string{"-psvalue", "bar"},
+			[]string{"bar"},
+		},
 	}
 
 	c := &Command{Use: "c", Run: emptyRun}
@@ -706,7 +730,7 @@ func TestStripFlags(t *testing.T) {
 	c.Flags().BoolP("bool", "b", false, "")
 
 	for i, test := range tests {
-		got := stripFlags(test.input, c)
+		got, _ := stripFlags(test.input, c)
 		if !reflect.DeepEqual(test.output, got) {
 			t.Errorf("(%v) Expected: %v, got: %v", i, test.output, got)
 		}
@@ -2319,6 +2343,7 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	checkStringContains(t, output, "This flag is deprecated")
 }
 
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
 func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
@@ -2333,11 +2358,69 @@ func TestTraverseWithParentFlags(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if len(args) != 1 && args[0] != "--add" {
+	if len(args) != 1 || args[0] != "--int" {
 		t.Errorf("Wrong args: %v", args)
 	}
 	if c.Name() != childCmd.Name() {
 		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+}
+
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
+func TestTraverseWithShorthandCombinationInParentFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
+	boolVal := rootCmd.Flags().BoolP("bool", "b", false, "")
+
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Int("int", -1, "")
+
+	rootCmd.AddCommand(childCmd)
+
+	c, args, err := rootCmd.Traverse([]string{"-bs", "ok", "child", "--int"})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(args) != 1 || args[0] != "--int" {
+		t.Errorf("Wrong args: %v", args)
+	}
+	if c.Name() != childCmd.Name() {
+		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+	if *stringVal != "ok" {
+		t.Errorf("Expected -s to be set to: %s, got: %s", "ok", *stringVal)
+	}
+	if !*boolVal {
+		t.Errorf("Expected -b to be set")
+	}
+}
+
+//nolint:goconst,nolintlint // Disable check for string literal occurrences
+func TestTraverseWithArgumentIdenticalToCommandName(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	stringVal := rootCmd.Flags().StringP("str", "s", "", "")
+	boolVal := rootCmd.Flags().BoolP("bool", "b", false, "")
+
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Int("int", -1, "")
+
+	rootCmd.AddCommand(childCmd)
+
+	c, args, err := rootCmd.Traverse([]string{"-bs", "child", "child", "--int"})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(args) != 1 || args[0] != "--int" {
+		t.Errorf("Wrong args: %v", args)
+	}
+	if c.Name() != childCmd.Name() {
+		t.Errorf("Expected command: %q, got: %q", childCmd.Name(), c.Name())
+	}
+	if *stringVal != "child" {
+		t.Errorf("Expected -s to be set to: %s, got: %s", "child", *stringVal)
+	}
+	if !*boolVal {
+		t.Errorf("Expected -b to be set")
 	}
 }
 
@@ -2392,7 +2475,7 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if len(args) != 1 && args[0] != "--str" {
+	if len(args) != 1 || args[0] != "--str" {
 		t.Errorf("Wrong args: %v", args)
 	}
 	if c.Name() != childCmd.Name() {
@@ -2792,11 +2875,13 @@ func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	var foo, bar string
+	var persist bool
 	root := &Command{
 		Use: "root",
 	}
 	root.PersistentFlags().StringVarP(&foo, "foo", "f", "", "")
 	root.PersistentFlags().StringVarP(&bar, "bar", "b", "something", "")
+	root.PersistentFlags().BoolVarP(&persist, "persist", "p", false, "")
 
 	child := &Command{
 		Use: "child",
@@ -2858,6 +2943,38 @@ func TestFind(t *testing.T) {
 		{
 			[]string{"--foo", "child", "--bar", "something", "child"},
 			[]string{"--foo", "child", "--bar", "something"},
+		},
+		{
+			[]string{"-f", "value", "child"},
+			[]string{"-f", "value"},
+		},
+		{
+			[]string{"-f=value", "child"},
+			[]string{"-f=value"},
+		},
+		{
+			[]string{"-fvalue", "child"},
+			[]string{"-fvalue"},
+		},
+		{
+			[]string{"-pf", "value", "child"},
+			[]string{"-pf", "value"},
+		},
+		{
+			[]string{"-pf=value", "child"},
+			[]string{"-pf=value"},
+		},
+		{
+			[]string{"-pfvalue", "child"},
+			[]string{"-pfvalue"},
+		},
+		{
+			[]string{"-pf", "child", "child"},
+			[]string{"-pf", "child"},
+		},
+		{
+			[]string{"-pf", "child", "-pb", "something", "child"},
+			[]string{"-pf", "child", "-pb", "something"},
 		},
 	}
 
