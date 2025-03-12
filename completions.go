@@ -360,6 +360,8 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// the extra added -- is counted as arg.
 	flagCompletion := true
 	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
+	// Reset ArgsLenAtDash.
+	finalCmd.Flags().Init(finalCmd.Flags().Name(), pflag.ContinueOnError)
 	newArgCount := finalCmd.Flags().NArg()
 
 	// Parse the flags early so we can check if required flags are set
