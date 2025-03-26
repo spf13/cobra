@@ -2899,7 +2899,7 @@ func TestCompletionFuncCompatibility(t *testing.T) {
 			var userComp func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 
 			// check against new signature
-			var _ CompletionFunc = userComp
+			var _ CompletionFunc = userComp //nolint:staticcheck // LHS type is needed for this use case
 
 			// check Command accepts
 			cmd := Command{
@@ -2913,8 +2913,7 @@ func TestCompletionFuncCompatibility(t *testing.T) {
 			var userComp func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective)
 
 			// check against new signature
-			var _ CompletionFunc = userComp
-
+			var _ CompletionFunc = userComp //nolint:staticcheck // LHS type is needed for this use case
 			// check Command accepts
 			cmd := Command{
 				ValidArgsFunction: userComp,
@@ -2927,8 +2926,8 @@ func TestCompletionFuncCompatibility(t *testing.T) {
 			var userComp CompletionFunc
 
 			// check helper against old signature
-			var _ func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) = userComp
-			var _ func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) = userComp
+			var _ func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) = userComp     //nolint:staticcheck // LHS type is needed for this use case
+			var _ func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) = userComp //nolint:staticcheck // LHS type is needed for this use case
 
 			// check Command accepts
 			cmd := Command{
@@ -2967,7 +2966,7 @@ func TestCompletionFuncCompatibility(t *testing.T) {
 			var userComp UserCompletionTypeAliasHelper
 
 			// Here we are validating the existing type validates the CompletionFunc type
-			var _ CompletionFunc = userComp
+			var _ CompletionFunc = userComp //nolint:staticcheck // LHS type is needed for this use case
 
 			cmd := Command{
 				ValidArgsFunction: userComp,
