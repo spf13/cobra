@@ -375,7 +375,7 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// Error while attempting to parse flags
 	if flagErr != nil {
 		// If error type is flagCompError and we don't want flagCompletion we should ignore the error
-		if _, ok := flagErr.(*flagCompError); !(ok && !flagCompletion) {
+		if _, ok := flagErr.(*flagCompError); !ok || flagCompletion {
 			return finalCmd, []Completion{}, ShellCompDirectiveDefault, flagErr
 		}
 	}
@@ -773,7 +773,7 @@ See each sub-command's help for details on how to use the generated script.
 		// shell completion for it (prog __complete completion '')
 		subCmd, cmdArgs, err := c.Find(args)
 		if err != nil || subCmd.Name() != compCmdName &&
-			!(subCmd.Name() == ShellCompRequestCmd && len(cmdArgs) > 1 && cmdArgs[0] == compCmdName) {
+			(subCmd.Name() != ShellCompRequestCmd || len(cmdArgs) <= 1 || cmdArgs[0] != compCmdName) {
 			// The completion command is not being called or being completed so we remove it.
 			c.RemoveCommand(completionCmd)
 			return
