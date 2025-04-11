@@ -1,3 +1,16 @@
+<div align="center" markdown="1">
+   <sup>Supported by:</sup>
+   <br>
+   <br>
+   <a href="https://www.warp.dev/cobra">
+      <img alt="Warp sponsorship" width="400" src="https://github.com/user-attachments/assets/ab8dd143-b0fd-4904-bdc5-dd7ecac94eae">
+   </a>
+
+### [Warp, the intelligent terminal for developers](https://www.warp.dev/cobra)
+[Available for MacOS, Linux, & Windows](https://www.warp.dev/cobra)<br>
+
+</div>
+<hr>
 
 ![cobra logo](https://github.com/user-attachments/assets/cbc3adf8-0dff-46e9-a88d-5e2d971c169e)
 
