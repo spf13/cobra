@@ -1189,6 +1189,7 @@ func (c *Command) ValidateRequiredFlags() error {
 
 	if len(missingFlagNames) > 0 {
 		return RequiredFlagError{
+			cmd:              c,
 			missingFlagNames: missingFlagNames,
 		}
 	}

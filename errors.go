@@ -47,7 +47,29 @@ func (e InvalidArgCountError) Error() string {
 	return fmt.Sprintf("accepts at most %d arg(s), received %d", e.atMost, len(e.args))
 }
 
-// InvalidArgCountError is the error returned when an invalid argument is present.
+// GetCommand returns the Command that the error occurred in.
+func (e InvalidArgCountError) GetCommand() *Command {
+	return e.cmd
+}
+
+// GetArguments returns the invalid arguments.
+func (e InvalidArgCountError) GetArguments() []string {
+	return e.args
+}
+
+// GetMinArgumentCount returns the minimum (inclusive) number of arguments
+// that the command requires. If there is no minimum, a value of -1 is returned.
+func (e InvalidArgCountError) GetMinArgumentCount() int {
+	return e.atLeast
+}
+
+// GetMaxArgumentCount returns the maximum (inclusive) number of arguments
+// that the command requires. If there is no maximum, a value of -1 is returned.
+func (e InvalidArgCountError) GetMaxArgumentCount() int {
+	return e.atMost
+}
+
+// InvalidArgCountError is the error returned an invalid argument is present.
 type InvalidArgValueError struct {
 	cmd         *Command
 	arg         string
@@ -59,12 +81,42 @@ func (e InvalidArgValueError) Error() string {
 	return fmt.Sprintf("invalid argument %q for %q%s", e.arg, e.cmd.CommandPath(), helpTextForSuggestions(e.suggestions))
 }
 
+// GetCommand returns the Command that the error occurred in.
+func (e InvalidArgValueError) GetCommand() *Command {
+	return e.cmd
+}
+
+// GetArgument returns the invalid argument.
+func (e InvalidArgValueError) GetArgument() string {
+	return e.arg
+}
+
+// GetSuggestions returns the suggested commands, if there are any.
+func (e InvalidArgValueError) GetSuggestions() []string {
+	return e.suggestions
+}
+
 // UnknownSubcommandError is the error returned when a subcommand can not be
 // found.
 type UnknownSubcommandError struct {
 	cmd         *Command
 	subcmd      string
 	suggestions []string
+}
+
+// GetCommand returns the Command that the error occurred in.
+func (e UnknownSubcommandError) GetCommand() *Command {
+	return e.cmd
+}
+
+// GetSubcommand returns the unknown subcommand name.
+func (e UnknownSubcommandError) GetSubcommand() string {
+	return e.subcmd
+}
+
+// GetSuggestions returns the suggested commands, if there are any.
+func (e UnknownSubcommandError) GetSuggestions() []string {
+	return e.suggestions
 }
 
 // Error implements error.
@@ -74,6 +126,7 @@ func (e UnknownSubcommandError) Error() string {
 
 // RequiredFlagError is the error returned when a required flag is not set.
 type RequiredFlagError struct {
+	cmd              *Command
 	missingFlagNames []string
 }
 
@@ -82,33 +135,74 @@ func (e RequiredFlagError) Error() string {
 	return fmt.Sprintf(`required flag(s) "%s" not set`, strings.Join(e.missingFlagNames, `", "`))
 }
 
+// GetCommand returns the Command that the error occurred in.
+func (e RequiredFlagError) GetCommand() *Command {
+	return e.cmd
+}
+
+// GetFlags returns the names of the missing flags.
+func (e RequiredFlagError) GetFlags() []string {
+	return e.missingFlagNames
+}
+
 // FlagGroupError is the error returned when mutually-required or
 // mutually-exclusive flags are not properly specified.
 type FlagGroupError struct {
 	err          error
+	cmd          *Command
 	flagList     string
 	problemFlags []string
 }
 
 var (
-	// errFlagsAreMutuallyExclusive indicates that more than one flag marked by MarkFlagsMutuallyExclusive was provided.
-	errFlagsAreMutuallyExclusive = errors.New("if any is set, none of the others can be")
+	// ErrFlagsAreMutuallyExclusive indicates that more than one flag marked by MarkFlagsMutuallyExclusive was provided.
+	ErrFlagsAreMutuallyExclusive = errors.New("if any is set, none of the others can be")
 
-	// errFlagsAreRequiredTogether indicates that only one of the flags marked by MarkFlagsRequiredTogether were provided.
-	errFlagsAreRequiredTogether = errors.New("if any is set, they must all be set")
+	// ErrFlagsAreRequiredTogether indicates that only one of the flags marked by MarkFlagsRequiredTogether were provided.
+	ErrFlagsAreRequiredTogether = errors.New("if any is set, they must all be set")
 
-	// errFlagsAreOneRequired indicates that none of the flags marked by MarkFlagsOneRequired flags were provided.
-	errFlagsAreOneRequired = errors.New("at least one of the flags is required")
+	// ErrFlagsAreOneRequired indicates that none of the flags marked by MarkFlagsOneRequired flags were provided.
+	ErrFlagsAreOneRequired = errors.New("at least one of the flags is required")
 )
+
+// GetCommand returns the Command that the error occurred in.
+func (e FlagGroupError) GetCommand() *Command {
+	return e.cmd
+}
+
+// GetFlagList returns the flags in the group.
+func (e FlagGroupError) GetFlags() []string {
+	return strings.Split(e.flagList, " ")
+}
+
+// Unwrap implements errors.Unwrap
+//
+// This returns one of:
+//   - ErrFlagsAreMutuallyExclusive
+//   - ErrFlagsAreRequiredTogether
+//   - ErrFlagsAreOneRequired
+func (e FlagGroupError) Unwrap() error {
+	return e.err
+}
+
+// GetProblemFlags returns the flags causing the error.
+//
+// The meaning of these flags depends on the wrapped error:
+//   - ErrFlagsAreMutuallyExclusive, these are all the flags set.
+//   - ErrFlagsAreRequiredTogether, these are the missing flags.
+//   - ErrFlagsAreOneRequired, this is empty.
+func (e FlagGroupError) GetProblemFlags() []string {
+	return e.problemFlags
+}
 
 // Error implements error.
 func (e FlagGroupError) Error() string {
 	switch {
-	case errors.Is(e.err, errFlagsAreRequiredTogether):
+	case errors.Is(e.err, ErrFlagsAreRequiredTogether):
 		return fmt.Sprintf("if any flags in the group [%v] are set they must all be set; missing %v", e.flagList, e.problemFlags)
-	case errors.Is(e.err, errFlagsAreOneRequired):
+	case errors.Is(e.err, ErrFlagsAreOneRequired):
 		return fmt.Sprintf("at least one of the flags in the group [%v] is required", e.flagList)
-	case errors.Is(e.err, errFlagsAreMutuallyExclusive):
+	case errors.Is(e.err, ErrFlagsAreMutuallyExclusive):
 		return fmt.Sprintf("if any flags in the group [%v] are set none of the others can be; %v were all set", e.flagList, e.problemFlags)
 	}
 
