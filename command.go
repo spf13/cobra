@@ -1188,7 +1188,9 @@ func (c *Command) ValidateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+		return RequiredFlagError{
+			missingFlagNames: missingFlagNames,
+		}
 	}
 	return nil
 }

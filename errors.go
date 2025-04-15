@@ -14,7 +14,11 @@
 
 package cobra
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 // InvalidArgCountError is the error returned when the wrong number of arguments
 // are supplied to a command.
@@ -66,4 +70,49 @@ type UnknownSubcommandError struct {
 // Error implements error.
 func (e UnknownSubcommandError) Error() string {
 	return fmt.Sprintf("unknown command %q for %q%s", e.subcmd, e.cmd.CommandPath(), helpTextForSuggestions(e.suggestions))
+}
+
+// RequiredFlagError is the error returned when a required flag is not set.
+type RequiredFlagError struct {
+	missingFlagNames []string
+}
+
+// Error implements error.
+func (e RequiredFlagError) Error() string {
+	return fmt.Sprintf(`required flag(s) "%s" not set`, strings.Join(e.missingFlagNames, `", "`))
+}
+
+// FlagGroupError is the error returned when mutually-required or
+// mutually-exclusive flags are not properly specified.
+type FlagGroupError struct {
+	err          error
+	flagList     string
+	problemFlags []string
+}
+
+var (
+	// errFlagsAreMutuallyExclusive indicates that more than one flag marked by MarkFlagsMutuallyExclusive was provided.
+	errFlagsAreMutuallyExclusive = errors.New("if any is set, none of the others can be")
+
+	// errFlagsAreRequiredTogether indicates that only one of the flags marked by MarkFlagsRequiredTogether were provided.
+	errFlagsAreRequiredTogether = errors.New("if any is set, they must all be set")
+
+	// errFlagsAreOneRequired indicates that none of the flags marked by MarkFlagsOneRequired flags were provided.
+	errFlagsAreOneRequired = errors.New("at least one of the flags is required")
+)
+
+// Error implements error.
+func (e FlagGroupError) Error() string {
+	switch {
+	case errors.Is(e.err, errFlagsAreRequiredTogether):
+		return fmt.Sprintf("if any flags in the group [%v] are set they must all be set; missing %v", e.flagList, e.problemFlags)
+	case errors.Is(e.err, errFlagsAreOneRequired):
+		return fmt.Sprintf("at least one of the flags in the group [%v] is required", e.flagList)
+	case errors.Is(e.err, errFlagsAreMutuallyExclusive):
+		return fmt.Sprintf("if any flags in the group [%v] are set none of the others can be; %v were all set", e.flagList, e.problemFlags)
+	}
+
+	// If the error struct is empty (i.e. wasn't created by Cobra), e.err will be nil.
+	// We don't have a message to print, so instead just print the struct contents.
+	return fmt.Sprintf("%#v", e)
 }
