@@ -6,7 +6,7 @@
       <img alt="Warp sponsorship" width="400" src="https://github.com/user-attachments/assets/ab8dd143-b0fd-4904-bdc5-dd7ecac94eae">
    </a>
 
-### [Warp, the agentic terminal for devs](https://www.warp.dev/cobra)
+### [Warp, the AI terminal for devs](https://www.warp.dev/cobra)
 [Try Cobra in Warp today](https://www.warp.dev/cobra)<br>
 
 </div>
