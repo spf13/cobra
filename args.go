@@ -15,7 +15,6 @@
 package cobra
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -33,8 +32,11 @@ func legacyArgs(cmd *Command, args []string) error {
 
 	// root command with subcommands, do subcommand checking.
 	if !cmd.HasParent() && len(args) > 0 {
-		suggestions := cmd.findSuggestions(args[0])
-		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), helpTextForSuggestions(suggestions))
+		return UnknownSubcommandError{
+			cmd:         cmd,
+			subcmd:      args[0],
+			suggestions: cmd.findSuggestions(args[0]),
+		}
 	}
 	return nil
 }
@@ -42,7 +44,11 @@ func legacyArgs(cmd *Command, args []string) error {
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		return UnknownSubcommandError{
+			cmd:         cmd,
+			subcmd:      args[0],
+			suggestions: nil,
+		}
 	}
 	return nil
 }
@@ -59,8 +65,11 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 		}
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {
-				suggestions := cmd.findSuggestions(args[0])
-				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), helpTextForSuggestions(suggestions))
+				return InvalidArgValueError{
+					cmd:         cmd,
+					arg:         v,
+					suggestions: cmd.findSuggestions(args[0]),
+				}
 			}
 		}
 	}
@@ -76,7 +85,12 @@ func ArbitraryArgs(cmd *Command, args []string) error {
 func MinimumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < n {
-			return fmt.Errorf("requires at least %d arg(s), only received %d", n, len(args))
+			return InvalidArgCountError{
+				cmd:     cmd,
+				args:    args,
+				atLeast: n,
+				atMost:  -1,
+			}
 		}
 		return nil
 	}
@@ -86,7 +100,12 @@ func MinimumNArgs(n int) PositionalArgs {
 func MaximumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) > n {
-			return fmt.Errorf("accepts at most %d arg(s), received %d", n, len(args))
+			return InvalidArgCountError{
+				cmd:     cmd,
+				args:    args,
+				atLeast: -1,
+				atMost:  n,
+			}
 		}
 		return nil
 	}
@@ -96,7 +115,12 @@ func MaximumNArgs(n int) PositionalArgs {
 func ExactArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) != n {
-			return fmt.Errorf("accepts %d arg(s), received %d", n, len(args))
+			return InvalidArgCountError{
+				cmd:     cmd,
+				args:    args,
+				atLeast: n,
+				atMost:  n,
+			}
 		}
 		return nil
 	}
@@ -106,7 +130,12 @@ func ExactArgs(n int) PositionalArgs {
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < min || len(args) > max {
-			return fmt.Errorf("accepts between %d and %d arg(s), received %d", min, max, len(args))
+			return InvalidArgCountError{
+				cmd:     cmd,
+				args:    args,
+				atLeast: min,
+				atMost:  max,
+			}
 		}
 		return nil
 	}
