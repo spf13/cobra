@@ -29,16 +29,6 @@ import (
 
 const markdownExtension = ".md"
 
-func printAliases(buf *bytes.Buffer, cmd *cobra.Command) {
-	if len(cmd.Aliases) > 0 {
-		buf.WriteString("### Aliases\n\n")
-		for _, alias := range cmd.Aliases {
-			buf.WriteString(fmt.Sprintf("* `%s`\n", alias))
-		}
-		buf.WriteString("\n")
-	}
-}
-
 func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
@@ -80,6 +70,14 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 
 	if cmd.Runnable() {
 		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.UseLine()))
+	}
+
+	if len(cmd.Aliases) > 0 {
+		buf.WriteString("### Aliases\n\n")
+		for _, alias := range cmd.Aliases {
+			buf.WriteString(fmt.Sprintf("* `%s`\n", alias))
+		}
+		buf.WriteString("\n")
 	}
 
 	if len(cmd.Example) > 0 {
