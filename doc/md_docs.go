@@ -73,14 +73,14 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	}
 
 	if len(cmd.Aliases) > 0 {
-		buf.WriteString("Aliases: ")
+		buf.WriteString("Aliases: `")
 		for i, alias := range cmd.Aliases {
 			if i > 0 {
-				buf.WriteString(", ")
+				buf.WriteString("`, `")
 			}
-			buf.WriteString(fmt.Sprintf("`%s`", alias))
+			buf.WriteString(alias)
 		}
-		buf.WriteString("\n")
+		buf.WriteString("`\n")
 	}
 
 	if len(cmd.Example) > 0 {
