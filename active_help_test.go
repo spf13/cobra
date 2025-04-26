@@ -26,6 +26,7 @@ const (
 	activeHelpMessage2 = "This is the rest of the activeHelp message"
 )
 
+// TestActiveHelpAlone tests that the active help function can be added to both root and child commands.
 func TestActiveHelpAlone(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -81,6 +82,7 @@ func TestActiveHelpAlone(t *testing.T) {
 	}
 }
 
+// TestActiveHelpWithComps tests the functionality of appending active help to command completions.
 func TestActiveHelpWithComps(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -166,6 +168,7 @@ func TestActiveHelpWithComps(t *testing.T) {
 	}
 }
 
+// TestMultiActiveHelp tests the functionality of adding multiple activeHelp messages to a command.
 func TestMultiActiveHelp(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -228,6 +231,7 @@ func TestMultiActiveHelp(t *testing.T) {
 	}
 }
 
+// TestActiveHelpForFlag tests the functionality of adding multiple activeHelp messages to a flag completion function.
 func TestActiveHelpForFlag(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -263,6 +267,7 @@ func TestActiveHelpForFlag(t *testing.T) {
 	}
 }
 
+// TestConfigActiveHelp tests the functionality of setting and retrieving active help configurations for a command.
 func TestConfigActiveHelp(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -316,6 +321,7 @@ func TestConfigActiveHelp(t *testing.T) {
 	}
 }
 
+// TestDisableActiveHelp tests the disabling of active help functionality.
 func TestDisableActiveHelp(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
