@@ -310,6 +310,8 @@ Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock ${__%[2]sCompleterB
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
 }
 
+// genPowerShellCompletion generates PowerShell completion script for the command.
+// It writes the generated script to the provided writer and returns any errors encountered.
 func (c *Command) genPowerShellCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
 	genPowerShellComp(buf, c.Name(), includeDesc)
@@ -317,6 +319,14 @@ func (c *Command) genPowerShellCompletion(w io.Writer, includeDesc bool) error {
 	return err
 }
 
+// genPowerShellCompletionFile generates a PowerShell completion file for the command.
+//
+// Parameters:
+//   - filename: The name of the file to generate.
+//   - includeDesc: A boolean indicating whether to include descriptions in the completion file.
+//
+// Returns:
+//   - error: If an error occurs during file creation or completion generation, it returns the error. Otherwise, it returns nil.
 func (c *Command) genPowerShellCompletionFile(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
@@ -327,24 +337,29 @@ func (c *Command) genPowerShellCompletionFile(filename string, includeDesc bool)
 	return c.genPowerShellCompletion(outFile, includeDesc)
 }
 
-// GenPowerShellCompletionFile generates powershell completion file without descriptions.
+// GenPowerShellCompletionFile generates a PowerShell completion file for the command without including descriptions.
+//
+// Parameters:
+//   - filename: The name of the file to generate.
+//
+// Returns:
+//   - An error if an error occurs during the generation process.
 func (c *Command) GenPowerShellCompletionFile(filename string) error {
 	return c.genPowerShellCompletionFile(filename, false)
 }
 
-// GenPowerShellCompletion generates powershell completion file without descriptions
-// and writes it to the passed writer.
+// GenPowerShellCompletion generates a PowerShell completion script without descriptions
+// and writes it to the provided writer. It returns an error if the operation fails.
 func (c *Command) GenPowerShellCompletion(w io.Writer) error {
 	return c.genPowerShellCompletion(w, false)
 }
 
-// GenPowerShellCompletionFileWithDesc generates powershell completion file with descriptions.
+// GenPowerShellCompletionFileWithDesc generates a PowerShell completion file for the command with detailed descriptions. It takes a filename as input and returns an error if any occurs during the generation process. The boolean parameter indicates whether to include descriptions in the generated file.
 func (c *Command) GenPowerShellCompletionFileWithDesc(filename string) error {
 	return c.genPowerShellCompletionFile(filename, true)
 }
 
-// GenPowerShellCompletionWithDesc generates powershell completion file with descriptions
-// and writes it to the passed writer.
+// GenPowerShellCompletionWithDesc generates a PowerShell completion file with descriptions and writes it to the provided writer. It takes a writer as an argument and returns an error if any occurs during the generation process.
 func (c *Command) GenPowerShellCompletionWithDesc(w io.Writer) error {
 	return c.genPowerShellCompletion(w, true)
 }

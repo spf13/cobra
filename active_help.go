@@ -33,8 +33,15 @@ const (
 // to the user.
 // The array parameter should be the array that will contain the completions.
 // This function can be called multiple times before and/or after completions are added to
-// the array.  Each time this function is called with the same array, the new
+// the array. Each time this function is called with the same array, the new
 // ActiveHelp line will be shown below the previous ones when completion is triggered.
+//
+// Parameters:
+//   - compArray: The array that will contain the completions.
+//   - activeHelpStr: The string to be added as ActiveHelp.
+//
+// Returns:
+//   - The updated array with the new ActiveHelp line appended.
 func AppendActiveHelp(compArray []Completion, activeHelpStr string) []Completion {
 	return append(compArray, fmt.Sprintf("%s%s", activeHelpMarker, activeHelpStr))
 }
@@ -44,6 +51,12 @@ func AppendActiveHelp(compArray []Completion, activeHelpStr string) []Completion
 // case, with all non-ASCII-alphanumeric characters replaced by `_`.
 // It will always return "0" if the global environment variable COBRA_ACTIVE_HELP
 // is set to "0".
+//
+// Parameters:
+//   - cmd: The root command whose ActiveHelp configuration is being retrieved.
+//
+// Returns:
+//   - A string representing the value of the ActiveHelp configuration.
 func GetActiveHelpConfig(cmd *Command) string {
 	activeHelpCfg := os.Getenv(activeHelpGlobalEnvVar)
 	if activeHelpCfg != activeHelpGlobalDisable {
@@ -52,9 +65,9 @@ func GetActiveHelpConfig(cmd *Command) string {
 	return activeHelpCfg
 }
 
-// activeHelpEnvVar returns the name of the program-specific ActiveHelp environment
-// variable.  It has the format <PROGRAM>_ACTIVE_HELP where <PROGRAM> is the name of the
-// root command in upper case, with all non-ASCII-alphanumeric characters replaced by `_`.
+// ActiveHelpEnvVar returns the name of the program-specific ActiveHelp environment variable.
+// It follows the format <PROGRAM>_ACTIVE_HELP where <PROGRAM> is the upper-case version of the root command's name,
+// with all non-ASCII-alphanumeric characters replaced by '_'.
 func activeHelpEnvVar(name string) string {
 	return configEnvVar(name, activeHelpEnvVarSuffix)
 }

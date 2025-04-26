@@ -20,6 +20,9 @@ import (
 	"testing"
 )
 
+// TestPwshCompletionNoActiveHelp tests the generation of PowerShell completion for a command without active help.
+//
+// It creates a new Command instance with the name "c" and an empty Run function. Then, it generates PowerShell completion output using GenPowerShellCompletion method and checks if the environment variable for disabling active help is set to 0.
 func TestPwshCompletionNoActiveHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 

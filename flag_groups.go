@@ -29,7 +29,10 @@ const (
 )
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
-// if the command is invoked with a subset (but not all) of the given flags.
+// if the command is invoked with a subset (but not all) of the given flags. It ensures
+// that all flags provided in flagNames must be used together or none at all.
+// Parameters:
+//   - flagNames: A slice of strings representing the names of the flags to mark.
 func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
 	c.mergePersistentFlags()
 	for _, v := range flagNames {
@@ -45,7 +48,8 @@ func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
 }
 
 // MarkFlagsOneRequired marks the given flags with annotations so that Cobra errors
-// if the command is invoked without at least one flag from the given set of flags.
+// if the command is invoked without at least one flag from the given set of flags. The
+// `flagNames` parameter is a slice of strings containing the names of the flags to be marked.
 func (c *Command) MarkFlagsOneRequired(flagNames ...string) {
 	c.mergePersistentFlags()
 	for _, v := range flagNames {
@@ -60,8 +64,11 @@ func (c *Command) MarkFlagsOneRequired(flagNames ...string) {
 	}
 }
 
-// MarkFlagsMutuallyExclusive marks the given flags with annotations so that Cobra errors
-// if the command is invoked with more than one flag from the given set of flags.
+// MarkFlagsMutuallyExclusive marks the given flags with annotations so that Cobra errors if the command is invoked with more than one flag from the given set of flags.
+// It takes a variable number of strings representing the names of the flags to be marked as mutually exclusive. Each time this method is called, it adds a new entry to the annotation.
+// If any of the specified flags are not found, it panics with an error message.
+// The flagNames parameter contains one or more string values that represent the names of the flags to be marked as mutually exclusive.
+// There is no return value.
 func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	c.mergePersistentFlags()
 	for _, v := range flagNames {
@@ -76,8 +83,7 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
-// ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the
-// first error encountered.
+// ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the first error encountered.
 func (c *Command) ValidateFlagGroups() error {
 	if c.DisableFlagParsing {
 		return nil
@@ -108,6 +114,8 @@ func (c *Command) ValidateFlagGroups() error {
 	return nil
 }
 
+// hasAllFlags checks if all flags in the provided flag names exist within the given FlagSet.
+// It returns true if all flags are found, otherwise it returns false.
 func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
 	for _, fname := range flagnames {
 		f := fs.Lookup(fname)
@@ -118,6 +126,16 @@ func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
 	return true
 }
 
+// processFlagForGroupAnnotation processes flags for group annotations, updating the group status based on the provided flag set and flag.
+//
+// Parameters:
+//   - flags: A pointer to the flag.FlagSet containing all flags.
+//   - pflag: A pointer to the flag.Flag being processed.
+//   - annotation: The name of the annotation to process.
+//   - groupStatus: A map tracking the status of groups, where the outer key is the group name and the inner map tracks individual flags within that group.
+//
+// This function checks if the provided flag has an annotation matching the specified annotation. If it does, it processes each group associated with the annotation. For each group, it ensures all flags in the group are defined in the provided flag set. If they are, it initializes the group status for any new groups and updates the status of the current flag within its group.
+//
 func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annotation string, groupStatus map[string]map[string]bool) {
 	groupInfo, found := pflag.Annotations[annotation]
 	if found {
@@ -141,6 +159,9 @@ func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annota
 	}
 }
 
+// validateRequiredFlagGroups checks if any flag groups have required flags that are not all set.
+// It takes a map where keys represent flag groups and values are maps of flag names to their set status.
+// Returns an error if any group contains flags that are either all unset or none unset, which is invalid.
 func validateRequiredFlagGroups(data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
@@ -164,6 +185,13 @@ func validateRequiredFlagGroups(data map[string]map[string]bool) error {
 	return nil
 }
 
+// validateOneRequiredFlagGroups checks that at least one flag from each group is set. It takes a map where keys are groups and values are maps indicating whether each flag within a group is set.
+//
+// Parameters:
+//   - data: A map of string to map of string to bool, representing the flags and their statuses in different groups.
+//
+// Returns:
+//   - error: An error if any group does not have at least one required flag set. If all required flags are set, it returns nil.
 func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
@@ -185,6 +213,22 @@ func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
 	return nil
 }
 
+// validateExclusiveFlagGroups checks that within a map of flag groups, no more than one flag from each group is set.
+//
+// Parameters:
+//   - data: A map where keys are group names and values are maps of flag names to their status (true if set).
+//
+// Returns:
+//   - error: If any group contains more than one set flag, an error is returned with details. Otherwise, returns nil.
+//
+// Example:
+//   err := validateExclusiveFlagGroups(map[string]map[string]bool{
+//       "group1": {"flagA": true, "flagB": false},
+//       "group2": {"flagC": false, "flagD": true},
+//   })
+//   if err != nil {
+//       fmt.Println(err)
+//   }
 func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
@@ -206,6 +250,8 @@ func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 	return nil
 }
 
+// sortedKeys returns a slice of strings containing the keys of the input map `m`, sorted in ascending order.
+// The function does not modify the original map and ensures that the keys are returned as sorted lexicographically.
 func sortedKeys(m map[string]map[string]bool) []string {
 	keys := make([]string, len(m))
 	i := 0
@@ -217,11 +263,11 @@ func sortedKeys(m map[string]map[string]bool) []string {
 	return keys
 }
 
-// enforceFlagGroupsForCompletion will do the following:
-// - when a flag in a group is present, other flags in the group will be marked required
-// - when none of the flags in a one-required group are present, all flags in the group will be marked required
-// - when a flag in a mutually exclusive group is present, other flags in the group will be marked as hidden
-// This allows the standard completion logic to behave appropriately for flag groups
+// enforceFlagGroupsForCompletion enforces the completion logic for flag groups in a command.
+// It ensures that when a flag in a group is present, other flags in the group are marked required,
+// and when none of the flags in a one-required group are present, all flags in the group are marked required.
+// Additionally, it hides flags that are mutually exclusive to others. This allows the standard completion logic
+// to behave appropriately for flag groups.
 func (c *Command) enforceFlagGroupsForCompletion() {
 	if c.DisableFlagParsing {
 		return

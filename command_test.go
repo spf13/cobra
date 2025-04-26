@@ -27,13 +27,28 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// emptyRun does nothing and is used as a placeholder or default function. It takes a pointer to a Command struct and a slice of strings as parameters but does not return any value.
 func emptyRun(*Command, []string) {}
 
+// ExecuteCommand executes a command with the given arguments and returns its output.
+//
+// Parameters:
+// - root: The root command to execute.
+// - args: Additional arguments to pass to the command.
+//
+// Returns:
+// - output: The output of the executed command.
+// - err: An error if the command execution fails.
 func executeCommand(root *Command, args ...string) (output string, err error) {
 	_, output, err = executeCommandC(root, args...)
 	return output, err
 }
 
+// executeCommandWithContext executes the given command in the context of a specific context.
+// It sets up the command's output and error buffers, applies the provided arguments,
+// and runs the command within the given context. The function returns the combined output
+// from stdout and stderr as a string, along with any errors that occur during execution.
+// The command is expected to be properly configured beforehand, with its out, err, and args set appropriately.
 func executeCommandWithContext(ctx context.Context, root *Command, args ...string) (output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
@@ -45,6 +60,17 @@ func executeCommandWithContext(ctx context.Context, root *Command, args ...strin
 	return buf.String(), err
 }
 
+// executeCommandC executes the given command with the provided arguments and returns the resulting command object, output, and any error that occurs.
+// The function sets the standard output and error to a buffer and captures the output during execution. It then calls ExecuteC on the root command with the specified arguments.
+//
+// Parameters:
+// - root: A pointer to the Command object to be executed.
+// - args: A variadic slice of strings representing the arguments to pass to the command.
+//
+// Returns:
+// - c: A pointer to the Command object that was executed.
+// - output: A string containing the captured standard output and error from the execution.
+// - err: An error if an error occurred during execution, otherwise nil.
 func executeCommandC(root *Command, args ...string) (c *Command, output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
@@ -56,6 +82,18 @@ func executeCommandC(root *Command, args ...string) (c *Command, output string, 
 	return c, buf.String(), err
 }
 
+// executeCommandWithContextC executes the given command with the specified context and arguments.
+// It captures both the output and any errors produced by the command execution.
+//
+// Parameters:
+//   - ctx: The context to use for executing the command, allowing for cancellation or timeouts.
+//   - root: The root command to be executed.
+//   - args: Additional arguments to pass to the command.
+//
+// Returns:
+//   - c: The command that was executed.
+//   - output: The captured standard output and error of the command execution.
+//   - err: Any error encountered during the execution of the command.
 func executeCommandWithContextC(ctx context.Context, root *Command, args ...string) (c *Command, output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
@@ -67,16 +105,21 @@ func executeCommandWithContextC(ctx context.Context, root *Command, args ...stri
 	return c, buf.String(), err
 }
 
+// ResetCommandLineFlagSet resets the command line flag set to a new one with os.Args[0] as the program name and ExitOnError as the error handling policy. This is useful for reinitializing flags in tests or when flags need to be reset between runs.
 func resetCommandLineFlagSet() {
 	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 }
 
+// checkStringContains checks if the 'got' string contains the 'expected' substring.
+// If not, it logs an error message indicating the mismatch between the expected and actual strings.
 func checkStringContains(t *testing.T, got, expected string) {
 	if !strings.Contains(got, expected) {
 		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
 	}
 }
 
+// checkStringOmits checks if the `got` string contains the `expected` substring.
+// If it does, the test fails with an error message indicating what was expected and what was got.
 func checkStringOmits(t *testing.T, got, expected string) {
 	if strings.Contains(got, expected) {
 		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
@@ -85,6 +128,11 @@ func checkStringOmits(t *testing.T, got, expected string) {
 
 const onetwo = "one two"
 
+// TestSingleCommand tests the execution of a single command within a root command.
+//
+// It sets up a root command with two subcommands "a" and "b". The root command expects exactly two arguments.
+// After executing the command with arguments "one" and "two", it checks if there is no unexpected output, error,
+// and if the arguments passed to the root command are as expected.
 func TestSingleCommand(t *testing.T) {
 	var rootCmdArgs []string
 	rootCmd := &Command{
@@ -110,6 +158,8 @@ func TestSingleCommand(t *testing.T) {
 	}
 }
 
+// TestChildCommand tests the behavior of the root command with a child command that takes exactly two arguments.
+// It verifies that the child command receives the correct arguments and no unexpected output or error is returned.
 func TestChildCommand(t *testing.T) {
 	var child1CmdArgs []string
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
@@ -135,6 +185,7 @@ func TestChildCommand(t *testing.T) {
 	}
 }
 
+// TestCallCommandWithoutSubcommands tests the scenario where a command is called without any subcommands. It asserts that there should be no errors when calling such a command.
 func TestCallCommandWithoutSubcommands(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	_, err := executeCommand(rootCmd)
@@ -143,6 +194,9 @@ func TestCallCommandWithoutSubcommands(t *testing.T) {
 	}
 }
 
+// TestRootExecuteUnknownCommand tests the execution of an unknown command in a root command hierarchy.
+// It creates a root command with a child command and attempts to execute an unknown command.
+// The function checks if the output contains the expected error message for an unknown command.
 func TestRootExecuteUnknownCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -156,6 +210,9 @@ func TestRootExecuteUnknownCommand(t *testing.T) {
 	}
 }
 
+// TestSubcommandExecuteC tests the execution of a subcommand using the Command type.
+// It sets up a root command with a child command and asserts that executing the child command
+// does not produce any output, no error is returned, and the correct command name is returned.
 func TestSubcommandExecuteC(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -174,6 +231,7 @@ func TestSubcommandExecuteC(t *testing.T) {
 	}
 }
 
+// TestExecuteContext tests the execution of commands with a context.
 func TestExecuteContext(t *testing.T) {
 	ctx := context.TODO()
 
@@ -203,6 +261,7 @@ func TestExecuteContext(t *testing.T) {
 	}
 }
 
+// TestExecuteContextC tests the ExecuteContext method with a context and verifies that all commands have the correct context.
 func TestExecuteContextC(t *testing.T) {
 	ctx := context.TODO()
 
@@ -232,6 +291,7 @@ func TestExecuteContextC(t *testing.T) {
 	}
 }
 
+// TestExecute_NoContext tests the Execute function without a context.
 func TestExecute_NoContext(t *testing.T) {
 	run := func(cmd *Command, args []string) {
 		if cmd.Context() != context.Background() {
@@ -259,6 +319,7 @@ func TestExecute_NoContext(t *testing.T) {
 	}
 }
 
+// TestRootUnknownCommandSilenced tests that unknown commands are handled correctly when errors and usage are silenced.
 func TestRootUnknownCommandSilenced(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.SilenceErrors = true
@@ -271,6 +332,7 @@ func TestRootUnknownCommandSilenced(t *testing.T) {
 	}
 }
 
+// TestCommandAlias tests the functionality of adding a command with aliases to a root command.
 func TestCommandAlias(t *testing.T) {
 	var timesCmdArgs []string
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
@@ -302,6 +364,10 @@ func TestCommandAlias(t *testing.T) {
 	}
 }
 
+// TestEnablePrefixMatching tests the functionality of enabling prefix matching for commands.
+// It checks if the command arguments are correctly captured when prefix matching is enabled.
+// The test asserts that there is no unexpected output or error, and that the captured arguments match the expected values.
+// After the test, it resets the `EnablePrefixMatching` to its default value.
 func TestEnablePrefixMatching(t *testing.T) {
 	EnablePrefixMatching = true
 
@@ -331,6 +397,7 @@ func TestEnablePrefixMatching(t *testing.T) {
 	EnablePrefixMatching = defaultPrefixMatching
 }
 
+// TestAliasPrefixMatching tests the alias prefix matching feature of commands.
 func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = true
 
@@ -366,9 +433,10 @@ func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = defaultPrefixMatching
 }
 
-// TestPlugin checks usage as plugin for another command such as kubectl.  The
-// executable is `kubectl-plugin`, but we run it as `kubectl plugin`. The help
-// text should reflect the way we run the command.
+// TestPlugin checks the usage of a plugin command with another command like `kubectl`. The
+// executable name is `kubectl-plugin`, but it's executed as `kubectl plugin`. The help text should
+// reflect how the command is invoked. It verifies that the output contains specific strings indicating
+// the correct usage and annotations.
 func TestPlugin(t *testing.T) {
 	cmd := &Command{
 		Use:     "kubectl-plugin",
@@ -390,7 +458,7 @@ func TestPlugin(t *testing.T) {
 	checkStringContains(t, cmdHelp, "version for kubectl plugin")
 }
 
-// TestPluginWithSubCommands checks usage as plugin with sub commands.
+// TestPluginWithSubCommands checks usage as a plugin with subcommands.
 func TestPluginWithSubCommands(t *testing.T) {
 	rootCmd := &Command{
 		Use:     "kubectl-plugin",
@@ -459,9 +527,9 @@ func TestChildSameName(t *testing.T) {
 	}
 }
 
-// TestGrandChildSameName checks the correct behaviour of cobra in cases,
-// when user has a root command and a grand child
-// with the same name.
+// TestGrandChildSameName checks the correct behavior of cobra in cases where
+// a user has a root command and a grandchild with the same name. It ensures that
+// the execution is correctly routed to the intended child command.
 func TestGrandChildSameName(t *testing.T) {
 	var fooCmdArgs []string
 	rootCmd := &Command{Use: "foo", Args: NoArgs, Run: emptyRun}
@@ -488,6 +556,7 @@ func TestGrandChildSameName(t *testing.T) {
 	}
 }
 
+// TestFlagLong tests the handling of long flags in a command.
 func TestFlagLong(t *testing.T) {
 	var cArgs []string
 	c := &Command{
@@ -525,6 +594,9 @@ func TestFlagLong(t *testing.T) {
 	}
 }
 
+// TestFlagShort tests the functionality of short flag parsing in a Command.
+// It sets up a command with integer and string flags, executes it with specific arguments,
+// and verifies that the flags are parsed correctly and no unexpected output or error is returned.
 func TestFlagShort(t *testing.T) {
 	var cArgs []string
 	c := &Command{
@@ -559,6 +631,7 @@ func TestFlagShort(t *testing.T) {
 	}
 }
 
+// TestChildFlag tests the functionality of a child command with an integer flag.
 func TestChildFlag(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -580,6 +653,11 @@ func TestChildFlag(t *testing.T) {
 	}
 }
 
+// TestChildFlagWithParentLocalFlag tests the behavior of child command flags when parent has a local flag with the same shorthand.
+//
+// It creates a root command and a child command, adds the child to the root, sets up string and integer flags on both commands,
+// executes the command with specific arguments, and verifies that an error is returned due to a flag conflict. Additionally,
+// it checks that the integer flag value from the child command is set correctly.
 func TestChildFlagWithParentLocalFlag(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -601,6 +679,8 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 	}
 }
 
+// TestFlagInvalidInput tests the behavior of the command when provided with an invalid integer flag value.
+// It ensures that the function correctly identifies and returns an error for invalid input.
 func TestFlagInvalidInput(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.Flags().IntP("intf", "i", -1, "")
@@ -613,6 +693,7 @@ func TestFlagInvalidInput(t *testing.T) {
 	checkStringContains(t, err.Error(), "invalid syntax")
 }
 
+// TestFlagBeforeCommand tests the behavior of flags when specified before the command.
 func TestFlagBeforeCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -640,6 +721,13 @@ func TestFlagBeforeCommand(t *testing.T) {
 	}
 }
 
+// TestStripFlags runs a series of tests to verify that the stripFlags function correctly removes flags from an input slice of strings.
+//
+// It creates a Command instance with persistent and local flags. Each test case provides an input slice of strings representing command-line arguments and expected output after flag removal.
+//
+// The function iterates over each test case, calls stripFlags with the input, and compares the result to the expected output. If the results do not match, it logs an error indicating the test case number, expected output, and actual output.
+//
+// This test ensures that the stripFlags function is correctly identifying and removing flags based on their prefixes and names.
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
@@ -713,6 +801,8 @@ func TestStripFlags(t *testing.T) {
 	}
 }
 
+// TestDisableFlagParsing tests the functionality of disabling flag parsing in a command.
+// It creates a new Command with DisableFlagParsing set to true and verifies that the Run function receives all arguments without flag parsing.
 func TestDisableFlagParsing(t *testing.T) {
 	var cArgs []string
 	c := &Command{
@@ -737,6 +827,10 @@ func TestDisableFlagParsing(t *testing.T) {
 	}
 }
 
+// TestPersistentFlagsOnSameCommand tests the behavior of persistent flags when used on the same command.
+//
+// It creates a root command with a persistent integer flag and runs it with specific arguments.
+// The function verifies that the flag value is correctly set and that the command arguments are as expected.
 func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	var rootCmdArgs []string
 	rootCmd := &Command{
@@ -765,8 +859,7 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	}
 }
 
-// TestEmptyInputs checks,
-// if flags correctly parsed with blank strings in args.
+// TestEmptyInputs checks if flags are correctly parsed with blank strings in args.
 func TestEmptyInputs(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -786,6 +879,7 @@ func TestEmptyInputs(t *testing.T) {
 	}
 }
 
+// TestChildFlagShadowsParentPersistentFlag tests if a child command's flags shadow parent persistent flags.
 func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	child := &Command{Use: "child", Run: emptyRun}
@@ -815,6 +909,7 @@ func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	}
 }
 
+// TestPersistentFlagsOnChild tests that persistent flags set on the root command are available to its child commands.
 func TestPersistentFlagsOnChild(t *testing.T) {
 	var childCmdArgs []string
 	rootCmd := &Command{Use: "root", Run: emptyRun}
@@ -850,6 +945,7 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 	}
 }
 
+// TestRequiredFlags checks that required flags are enforced when running a command.
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().String("foo1", "", "")
@@ -868,6 +964,7 @@ func TestRequiredFlags(t *testing.T) {
 	}
 }
 
+// TestPersistentRequiredFlags tests the marking of persistent and local flags as required in a command hierarchy.
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().String("foo1", "", "")
@@ -893,6 +990,7 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	}
 }
 
+// TestPersistentRequiredFlagsWithDisableFlagParsing tests that a required persistent flag does not break commands that disable flag parsing.
 func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	// Make sure a required persistent flag does not break
 	// commands that disable flag parsing
@@ -924,6 +1022,13 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	}
 }
 
+// TestInitHelpFlagMergesFlags verifies that when InitDefaultHelpFlag is called on a child command, it merges the help flag from its parent command.
+//
+// Parameters:
+//   - t: A pointer to testing.T for test assertions.
+//
+// Returns:
+//   None. The function uses t.Errorf to report failures.
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
 	rootCmd := &Command{Use: "root"}
@@ -938,6 +1043,8 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 	}
 }
 
+// TestHelpCommandExecuted tests that the 'help' command is executed correctly.
+// It verifies that the output contains the long description of the root command.
 func TestHelpCommandExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -950,6 +1057,7 @@ func TestHelpCommandExecuted(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Long)
 }
 
+// TestHelpCommandExecutedOnChild tests that the help command is executed on a child command.
 func TestHelpCommandExecutedOnChild(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description", Run: emptyRun}
@@ -963,6 +1071,7 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
+// TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag tests that the help command executed on a child command shows the child's flags and not the parent's shadowed flags.
 func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	child := &Command{Use: "child", Run: emptyRun}
@@ -995,6 +1104,10 @@ Global Flags:
 	}
 }
 
+// TestSetHelpCommand tests the SetHelpCommand method of the Command struct.
+//
+// It creates a new command and sets its help command. The help command runs a specific function that prints an expected string.
+// The test then executes the help command and checks if the output contains the expected string, asserting no errors occur during execution.
 func TestSetHelpCommand(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.AddCommand(&Command{Use: "empty", Run: emptyRun})
@@ -1018,6 +1131,10 @@ func TestSetHelpCommand(t *testing.T) {
 	}
 }
 
+// TestSetHelpTemplate tests the SetHelpTemplate method of the Command struct.
+//
+// It verifies that setting a custom help template on a root command and its child commands works as expected.
+// It also checks that the default help template is used when no custom template is set.
 func TestSetHelpTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -1061,6 +1178,11 @@ func TestSetHelpTemplate(t *testing.T) {
 	}
 }
 
+// TestHelpFlagExecuted tests if the help flag is executed correctly.
+// It creates a root command with a long description and an empty run function.
+// The test then executes the command with the "--help" flag and checks if the output contains the long description.
+// If any error occurs during execution, it reports the error using the test's Errorf method.
+// Additionally, it uses the checkStringContains helper function to verify that the output string contains the expected substring.
 func TestHelpFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 
@@ -1072,6 +1194,9 @@ func TestHelpFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Long)
 }
 
+// TestHelpFlagExecutedOnChild tests whether the help flag is executed on a child command.
+// It sets up a root command with a child command and executes the child command with the "--help" flag.
+// The function then checks if the output contains the long description of the child command.
 func TestHelpFlagExecutedOnChild(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description", Run: emptyRun}
@@ -1085,10 +1210,10 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
-// TestHelpFlagInHelp checks,
-// if '--help' flag is shown in help for child (executing `parent help child`),
-// that has no other flags.
-// Related to https://github.com/spf13/cobra/issues/302.
+// TestHelpFlagInHelp verifies that the '--help' flag is displayed in the help output for a child command when using `parent help child`.
+//
+// The test ensures that the Cobra library correctly handles the display of the '--help' flag in nested command structures.
+// This addresses an issue reported in https://github.com/spf13/cobra/issues/302, ensuring proper functionality and user experience.
 func TestHelpFlagInHelp(t *testing.T) {
 	parentCmd := &Command{Use: "parent", Run: func(*Command, []string) {}}
 
@@ -1103,6 +1228,7 @@ func TestHelpFlagInHelp(t *testing.T) {
 	checkStringContains(t, output, "[flags]")
 }
 
+// TestFlagsInUsage tests if the command usage includes flags section.
 func TestFlagsInUsage(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
 	output, err := executeCommand(rootCmd, "--help")
@@ -1113,6 +1239,7 @@ func TestFlagsInUsage(t *testing.T) {
 	checkStringContains(t, output, "[flags]")
 }
 
+// TestHelpExecutedOnNonRunnableChild tests the behavior of help when executed on a non-runnable child command.
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Long: "Long description"}
@@ -1126,6 +1253,9 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	checkStringContains(t, output, childCmd.Long)
 }
 
+// TestSetUsageTemplate tests the functionality of SetUsageTemplate method.
+// It verifies that setting a custom usage template on a command and its child commands works as expected.
+// It also checks that resetting the template to empty falls back to the default usage format.
 func TestSetUsageTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -1165,6 +1295,10 @@ func TestSetUsageTemplate(t *testing.T) {
 	}
 }
 
+// TestVersionFlagExecuted tests that the --version flag is executed correctly.
+//
+// It creates a root command with a specific version and an empty run function.
+// The function then executes the command with the --version flag and checks if the output contains the expected version string.
 func TestVersionFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 
@@ -1176,6 +1310,7 @@ func TestVersionFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+// TestVersionFlagExecutedDiplayName tests if the version flag executed with a display name.
 func TestVersionFlagExecutedDiplayName(t *testing.T) {
 	rootCmd := &Command{
 		Use:     "kubectl-plugin",
@@ -1194,6 +1329,11 @@ func TestVersionFlagExecutedDiplayName(t *testing.T) {
 	checkStringContains(t, output, "kubectl plugin version 1.0.0")
 }
 
+// TestVersionFlagExecutedWithNoName tests that the version flag is executed when no name is provided.
+//
+// It creates a root command with a version and an empty run function. It then executes the command with the --version flag and "arg1".
+//
+// The function asserts that there is no error returned and that the output contains the string "version 1.0.0".
 func TestVersionFlagExecutedWithNoName(t *testing.T) {
 	rootCmd := &Command{Version: "1.0.0", Run: emptyRun}
 
@@ -1205,6 +1345,14 @@ func TestVersionFlagExecutedWithNoName(t *testing.T) {
 	checkStringContains(t, output, "version 1.0.0")
 }
 
+// TestShortAndLongVersionFlagInHelp tests that both the short and long version flags are present in the help output.
+//
+// Parameters:
+//   - t: A testing.T instance to which assertions can be made.
+//
+// This function creates a root command with a specified use case, version, and empty run function.
+// It then executes the command with the "--help" flag and checks if the "-v, --version" string is present in the output.
+// If an error occurs during the execution, it asserts an error with a message indicating the unexpected error.
 func TestShortAndLongVersionFlagInHelp(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 
@@ -1216,6 +1364,13 @@ func TestShortAndLongVersionFlagInHelp(t *testing.T) {
 	checkStringContains(t, output, "-v, --version")
 }
 
+// TestLongVersionFlagOnlyInHelpWhenShortPredefined tests that the long version flag is only included in help when a short version flag is predefined.
+//
+// Parameters:
+//   - t: The testing.T instance for running the test.
+//
+// Returns:
+//   None. This function uses t.Errorf to report any unexpected errors encountered during the execution of the test.
 func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.Flags().StringP("foo", "v", "", "not a version flag")
@@ -1229,6 +1384,9 @@ func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
 	checkStringContains(t, output, "--version")
 }
 
+// TestShorthandVersionFlagExecuted tests if the shorthand version flag is executed correctly.
+// It sets up a root command with a specific use and version, executes it with a version flag,
+// and checks if the output contains the expected version information.
 func TestShorthandVersionFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 
@@ -1240,6 +1398,7 @@ func TestShorthandVersionFlagExecuted(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+// TestVersionTemplate tests the custom version template of a command.
 func TestVersionTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
@@ -1252,6 +1411,8 @@ func TestVersionTemplate(t *testing.T) {
 	checkStringContains(t, output, "customized version: 1.0.0")
 }
 
+// TestShorthandVersionTemplate tests the execution of a command with a custom version template.
+// It asserts that the output contains the customized version string and no errors occur during execution.
 func TestShorthandVersionTemplate(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
@@ -1264,6 +1425,7 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	checkStringContains(t, output, "customized version: 1.0.0")
 }
 
+// TestRootErrPrefixExecutedOnSubcommand tests whether the root command's error prefix is applied to errors returned by subcommands.
 func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.SetErrPrefix("root error prefix:")
@@ -1277,6 +1439,8 @@ func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root error prefix: unknown flag: --unknown-flag")
 }
 
+// TestRootAndSubErrPrefix tests the behavior of setting error prefixes on a root command and its subcommand.
+// It checks if the correct error prefix is prepended when an unknown flag is used in either the root or subcommand.
 func TestRootAndSubErrPrefix(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	subCmd := &Command{Use: "sub", Run: emptyRun}
@@ -1297,6 +1461,10 @@ func TestRootAndSubErrPrefix(t *testing.T) {
 	}
 }
 
+// TestVersionFlagExecutedOnSubcommand tests if the version flag is executed on a subcommand.
+// It creates a root command with a specific version and adds a subcommand without a run function.
+// It then executes the command with the --version flag followed by the subcommand name.
+// Finally, it checks that the output contains the expected version information.
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -1309,6 +1477,13 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+// TestShorthandVersionFlagExecutedOnSubcommand tests if the shorthand version flag (-v) is executed when passed to a subcommand.
+//
+// Parameters:
+//   - t: A testing.T instance used for assertions and error reporting.
+//
+// Returns:
+//   - None, but performs assertions on the output and any errors encountered during command execution.
 func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -1321,6 +1496,9 @@ func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
+// TestVersionFlagOnlyAddedToRoot checks that the --version flag is only added to the root command and not to its subcommands.
+// It creates a root command with a version and adds a subcommand without the version flag.
+// It then tries to execute the subcommand with the --version flag and expects an error indicating that the flag is unknown.
 func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -1333,6 +1511,7 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown flag: --version")
 }
 
+// TestShortVersionFlagOnlyAddedToRoot checks if the short version flag is only added to the root command.
 func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
@@ -1345,6 +1524,10 @@ func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
+// TestVersionFlagOnlyExistsIfVersionNonEmpty checks if the `--version` flag is only present when the version string is non-empty.
+// It creates a root command and tries to execute it with the `--version` flag, expecting an error since the version is empty.
+// If no error is returned, it asserts that an error should have been returned.
+// It then checks if the error message contains the expected substring "unknown flag: --version".
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
@@ -1355,6 +1538,12 @@ func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown flag: --version")
 }
 
+// TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty tests that the version flag shorthand '-v' only exists if the Version field of the Command is non-empty.
+//
+// Parameters:
+//   - t: A testing.T instance used to assert test conditions.
+//
+// The function does not return any values. If the Version field is empty and the shorthand flag '-v' is provided, an error is expected with a specific message indicating that the shorthand flag is unknown.
 func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
@@ -1365,6 +1554,9 @@ func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
+// TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined tests that the shorthand version flag is only added if it's not already defined.
+//
+// It creates a root command with a non-version flag named "notversion" and shorthand "v". When executing the command with "-v", it should return an error because "v" is not a valid argument for the existing shorthand flag. The test checks that the shorthand lookup returns the correct flag name and that the error message contains the expected text.
 func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
 	rootCmd.Flags().StringP("notversion", "v", "", "not a version flag")
@@ -1377,6 +1569,10 @@ func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
 }
 
+// TestShorthandVersionFlagOnlyAddedIfVersionNotDefined tests that the shorthand version flag is only added if a custom version flag is not defined.
+//
+// Parameters:
+//   - t: A testing.T object for running the test.
 func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
 	rootCmd.Flags().Bool("version", false, "a different kind of version flag")
@@ -1388,6 +1584,7 @@ func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
 	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
+// TestUsageIsNotPrintedTwice tests that the usage message for a command is not printed more than once.
 func TestUsageIsNotPrintedTwice(t *testing.T) {
 	var cmd = &Command{Use: "root"}
 	var sub = &Command{Use: "sub"}
@@ -1399,6 +1596,7 @@ func TestUsageIsNotPrintedTwice(t *testing.T) {
 	}
 }
 
+// TestVisitParents tests the VisitParents method to ensure it correctly visits parent commands.
 func TestVisitParents(t *testing.T) {
 	c := &Command{Use: "app"}
 	sub := &Command{Use: "sub"}
@@ -1428,6 +1626,10 @@ func TestVisitParents(t *testing.T) {
 	}
 }
 
+// TestSuggestions tests the command suggestion feature of the Command struct.
+// It checks if the suggested commands are correctly generated based on user input,
+// and ensures that suggestions are disabled when requested. The test covers various
+// typo cases and expected suggestions or no suggestions at all.
 func TestSuggestions(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	timesCmd := &Command{
@@ -1475,6 +1677,8 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+// TestCaseInsensitive tests the functionality of case-insensitive command matching.
+// It checks if commands and their aliases are matched correctly based on the setting of EnableCaseInsensitive.
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
@@ -1568,8 +1772,7 @@ func TestCaseInsensitive(t *testing.T) {
 	EnableCaseInsensitive = defaultCaseInsensitive
 }
 
-// This test make sure we keep backwards-compatibility with respect
-// to command names case sensitivity behavior.
+// TestCaseSensitivityBackwardCompatibility tests backward compatibility with respect to command names case sensitivity behavior.
 func TestCaseSensitivityBackwardCompatibility(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -1582,6 +1785,7 @@ func TestCaseSensitivityBackwardCompatibility(t *testing.T) {
 
 }
 
+// TestRemoveCommand tests the functionality of removing a command from a parent command and ensures that attempting to execute it raises an error.
 func TestRemoveCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}
@@ -1594,6 +1798,10 @@ func TestRemoveCommand(t *testing.T) {
 	}
 }
 
+// TestReplaceCommandWithRemove tests replacing a child command with another.
+// It sets up a root command and two child commands, removes one child,
+// and then adds another. It asserts that the removed command is not called
+// while the new command is called when the child command is executed.
 func TestReplaceCommandWithRemove(t *testing.T) {
 	childUsed := 0
 	rootCmd := &Command{Use: "root", Run: emptyRun}
@@ -1625,6 +1833,8 @@ func TestReplaceCommandWithRemove(t *testing.T) {
 	}
 }
 
+// TestDeprecatedCommand tests the execution of a deprecated command and verifies that the deprecation message is displayed.
+// It creates a root command with a deprecated subcommand, executes the deprecated command, and checks if the deprecation message is present in the output.
 func TestDeprecatedCommand(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	deprecatedCmd := &Command{
@@ -1642,6 +1852,7 @@ func TestDeprecatedCommand(t *testing.T) {
 	checkStringContains(t, output, deprecatedCmd.Deprecated)
 }
 
+// TestHooks tests the hook functionality of a command by executing it and verifying that all hooks are called with the correct arguments.
 func TestHooks(t *testing.T) {
 	var (
 		persPreArgs  string
@@ -1694,6 +1905,16 @@ func TestHooks(t *testing.T) {
 	}
 }
 
+// TestPersistentHooks tests the behavior of persistent hooks in various scenarios.
+//
+// It enables and disables the EnableTraverseRunHooks flag to test how persistent pre-run, run,
+// and post-run hooks are invoked during command execution. The function asserts that the correct
+// sequence of hooks is executed based on the traversal enabled status.
+//
+// Parameters:
+// - t: A testing.T instance used for assertions and reporting errors in tests.
+//
+// The function does not return any values; it executes as part of a test suite.
 func TestPersistentHooks(t *testing.T) {
 	EnableTraverseRunHooks = true
 	testPersistentHooks(t, []string{
@@ -1716,6 +1937,11 @@ func TestPersistentHooks(t *testing.T) {
 	})
 }
 
+// testPersistentHooks tests the execution order of persistent hooks in a command hierarchy.
+// It validates that the expected hook run order is followed and that no unexpected output or errors occur.
+// Parameters:
+// - t: A testing.T instance for reporting errors.
+// - expectedHookRunOrder: A slice of strings representing the expected order in which hooks should be run.
 func testPersistentHooks(t *testing.T, expectedHookRunOrder []string) {
 	var hookRunOrder []string
 
@@ -1785,7 +2011,8 @@ func testPersistentHooks(t *testing.T, expectedHookRunOrder []string) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// TestGlobalNormFuncPropagation tests that setting a global normalization function on a parent command propagates to its child commands.
+// It uses a custom normalization function and verifies that it is correctly applied to both the parent and child commands.
 func TestGlobalNormFuncPropagation(t *testing.T) {
 	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(name)
@@ -1805,7 +2032,7 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// TestNormPassedOnLocal tests if the normalization function is passed to the local flag set.
 func TestNormPassedOnLocal(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -1819,7 +2046,8 @@ func TestNormPassedOnLocal(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// TestNormPassedOnInherited tests that a normalization function is passed on to inherited flag sets when adding commands before and after flags. It ensures that the normalization logic is applied consistently across different commands and their flag sets.
+// The test creates a root command with a custom normalization function, adds two child commands, and verifies that the normalization function affects the flag names in both child commands' inherited flag sets.
 func TestNormPassedOnInherited(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -1847,7 +2075,7 @@ func TestNormPassedOnInherited(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// TestConsistentNormalizedName tests that setting different normalization functions does not lead to duplicate flags. It verifies that the global normalization function takes precedence and prevents creation of a flag with an already normalized name.
 func TestConsistentNormalizedName(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -1866,6 +2094,8 @@ func TestConsistentNormalizedName(t *testing.T) {
 	}
 }
 
+// TestFlagOnPflagCommandLine tests if a pflag is added to the command line.
+// It checks if the specified flag appears in the help output of the command.
 func TestFlagOnPflagCommandLine(t *testing.T) {
 	flagName := "flagOnCommandLine"
 	pflag.String(flagName, "", "about my flag")
@@ -1879,8 +2109,7 @@ func TestFlagOnPflagCommandLine(t *testing.T) {
 	resetCommandLineFlagSet()
 }
 
-// TestHiddenCommandExecutes checks,
-// if hidden commands run as intended.
+// TestHiddenCommandExecutes checks if hidden commands run as intended.
 func TestHiddenCommandExecutes(t *testing.T) {
 	executed := false
 	c := &Command{
@@ -1902,7 +2131,7 @@ func TestHiddenCommandExecutes(t *testing.T) {
 	}
 }
 
-// test to ensure hidden commands do not show up in usage/help text
+// TestHiddenCommandIsHidden tests that hidden commands do not appear in the usage or help text.
 func TestHiddenCommandIsHidden(t *testing.T) {
 	c := &Command{Use: "c", Hidden: true, Run: emptyRun}
 	if c.IsAvailableCommand() {
@@ -1910,6 +2139,7 @@ func TestHiddenCommandIsHidden(t *testing.T) {
 	}
 }
 
+// TestCommandsAreSorted tests that commands are sorted alphabetically when EnableCommandSorting is enabled.
 func TestCommandsAreSorted(t *testing.T) {
 	EnableCommandSorting = true
 
@@ -1932,6 +2162,8 @@ func TestCommandsAreSorted(t *testing.T) {
 	EnableCommandSorting = defaultCommandSorting
 }
 
+// TestEnableCommandSortingIsDisabled tests the scenario where command sorting is disabled.
+// It ensures that commands are added in the order they were created without any sorting applied.
 func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = false
 
@@ -1953,6 +2185,7 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	EnableCommandSorting = defaultCommandSorting
 }
 
+// TestUsageWithGroup tests the usage of a root command with groups and ensures that the help output is correctly grouped.
 func TestUsageWithGroup(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -1974,6 +2207,7 @@ func TestUsageWithGroup(t *testing.T) {
 	checkStringContains(t, output, "\ngroup2\n  cmd2")
 }
 
+// TestUsageHelpGroup tests the usage of the help command with groups.
 func TestUsageHelpGroup(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -1992,6 +2226,7 @@ func TestUsageHelpGroup(t *testing.T) {
 	checkStringContains(t, output, "\ngroup\n  help")
 }
 
+// TestUsageCompletionGroup tests the usage of command completion groups in a root command.
 func TestUsageCompletionGroup(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
@@ -2012,6 +2247,7 @@ func TestUsageCompletionGroup(t *testing.T) {
 	checkStringContains(t, output, "\ngroup\n  completion")
 }
 
+// TestUngroupedCommand tests the behavior of a root command with an ungrouped command.
 func TestUngroupedCommand(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
@@ -2034,6 +2270,7 @@ func TestUngroupedCommand(t *testing.T) {
 	checkStringContains(t, output, "\nAdditional Commands:\n  yyy")
 }
 
+// TestAddGroup tests the functionality of adding a group and a command to a root command.
 func TestAddGroup(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
@@ -2048,6 +2285,8 @@ func TestAddGroup(t *testing.T) {
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
+// TestWrongGroupFirstLevel tests the scenario where a command is added to a non-existent group.
+// It verifies that the system panics when attempting to run a command with an invalid group ID.
 func TestWrongGroupFirstLevel(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 
@@ -2066,6 +2305,14 @@ func TestWrongGroupFirstLevel(t *testing.T) {
 	}
 }
 
+// TestWrongGroupNestedLevel tests the behavior of adding a command to a non-existent group within a nested command structure.
+//
+// It sets up a root command with a child command and attempts to add a new command to a non-existent group. The test expects
+// the code to panic when trying to execute the command, as the group does not exist. The test also verifies that an unexpected
+// error is not returned when attempting to execute the command.
+//
+// Parameters:
+//   - t: A testing.T instance for reporting test results.
 func TestWrongGroupNestedLevel(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 	var childCmd = &Command{Use: "child", Run: emptyRun}
@@ -2086,6 +2333,9 @@ func TestWrongGroupNestedLevel(t *testing.T) {
 	}
 }
 
+// TestWrongGroupForHelp tests the scenario where a command help is requested using a non-existent group ID.
+// It sets up a root command with a child command and attempts to set an invalid help command group ID.
+// The test expects a panic due to the missing group and confirms that no error occurs during command execution.
 func TestWrongGroupForHelp(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 	var childCmd = &Command{Use: "child", Run: emptyRun}
@@ -2106,6 +2356,9 @@ func TestWrongGroupForHelp(t *testing.T) {
 	}
 }
 
+// TestWrongGroupForCompletion verifies that the system reacts correctly when setting a completion command group ID that does not exist.
+// It creates a root command with a child command and attempts to set an invalid completion group ID, expecting a panic.
+// If no panic occurs, it asserts an error. If an error is returned, it is unexpected and causes a test failure.
 func TestWrongGroupForCompletion(t *testing.T) {
 	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
 	var childCmd = &Command{Use: "child", Run: emptyRun}
@@ -2126,6 +2379,9 @@ func TestWrongGroupForCompletion(t *testing.T) {
 	}
 }
 
+// TestSetOutput tests the behavior of Setting the output to nil and verifying it reverts to stdout.
+// It creates a new Command instance, sets its output to nil, and checks if calling OutOrStdout()
+// returns os.Stdout as expected. If not, it fails the test with an error message.
 func TestSetOutput(t *testing.T) {
 	c := &Command{}
 	c.SetOutput(nil)
@@ -2134,6 +2390,8 @@ func TestSetOutput(t *testing.T) {
 	}
 }
 
+// TestSetOut tests the behavior of setting the output to nil in a Command instance and verifies that it reverts back to standard output.
+// It uses a testing.T instance to perform assertions.
 func TestSetOut(t *testing.T) {
 	c := &Command{}
 	c.SetOut(nil)
@@ -2142,6 +2400,8 @@ func TestSetOut(t *testing.T) {
 	}
 }
 
+// TestSetErr tests the behavior of the SetErr method.
+// It verifies that setting an error to nil reverts the Command instance's ErrOrStderr() output to os.Stderr.
 func TestSetErr(t *testing.T) {
 	c := &Command{}
 	c.SetErr(nil)
@@ -2150,6 +2410,9 @@ func TestSetErr(t *testing.T) {
 	}
 }
 
+// TestSetIn tests the SetIn method of Command.
+//
+// It sets the input of a command to nil and checks if it reverts back to stdin. If not, it fails the test.
 func TestSetIn(t *testing.T) {
 	c := &Command{}
 	c.SetIn(nil)
@@ -2158,6 +2421,8 @@ func TestSetIn(t *testing.T) {
 	}
 }
 
+// TestUsageStringRedirected tests the functionality of capturing both standard output and standard error in UsageString.
+// It ensures that when multiple Print and PrintErr calls are made, they are consolidated into a single UsageString.
 func TestUsageStringRedirected(t *testing.T) {
 	c := &Command{}
 
@@ -2174,6 +2439,7 @@ func TestUsageStringRedirected(t *testing.T) {
 	}
 }
 
+// TestCommandPrintRedirection tests the print redirection functionality of the Command struct.
 func TestCommandPrintRedirection(t *testing.T) {
 	errBuff, outBuff := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
 	root := &Command{
@@ -2215,6 +2481,9 @@ func TestCommandPrintRedirection(t *testing.T) {
 	}
 }
 
+// TestFlagErrorFunc tests the FlagErrorFunc of a Command.
+// It sets a custom error function that formats an error message with "This is expected:" prefix.
+// The test executes a command with an unknown flag and checks if the returned error matches the expected format.
 func TestFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -2232,6 +2501,8 @@ func TestFlagErrorFunc(t *testing.T) {
 	}
 }
 
+// TestFlagErrorFuncHelp tests the FlagErrorFunc functionality by creating a command with a persistent flag and a custom error function.
+// It then executes the command with both "--help" and "-h" flags to ensure they do not fail and return the expected output.
 func TestFlagErrorFuncHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.PersistentFlags().Bool("help", false, "help for c")
@@ -2264,9 +2535,8 @@ Flags:
 	}
 }
 
-// TestSortedFlags checks,
-// if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
-// Related to https://github.com/spf13/cobra/issues/404.
+// TestSortedFlags checks if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
+// This test is related to https://github.com/spf13/cobra/issues/404.
 func TestSortedFlags(t *testing.T) {
 	c := &Command{}
 	c.Flags().SortFlags = false
@@ -2289,10 +2559,15 @@ func TestSortedFlags(t *testing.T) {
 	})
 }
 
-// TestMergeCommandLineToFlags checks,
-// if pflag.CommandLine is correctly merged to c.Flags() after first call
-// of c.mergePersistentFlags.
-// Related to https://github.com/spf13/cobra/issues/443.
+// TestMergeCommandLineToFlags checks if pflag.CommandLine is correctly merged to c.Flags() after the first call of c.mergePersistentFlags.
+// It verifies that flags from CommandLine are available in c.Flags().
+// This function addresses issue https://github.com/spf13/cobra/issues/443.
+//
+// Parameters:
+//   - t: The testing.T instance for running the test.
+//
+// Expected behavior:
+//   - After merging, the flag "boolflag" should be present in c.Flags().
 func TestMergeCommandLineToFlags(t *testing.T) {
 	pflag.Bool("boolflag", false, "")
 	c := &Command{Use: "c", Run: emptyRun}
@@ -2304,9 +2579,15 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 	resetCommandLineFlagSet()
 }
 
-// TestUseDeprecatedFlags checks,
-// if cobra.Execute() prints a message, if a deprecated flag is used.
-// Related to https://github.com/spf13/cobra/issues/463.
+// TestUseDeprecatedFlags checks if cobra.Execute() prints a message when a deprecated flag is used.
+// The function tests the behavior of Cobra's Flag system when a deprecated flag is utilized and
+// verifies that a specific deprecation message is printed in the output. This test addresses issue #463 from the Cobra repository.
+//
+// Parameters:
+//   - t: A testing.T instance to provide context for assertions and error handling during the test.
+//
+// Returns:
+//   None
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
@@ -2319,6 +2600,20 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	checkStringContains(t, output, "This flag is deprecated")
 }
 
+// TestTraverseWithParentFlags tests the Traverse method of a Command with parent flags.
+//
+// It creates a root command and a child command, sets up flags on both, adds the child to the root,
+// and then traverses the command tree with specific flag arguments. The test checks if the traversal
+// is performed correctly, including handling of flags from parent commands.
+//
+// Parameters:
+//   - t: A *testing.T instance for running the test.
+//
+// Returns:
+//   None
+//
+// Errors:
+//   This function does not return any errors directly but uses t.Errorf to report failures.
 func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
@@ -2341,6 +2636,12 @@ func TestTraverseWithParentFlags(t *testing.T) {
 	}
 }
 
+// TestTraverseNoParentFlags tests the Traverse method of a Command with no parent flags.
+//
+// It sets up a root command with a flag and a child command without any flags. The test then calls
+// the Traverse method on the root command to navigate to the child command using the path "child".
+// It verifies that there are no arguments returned, that the command name is correct, and that no error
+// occurs during the traversal.
 func TestTraverseNoParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("foo", "", "foo things")
@@ -2361,6 +2662,10 @@ func TestTraverseNoParentFlags(t *testing.T) {
 	}
 }
 
+// TestTraverseWithBadParentFlags tests the behavior of the Traverse method when encountering unknown flags.
+//
+// It creates a root command with a child command and attempts to traverse with a bad parent flag.
+// The expected error message is checked, and it's verified that no command is returned.
 func TestTraverseWithBadParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 
@@ -2379,6 +2684,8 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 	}
 }
 
+// TestTraverseWithBadChildFlag tests the behavior of the Traverse method when a bad flag is provided to a child command.
+// It sets up a root command with a child command and expects that the Traverse method returns the correct child command and the remaining args without parsing the flags.
 func TestTraverseWithBadChildFlag(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
@@ -2400,6 +2707,7 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 	}
 }
 
+// TestTraverseWithTwoSubcommands tests the Traverse method when navigating through a command tree with two levels of subcommands. It verifies that the traversal correctly reaches the deepest subcommand and returns it without errors.
 func TestTraverseWithTwoSubcommands(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 
@@ -2420,8 +2728,8 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
-// TestUpdateName checks if c.Name() updates on changed c.Use.
-// Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
+// TestUpdateName verifies that the Name method updates when the Use field of a Command is modified.
+// This test addresses issue #422 regarding command name updating in Cobra.
 func TestUpdateName(t *testing.T) {
 	c := &Command{Use: "name xyz"}
 	originalName := c.Name()
@@ -2439,6 +2747,9 @@ type calledAsTestcase struct {
 	epm  bool
 }
 
+// test runs the command with the given arguments and asserts that the expected command was called.
+// It uses a mock function to capture the called command and its name.
+// If the expected command is not called or the CalledAs method does not return the expected value, it fails the test.
 func (tc *calledAsTestcase) test(t *testing.T) {
 	defer func(ov bool) { EnablePrefixMatching = ov }(EnablePrefixMatching)
 	EnablePrefixMatching = tc.epm
@@ -2474,6 +2785,7 @@ func (tc *calledAsTestcase) test(t *testing.T) {
 	}
 }
 
+// TestCalledAs runs a series of test cases to verify the behavior of the calledAs function.
 func TestCalledAs(t *testing.T) {
 	tests := map[string]calledAsTestcase{
 		"find/no-args":            {nil, "parent", "parent", false},
@@ -2495,6 +2807,12 @@ func TestCalledAs(t *testing.T) {
 	}
 }
 
+// TestFParseErrWhitelistBackwardCompatibility tests the backward compatibility of the fparse error handling when encountering an unknown flag.
+// It creates a command with a boolean flag and executes it with an unknown flag. The test expects an error indicating an unknown flag and checks if the output contains the expected error message.
+// Parameters:
+//   - t: *testing.T, the testing environment
+// Returns:
+//   None
 func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().BoolP("boola", "a", false, "a boolean flag")
@@ -2506,6 +2824,9 @@ func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
+// TestFParseErrWhitelistSameCommand tests the behavior of FParseErrWhitelist when encountering unknown flags.
+// It creates a command with a flag whitelist that allows unknown flags and attempts to execute the command with an unknown flag.
+// The test expects no error to be returned, as the unknown flag is whitelisted.
 func TestFParseErrWhitelistSameCommand(t *testing.T) {
 	c := &Command{
 		Use: "c",
@@ -2522,6 +2843,9 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 	}
 }
 
+// TestFParseErrWhitelistParentCommand tests the FParseErrWhitelist for a parent command.
+// It creates a root command with a whitelist that allows unknown flags and adds a child command with its own flags.
+// The test executes the command with an unknown flag, expecting an error indicating an unknown flag.
 func TestFParseErrWhitelistParentCommand(t *testing.T) {
 	root := &Command{
 		Use: "root",
@@ -2546,6 +2870,7 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
+// TestFParseErrWhitelistChildCommand tests the FParseErrWhitelist functionality for a child command.
 func TestFParseErrWhitelistChildCommand(t *testing.T) {
 	root := &Command{
 		Use: "root",
@@ -2569,6 +2894,7 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 	}
 }
 
+// TestFParseErrWhitelistSiblingCommand tests the FParseErrWhitelist feature when sibling commands are involved.
 func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	root := &Command{
 		Use: "root",
@@ -2600,6 +2926,8 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
+// TestSetContext tests the SetContext method of a Command struct by setting a value in the context and verifying that it can be retrieved within the Run function.
+// It takes a testing.T pointer as an argument, which is used for assertion and error reporting during the test.
 func TestSetContext(t *testing.T) {
 	type key struct{}
 	val := "foobar"
@@ -2625,6 +2953,7 @@ func TestSetContext(t *testing.T) {
 	}
 }
 
+// TestSetContextPreRun tests that the PreRun function sets a value in the context before running the command.
 func TestSetContextPreRun(t *testing.T) {
 	type key struct{}
 	val := "barr"
@@ -2651,6 +2980,8 @@ func TestSetContextPreRun(t *testing.T) {
 	}
 }
 
+// TestSetContextPreRunOverwrite tests that setting a context with a key and value in the Run method overwrites any existing value for that key.
+// It checks if the expected error is returned when trying to access the overwritten key in the context.
 func TestSetContextPreRunOverwrite(t *testing.T) {
 	type key struct{}
 	val := "blah"
@@ -2672,6 +3003,7 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 	}
 }
 
+// TestSetContextPersistentPreRun tests if the PersistentPreRun function correctly sets a context value that is accessible to its child command.
 func TestSetContextPersistentPreRun(t *testing.T) {
 	type key struct{}
 	val := "barbar"
@@ -2706,6 +3038,12 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 const VersionFlag = "--version"
 const HelpFlag = "--help"
 
+// TestNoRootRunCommandExecutedWithVersionSet tests that when a command without a root run function is executed with version set, the appropriate output is produced.
+//
+// Parameters:
+//   - t: A testing.T instance for running the test and reporting errors.
+//
+// The function sets up a Command tree with a root command that has a version but no run function. It then executes this command and checks if the output contains the long description, help flag, and version flag as expected. If any of these are missing or an error occurs during execution, the test will fail.
 func TestNoRootRunCommandExecutedWithVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description"}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2720,6 +3058,7 @@ func TestNoRootRunCommandExecutedWithVersionSet(t *testing.T) {
 	checkStringContains(t, output, VersionFlag)
 }
 
+// TestNoRootRunCommandExecutedWithoutVersionSet verifies that the root command is executed without a version flag set.
 func TestNoRootRunCommandExecutedWithoutVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description"}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2734,6 +3073,7 @@ func TestNoRootRunCommandExecutedWithoutVersionSet(t *testing.T) {
 	checkStringOmits(t, output, VersionFlag)
 }
 
+// TestHelpCommandExecutedWithVersionSet tests that the help command is executed with version set.
 func TestHelpCommandExecutedWithVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2748,6 +3088,9 @@ func TestHelpCommandExecutedWithVersionSet(t *testing.T) {
 	checkStringContains(t, output, VersionFlag)
 }
 
+// TestHelpCommandExecutedWithoutVersionSet tests the scenario where the help command is executed without a version flag set.
+//
+// It initializes a root command with a child command and then executes the "help" command. The function asserts that the output contains the long description of the root command and the help flag, but does not contain the version flag.
 func TestHelpCommandExecutedWithoutVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2762,6 +3105,8 @@ func TestHelpCommandExecutedWithoutVersionSet(t *testing.T) {
 	checkStringOmits(t, output, VersionFlag)
 }
 
+// TestHelpflagCommandExecutedWithVersionSet tests that the help flag command is executed when the version flag is set.
+// It verifies that the output contains the root command's long description, the help flag, and the version flag.
 func TestHelpflagCommandExecutedWithVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2776,6 +3121,13 @@ func TestHelpflagCommandExecutedWithVersionSet(t *testing.T) {
 	checkStringContains(t, output, VersionFlag)
 }
 
+// TestHelpflagCommandExecutedWithoutVersionSet tests that the help flag is executed without a version set.
+//
+// Parameters:
+//   - t: A testing.T instance for running test assertions.
+//
+// Returns:
+//   - None
 func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -2790,6 +3142,9 @@ func TestHelpflagCommandExecutedWithoutVersionSet(t *testing.T) {
 	checkStringOmits(t, output, VersionFlag)
 }
 
+// TestFind tests the Find method of the Command type.
+//
+// It verifies that the method correctly identifies the child command and collects any flags passed to it.
 func TestFind(t *testing.T) {
 	var foo, bar string
 	root := &Command{
@@ -2879,6 +3234,7 @@ func TestFind(t *testing.T) {
 	}
 }
 
+// TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition tests that an unknown flag returns the same error regardless of its position in the argument list.
 func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 	testCases := [][]string{
 		// {"--unknown", "--namespace", "foo", "child", "--bar"}, // FIXME: This test case fails, returning the error `unknown command "foo" for "root"` instead of the expected error `unknown flag: --unknown`
@@ -2922,6 +3278,13 @@ func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 	}
 }
 
+// TestHelpFuncExecuted tests if the help function is executed correctly when called with a specific context. It checks both the content of the help text and whether the correct context is being used.
+//
+// Parameters:
+//   - t: The testing.T object for running the test.
+//
+// Returns:
+//   None
 func TestHelpFuncExecuted(t *testing.T) {
 	helpText := "Long description"
 

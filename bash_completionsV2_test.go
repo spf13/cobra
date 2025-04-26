@@ -20,6 +20,8 @@ import (
 	"testing"
 )
 
+// TestBashCompletionV2WithActiveHelp tests the generation of bash completion V2 with active help enabled.
+// It creates a command, generates bash completion, and asserts that active help is not being disabled.
 func TestBashCompletionV2WithActiveHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 

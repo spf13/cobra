@@ -24,12 +24,14 @@ import (
 	"text/template"
 )
 
+// assertNoErr checks if an error is not nil and logs it as an error if so. This function is typically used in tests to ensure that no errors occur during the execution of test cases. If an error is encountered, it calls t.Error() with the error message, causing the test to fail.
 func assertNoErr(t *testing.T, e error) {
 	if e != nil {
 		t.Error(e)
 	}
 }
 
+// TestAddTemplateFunctions tests the AddTemplateFunc and AddTemplateFuncs functions.
 func TestAddTemplateFunctions(t *testing.T) {
 	AddTemplateFunc("t", func() bool { return true })
 	AddTemplateFuncs(template.FuncMap{
@@ -118,6 +120,16 @@ func TestLevenshteinDistance(t *testing.T) {
 	}
 }
 
+// TestStringInSlice tests the stringInSlice function with various scenarios to ensure its correctness.
+//
+// The test cases cover:
+// - A case-sensitive match where the target string is in the slice.
+// - A case-sensitive match where the target string is not in the slice.
+// - A case-insensitive match, which should return false as the function is case-sensitive.
+// - An empty slice, expecting false.
+// - An empty string, expecting false unless the slice also contains an empty string.
+// - An empty string matching another empty string, expecting true.
+// - An empty string in an empty slice, expecting false.
 func TestStringInSlice(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -182,6 +194,7 @@ func TestStringInSlice(t *testing.T) {
 	}
 }
 
+// TestRpad tests the rpad function with various test cases to ensure it pads strings correctly.
 func TestRpad(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -228,18 +241,10 @@ func TestRpad(t *testing.T) {
 	}
 }
 
-// TestDeadcodeElimination checks that a simple program using cobra in its
-// default configuration is linked taking full advantage of the linker's
-// deadcode elimination step.
+// TestDeadcodeElimination checks that a simple program using cobra in its default configuration is linked taking full advantage of the linker's deadcode elimination step.
 //
-// If reflect.Value.MethodByName/reflect.Value.Method are reachable the
-// linker will not always be able to prove that exported methods are
-// unreachable, making deadcode elimination less effective. Using
-// text/template and html/template makes reflect.Value.MethodByName
-// reachable.
-// Since cobra can use text/template templates this test checks that in its
-// default configuration that code path can be proven to be unreachable by
-// the linker.
+// If reflect.Value.MethodByName/reflect.Value.Method are reachable the linker will not always be able to prove that exported methods are unreachable, making deadcode elimination less effective. Using text/template and html/template makes reflect.Value.MethodByName reachable.
+// Since cobra can use text/template templates this test checks that in its default configuration that code path can be proven to be unreachable by the linker.
 //
 // See also: https://github.com/spf13/cobra/pull/1956
 func TestDeadcodeElimination(t *testing.T) {
