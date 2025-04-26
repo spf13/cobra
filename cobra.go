@@ -80,37 +80,48 @@ You need to open cmd.exe and run it from there.
 // Works only on Microsoft Windows.
 var MousetrapDisplayDuration = 5 * time.Second
 
-// AddTemplateFunc adds a template function that's available to Usage and Help
-// template generation.
+// AddTemplateFunc registers a new template function with the given name, making it available for use in the Usage and Help templates.
 func AddTemplateFunc(name string, tmplFunc interface{}) {
 	templateFuncs[name] = tmplFunc
 }
 
 // AddTemplateFuncs adds multiple template functions that are available to Usage and
-// Help template generation.
+// Help template generation. It takes a map of template function names to their implementations
+// and merges them into the global template function map, allowing these functions to be used
+// in usage and help text templates.
 func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 	for k, v := range tmplFuncs {
 		templateFuncs[k] = v
 	}
 }
 
-// OnInitialize sets the passed functions to be run when each command's
-// Execute method is called.
+// OnInitialize registers functions that will be executed whenever a command's
+// Execute method is invoked. These functions are typically used for setup or initialization tasks.
 func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
 }
 
-// OnFinalize sets the passed functions to be run when each command's
-// Execute method is terminated.
+// OnFinalize sets the provided functions to be executed when each command's
+// Execute method is completed. The functions are called in the order they are provided.
 func OnFinalize(y ...func()) {
 	finalizers = append(finalizers, y...)
 }
 
 // FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
 
-// Gt takes two types and checks whether the first type is greater than the second. In case of types Arrays, Chans,
-// Maps and Slices, Gt will compare their lengths. Ints are compared directly while strings are first parsed as
-// ints and then compared.
+// Gt compares two types and returns true if the first type is greater than the second. For arrays, channels,
+// maps, and slices, it compares their lengths. Ints are compared directly, while strings are first converted to ints
+// before comparison. If either conversion fails (e.g., string is not a valid integer), Gt will return false.
+//
+// Parameters:
+//   a - the first value to compare.
+//   b - the second value to compare.
+//
+// Returns:
+//   true if a is greater than b, false otherwise.
+//
+// Errors:
+//   None. The function handles invalid string conversions internally and returns false in such cases.
 func Gt(a interface{}, b interface{}) bool {
 	var left, right int64
 	av := reflect.ValueOf(a)
@@ -141,6 +152,13 @@ func Gt(a interface{}, b interface{}) bool {
 // FIXME Eq is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
 
 // Eq takes two types and checks whether they are equal. Supported types are int and string. Unsupported types will panic.
+// Parameters:
+//   a - the first value to compare
+//   b - the second value to compare
+// Returns:
+//   true if a and b are equal, false otherwise
+// Panics:
+//   if a or b is of an unsupported type (array, chan, map, slice)
 func Eq(a interface{}, b interface{}) bool {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
@@ -156,13 +174,21 @@ func Eq(a interface{}, b interface{}) bool {
 	return false
 }
 
+// TrimRightSpace returns a copy of the input string with trailing white space removed.
 func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
 // FIXME appendIfNotPresent is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
 
-// appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s.
+// AppendIfNotPresent appends a string to the end of the slice if it's not already present.
+//
+// Parameters:
+//   - s: The slice to append to.
+//   - stringToAppend: The string to be appended.
+//
+// Returns:
+//   The updated slice with the string appended, or the original slice unchanged if the string was already present.
 func appendIfNotPresent(s, stringToAppend string) string {
 	if strings.Contains(s, stringToAppend) {
 		return s
@@ -171,11 +197,19 @@ func appendIfNotPresent(s, stringToAppend string) string {
 }
 
 // rpad adds padding to the right of a string.
+//
+// Parameters:
+//   - s: The input string to pad.
+//   - padding: The number of spaces to add as padding on the right.
+//
+// Returns:
+//   - The formatted string with right-padding applied.
 func rpad(s string, padding int) string {
 	formattedString := fmt.Sprintf("%%-%ds", padding)
 	return fmt.Sprintf(formattedString, s)
 }
 
+// tmpl returns a new tmplFunc instance with the provided text.
 func tmpl(text string) *tmplFunc {
 	return &tmplFunc{
 		tmpl: text,
@@ -188,7 +222,14 @@ func tmpl(text string) *tmplFunc {
 	}
 }
 
-// ld compares two strings and returns the levenshtein distance between them.
+// ld calculates the Levenshtein distance between two strings, optionally ignoring case.
+// It returns the minimum number of single-character edits required to change one word into the other.
+// Parameters:
+//   s - the first string
+//   t - the second string
+//   ignoreCase - if true, the comparison is case-insensitive
+// Returns:
+//   The Levenshtein distance between the two strings.
 func ld(s, t string, ignoreCase bool) int {
 	if ignoreCase {
 		s = strings.ToLower(s)
@@ -222,6 +263,14 @@ func ld(s, t string, ignoreCase bool) int {
 	return d[len(s)][len(t)]
 }
 
+// stringInSlice checks if a string is present in the given slice of strings.
+//
+// Parameters:
+//   - a: The string to search for.
+//   - list: The slice of strings to search within.
+//
+// Returns:
+//   - true if the string is found in the slice, false otherwise.
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
@@ -231,7 +280,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-// CheckErr prints the msg with the prefix 'Error:' and exits with error code 1. If the msg is nil, it does nothing.
+// CheckErr prints the provided message with the prefix 'Error:' and exits with an error code of 1. If the message is `nil`, it does nothing.
 func CheckErr(msg interface{}) {
 	if msg != nil {
 		fmt.Fprintln(os.Stderr, "Error:", msg)
@@ -239,7 +288,9 @@ func CheckErr(msg interface{}) {
 	}
 }
 
-// WriteStringAndCheck writes a string into a buffer, and checks if the error is not nil.
+// WriteStringAndCheck writes a string into a buffer and checks if the error is not nil.
+// It takes an io.StringWriter `b` and a string `s`, writes the string to the writer,
+// and calls CheckErr with the resulting error, handling any errors that occur during the write operation.
 func WriteStringAndCheck(b io.StringWriter, s string) {
 	_, err := b.WriteString(s)
 	CheckErr(err)

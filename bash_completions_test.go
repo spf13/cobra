@@ -24,18 +24,31 @@ import (
 	"testing"
 )
 
+// checkOmit checks if the 'unexpected' substring is present in 'found'.
+// If it is, it logs an error using t.Errorf indicating that the 'unexpected'
+// value was found. This function is typically used in tests to ensure that
+// certain substrings are omitted from a string being tested.
+//
+// Parameters:
+//   - t: A testing.T instance for reporting errors.
+//   - found: The string to search within.
+//   - unexpected: The substring that should not be present in 'found'.
 func checkOmit(t *testing.T, found, unexpected string) {
 	if strings.Contains(found, unexpected) {
 		t.Errorf("Got: %q\nBut should not have!\n", unexpected)
 	}
 }
 
+// check asserts that the `found` string contains the `expected` substring.
+// If not, it logs an error with the expected and actual values.
+// This function is typically used in testing to validate substrings within larger strings.
 func check(t *testing.T, found, expected string) {
 	if !strings.Contains(found, expected) {
 		t.Errorf("Expecting to contain: \n %q\nGot:\n %q\n", expected, found)
 	}
 }
 
+// checkNumOccurrences checks if the string `found` contains the substring `expected` exactly `expectedOccurrences` times. If not, it fails the test with an error message indicating the expected and actual occurrences.
 func checkNumOccurrences(t *testing.T, found, expected string, expectedOccurrences int) {
 	numOccurrences := strings.Count(found, expected)
 	if numOccurrences != expectedOccurrences {
@@ -43,6 +56,9 @@ func checkNumOccurrences(t *testing.T, found, expected string, expectedOccurrenc
 	}
 }
 
+// checkRegex checks if the `found` string matches the `pattern` using regular expressions.
+// If an error occurs during the matching process, it logs the error and fails the test.
+// It asserts that the `found` string should match the `pattern`, otherwise failing the test with a detailed message.
 func checkRegex(t *testing.T, found, pattern string) {
 	matched, err := regexp.MatchString(pattern, found)
 	if err != nil {
@@ -53,6 +69,10 @@ func checkRegex(t *testing.T, found, pattern string) {
 	}
 }
 
+// runShellCheck runs shellcheck on the provided string with specific options and error codes.
+// It executes shellcheck with the bash syntax, sending the input from the string through stdin.
+// The function redirects the standard output and error of the command to os.Stdout and os.Stderr respectively.
+// Returns an error if the execution of shellcheck fails or if there's an issue with setting up the command input.
 func runShellCheck(s string) error {
 	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e",
 		"SC2034", // PREFIX appears unused. Verify it or export it.
@@ -80,6 +100,7 @@ const bashCompletionFunc = `__root_custom_func() {
 }
 `
 
+// TestBashCompletions tests the generation of bash completion functions for a root command.
 func TestBashCompletions(t *testing.T) {
 	rootCmd := &Command{
 		Use:                    "root",
@@ -226,6 +247,9 @@ func TestBashCompletions(t *testing.T) {
 	}
 }
 
+// TestBashCompletionHiddenFlag tests that a hidden flag is not included in the Bash completion output.
+// It creates a command with a hidden flag and asserts that after generating the Bash completion script,
+// the hidden flag is not present in the output.
 func TestBashCompletionHiddenFlag(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -242,6 +266,9 @@ func TestBashCompletionHiddenFlag(t *testing.T) {
 	}
 }
 
+// TestBashCompletionDeprecatedFlag tests the generation of bash completion script for a command with a deprecated flag.
+// It ensures that the deprecated flag is not included in the generated completion script.
+// The function takes a testing.T pointer as an argument to perform assertions and checks.
 func TestBashCompletionDeprecatedFlag(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -258,6 +285,8 @@ func TestBashCompletionDeprecatedFlag(t *testing.T) {
 	}
 }
 
+// TestBashCompletionTraverseChildren tests the bash completion generation for commands with TraverseChildren set to true.
+// It checks that local non-persistent flags are not included in the generated completion script.
 func TestBashCompletionTraverseChildren(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun, TraverseChildren: true}
 
@@ -276,6 +305,13 @@ func TestBashCompletionTraverseChildren(t *testing.T) {
 	checkOmit(t, output, `local_nonpersistent_flags+=("-b")`)
 }
 
+// TestBashCompletionNoActiveHelp tests the generation of bash completion without active help.
+//
+// Parameters:
+// - t: A testing.T instance for assertions and logging test failures.
+//
+// This function creates a Command instance, generates bash completion with disabled active help,
+// and checks if the output contains the correct environment variable setting to disable active help.
 func TestBashCompletionNoActiveHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
