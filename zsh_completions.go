@@ -21,24 +21,50 @@ import (
 	"os"
 )
 
-// GenZshCompletionFile generates zsh completion file including descriptions.
+// GenZshCompletionFile generates a zsh completion file for the command, including descriptions. It takes a filename as an argument and returns an error if any occurs during the generation process. If descriptions are included in the completion file, it calls the genZshCompletionFile method with additional parameters.
 func (c *Command) GenZshCompletionFile(filename string) error {
 	return c.genZshCompletionFile(filename, true)
 }
 
-// GenZshCompletion generates zsh completion file including descriptions
-// and writes it to the passed writer.
+// GenZshCompletion generates a zsh completion script for the command. It includes descriptions for each command and option,
+// and writes the script to the provided writer.
+//
+// Parameters:
+//   - w: io.Writer where the generated zsh completion script will be written.
+//
+// Returns:
+//   - error if there is an issue generating or writing the completion script.
+//
+// Example usage:
+//
+//     var cmd Command
+//     file, err := os.Create("completion.zsh")
+//     if err != nil {
+//         log.Fatal(err)
+//     }
+//     defer file.Close()
+//     err = cmd.GenZshCompletion(file)
+//     if err != nil {
+//         log.Fatal(err)
+//     }
 func (c *Command) GenZshCompletion(w io.Writer) error {
 	return c.genZshCompletion(w, true)
 }
 
-// GenZshCompletionFileNoDesc generates zsh completion file without descriptions.
+// GenZshCompletionFileNoDesc generates a zsh completion file without descriptions for the Command instance.
+// It takes a filename as input and returns an error if the operation fails. The function does not include descriptions in the generated file.
 func (c *Command) GenZshCompletionFileNoDesc(filename string) error {
 	return c.genZshCompletionFile(filename, false)
 }
 
-// GenZshCompletionNoDesc generates zsh completion file without descriptions
-// and writes it to the passed writer.
+// GenZshCompletionNoDesc generates a zsh completion file for the command without descriptions.
+// It writes the generated completion script to the provided writer.
+//
+// Parameters:
+//   - w: The writer to which the completion script will be written.
+//
+// Returns:
+//   - error: If an error occurs during the generation process, it will be returned.
 func (c *Command) GenZshCompletionNoDesc(w io.Writer) error {
 	return c.genZshCompletion(w, false)
 }
@@ -51,22 +77,26 @@ func (c *Command) GenZshCompletionNoDesc(w io.Writer) error {
 // To achieve file extension filtering, one can use ValidArgsFunction and
 // ShellCompDirectiveFilterFileExt.
 //
-// Deprecated
+// Deprecated: Use ShellCompDirectiveDefault or specify a valid completion function instead.
 func (c *Command) MarkZshCompPositionalArgumentFile(argPosition int, patterns ...string) error {
 	return nil
 }
 
-// MarkZshCompPositionalArgumentWords only worked for zsh. It has therefore
-// been disabled.
-// To achieve the same behavior across all shells, one can use
-// ValidArgs (for the first argument only) or ValidArgsFunction for
-// any argument (can include the first one also).
+// MarkZshCompPositionalArgumentWords marks the positional arguments of a command with zsh completion words.
+// This function is deprecated. For cross-shell compatibility, use ValidArgs for the first argument or ValidArgsFunction for any argument.
 //
-// Deprecated
+// Deprecated: Use ValidArgs or ValidArgsFunction instead.
 func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...string) error {
 	return nil
 }
 
+// genZshCompletionFile generates a Zsh completion file for the command.
+//
+// It takes two parameters:
+//   - filename: The name of the file where the completion script will be written.
+//   - includeDesc: A boolean indicating whether to include descriptions in the completion script.
+//
+// It returns an error if there is an issue creating or writing to the file.
 func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
@@ -77,6 +107,14 @@ func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error 
 	return c.genZshCompletion(outFile, includeDesc)
 }
 
+// genZshCompletion generates Zsh completion script for the command and writes it to the provided writer.
+//
+// Parameters:
+//   - w: The io.Writer where the completion script will be written.
+//   - includeDesc: A boolean indicating whether to include descriptions in the completion script.
+//
+// Returns:
+//   - error: An error if there was an issue writing to the writer or generating the script.
 func (c *Command) genZshCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
 	genZshComp(buf, c.Name(), includeDesc)
