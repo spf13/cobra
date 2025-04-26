@@ -49,6 +49,11 @@ type flagCompError struct {
 	flagName   string
 }
 
+// Error returns a descriptive error message indicating that the specified flag is not supported by the given subcommand.
+// Parameters:
+//   - e: A pointer to a flagCompError instance containing details about the unsupported flag and subcommand.
+// Returns:
+//   - A string representing the error message.
 func (e *flagCompError) Error() string {
 	return "Subcommand '" + e.subCommand + "' does not support flag '" + e.flagName + "'"
 }
@@ -131,7 +136,14 @@ type Completion = string
 // CompletionFunc is a function that provides completion results.
 type CompletionFunc = func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective)
 
-// CompletionWithDesc returns a [Completion] with a description by using the TAB delimited format.
+// CompletionWithDesc constructs a Completion object with the provided choice and description. The completion follows the TAB-delimited format where the choice is followed by a tab character and then the description.
+//
+// Parameters:
+//   - choice: A string representing the main element of the completion.
+//   - description: A string providing additional information about the choice.
+//
+// Returns:
+//   - Completion: A new Completion object combining the choice and description in the specified format.
 func CompletionWithDesc(choice string, description string) Completion {
 	return choice + "\t" + description
 }
@@ -141,25 +153,38 @@ func CompletionWithDesc(choice string, description string) Completion {
 //
 // This method satisfies [CompletionFunc].
 // It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
+//
+// Parameters:
+//   - cmd: The command instance for which file completion is being disabled.
+//   - args: The current arguments passed to the command.
+//   - toComplete: The partial string that needs completion.
+//
+// Returns:
+//   - []Completion: An empty slice, indicating no completions are available.
+//   - ShellCompDirectiveNoFileComp: A directive indicating that file completion should not be performed.
 func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
 	return nil, ShellCompDirectiveNoFileComp
 }
 
-// FixedCompletions can be used to create a completion function which always
-// returns the same results.
+// FixedCompletions can be used to create a completion function which always returns the same results.
 //
-// This method returns a function that satisfies [CompletionFunc]
-// It can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
+// This method returns a function that satisfies [CompletionFunc] and can be used with [Command.RegisterFlagCompletionFunc] and for [Command.ValidArgsFunction].
 func FixedCompletions(choices []Completion, directive ShellCompDirective) CompletionFunc {
 	return func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
 		return choices, directive
 	}
 }
 
-// RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
+// RegisterFlagCompletionFunc registers a function to provide completion for a specified flag in the command.
 //
-// You can use pre-defined completion functions such as [FixedCompletions] or [NoFileCompletions],
-// or you can define your own.
+// The flagName parameter is the name of the flag for which completion needs to be registered.
+// The f parameter is the completion function that will be called to generate completion suggestions.
+//
+// If the flag does not exist, an error is returned with a message indicating that the flag does not exist.
+//
+// If the flag is already registered, an error is returned with a message indicating that the flag is already registered.
+//
+// The completion function provided must be thread-safe as it may be called concurrently from multiple goroutines.
 func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) error {
 	flag := c.Flag(flagName)
 	if flag == nil {
@@ -175,7 +200,7 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) 
 	return nil
 }
 
-// GetFlagCompletionFunc returns the completion function for the given flag of the command, if available.
+// GetFlagCompletionFunc returns the completion function for the given flag of the command, if available. It takes a flagName string as an argument and returns a CompletionFunc and a boolean indicating whether the completion function was found. If the flag does not exist, it returns nil and false.
 func (c *Command) GetFlagCompletionFunc(flagName string) (CompletionFunc, bool) {
 	flag := c.Flag(flagName)
 	if flag == nil {
@@ -189,7 +214,7 @@ func (c *Command) GetFlagCompletionFunc(flagName string) (CompletionFunc, bool) 
 	return completionFunc, exists
 }
 
-// Returns a string listing the different directive enabled in the specified parameter
+// string returns a string listing the different directive enabled in the specified parameter. It checks each bit of the ShellCompDirective and appends the corresponding directive name to the directives slice if the bit is set. If no bits are set, it defaults to "ShellCompDirectiveDefault". If the value exceeds shellCompDirectiveMaxValue, it returns an error message indicating an unexpected value.
 func (d ShellCompDirective) string() string {
 	var directives []string
 	if d&ShellCompDirectiveError != 0 {
@@ -566,6 +591,8 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	return finalCmd, completions, directive, nil
 }
 
+// helpOrVersionFlagPresent checks if either the "version" or "help" flag is present and has been changed.
+// It returns true if either flag is set, otherwise false.
 func helpOrVersionFlagPresent(cmd *Command) bool {
 	if versionFlag := cmd.Flags().Lookup("version"); versionFlag != nil &&
 		len(versionFlag.Annotations[FlagSetByCobraAnnotation]) > 0 && versionFlag.Changed {
@@ -578,6 +605,10 @@ func helpOrVersionFlagPresent(cmd *Command) bool {
 	return false
 }
 
+// getFlagNameCompletions returns completion suggestions for a flag based on the partial name provided.
+// It checks if the flag is non-completable and returns an empty slice if true.
+// For each prefix match, it appends both the long and short form of the flag (without the '=') to the completions list,
+// providing descriptions based on the flag's usage.
 func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 	if nonCompletableFlag(flag) {
 		return []Completion{}
@@ -611,6 +642,9 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 	return completions
 }
 
+// completeRequireFlags generates completion suggestions for required flags of a command.
+// It takes a pointer to the final Command and the string being completed as input.
+// It returns a slice of Completion objects representing the suggested flag names.
 func completeRequireFlags(finalCmd *Command, toComplete string) []Completion {
 	var completions []Completion
 
@@ -636,6 +670,12 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []Completion {
 	return completions
 }
 
+// checkIfFlagCompletion checks if the given arguments suggest that a flag is being completed and returns the relevant flag, trimmed arguments, and any error.
+// If flag completion is not applicable or no flag is found, it returns nil for the flag and the original arguments along with nil error.
+// It handles both shorthand and full flag names, as well as flags with an '=' sign.
+// If the command has disabled flag parsing, it directly returns without attempting to complete a flag.
+// The function ensures that if a flag completion is attempted but does not apply, it reverts to noun completion by resetting the arguments.
+// It also checks for unsupported flags and returns an error indicating so.
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
 	if finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
@@ -911,6 +951,17 @@ to your powershell profile.
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
 }
 
+// findFlag searches for a flag with the given name in the provided command.
+// If the name is a single character, it first attempts to convert it into a long flag
+// by looking up its shorthand in the current and inherited flag sets. If found,
+// it returns the corresponding flag; otherwise, it returns nil.
+//
+// Parameters:
+//   - cmd: The command in which to search for the flag.
+//   - name: The name of the flag to search for.
+//
+// Returns:
+//   - *pflag.Flag: The found flag if successful, or nil if not found.
 func findFlag(cmd *Command, name string) *pflag.Flag {
 	flagSet := cmd.Flags()
 	if len(name) == 1 {
@@ -930,10 +981,10 @@ func findFlag(cmd *Command, name string) *pflag.Flag {
 	return cmd.Flag(name)
 }
 
-// CompDebug prints the specified string to the same file as where the
-// completion script prints its logs.
-// Note that completion printouts should never be on stdout as they would
-// be wrongly interpreted as actual completion choices by the completion script.
+// CompDebug prints the specified string to the same file as where the completion script prints its logs.
+// Note that completion printouts should never be on stdout as they would be wrongly interpreted as actual completion choices by the completion script.
+// The message is prefixed with "[Debug] " before printing. If BASH_COMP_DEBUG_FILE environment variable is set, the message is appended to the specified file.
+// If printToStdErr is true, the message is printed to stderr instead of stdout, ensuring it is not read by the completion script.
 func CompDebug(msg string, printToStdErr bool) {
 	msg = fmt.Sprintf("[Debug] %s", msg)
 
@@ -954,21 +1005,20 @@ func CompDebug(msg string, printToStdErr bool) {
 	}
 }
 
-// CompDebugln prints the specified string with a newline at the end
-// to the same file as where the completion script prints its logs.
-// Such logs are only printed when the user has set the environment
-// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
+// CompDebugln prints the specified string with a newline at the end to the same file as where the completion script prints its logs.
+// It only has an effect if the user has set the environment variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
+// If printToStdErr is true, the message will be printed to standard error instead of the debug file.
 func CompDebugln(msg string, printToStdErr bool) {
 	CompDebug(fmt.Sprintf("%s\n", msg), printToStdErr)
 }
 
-// CompError prints the specified completion message to stderr.
+// CompError prints the specified completion message to stderr with an error prefix.
 func CompError(msg string) {
 	msg = fmt.Sprintf("[Error] %s", msg)
 	CompDebug(msg, true)
 }
 
-// CompErrorln prints the specified completion message to stderr with a newline at the end.
+// CompErrorln prints the specified completion message to stderr with a newline at the end. It wraps the original CompError function, appending a newline character to the message before printing it.
 func CompErrorln(msg string) {
 	CompError(fmt.Sprintf("%s\n", msg))
 }
@@ -981,9 +1031,12 @@ const (
 
 var configEnvVarPrefixSubstRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 
-// configEnvVar returns the name of the program-specific configuration environment
-// variable.  It has the format <PROGRAM>_<SUFFIX> where <PROGRAM> is the name of the
-// root command in upper case, with all non-ASCII-alphanumeric characters replaced by `_`.
+// ConfigEnvVar returns the name of the program-specific configuration environment variable. It has the format <PROGRAM>_<SUFFIX> where <PROGRAM> is the name of the root command in upper case, with all non-ASCII-alphanumeric characters replaced by `_`. This format should not be changed: users will be using it explicitly.
+// Parameters:
+//   - name: The name of the root command.
+//   - suffix: Additional text to append to the program name for uniqueness.
+// Returns:
+//   - A string representing the configuration environment variable name.
 func configEnvVar(name, suffix string) string {
 	// This format should not be changed: users will be using it explicitly.
 	v := strings.ToUpper(fmt.Sprintf("%s_%s", name, suffix))

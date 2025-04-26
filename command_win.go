@@ -27,6 +27,9 @@ import (
 
 var preExecHookFn = preExecHook
 
+// preExecHook runs a hook before executing a command.
+// If MousetrapHelpText is not empty and the command was started by the explorer,
+// it prints the help text, waits for MousetrapDisplayDuration if specified, or prompts the user to press return before exiting with status 1.
 func preExecHook(c *Command) {
 	if MousetrapHelpText != "" && mousetrap.StartedByExplorer() {
 		c.Print(MousetrapHelpText)
