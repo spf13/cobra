@@ -272,7 +272,14 @@ complete -k -c %[2]s -n '__%[1]s_requires_order_preservation && __%[1]s_prepare_
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
 }
 
-// GenFishCompletion generates fish completion file and writes to the passed writer.
+// GenFishCompletion generates a fish completion file and writes it to the provided writer.
+//
+// Parameters:
+//   - w: io.Writer to which the completion file will be written.
+//   - includeDesc: boolean indicating whether to include descriptions in the completion file.
+//
+// Returns:
+//   - error: if an error occurs during the generation or writing process.
 func (c *Command) GenFishCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
 	genFishComp(buf, c.Name(), includeDesc)
@@ -280,7 +287,9 @@ func (c *Command) GenFishCompletion(w io.Writer, includeDesc bool) error {
 	return err
 }
 
-// GenFishCompletionFile generates fish completion file.
+// GenFishCompletionFile generates a fish completion file based on the provided filename and whether to include descriptions.
+// It takes a filename as a string and a boolean indicating whether to include descriptions in the completion file.
+// It returns an error if creating or writing to the file fails, or if generating the completion data fails.
 func (c *Command) GenFishCompletionFile(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {

@@ -23,6 +23,10 @@ import (
 	"testing"
 )
 
+// TestCompleteNoDesCmdInFishScript tests the completion functionality for a command without descriptions in a Fish shell script.
+//
+// It sets up a root command and a child command, adds the child to the root, generates Fish completion script,
+// and checks if the output contains the expected completion information without descriptions.
 func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -39,6 +43,7 @@ func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 	check(t, output, ShellCompNoDescRequestCmd)
 }
 
+// TestCompleteCmdInFishScript tests the generation of fish completion script for a command.
 func TestCompleteCmdInFishScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -56,6 +61,8 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	checkOmit(t, output, ShellCompNoDescRequestCmd)
 }
 
+// TestProgWithDash tests the generation of fish completion for a command with a hyphen in its name.
+// It verifies that the hyphen is replaced in function names but remains intact in the command name.
 func TestProgWithDash(t *testing.T) {
 	rootCmd := &Command{Use: "root-dash", Args: NoArgs, Run: emptyRun}
 	buf := new(bytes.Buffer)
@@ -71,6 +78,7 @@ func TestProgWithDash(t *testing.T) {
 	checkOmit(t, output, "-c root_dash")
 }
 
+// TestProgWithColon tests the generation of Fish completion for a command with a colon in its name.
 func TestProgWithColon(t *testing.T) {
 	rootCmd := &Command{Use: "root:colon", Args: NoArgs, Run: emptyRun}
 	buf := new(bytes.Buffer)
@@ -86,6 +94,13 @@ func TestProgWithColon(t *testing.T) {
 	checkOmit(t, output, "-c root_colon")
 }
 
+// TestFishCompletionNoActiveHelp tests the generation of Fish completion script without active help enabled.
+//
+// Parameters:
+//   - t: A testing.T instance for assertions and logging.
+//
+// The function creates a new Command, generates its Fish completion script with active help disabled,
+// and asserts that the output does not include an active help variable set to 1.
 func TestFishCompletionNoActiveHelp(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
@@ -98,6 +113,8 @@ func TestFishCompletionNoActiveHelp(t *testing.T) {
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
 
+// TestGenFishCompletionFile tests the generation of a Fish completion file for a Cobra command.
+// It creates a temporary file, sets up a Cobra command hierarchy, and asserts that no errors occur during the completion file generation process.
 func TestGenFishCompletionFile(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "cobra-test")
 	if err != nil {
@@ -117,6 +134,11 @@ func TestGenFishCompletionFile(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletionFile(tmpFile.Name(), false))
 }
 
+// TestFailGenFishCompletionFile tests the GenFishCompletionFile method for permission errors.
+//
+// It creates a temporary directory and file, sets up a command structure,
+// and attempts to generate Fish completion file. It checks if the error returned
+// matches os.ErrPermission as expected. If not, it fails the test with an error message.
 func TestFailGenFishCompletionFile(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "cobra-test")
 	if err != nil {

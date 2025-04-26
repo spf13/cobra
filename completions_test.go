@@ -24,6 +24,12 @@ import (
 	"testing"
 )
 
+// validArgsFunc checks if the number of arguments is valid for a command.
+// It returns an empty slice and ShellCompDirectiveNoFileComp if there are any arguments,
+// otherwise, it returns a list of completion suggestions and ShellCompDirectiveDefault.
+
+// AddCompletions appends completion suggestions to the provided completions slice.
+// It filters suggestions based on the prefix provided in toComplete.
 func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	if len(args) != 0 {
 		return nil, ShellCompDirectiveNoFileComp
@@ -38,6 +44,15 @@ func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, Sh
 	return completions, ShellCompDirectiveDefault
 }
 
+// validArgsFunc2 checks if the number of arguments is zero and returns possible completions for a given prefix.
+//
+// Args:
+//   cmd: The command being executed.
+//   args: The current arguments provided to the command.
+//   toComplete: The prefix that needs completion.
+//
+// Returns:
+//   A slice of strings representing possible completions and a ShellCompDirective indicating the directive for shell completion.
 func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 	if len(args) != 0 {
 		return nil, ShellCompDirectiveNoFileComp
@@ -52,6 +67,7 @@ func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, S
 	return completions, ShellCompDirectiveDefault
 }
 
+// TestCmdNameCompletionInGo tests the command name completion functionality in Go.
 func TestCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -154,6 +170,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestNoCmdNameCompletionInGo tests the behavior of command name completion in Go when different flags and arguments are present.
 func TestNoCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -319,6 +336,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestValidArgsCompletionInGo tests the completion of valid arguments in a Go command.
 func TestValidArgsCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
@@ -373,6 +391,7 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestValidArgsAndCmdCompletionInGo tests that sub-commands and valid arguments are correctly completed.
 func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
@@ -423,6 +442,9 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncAndCmdCompletionInGo tests the completion functionality of a root command and its child command.
+// It verifies that both sub-commands and valid arguments are correctly completed without and with prefixes,
+// as well as with descriptions. The function uses a test environment to execute commands and compare the output against expected results.
 func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:               "root",
@@ -490,6 +512,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestFlagNameCompletionInGo tests the completion of flag names in a Go command.
 func TestFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -580,6 +603,8 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestFlagNameCompletionInGoWithDesc tests the completion of flag names in a Go command.
+// It verifies that flags are correctly completed when the user provides a prefix and without any prefix.
 func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -677,23 +702,33 @@ type customMultiString []string
 
 var _ SliceValue = (*customMultiString)(nil)
 
+// String returns a string representation of the customMultiString.
+// It uses fmt.Sprintf to convert the underlying value to a string.
 func (s *customMultiString) String() string {
 	return fmt.Sprintf("%v", *s)
 }
 
+// Set appends a value to the customMultiString and returns an error if any.
+// Parameters:
+//   - v: The string value to be appended.
+// Returns:
+//   - error: An error if appending fails; otherwise, nil.
 func (s *customMultiString) Set(v string) error {
 	*s = append(*s, v)
 	return nil
 }
 
+// Type returns the type of customMultiString, which is "multi string".
 func (s *customMultiString) Type() string {
 	return "multi string"
 }
 
+// GetSlice returns a copy of the slice stored in the customMultiString instance.
 func (s *customMultiString) GetSlice() []string {
 	return *s
 }
 
+// TestFlagNameCompletionRepeat tests the completion of flag names without repetition.
 func TestFlagNameCompletionRepeat(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -841,6 +876,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 }
 
+// TestRequiredFlagNameCompletionInGo tests the completion of required flags in a command-line interface.
+// It ensures that required flags are suggested even without the - prefix and that they are not suggested once present.
 func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
@@ -1035,6 +1072,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestFlagFileExtFilterCompletionInGo tests the completion logic for flags with file extensions.
 func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -1157,6 +1195,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestFlagDirFilterCompletionInGo tests the completion logic for directory filtering flags in a Go command.
 func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -1273,6 +1312,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncCmdContext tests the ValidArgsFunction of a child command using a context with specific values.
 func TestValidArgsFuncCmdContext(t *testing.T) {
 	validArgsFunc := func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		ctx := cmd.Context()
@@ -1315,6 +1355,10 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncSingleCmd tests the valid arguments function for a single command.
+//
+// It creates a root command with a valid arguments function and an empty run function. Then it tests
+// completing an empty string and a string with a prefix, checking if the output matches the expected results.
 func TestValidArgsFuncSingleCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:               "root",
@@ -1354,6 +1398,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncSingleCmdInvalidArg tests the behavior of a root command without subcommands when completing with an invalid number of arguments. The test ensures that the correct error message and completion directive are returned.
 func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -1381,6 +1426,7 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncChildCmds tests the completion functionality for child commands with valid argument functions.
 func TestValidArgsFuncChildCmds(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child1Cmd := &Command{
@@ -1485,6 +1531,8 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncAliases tests the functionality of valid arguments function aliases in a command.
+// It verifies that the completion works correctly with different sub-commands and prefixes.
 func TestValidArgsFuncAliases(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1541,6 +1589,8 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncInBashScript tests that the bash completion function is generated correctly when a valid args function is set for a command.
+// It creates a root command with a child command and validates that the bash completion output includes the valid args function.
 func TestValidArgsFuncInBashScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1557,6 +1607,8 @@ func TestValidArgsFuncInBashScript(t *testing.T) {
 	check(t, output, "has_completion_function=1")
 }
 
+// TestNoValidArgsFuncInBashScript tests the generation of Bash completion script when no valid arguments function is provided.
+// It asserts that the generated script does not include a completion function.
 func TestNoValidArgsFuncInBashScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1572,6 +1624,9 @@ func TestNoValidArgsFuncInBashScript(t *testing.T) {
 	checkOmit(t, output, "has_completion_function=1")
 }
 
+// TestCompleteCmdInBashScript tests the generation of bash completion for a command.
+// It sets up a root command and adds a child command to it. Then, it generates bash completion
+// and checks if the output contains the expected shell completion flag without description requests.
 func TestCompleteCmdInBashScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1588,6 +1643,8 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	check(t, output, ShellCompNoDescRequestCmd)
 }
 
+// TestCompleteNoDesCmdInZshScript tests that a zsh completion script is generated without descriptions for commands.
+// It verifies the expected command name and description absence in the generated script.
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1604,6 +1661,7 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	check(t, output, ShellCompNoDescRequestCmd)
 }
 
+// TestCompleteCmdInZshScript tests the generation of Zsh completion for a command.
 func TestCompleteCmdInZshScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{
@@ -1621,6 +1679,7 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	checkOmit(t, output, ShellCompNoDescRequestCmd)
 }
 
+// TestFlagCompletionInGo tests flag completion functionality in a Go command.
 func TestFlagCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -1714,6 +1773,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestValidArgsFuncChildCmdsWithDesc tests the completion of sub-commands using valid args functions.
 func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child1Cmd := &Command{
@@ -2041,6 +2101,8 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 }
 
+// TestFlagCompletionWorksRootCommandAddedAfterFlags tests that flag completion works for a subcommand after it is added to the root command.
+// It specifically checks if the completion function is registered correctly and if the flag completion provides the expected suggestions.
 func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{
@@ -2076,6 +2138,15 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 	}
 }
 
+// TestFlagCompletionForPersistentFlagsCalledFromSubCmd tests that persistent flag completion works for a command called from a subcommand.
+// It sets up a root command with a persistent string flag and a child command with its own valid arguments function and a boolean flag.
+// The test executes the command to trigger the flag completion and checks if the output matches the expected result.
+// Args:
+//   - t: A testing.T instance for assertions and logging.
+// Returns:
+//   - None
+// Raises:
+//   - An error if an unexpected error occurs during the execution of the command.
 func TestFlagCompletionForPersistentFlagsCalledFromSubCmd(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	rootCmd.PersistentFlags().String("string", "", "test string flag")
@@ -2109,15 +2180,9 @@ func TestFlagCompletionForPersistentFlagsCalledFromSubCmd(t *testing.T) {
 	}
 }
 
-// This test tries to register flag completion concurrently to make sure the
-// code handles concurrency properly.
-// This was reported as a problem when tests are run concurrently:
-// https://github.com/spf13/cobra/issues/1320
+// TestFlagCompletionConcurrentRegistration tests the registration of flag completion concurrently to ensure proper handling of concurrency.
 //
-// NOTE: this test can sometimes pass even if the code were to not handle
-// concurrency properly. This is not great but the important part is that
-// it should never fail.  Therefore, if the tests fails sometimes, we will
-// still be able to know there is a problem.
+// It registers flags on a root command and a child command and then attempts to register completion functions for these flags concurrently in different goroutines. The test asserts that flag completion works correctly for each flag, regardless of whether it belongs to the root or child command.
 func TestFlagCompletionConcurrentRegistration(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	const maxFlags = 50
@@ -2184,6 +2249,7 @@ func TestFlagCompletionConcurrentRegistration(t *testing.T) {
 	}
 }
 
+// TestFlagCompletionInGoWithDesc tests flag completion functionality in a Go application with descriptions.
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -2277,6 +2343,8 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	}
 }
 
+// TestValidArgsNotValidArgsFunc tests the behavior when both ValidArgs and ValidArgsFunction are present.
+// It ensures that only ValidArgs is considered during command completion.
 func TestValidArgsNotValidArgsFunc(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
@@ -2320,6 +2388,11 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 	}
 }
 
+// TestArgAliasesCompletionInGo tests the completion behavior of argument aliases in a Go command.
+//
+// It creates a root command with specific valid arguments and their aliases. The test cases check
+// the completion behavior when there are matching valid arguments and when no matches exist, ensuring that
+// only the aliased arguments are returned for incomplete input prefixes.
 func TestArgAliasesCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:        "root",
@@ -2378,6 +2451,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 	}
 }
 
+// TestCompleteHelp tests the completion of the help command in a root command with sub-commands.
 func TestCompleteHelp(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child1Cmd := &Command{
@@ -2448,6 +2522,8 @@ func TestCompleteHelp(t *testing.T) {
 	}
 }
 
+// removeCompCmd removes the completion command from the given root command.
+// It searches through the root command's subcommands and removes the one with the name `compCmdName`.
 func removeCompCmd(rootCmd *Command) {
 	// Remove completion command for the next test
 	for _, cmd := range rootCmd.commands {
@@ -2458,6 +2534,7 @@ func removeCompCmd(rootCmd *Command) {
 	}
 }
 
+// TestDefaultCompletionCmd tests the default completion command behavior in different scenarios.
 func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:  "root",
@@ -2604,6 +2681,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	removeCompCmd(rootCmd)
 }
 
+// TestCompleteCompletion tests the completion functionality of a root command without any sub-commands and with sub-commands.
 func TestCompleteCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 
@@ -2691,6 +2769,12 @@ func TestCompleteCompletion(t *testing.T) {
 	}
 }
 
+// TestMultipleShorthandFlagCompletion tests the completion functionality of multiple shorthand flags in a command.
+//
+// It sets up a root command with various flags and their shorthand versions. The test then executes the command with different combinations of shorthand flags to verify that the correct completions are returned.
+//
+// Parameters:
+//   - t: A pointer to a testing.T instance used for assertions and error reporting.
 func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
@@ -2784,6 +2868,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	}
 }
 
+// TestCompleteWithDisableFlagParsing tests the behavior of Cobra's flag completion when DisableFlagParsing is set on a command.
 func TestCompleteWithDisableFlagParsing(t *testing.T) {
 
 	flagValidArgs := func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -2847,6 +2932,7 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	}
 }
 
+// TestCompleteWithRootAndLegacyArgs tests a lonely root command that uses legacyArgs(). The root command should accept any number of arguments and completion should behave accordingly.
 func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	// Test a lonely root command which uses legacyArgs().  In such a case, the root
 	// command should accept any number of arguments and completion should behave accordingly.
@@ -2893,6 +2979,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	}
 }
 
+// TestCompletionFuncCompatibility tests the compatibility of completion functions with different formats and types.
 func TestCompletionFuncCompatibility(t *testing.T) {
 	t.Run("validate signature", func(t *testing.T) {
 		t.Run("format with []string", func(t *testing.T) {
@@ -2978,6 +3065,7 @@ func TestCompletionFuncCompatibility(t *testing.T) {
 	})
 }
 
+// TestFixedCompletions tests the FixedCompletions completion function.
 func TestFixedCompletions(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	choices := []string{"apple", "banana", "orange"}
@@ -3005,6 +3093,7 @@ func TestFixedCompletions(t *testing.T) {
 	}
 }
 
+// TestFixedCompletionsWithCompletionHelpers tests the FixedCompletions function with various completion helpers to ensure correct behavior.
 func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	// here we are mixing string, [Completion] and [CompletionWithDesc]
@@ -3055,6 +3144,9 @@ func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
 	})
 }
 
+// TestCompletionForGroupedFlags tests the completion functionality for grouped flags in a command.
+// It verifies that flags within a group are suggested together and only when required, and that
+// flags outside of a group are not suggested with a leading '-' prefix unless they are part of a required group.
 func TestCompletionForGroupedFlags(t *testing.T) {
 	getCmd := func() *Command {
 		rootCmd := &Command{
@@ -3155,6 +3247,11 @@ func TestCompletionForGroupedFlags(t *testing.T) {
 	}
 }
 
+// TestCompletionForOneRequiredGroupFlags tests the completion logic when one group of flags is required.
+//
+// It sets up a command with multiple subcommands and flags, marking some flags as part of a required group. The test cases
+// verify that only the required flags are suggested for completion when no flag from the group is provided. It also checks
+// scenarios where flags within the group are already present or other conditions affect the suggestion.
 func TestCompletionForOneRequiredGroupFlags(t *testing.T) {
 	getCmd := func() *Command {
 		rootCmd := &Command{
@@ -3253,6 +3350,7 @@ func TestCompletionForOneRequiredGroupFlags(t *testing.T) {
 	}
 }
 
+// TestCompletionForMutuallyExclusiveFlags tests completion behavior for commands with mutually exclusive flags.
 func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 	getCmd := func() *Command {
 		rootCmd := &Command{
@@ -3581,6 +3679,7 @@ func TestCompletionCobraFlags(t *testing.T) {
 	}
 }
 
+// TestArgsNotDetectedAsFlagsCompletionInGo is a regression test ensuring that the bug described in https://github.com/spf13/cobra/issues/1816 does not occur anymore.
 func TestArgsNotDetectedAsFlagsCompletionInGo(t *testing.T) {
 	// Regression test that ensures the bug described in
 	// https://github.com/spf13/cobra/issues/1816 does not occur anymore.
@@ -3645,6 +3744,10 @@ Completion ended with directive: ShellCompDirectiveNoFileComp
 	}
 }
 
+// TestGetFlagCompletion tests the GetFlagCompletionFunc method of the Command type.
+// It verifies that the function correctly retrieves and returns the completion function for a given flag,
+// including both local and persistent flags, as well as child commands. The test cases cover various scenarios
+// to ensure the functionality works as expected.
 func TestGetFlagCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 
@@ -3735,6 +3838,8 @@ func TestGetFlagCompletion(t *testing.T) {
 	}
 }
 
+// TestGetEnvConfig tests the getEnvConfig function with various test cases to ensure it correctly handles environment variable overrides and fallbacks.
+// Each test case checks different scenarios for command and global environment variables, as well as their expected outcomes.
 func TestGetEnvConfig(t *testing.T) {
 	testCases := []struct {
 		desc      string
@@ -3820,6 +3925,7 @@ func TestGetEnvConfig(t *testing.T) {
 	}
 }
 
+// TestDisableDescriptions tests the functionality of disabling descriptions for command completion.
 func TestDisableDescriptions(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
