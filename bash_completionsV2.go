@@ -21,6 +21,9 @@ import (
 	"os"
 )
 
+// genBashCompletion generates Bash completion script for the command.
+// It writes the completion script to the provided writer and includes descriptions if specified.
+// Returns an error if the operation fails.
 func (c *Command) genBashCompletion(w io.Writer, includeDesc bool) error {
 	buf := new(bytes.Buffer)
 	genBashComp(buf, c.Name(), includeDesc)
@@ -466,7 +469,14 @@ fi
 		activeHelpMarker))
 }
 
-// GenBashCompletionFileV2 generates Bash completion version 2.
+// GenBashCompletionFileV2 generates a Bash completion file for version 2.
+//
+// Parameters:
+//   - filename: The name of the file to be created.
+//   - includeDesc: A boolean indicating whether to include descriptions in the completion file.
+//
+// Returns:
+//   - error: An error if any occurs during file creation or generation.
 func (c *Command) GenBashCompletionFileV2(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
@@ -477,8 +487,14 @@ func (c *Command) GenBashCompletionFileV2(filename string, includeDesc bool) err
 	return c.GenBashCompletionV2(outFile, includeDesc)
 }
 
-// GenBashCompletionV2 generates Bash completion file version 2
-// and writes it to the passed writer.
+// GenBashCompletionV2 generates Bash completion file version 2 and writes it to the provided writer. It includes a description of each command if includeDesc is true.
+//
+// Parameters:
+//   - w: The writer where the Bash completion file will be written.
+//   - includeDesc: A boolean indicating whether to include descriptions in the completion file.
+//
+// Returns:
+//   - An error if there was an issue generating or writing the completion file.
 func (c *Command) GenBashCompletionV2(w io.Writer, includeDesc bool) error {
 	return c.genBashCompletion(w, includeDesc)
 }

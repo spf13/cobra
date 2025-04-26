@@ -401,6 +401,13 @@ __%[1]s_handle_word()
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, activeHelpEnvVar(name)))
 }
 
+// writePostscript writes postscript code to the provided buffer for a given command name.
+//
+// Parameters:
+//   - buf: io.StringWriter where the postscript code will be written.
+//   - name: The name of the command for which the postscript code is being generated.
+//
+// This function handles the generation of completion script postscript code for a Bash or similar shell. It replaces colons in the command name with double underscores, initializes completion variables and functions, and sets up the completion behavior using the 'complete' command.
 func writePostscript(buf io.StringWriter, name string) {
 	name = strings.ReplaceAll(name, ":", "__")
 	WriteStringAndCheck(buf, fmt.Sprintf("__start_%s()\n", name))
@@ -444,6 +451,16 @@ fi
 	WriteStringAndCheck(buf, "# ex: ts=4 sw=4 et filetype=sh\n")
 }
 
+// writeCommands writes the command definitions to a buffer.
+//
+// It takes an io.StringWriter and a *Command as parameters. The function iterates through
+// the commands associated with the given Command instance. If a command is not available and
+// is not the help command, it skips that command. For each valid command, it writes its name to the buffer
+// in the format 'commands+=(<command_name>)' and calls writeCmdAliases to write any aliases for the command.
+//
+// The function includes a newline character at the end of the output.
+//
+// It returns nothing but may log errors through WriteStringAndCheck.
 func writeCommands(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    commands=()\n")
 	for _, c := range cmd.Commands() {
@@ -456,6 +473,16 @@ func writeCommands(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "\n")
 }
 
+// writeFlagHandler writes the flag completion handler for a given command and its annotations.
+//
+// Parameters:
+//   buf - an io.StringWriter where the completion handler will be written
+//   name - the name of the flag
+//   annotations - a map containing annotations for the flag, including types like BashCompFilenameExt, BashCompCustom, and BashCompSubdirsInDir
+//   cmd - the command associated with the flag
+//
+// Returns:
+//   This function does not return any value. It writes to the buffer provided.
 func writeFlagHandler(buf io.StringWriter, name string, annotations map[string][]string, cmd *Command) {
 	for key, value := range annotations {
 		switch key {
@@ -494,6 +521,15 @@ func writeFlagHandler(buf io.StringWriter, name string, annotations map[string][
 
 const cbn = "\")\n"
 
+// writeShortFlag writes a short flag to the provided buffer.
+//
+// Parameters:
+//   - buf: The io.StringWriter where the flag will be written.
+//   - flag: A pointer to the pflag.Flag representing the flag to write.
+//   - cmd: A pointer to the Command associated with the flag.
+//
+// It constructs a formatted string based on the flag's shorthand and annotations, then writes it to the buffer using WriteStringAndCheck.
+// Additionally, it calls writeFlagHandler to handle any specific logic for the flag.
 func writeShortFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
 	name := flag.Shorthand
 	format := "    "
@@ -505,6 +541,17 @@ func writeShortFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
 	writeFlagHandler(buf, "-"+name, flag.Annotations, cmd)
 }
 
+// writeFlag writes a flag definition to the buffer in a specific format.
+//
+// Parameters:
+//   - buf: The io.StringWriter where the flag definition will be written.
+//   - flag: The pflag.Flag object representing the flag being written.
+//   - cmd: The Command object associated with the flag.
+//
+// Returns:
+//   None
+//
+// This function handles the formatting and writing of a single flag, including handling cases for flags without default values and two-word flags. It also calls writeFlagHandler to process any additional annotations or handlers related to the flag.
 func writeFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
 	name := flag.Name
 	format := "    flags+=(\"--%s"
@@ -520,6 +567,14 @@ func writeFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
 	writeFlagHandler(buf, "--"+name, flag.Annotations, cmd)
 }
 
+// writeLocalNonPersistentFlag writes the local non-persistent flags to the provided buffer.
+//
+// Parameters:
+//   - buf: The io.StringWriter where the flags will be written.
+//   - flag: A pointer to the pflag.Flag that contains the details of the flag.
+//
+// This function constructs a string representation of the flag and appends it to the buffer. If the flag has a shorthand,
+// it also writes the shorthand version of the flag to the buffer.
 func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
 	name := flag.Name
 	format := "    local_nonpersistent_flags+=(\"--%[1]s" + cbn
@@ -532,7 +587,9 @@ func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
 	}
 }
 
-// prepareCustomAnnotationsForFlags setup annotations for go completions for registered flags
+// prepareCustomAnnotationsForFlags sets up custom annotations for go completions for registered flags.
+//
+// It takes a pointer to a Command and iterates over the flagCompletionFunctions map, adding custom annotations to each flag's Annotations field. The custom annotation is a Bash completion command that calls the __*_go_custom_completion function for the specified flag, ensuring that the root command name is correctly set for the prefix of the completion script.
 func prepareCustomAnnotationsForFlags(cmd *Command) {
 	flagCompletionMutex.RLock()
 	defer flagCompletionMutex.RUnlock()
@@ -548,6 +605,9 @@ func prepareCustomAnnotationsForFlags(cmd *Command) {
 	}
 }
 
+// writeFlags writes the flags for a command to the provided buffer.
+// It handles both local and inherited flags, excluding non-completable ones.
+// If flag parsing is disabled, it sets the corresponding variable in the buffer.
 func writeFlags(buf io.StringWriter, cmd *Command) {
 	prepareCustomAnnotationsForFlags(cmd)
 	WriteStringAndCheck(buf, `    flags=()
@@ -590,6 +650,12 @@ func writeFlags(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "\n")
 }
 
+// writeRequiredFlag appends to the buffer a line that specifies which flags are required for the command.
+// It takes an io.StringWriter and a Command as parameters. The function checks each non-inherited flag of the command
+// and adds it to the must_have_one_flag array if it is annotated with BashCompOneRequiredFlag. If the flag is not of type bool,
+// it appends "=" after the flag name in the array.
+// This function does not return any values, but it may write strings to the buffer and handle errors through WriteStringAndCheck.
+// It also uses nonCompletableFlag to determine if a flag should be skipped.
 func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    must_have_one_flag=()\n")
 	flags := cmd.NonInheritedFlags()
@@ -612,6 +678,13 @@ func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 	})
 }
 
+// writeRequiredNouns writes the required nouns for a command to a buffer.
+//
+// It takes an io.StringWriter and a pointer to a Command as parameters. The Command should have valid arguments defined in ValidArgs or a function to provide them through ValidArgsFunction.
+//
+// This function sorts the valid arguments, removes any descriptions following a tab character (not supported by bash completion), and appends each noun to the buffer in the format required for command-line interface validation.
+//
+// If a ValidArgsFunction is provided, it also sets a flag indicating that a completion function is available.
 func writeRequiredNouns(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    must_have_one_noun=()\n")
 	sort.Strings(cmd.ValidArgs)
@@ -626,6 +699,14 @@ func writeRequiredNouns(buf io.StringWriter, cmd *Command) {
 	}
 }
 
+// writeCmdAliases writes the command aliases to the provided buffer.
+//
+// Parameters:
+//   - buf: An io.StringWriter where the aliases will be written.
+//   - cmd: A pointer to a Command struct containing the aliases to be written.
+//
+// Returns:
+//   - None
 func writeCmdAliases(buf io.StringWriter, cmd *Command) {
 	if len(cmd.Aliases) == 0 {
 		return
@@ -641,6 +722,15 @@ func writeCmdAliases(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, `    fi`)
 	WriteStringAndCheck(buf, "\n")
 }
+// writeArgAliases writes argument aliases for a command to the buffer and checks for errors.
+//
+// Parameters:
+//   - buf: The string writer where the alias information will be written.
+//   - cmd: The command whose aliases are being written.
+//
+// This function formats and appends argument aliases of the given command to the buffer,
+// ensuring they are sorted alphabetically. It also handles any errors that occur during
+// the writing process using WriteStringAndCheck.
 func writeArgAliases(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    noun_aliases=()\n")
 	sort.Strings(cmd.ArgAliases)
@@ -649,6 +739,11 @@ func writeArgAliases(buf io.StringWriter, cmd *Command) {
 	}
 }
 
+// gen recursively generates a set of functions to call the provided command and its subcommands.
+//
+// Parameters:
+//   - buf: an io.StringWriter to write the generated functions to.
+//   - cmd: the current command to generate functions for.
 func gen(buf io.StringWriter, cmd *Command) {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() && c != cmd.helpCommand {
@@ -679,7 +774,13 @@ func gen(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "}\n\n")
 }
 
-// GenBashCompletion generates bash completion file and writes to the passed writer.
+// GenBashCompletion generates a bash completion file and writes it to the provided writer.
+//
+// Parameters:
+//   - w: io.Writer - The writer to which the bash completion file will be written.
+//
+// Returns:
+//   - error: If an error occurs during the generation or writing process, it is returned.
 func (c *Command) GenBashCompletion(w io.Writer) error {
 	buf := new(bytes.Buffer)
 	writePreamble(buf, c.Name())
@@ -693,11 +794,18 @@ func (c *Command) GenBashCompletion(w io.Writer) error {
 	return err
 }
 
+// nonCompletableFlag checks if a flag is hidden or deprecated and returns true if it should not be completed.
 func nonCompletableFlag(flag *pflag.Flag) bool {
 	return flag.Hidden || len(flag.Deprecated) > 0
 }
 
-// GenBashCompletionFile generates bash completion file.
+// GenBashCompletionFile generates a bash completion file for the command.
+//
+// Parameters:
+// filename - The path to the output bash completion file.
+//
+// Returns:
+// error - An error if the file could not be created or written, nil otherwise.
 func (c *Command) GenBashCompletionFile(filename string) error {
 	outFile, err := os.Create(filename)
 	if err != nil {
