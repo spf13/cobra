@@ -34,7 +34,7 @@ This program can actually generate docs for the kubectl command in the kubernete
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -45,7 +45,7 @@ import (
 )
 
 func main() {
-	kubectl := cmd.NewKubectlCommand(cmdutil.NewFactory(nil), os.Stdin, ioutil.Discard, ioutil.Discard)
+	kubectl := cmd.NewKubectlCommand(cmdutil.NewFactory(nil), os.Stdin, io.Discard, io.Discard)
 	err := doc.GenYamlTree(kubectl, "./")
 	if err != nil {
 		log.Fatal(err)

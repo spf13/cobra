@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -142,9 +141,6 @@ func TestGenManSeeAlso(t *testing.T) {
 	if err := assertLineFound(scanner, ".SH SEE ALSO"); err != nil {
 		t.Fatalf("Couldn't find SEE ALSO section header: %v", err)
 	}
-	if err := assertNextLineEquals(scanner, ".PP"); err != nil {
-		t.Fatalf("First line after SEE ALSO wasn't break-indent: %v", err)
-	}
 	if err := assertNextLineEquals(scanner, `\fBroot-bbb(1)\fP, \fBroot-ccc(1)\fP`); err != nil {
 		t.Fatalf("Second line after SEE ALSO wasn't correct: %v", err)
 	}
@@ -168,7 +164,7 @@ func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 func TestGenManTree(t *testing.T) {
 	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
 	header := &GenManHeader{Section: "2"}
-	tmpdir, err := ioutil.TempDir("", "test-gen-man-tree")
+	tmpdir, err := os.MkdirTemp("", "test-gen-man-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
@@ -219,7 +215,7 @@ func assertNextLineEquals(scanner *bufio.Scanner, expectedLine string) error {
 }
 
 func BenchmarkGenManToFile(b *testing.B) {
-	file, err := ioutil.TempFile("", "")
+	file, err := os.CreateTemp("", "")
 	if err != nil {
 		b.Fatal(err)
 	}

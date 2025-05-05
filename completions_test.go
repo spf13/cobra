@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -698,6 +699,29 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 }
 
+// customMultiString is a custom Value type that accepts multiple values,
+// but does not include "Slice" or "Array" in its "Type" string.
+type customMultiString []string
+
+var _ SliceValue = (*customMultiString)(nil)
+
+func (s *customMultiString) String() string {
+	return fmt.Sprintf("%v", *s)
+}
+
+func (s *customMultiString) Set(v string) error {
+	*s = append(*s, v)
+	return nil
+}
+
+func (s *customMultiString) Type() string {
+	return "multi string"
+}
+
+func (s *customMultiString) GetSlice() []string {
+	return *s
+}
+
 func TestFlagNameCompletionRepeat(t *testing.T) {
 	rootCmd := &Command{
 		Use: "root",
@@ -720,6 +744,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	sliceFlag := rootCmd.Flags().Lookup("slice")
 	rootCmd.Flags().BoolSliceP("bslice", "b", nil, "bool slice flag")
 	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+	rootCmd.Flags().VarP(&customMultiString{}, "multi", "m", "multi string flag")
+	multiFlag := rootCmd.Flags().Lookup("multi")
 
 	// Test that flag names are not repeated unless they are an array or slice
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
@@ -733,6 +759,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"--array",
 		"--bslice",
 		"--help",
+		"--multi",
 		"--second",
 		"--slice",
 		":4",
@@ -756,6 +783,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"--array",
 		"--bslice",
 		"--help",
+		"--multi",
 		"--slice",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
@@ -766,7 +794,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--")
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--array", "val", "--bslice", "true", "--multi", "val", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -774,12 +802,14 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
 	bsliceFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"--array",
 		"--bslice",
 		"--first",
 		"--help",
+		"--multi",
 		"--second",
 		"--slice",
 		":4",
@@ -798,6 +828,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"--array",
@@ -808,6 +839,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"-f",
 		"--help",
 		"-h",
+		"--multi",
+		"-m",
 		"--second",
 		"-s",
 		"--slice",
@@ -828,6 +861,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	arrayFlag.Changed = false
+	multiFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"-a",
@@ -2537,7 +2571,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		Run:  emptyRun,
 	}
 
-	// Test that no completion command is created if there are not other sub-commands
+	// Test that when there are no sub-commands, the completion command is not created if it is not called directly.
 	assertNoErr(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.commands {
 		if cmd.Name() == compCmdName {
@@ -2546,6 +2580,17 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		}
 	}
 
+	// Test that when there are no sub-commands, the completion command is created when it is called directly.
+	_, err := executeCommand(rootCmd, compCmdName)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the arguments
+	rootCmd.args = nil
+	// Remove completion command for the next test
+	removeCompCmd(rootCmd)
+
+	// Add a sub-command
 	subCmd := &Command{
 		Use: "sub",
 		Run: emptyRun,
@@ -2667,6 +2712,42 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 func TestCompleteCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+
+	// Test that when there are no sub-commands, the 'completion' command is not completed
+	// (because it is not created).
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "completion")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Test that when there are no sub-commands, completion can be triggered for the default
+	// 'completion' command
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "completion", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"bash",
+		"fish",
+		"powershell",
+		"zsh",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Add a sub-command
 	subCmd := &Command{
 		Use: "sub",
 		Run: emptyRun,
@@ -2674,12 +2755,12 @@ func TestCompleteCompletion(t *testing.T) {
 	rootCmd.AddCommand(subCmd)
 
 	// Test sub-commands of the completion command
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "completion", "")
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "completion", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	expected := strings.Join([]string{
+	expected = strings.Join([]string{
 		"bash",
 		"fish",
 		"powershell",
@@ -2927,6 +3008,91 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	}
 }
 
+func TestCompletionFuncCompatibility(t *testing.T) {
+	t.Run("validate signature", func(t *testing.T) {
+		t.Run("format with []string", func(t *testing.T) {
+			var userComp func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			// check against new signature
+			var _ CompletionFunc = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("format with []Completion", func(t *testing.T) {
+			var userComp func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective)
+
+			// check against new signature
+			var _ CompletionFunc = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("format with CompletionFunc", func(t *testing.T) {
+			var userComp CompletionFunc
+
+			// check helper against old signature
+			var _ func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) = userComp
+			var _ func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) = userComp
+
+			// check Command accepts
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+	})
+
+	t.Run("user defined completion helper", func(t *testing.T) {
+		t.Run("type helper", func(t *testing.T) {
+			// This is a type that may have been defined by the user of the library
+			// This replicates the issue https://github.com/docker/cli/issues/5827
+			// https://github.com/docker/cli/blob/b6e7eba4470ecdca460e4b63270fba8179674ad6/cli/command/completion/functions.go#L18
+			type UserCompletionTypeHelper func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			var userComp UserCompletionTypeHelper
+
+			// Here we are validating the existing type validates the CompletionFunc type
+			var _ CompletionFunc = userComp
+
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+
+		t.Run("type alias helper", func(t *testing.T) {
+			// This is a type that may have been defined by the user of the library
+			// This replicates the possible fix that was tried here https://github.com/docker/cli/pull/5828
+			// https://github.com/docker/cli/blob/ae3d4db9f658259dace9dee515718be7c1b1f517/cli/command/completion/functions.go#L18
+			type UserCompletionTypeAliasHelper = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+
+			var userComp UserCompletionTypeAliasHelper
+
+			// Here we are validating the existing type validates the CompletionFunc type
+			var _ CompletionFunc = userComp
+
+			cmd := Command{
+				ValidArgsFunction: userComp,
+			}
+
+			_ = cmd.RegisterFlagCompletionFunc("foo", userComp)
+		})
+	})
+}
+
 func TestFixedCompletions(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	choices := []string{"apple", "banana", "orange"}
@@ -2953,6 +3119,56 @@ func TestFixedCompletions(t *testing.T) {
 	if output != expected {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
+}
+
+func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	// here we are mixing string, [Completion] and [CompletionWithDesc]
+	choices := []string{"apple", Completion("banana"), CompletionWithDesc("orange", "orange are orange")}
+	childCmd := &Command{
+		Use:               "child",
+		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	t.Run("completion with description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange\torange are orange", // this one has the description as expected with [ShellCompRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
+
+	t.Run("completion with no description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange", // the description is absent as expected with [ShellCompNoDescRequestCmd] flag
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+
+		if output != expected {
+			t.Errorf("expected: %q, got: %q", expected, output)
+		}
+	})
 }
 
 func TestCompletionForGroupedFlags(t *testing.T) {
@@ -3671,6 +3887,288 @@ func TestGetFlagCompletion(t *testing.T) {
 				if tc.directive != directive {
 					t.Errorf("Unexpected directive %q", directive)
 				}
+			}
+		})
+	}
+}
+
+func TestGetEnvConfig(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		use       string
+		suffix    string
+		cmdVar    string
+		globalVar string
+		cmdVal    string
+		globalVal string
+		expected  string
+	}{
+		{
+			desc:      "Command envvar overrides global",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			desc:      "Missing/empty command envvar falls back to global",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "global",
+			expected:  "global",
+		},
+		{
+			desc:      "Missing/empty command and global envvars fall back to empty",
+			use:       "root",
+			suffix:    "test",
+			cmdVar:    "ROOT_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "",
+			globalVal: "",
+			expected:  "",
+		},
+		{
+			desc:      "Periods in command use transform to underscores in env var name",
+			use:       "foo.bar",
+			suffix:    "test",
+			cmdVar:    "FOO_BAR_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+		{
+			desc:      "Dashes in command use transform to underscores in env var name",
+			use:       "quux-BAZ",
+			suffix:    "test",
+			cmdVar:    "QUUX_BAZ_TEST",
+			globalVar: "COBRA_TEST",
+			cmdVal:    "cmd",
+			globalVal: "global",
+			expected:  "cmd",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Could make env handling cleaner with t.Setenv with Go >= 1.17
+			err := os.Setenv(tc.cmdVar, tc.cmdVal)
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.cmdVar))
+			}()
+			assertNoErr(t, err)
+			err = os.Setenv(tc.globalVar, tc.globalVal)
+			defer func() {
+				assertNoErr(t, os.Unsetenv(tc.globalVar))
+			}()
+			assertNoErr(t, err)
+			cmd := &Command{Use: tc.use}
+			got := getEnvConfig(cmd, tc.suffix)
+			if got != tc.expected {
+				t.Errorf("expected: %q, got: %q", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestDisableDescriptions(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	childCmd := &Command{
+		Use:   "thechild",
+		Short: "The child command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	specificDescriptionsEnvVar := configEnvVar(rootCmd.Name(), configEnvVarSuffixDescriptions)
+	globalDescriptionsEnvVar := configEnvVar(configEnvVarGlobalPrefix, configEnvVarSuffixDescriptions)
+
+	const (
+		descLineWithDescription    = "first\tdescription"
+		descLineWithoutDescription = "first"
+	)
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		comps := []string{descLineWithDescription}
+		return comps, ShellCompDirectiveDefault
+	}
+
+	testCases := []struct {
+		desc             string
+		globalEnvValue   string
+		specificEnvValue string
+		expectedLine     string
+	}{
+		{
+			"No env variables set",
+			"",
+			"",
+			descLineWithDescription,
+		},
+		{
+			"Global value false",
+			"false",
+			"",
+			descLineWithoutDescription,
+		},
+		{
+			"Specific value false",
+			"",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values false",
+			"false",
+			"false",
+			descLineWithoutDescription,
+		},
+		{
+			"Both values true",
+			"true",
+			"true",
+			descLineWithDescription,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			if err := os.Setenv(specificDescriptionsEnvVar, tc.specificEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", specificDescriptionsEnvVar, err)
+			}
+			if err := os.Setenv(globalDescriptionsEnvVar, tc.globalEnvValue); err != nil {
+				t.Errorf("Unexpected error setting %s: %v", globalDescriptionsEnvVar, err)
+			}
+
+			var run = func() {
+				output, err := executeCommand(rootCmd, ShellCompRequestCmd, "thechild", "")
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				expected := strings.Join([]string{
+					tc.expectedLine,
+					":0",
+					"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+				if output != expected {
+					t.Errorf("expected: %q, got: %q", expected, output)
+				}
+			}
+
+			run()
+
+			// For empty cases, test also unset state
+			if tc.specificEnvValue == "" {
+				if err := os.Unsetenv(specificDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", specificDescriptionsEnvVar, err)
+				}
+				run()
+			}
+			if tc.globalEnvValue == "" {
+				if err := os.Unsetenv(globalDescriptionsEnvVar); err != nil {
+					t.Errorf("Unexpected error unsetting %s: %v", globalDescriptionsEnvVar, err)
+				}
+				run()
+			}
+		})
+	}
+}
+
+// A test to make sure the InitDefaultCompletionCmd function works as expected
+// in case a project calls it directly.
+func TestInitDefaultCompletionCmd(t *testing.T) {
+
+	testCases := []struct {
+		desc          string
+		hasChildCmd   bool
+		args          []string
+		expectCompCmd bool
+	}{
+		{
+			desc:          "no child command and not calling the completion command",
+			hasChildCmd:   false,
+			args:          []string{"somearg"},
+			expectCompCmd: false,
+		},
+		{
+			desc:          "no child command but calling the completion command",
+			hasChildCmd:   false,
+			args:          []string{"completion"},
+			expectCompCmd: true,
+		},
+		{
+			desc:          "no child command but calling __complete on the root command",
+			hasChildCmd:   false,
+			args:          []string{"__complete", ""},
+			expectCompCmd: false,
+		},
+		{
+			desc:          "no child command but calling __complete on the completion command",
+			hasChildCmd:   false,
+			args:          []string{"__complete", "completion", ""},
+			expectCompCmd: true,
+		},
+		{
+			desc:          "with child command",
+			hasChildCmd:   true,
+			args:          []string{"child"},
+			expectCompCmd: true,
+		},
+		{
+			desc:          "no child command not passing args",
+			hasChildCmd:   false,
+			args:          nil,
+			expectCompCmd: false,
+		},
+		{
+			desc:          "with child command not passing args",
+			hasChildCmd:   true,
+			args:          nil,
+			expectCompCmd: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			rootCmd := &Command{Use: "root", Run: emptyRun}
+			childCmd := &Command{Use: "child", Run: emptyRun}
+
+			expectedNumSubCommands := 0
+			if tc.hasChildCmd {
+				rootCmd.AddCommand(childCmd)
+				expectedNumSubCommands++
+			}
+
+			if tc.expectCompCmd {
+				expectedNumSubCommands++
+			}
+
+			if len(tc.args) > 0 && tc.args[0] == "__complete" {
+				expectedNumSubCommands++
+			}
+
+			// Setup the __complete command to mimic real world scenarios
+			rootCmd.initCompleteCmd(tc.args)
+
+			// Call the InitDefaultCompletionCmd function directly
+			if tc.args == nil {
+				rootCmd.InitDefaultCompletionCmd()
+			} else {
+				rootCmd.InitDefaultCompletionCmd(tc.args...)
+			}
+
+			// Check if the completion command was added
+			if len(rootCmd.Commands()) != expectedNumSubCommands {
+				t.Errorf("Expected %d subcommands, got %d", expectedNumSubCommands, len(rootCmd.Commands()))
 			}
 		})
 	}
