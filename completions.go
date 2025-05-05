@@ -173,7 +173,7 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) 
 	return nil
 }
 
-// GetFlagCompletion returns the completion function for the given flag, if available.
+// GetFlagCompletionFunc returns the completion function for the given flag, if available.
 func (c *Command) GetFlagCompletionFunc(flag *pflag.Flag) (CompletionFunc, bool) {
 	c.initializeCompletionStorage()
 
