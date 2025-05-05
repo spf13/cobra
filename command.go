@@ -172,7 +172,7 @@ type Command struct {
 	// flagsCompletions contrains completions for arbitrary lists of flags.
 	// Those flags may or may not actually strictly belong to the command in the function,
 	// but registering completions for them through the command allows for garbage-collecting.
-	flagCompletionFunctions map[*flag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+	flagCompletionFunctions map[*flag.Flag]CompletionFunc
 	// lock for reading and writing from flagCompletionFunctions
 	flagCompletionMutex *sync.RWMutex
 
