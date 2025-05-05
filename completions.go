@@ -196,8 +196,9 @@ func (c *Command) GetFlagCompletionFunc(flag *pflag.Flag) (CompletionFunc, bool)
 	return c.Parent().GetFlagCompletionFunc(flag)
 }
 
-// GetFlagCompletionByName returns the completion function for the given flag in the command by name, if available.
-// If the flag is not found in the command's local flags, it looks into the persistent flags, which might belong to one of the command's parents.
+// GetFlagCompletionByName returns the completion function for the given flag in the command 
+// by name, if available. If the flag is not found in the command's local flags, it looks into 
+// the persistent flags, which might belong to one of the command's parents.
 func (c *Command) GetFlagCompletionFuncByName(flagName string) (CompletionFunc, bool) {
 	// Attempt to find it in the local flags.
 	if flag := c.Flags().Lookup(flagName); flag != nil {
