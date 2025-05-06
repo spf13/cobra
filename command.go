@@ -778,21 +778,14 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	return commandFound, a, nil
 }
 
-func (c *Command) findSuggestions(arg string) string {
+func (c *Command) findSuggestions(arg string) []string {
 	if c.DisableSuggestions {
-		return ""
+		return nil
 	}
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
-	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		sb.WriteString("\n\nDid you mean this?\n")
-		for _, s := range suggestions {
-			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
-		}
-	}
-	return sb.String()
+	return c.SuggestionsFor(arg)
 }
 
 func (c *Command) findNext(next string) *Command {
@@ -1931,6 +1924,19 @@ func commandNameMatches(s string, t string) bool {
 	}
 
 	return s == t
+}
+
+// helpTextForSuggestions joins a slice of command suggestions into a string.
+// If the provided slice is empty or nil, an empty string is returned.
+func helpTextForSuggestions(suggestions []string) string {
+	var sb strings.Builder
+	if len(suggestions) > 0 {
+		sb.WriteString("\n\nDid you mean this?\n")
+		for _, s := range suggestions {
+			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
+		}
+	}
+	return sb.String()
 }
 
 // tmplFunc holds a template and a function that will execute said template.
