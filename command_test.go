@@ -2952,3 +2952,83 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestHasCustomFlagCompletion(t *testing.T) {
+
+	testCases := []struct {
+		name           string
+		cmd            *Command
+		expectedResult bool
+	}{
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions not set",
+			cmd: &Command{
+				Use: "c",
+				Run: emptyRun,
+			},
+			expectedResult: false,
+		},
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions set true",
+			cmd: &Command{
+				Use:                        "c",
+				Run:                        emptyRun,
+				AllowCustomFlagCompletions: true,
+			},
+			expectedResult: false,
+		},
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions set false",
+			cmd: &Command{
+				Use:                        "c",
+				Run:                        emptyRun,
+				AllowCustomFlagCompletions: false,
+			},
+			expectedResult: false,
+		},
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions not set with Valid",
+			cmd: &Command{
+				Use: "c",
+				Run: emptyRun,
+				ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+					return []string{}, ShellCompDirectiveNoFileComp
+				},
+			},
+			expectedResult: false,
+		},
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions set true",
+			cmd: &Command{
+				Use:                        "c",
+				Run:                        emptyRun,
+				AllowCustomFlagCompletions: true,
+				ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+					return []string{}, ShellCompDirectiveNoFileComp
+				},
+			},
+			expectedResult: true,
+		},
+		{
+			name: "HasCustomFlagCompletion() AllowCustomFlagCompletions set false",
+			cmd: &Command{
+				Use:                        "c",
+				Run:                        emptyRun,
+				AllowCustomFlagCompletions: false,
+				ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+					return []string{}, ShellCompDirectiveNoFileComp
+				},
+			},
+			expectedResult: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.cmd.HasCustomFlagCompletion() != tc.expectedResult {
+				t.Errorf("did not return expected results")
+			}
+		})
+	}
+
+}
