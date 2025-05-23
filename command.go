@@ -964,10 +964,6 @@ func (c *Command) execute(a []string) (err error) {
 
 	argWoFlags := c.Flags().Args()
 
-	if c.Finalize != nil {
-		defer c.Finalize(c, argWoFlags)
-	}
-
 	if c.DisableFlagParsing {
 		argWoFlags = a
 	}
@@ -988,6 +984,13 @@ func (c *Command) execute(a []string) (err error) {
 			parents = append(parents, p)
 		}
 	}
+	defer func() {
+		for _, p := range parents {
+			if p.Finalize != nil {
+				p.Finalize(c, argWoFlags)
+			}
+		}
+	}()
 	for _, p := range parents {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
