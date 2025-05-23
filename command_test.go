@@ -2952,3 +2952,25 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestFinalizeCalledOnPanic(t *testing.T) {
+	finalizeCalls := 0
+	defer func() {
+		if recover() == nil {
+			t.Error("The code should have panicked due to panicking run")
+		}
+		if finalizeCalls != 1 {
+			t.Errorf("finalize() called %d times, want 1", finalizeCalls)
+		}
+	}()
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(cmd *Command, args []string) {
+			panic("should panic")
+		},
+		Finalize: func(cmd *Command, args []string) {
+			finalizeCalls++
+		},
+	}
+	executeCommand(rootCmd)
+}
