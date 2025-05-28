@@ -52,3 +52,8 @@ linters:
     #- unparam
     - unused
     #- whitespace
+  exclusions:
+    presets:
+      - common-false-positives
+      - legacy
+      - std-error-handling
