@@ -22,9 +22,9 @@ import (
 	"sort"
 	"strings"
 
+	yaml "github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
 )
 
 type cmdOption struct {

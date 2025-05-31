@@ -94,7 +94,7 @@ var dummyCmd = &cobra.Command{
 
 func checkStringContains(t *testing.T, got, expected string) {
 	if !strings.Contains(got, expected) {
-		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
+		t.Errorf("Expected string to contain: \n %v\nGot:\n %v\n", expected, got)
 	}
 }
 
