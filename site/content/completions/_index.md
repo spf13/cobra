@@ -305,6 +305,36 @@ $ helm status --output [tab][tab]
 json table yaml
 ```
 
+#### Change the default ShellCompDirective
+
+When no completion function is registered for a leaf command or for a flag, Cobra will
+automatically use `ShellCompDirectiveDefault`, which will invoke the shell's filename completion.
+This implies that when file completion does not apply to a leaf command or to a flag (the command
+or flag does not operate on a filename), turning off file completion requires you to register a
+completion function for that command/flag.
+For example:
+
+```go
+cmd.RegisterFlagCompletionFunc("flag-name", cobra.NoFileCompletions)
+```
+
+If you find that there are more situations where file completion should be turned off than
+when it is applicable, you can recursively change the default `ShellCompDirective` for a command
+and its subcommands to `ShellCompDirectiveNoFileComp`:
+
+```go
+cmd.CompletionOptions.SetDefaultShellCompDirective(ShellCompDirectiveNoFileComp)
+```
+
+If doing so, keep in mind that you should instead register a completion function for leaf commands or
+flags where file completion is applicable. For example:
+
+```go
+cmd.RegisterFlagCompletionFunc("flag-name", cobra.FixedCompletions(nil, ShellCompDirectiveDefault))
+```
+
+To change the default directive for the entire program, set the DefaultShellCompDirective on the root command.
+
 #### Debugging
 
 You can also easily debug your Go completion code for flags:
