@@ -4015,3 +4015,60 @@ func TestInitDefaultCompletionCmd(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomDefaultShellCompDirective(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.PersistentFlags().String("string", "", "test string flag")
+	// use ShellCompDirectiveNoFileComp instead of the default, which is ShellCompDirectiveDefault.
+	rootCmd.CompletionOptions.SetDefaultShellCompDirective(ShellCompDirectiveNoFileComp)
+
+	// child1 inherits the custom DefaultShellCompDirective.
+	childCmd1 := &Command{Use: "child1", Run: emptyRun}
+	// child2 resets the custom DefaultShellCompDirective to the default value.
+	childCmd2 := &Command{Use: "child2", Run: emptyRun}
+	childCmd2.CompletionOptions.SetDefaultShellCompDirective(ShellCompDirectiveDefault)
+
+	rootCmd.AddCommand(childCmd1, childCmd2)
+
+	testCases := []struct {
+		desc              string
+		args              []string
+		expectedDirective string
+	}{
+		{
+			"flag completion on root command with custom DefaultShellCompDirective",
+			[]string{"--string", ""},
+			"ShellCompDirectiveNoFileComp",
+		},
+		{
+			"flag completion on subcommand with inherited custom DefaultShellCompDirective",
+			[]string{"child1", "--string", ""},
+			"ShellCompDirectiveNoFileComp",
+		},
+		{
+			"flag completion on subcommand with reset DefaultShellCompDirective",
+			[]string{"child2", "--string", ""},
+			"ShellCompDirectiveDefault",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			args := []string{ShellCompNoDescRequestCmd}
+			args = append(args, tc.args...)
+
+			output, err := executeCommand(rootCmd, args...)
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			outputWords := strings.Split(strings.TrimSpace(output), " ")
+			directive := outputWords[len(outputWords)-1]
+
+			if directive != tc.expectedDirective {
+				t.Errorf("expected: %q, got: %q", tc.expectedDirective, directive)
+			}
+		})
+	}
+}
