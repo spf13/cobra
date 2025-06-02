@@ -25,6 +25,13 @@ func (c *Command) MarkFlagRequired(name string) error {
 	return MarkFlagRequired(c.Flags(), name)
 }
 
+// MarkFlagsRequired instructs the various shell completion implementations to
+// prioritize the named flags when performing completion,
+// and causes your command to report an error if invoked without any of the flags.
+func (c *Command) MarkFlagsRequired(names ...string) error {
+	return MarkFlagsRequired(c.Flags(), names...)
+}
+
 // MarkPersistentFlagRequired instructs the various shell completion implementations to
 // prioritize the named persistent flag when performing completion,
 // and causes your command to report an error if invoked without the flag.
@@ -32,11 +39,30 @@ func (c *Command) MarkPersistentFlagRequired(name string) error {
 	return MarkFlagRequired(c.PersistentFlags(), name)
 }
 
+// MarkPersistentFlagsRequired instructs the various shell completion implementations to
+// prioritize the named persistent flags when performing completion,
+// and causes your command to report an error if invoked without any of the flags.
+func (c *Command) MarkPersistentFlagsRequired(names ...string) error {
+	return MarkFlagsRequired(c.PersistentFlags(), names...)
+}
+
 // MarkFlagRequired instructs the various shell completion implementations to
 // prioritize the named flag when performing completion,
 // and causes your command to report an error if invoked without the flag.
 func MarkFlagRequired(flags *pflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompOneRequiredFlag, []string{"true"})
+}
+
+// MarkFlagsRequired instructs the various shell completion implementations to
+// prioritize the named flags when performing completion,
+// and causes your command to report an error if invoked without any of the flags.
+func MarkFlagsRequired(flags *pflag.FlagSet, names ...string) error {
+	for _, name := range names {
+		if err := MarkFlagRequired(flags, name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // MarkFlagFilename instructs the various shell completion implementations to
