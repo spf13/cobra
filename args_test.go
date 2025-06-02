@@ -15,7 +15,9 @@
 package cobra
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -32,12 +34,45 @@ func getCommand(args PositionalArgs, withValid bool) *Command {
 	return c
 }
 
+func getCommandName(c *Command) string {
+	if c == nil {
+		return "<nil>"
+	} else {
+		return c.Name()
+	}
+}
+
 func expectSuccess(output string, err error, t *testing.T) {
 	if output != "" {
 		t.Errorf("Unexpected output: %v", output)
 	}
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+func expectErrorAs(err error, target error, t *testing.T) {
+	if err == nil {
+		t.Fatalf("Expected error, got nil")
+	}
+
+	targetType := reflect.TypeOf(target)
+	targetPtr := reflect.New(targetType).Interface() // *SomeError
+	if !errors.As(err, targetPtr) {
+		t.Fatalf("Expected error to be %T, got %T", target, err)
+	}
+}
+
+func expectErrorHasCommand(err error, cmd *Command, t *testing.T) {
+	getCommand, ok := err.(interface{ GetCommand() *Command })
+	if !ok {
+		t.Fatalf("Expected error to have GetCommand method, but did not")
+	}
+
+	got := getCommand.GetCommand()
+	if cmd != got {
+		t.Errorf("Expected err.GetCommand to return %v, got %v",
+			getCommandName(cmd), getCommandName(got))
 	}
 }
 
@@ -139,6 +174,13 @@ func TestNoArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestNoArgs_ReturnsUnknownSubcommandError(t *testing.T) {
+	c := getCommand(NoArgs, false)
+	_, err := executeCommand(c, "a")
+	expectErrorAs(err, UnknownSubcommandError{}, t)
+	expectErrorHasCommand(err, c, t)
+}
+
 // OnlyValidArgs
 
 func TestOnlyValidArgs(t *testing.T) {
@@ -151,6 +193,13 @@ func TestOnlyValidArgs_WithInvalidArgs(t *testing.T) {
 	c := getCommand(OnlyValidArgs, true)
 	_, err := executeCommand(c, "a")
 	validOnlyWithInvalidArgs(err, t)
+}
+
+func TestOnlyValidArgs_ReturnsInvalidArgValueError(t *testing.T) {
+	c := getCommand(OnlyValidArgs, true)
+	_, err := executeCommand(c, "a")
+	expectErrorAs(err, InvalidArgValueError{}, t)
+	expectErrorHasCommand(err, c, t)
 }
 
 // ArbitraryArgs
@@ -229,6 +278,13 @@ func TestMinimumNArgs_WithLessArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestMinimumNArgs_ReturnsInvalidArgCountError(t *testing.T) {
+	c := getCommand(MinimumNArgs(2), true)
+	_, err := executeCommand(c, "a")
+	expectErrorAs(err, InvalidArgCountError{}, t)
+	expectErrorHasCommand(err, c, t)
+}
+
 // MaximumNArgs
 
 func TestMaximumNArgs(t *testing.T) {
@@ -277,6 +333,13 @@ func TestMaximumNArgs_WithMoreArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
 	c := getCommand(MatchAll(OnlyValidArgs, MaximumNArgs(2)), true)
 	_, err := executeCommand(c, "a", "b", "c")
 	validOnlyWithInvalidArgs(err, t)
+}
+
+func TestMaximumNArgs_ReturnsInvalidArgCountError(t *testing.T) {
+	c := getCommand(MaximumNArgs(2), true)
+	_, err := executeCommand(c, "a", "b", "c")
+	expectErrorAs(err, InvalidArgCountError{}, t)
+	expectErrorHasCommand(err, c, t)
 }
 
 // ExactArgs
@@ -329,6 +392,13 @@ func TestExactArgs_WithInvalidCount_WithValidOnly_WithInvalidArgs(t *testing.T) 
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestExactArgs_ReturnsInvalidArgCountError(t *testing.T) {
+	c := getCommand(ExactArgs(2), true)
+	_, err := executeCommand(c, "a")
+	expectErrorAs(err, InvalidArgCountError{}, t)
+	expectErrorHasCommand(err, c, t)
+}
+
 // RangeArgs
 
 func TestRangeArgs(t *testing.T) {
@@ -377,6 +447,13 @@ func TestRangeArgs_WithInvalidCount_WithValidOnly_WithInvalidArgs(t *testing.T) 
 	c := getCommand(MatchAll(OnlyValidArgs, RangeArgs(2, 4)), true)
 	_, err := executeCommand(c, "a")
 	validOnlyWithInvalidArgs(err, t)
+}
+
+func TestRangeArgs_ReturnsInvalidArgCountError(t *testing.T) {
+	c := getCommand(RangeArgs(2, 4), true)
+	_, err := executeCommand(c, "a")
+	expectErrorAs(err, InvalidArgCountError{}, t)
+	expectErrorHasCommand(err, c, t)
 }
 
 // Takes(No)Args
