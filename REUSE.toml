@@ -1,0 +1,11 @@
+version = 1
+SPDX-PackageName = "cobra"
+SPDX-PackageSupplier = "ospo@sap.com"
+SPDX-PackageDownloadLocation = "https://ocm.software/ocm"
+SPDX-PackageComment = "This package is licensed under the Apache License 2.0"
+
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Copyright 2013-2023 The Cobra Authors"
+SPDX-License-Identifier = "Apache-2.0"
