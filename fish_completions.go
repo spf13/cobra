@@ -46,14 +46,14 @@ function __%[1]s_perform_completion
 
     # Extract all args except the last one
     set -l args (commandline -opc)
-    # Extract the last arg and escape it in case it is a space
+    # Extract the last arg and escape it in case it is a space or wildcard
     set -l lastArg (string escape -- (commandline -ct))
 
     __%[1]s_debug "args: $args"
     __%[1]s_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
-    set -l requestComp "%[10]s=0 $args[1] %[3]s $args[2..-1] $lastArg"
+    set -l requestComp "%[10]s=0 $args[1] %[3]s $(string join ' ' (string escape $args[2..-1])) $lastArg"
 
     __%[1]s_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
