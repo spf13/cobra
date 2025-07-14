@@ -83,29 +83,38 @@ func (c *Command) ValidateFlagGroups() error {
 		return nil
 	}
 
-	flags := c.Flags()
+	required, oneRequired, mutuallyExclusive := c.getFlagGroupStatuses()
 
-	// groupStatus format is the list of flags as a unique ID,
-	// then a map of each flag name and whether it is set or not.
-	groupStatus := map[string]map[string]bool{}
-	oneRequiredGroupStatus := map[string]map[string]bool{}
-	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
-	flags.VisitAll(func(pflag *flag.Flag) {
-		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, groupStatus)
-		processFlagForGroupAnnotation(flags, pflag, oneRequiredAnnotation, oneRequiredGroupStatus)
-		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
-	})
-
-	if err := validateRequiredFlagGroups(groupStatus); err != nil {
+	if err := validateRequiredFlagGroups(required); err != nil {
 		return err
 	}
-	if err := validateOneRequiredFlagGroups(oneRequiredGroupStatus); err != nil {
+	if err := validateOneRequiredFlagGroups(oneRequired); err != nil {
 		return err
 	}
-	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus); err != nil {
+	if err := validateExclusiveFlagGroups(mutuallyExclusive); err != nil {
 		return err
 	}
 	return nil
+}
+
+// getFlagGroupStatuses collects the status of all flags belonging to any flag group.
+func (c *Command) getFlagGroupStatuses() (
+	required map[string]map[string]bool,
+	oneRequired map[string]map[string]bool,
+	mutuallyExclusive map[string]map[string]bool,
+) {
+	flags := c.Flags()
+	required = map[string]map[string]bool{}
+	oneRequired = map[string]map[string]bool{}
+	mutuallyExclusive = map[string]map[string]bool{}
+
+	flags.VisitAll(func(pflag *flag.Flag) {
+		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, required)
+		processFlagForGroupAnnotation(flags, pflag, oneRequiredAnnotation, oneRequired)
+		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusive)
+	})
+
+	return required, oneRequired, mutuallyExclusive
 }
 
 func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
@@ -227,19 +236,11 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 		return
 	}
 
-	flags := c.Flags()
-	groupStatus := map[string]map[string]bool{}
-	oneRequiredGroupStatus := map[string]map[string]bool{}
-	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
-	c.Flags().VisitAll(func(pflag *flag.Flag) {
-		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, groupStatus)
-		processFlagForGroupAnnotation(flags, pflag, oneRequiredAnnotation, oneRequiredGroupStatus)
-		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
-	})
+	required, oneRequired, mutuallyExclusive := c.getFlagGroupStatuses()
 
 	// If a flag that is part of a group is present, we make all the other flags
 	// of that group required so that the shell completion suggests them automatically
-	for flagList, flagnameAndStatus := range groupStatus {
+	for flagList, flagnameAndStatus := range required {
 		for _, isSet := range flagnameAndStatus {
 			if isSet {
 				// One of the flags of the group is set, mark the other ones as required
@@ -252,7 +253,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 
 	// If none of the flags of a one-required group are present, we make all the flags
 	// of that group required so that the shell completion suggests them automatically
-	for flagList, flagnameAndStatus := range oneRequiredGroupStatus {
+	for flagList, flagnameAndStatus := range oneRequired {
 		isSet := false
 
 		for _, isSet = range flagnameAndStatus {
@@ -272,7 +273,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 
 	// If a flag that is mutually exclusive to others is present, we hide the other
 	// flags of that group so the shell completion does not suggest them
-	for flagList, flagnameAndStatus := range mutuallyExclusiveGroupStatus {
+	for flagList, flagnameAndStatus := range mutuallyExclusive {
 		for flagName, isSet := range flagnameAndStatus {
 			if isSet {
 				// One of the flags of the mutually exclusive group is set, mark the other ones as hidden
