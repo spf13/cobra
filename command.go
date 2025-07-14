@@ -1021,11 +1021,7 @@ func (c *Command) validateRequiredFlags() error {
 	flags := c.Flags()
 	missingFlagNames := []string{}
 	flags.VisitAll(func(pflag *flag.Flag) {
-		requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
-		if !found {
-			return
-		}
-		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+		if c.IsFlagRequired(pflag.Name) && !pflag.Changed {
 			missingFlagNames = append(missingFlagNames, pflag.Name)
 		}
 	})
@@ -1606,6 +1602,36 @@ func (c *Command) HasAvailableLocalFlags() bool {
 // not hidden or deprecated.
 func (c *Command) HasAvailableInheritedFlags() bool {
 	return c.InheritedFlags().HasAvailableFlags()
+}
+
+// IsFlagRequired returns true if the flag identified by 'name' is a local flag
+// is marked as required.
+func (c *Command) IsFlagRequired(name string) bool {
+	f := c.Flags().Lookup(name)
+	if f == nil {
+		return false
+	}
+
+	requiredAnnotation, found := f.Annotations[BashCompOneRequiredFlag]
+	if !found {
+		return false
+	}
+	return len(requiredAnnotation) > 0 && requiredAnnotation[0] == "true"
+}
+
+// IsPersistentFlagRequired returns true if the persistent flag identified by
+// 'name' is marked as required.
+func (c *Command) IsPersistentFlagRequired(name string) bool {
+	f := c.PersistentFlags().Lookup(name)
+	if f == nil {
+		return false
+	}
+
+	requiredAnnotation, found := f.Annotations[BashCompOneRequiredFlag]
+	if !found {
+		return false
+	}
+	return len(requiredAnnotation) > 0 && requiredAnnotation[0] == "true"
 }
 
 // Flag climbs up the command tree looking for matching flag.
