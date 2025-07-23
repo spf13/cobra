@@ -981,6 +981,12 @@ func (c *Command) execute(a []string) (err error) {
 			parents = append(parents, p)
 		}
 	}
+	if err := c.ValidateRequiredFlags(); err != nil {
+		return err
+	}
+	if err := c.ValidateFlagGroups(); err != nil {
+		return err
+	}
 	for _, p := range parents {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
@@ -1003,14 +1009,6 @@ func (c *Command) execute(a []string) (err error) {
 	} else if c.PreRun != nil {
 		c.PreRun(c, argWoFlags)
 	}
-
-	if err := c.ValidateRequiredFlags(); err != nil {
-		return err
-	}
-	if err := c.ValidateFlagGroups(); err != nil {
-		return err
-	}
-
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
