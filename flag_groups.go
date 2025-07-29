@@ -83,7 +83,10 @@ func (c *Command) ValidateFlagGroups() error {
 		return nil
 	}
 
-	required, oneRequired, mutuallyExclusive := c.getFlagGroupStatuses()
+	statuses := c.getFlagGroupStatuses()
+	required := statuses.Required
+	oneRequired := statuses.OneRequired
+	mutuallyExclusive := statuses.MutuallyExclusive
 
 	if err := validateRequiredFlagGroups(required); err != nil {
 		return err
@@ -97,16 +100,18 @@ func (c *Command) ValidateFlagGroups() error {
 	return nil
 }
 
+type FlagGroupStatuses struct {
+	Required          map[string]map[string]bool
+	OneRequired       map[string]map[string]bool
+	MutuallyExclusive map[string]map[string]bool
+}
+
 // getFlagGroupStatuses collects the status of all flags belonging to any flag group.
-func (c *Command) getFlagGroupStatuses() (
-	required map[string]map[string]bool,
-	oneRequired map[string]map[string]bool,
-	mutuallyExclusive map[string]map[string]bool,
-) {
+func (c *Command) getFlagGroupStatuses() FlagGroupStatuses {
 	flags := c.Flags()
-	required = map[string]map[string]bool{}
-	oneRequired = map[string]map[string]bool{}
-	mutuallyExclusive = map[string]map[string]bool{}
+	required := map[string]map[string]bool{}
+	oneRequired := map[string]map[string]bool{}
+	mutuallyExclusive := map[string]map[string]bool{}
 
 	flags.VisitAll(func(pflag *flag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroupAnnotation, required)
@@ -114,7 +119,11 @@ func (c *Command) getFlagGroupStatuses() (
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusive)
 	})
 
-	return required, oneRequired, mutuallyExclusive
+	return FlagGroupStatuses{
+		Required:          required,
+		OneRequired:       oneRequired,
+		MutuallyExclusive: mutuallyExclusive,
+	}
 }
 
 func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
@@ -236,7 +245,10 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 		return
 	}
 
-	required, oneRequired, mutuallyExclusive := c.getFlagGroupStatuses()
+	statuses := c.getFlagGroupStatuses()
+	required := statuses.Required
+	oneRequired := statuses.OneRequired
+	mutuallyExclusive := statuses.MutuallyExclusive
 
 	// If a flag that is part of a group is present, we make all the other flags
 	// of that group required so that the shell completion suggests them automatically
