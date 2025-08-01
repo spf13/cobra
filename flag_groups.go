@@ -84,30 +84,27 @@ func (c *Command) ValidateFlagGroups() error {
 	}
 
 	statuses := c.getFlagGroupStatuses()
-	required := statuses.Required
-	oneRequired := statuses.OneRequired
-	mutuallyExclusive := statuses.MutuallyExclusive
 
-	if err := validateRequiredFlagGroups(required); err != nil {
+	if err := validateRequiredFlagGroups(statuses.Required); err != nil {
 		return err
 	}
-	if err := validateOneRequiredFlagGroups(oneRequired); err != nil {
+	if err := validateOneRequiredFlagGroups(statuses.OneRequired); err != nil {
 		return err
 	}
-	if err := validateExclusiveFlagGroups(mutuallyExclusive); err != nil {
+	if err := validateExclusiveFlagGroups(statuses.MutuallyExclusive); err != nil {
 		return err
 	}
 	return nil
 }
 
-type FlagGroupStatuses struct {
+type flagGroupStatuses struct {
 	Required          map[string]map[string]bool
 	OneRequired       map[string]map[string]bool
 	MutuallyExclusive map[string]map[string]bool
 }
 
 // getFlagGroupStatuses collects the status of all flags belonging to any flag group.
-func (c *Command) getFlagGroupStatuses() FlagGroupStatuses {
+func (c *Command) getFlagGroupStatuses() flagGroupStatuses {
 	flags := c.Flags()
 	required := map[string]map[string]bool{}
 	oneRequired := map[string]map[string]bool{}
@@ -119,7 +116,7 @@ func (c *Command) getFlagGroupStatuses() FlagGroupStatuses {
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusive)
 	})
 
-	return FlagGroupStatuses{
+	return flagGroupStatuses{
 		Required:          required,
 		OneRequired:       oneRequired,
 		MutuallyExclusive: mutuallyExclusive,
@@ -246,13 +243,10 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 	}
 
 	statuses := c.getFlagGroupStatuses()
-	required := statuses.Required
-	oneRequired := statuses.OneRequired
-	mutuallyExclusive := statuses.MutuallyExclusive
 
 	// If a flag that is part of a group is present, we make all the other flags
 	// of that group required so that the shell completion suggests them automatically
-	for flagList, flagnameAndStatus := range required {
+	for flagList, flagnameAndStatus := range statuses.Required {
 		for _, isSet := range flagnameAndStatus {
 			if isSet {
 				// One of the flags of the group is set, mark the other ones as required
@@ -265,7 +259,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 
 	// If none of the flags of a one-required group are present, we make all the flags
 	// of that group required so that the shell completion suggests them automatically
-	for flagList, flagnameAndStatus := range oneRequired {
+	for flagList, flagnameAndStatus := range statuses.OneRequired {
 		isSet := false
 
 		for _, isSet = range flagnameAndStatus {
@@ -285,7 +279,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 
 	// If a flag that is mutually exclusive to others is present, we hide the other
 	// flags of that group so the shell completion does not suggest them
-	for flagList, flagnameAndStatus := range mutuallyExclusive {
+	for flagList, flagnameAndStatus := range statuses.MutuallyExclusive {
 		for flagName, isSet := range flagnameAndStatus {
 			if isSet {
 				// One of the flags of the mutually exclusive group is set, mark the other ones as hidden
