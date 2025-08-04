@@ -48,6 +48,7 @@
 - [OpenShift](https://www.openshift.com/)
 - [Ory Hydra](https://github.com/ory/hydra)
 - [Ory Kratos](https://github.com/ory/kratos)
+- [Periscope](https://github.com/anishathalye/periscope)
 - [Pixie](https://github.com/pixie-io/pixie)
 - [Polygon Edge](https://github.com/0xPolygon/polygon-edge)
 - [Pouch](https://github.com/alibaba/pouch)
