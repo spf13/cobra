@@ -1,7 +1,13 @@
-
-![cobra logo](https://github.com/user-attachments/assets/cbc3adf8-0dff-46e9-a88d-5e2d971c169e)
+<div align="center">
+<a href="https://cobra.dev">
+<img width="512" height="535" alt="cobra-logo" src="https://github.com/user-attachments/assets/c8bf9aad-b5ae-41d3-8899-d83baec10af8" />
+</a>
+</div>
 
 Cobra is a library for creating powerful modern CLI applications.
+
+<a href="https://cobra.dev">Visit Cobra.dev for extensive documentation</a> 
+
 
 Cobra is used in many Go projects such as [Kubernetes](https://kubernetes.io/),
 [Hugo](https://gohugo.io), and [GitHub CLI](https://github.com/cli/cli) to
