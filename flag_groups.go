@@ -96,13 +96,13 @@ func (c *Command) ValidateFlagGroups() error {
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
 	})
 
-	if err := validateRequiredFlagGroups(groupStatus); err != nil {
+	if err := validateRequiredFlagGroups(c, groupStatus); err != nil {
 		return err
 	}
-	if err := validateOneRequiredFlagGroups(oneRequiredGroupStatus); err != nil {
+	if err := validateOneRequiredFlagGroups(c, oneRequiredGroupStatus); err != nil {
 		return err
 	}
-	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus); err != nil {
+	if err := validateExclusiveFlagGroups(c, mutuallyExclusiveGroupStatus); err != nil {
 		return err
 	}
 	return nil
@@ -141,7 +141,7 @@ func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annota
 	}
 }
 
-func validateRequiredFlagGroups(data map[string]map[string]bool) error {
+func validateRequiredFlagGroups(cmd *Command, data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -158,13 +158,18 @@ func validateRequiredFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(unset)
-		return fmt.Errorf("if any flags in the group [%v] are set they must all be set; missing %v", flagList, unset)
+		return FlagGroupError{
+			err:          ErrFlagsAreRequiredTogether,
+			cmd:          cmd,
+			flagList:     flagList,
+			problemFlags: unset,
+		}
 	}
 
 	return nil
 }
 
-func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
+func validateOneRequiredFlagGroups(cmd *Command, data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -180,12 +185,16 @@ func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
-		return fmt.Errorf("at least one of the flags in the group [%v] is required", flagList)
+		return FlagGroupError{
+			err:      ErrFlagsAreOneRequired,
+			cmd:      cmd,
+			flagList: flagList,
+		}
 	}
 	return nil
 }
 
-func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
+func validateExclusiveFlagGroups(cmd *Command, data map[string]map[string]bool) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -201,7 +210,12 @@ func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
-		return fmt.Errorf("if any flags in the group [%v] are set none of the others can be; %v were all set", flagList, set)
+		return FlagGroupError{
+			err:          ErrFlagsAreMutuallyExclusive,
+			cmd:          cmd,
+			flagList:     flagList,
+			problemFlags: set,
+		}
 	}
 	return nil
 }
