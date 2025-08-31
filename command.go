@@ -39,7 +39,7 @@ const (
 )
 
 // FParseErrWhitelist configures Flag parse errors to be ignored
-type FParseErrWhitelist flag.ParseErrorsWhitelist
+type FParseErrWhitelist flag.ParseErrorsAllowlist
 
 // Group Structure to manage groups for commands
 type Group struct {
@@ -1877,7 +1877,7 @@ func (c *Command) ParseFlags(args []string) error {
 	c.mergePersistentFlags()
 
 	// do it here after merging all flags and just before parse
-	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
+	c.Flags().ParseErrorsAllowlist = flag.ParseErrorsAllowlist(c.FParseErrWhitelist)
 
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
