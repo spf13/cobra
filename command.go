@@ -184,6 +184,8 @@ type Command struct {
 	helpCommand *Command
 	// helpCommandGroupID is the group id for the helpCommand
 	helpCommandGroupID string
+	// suggestOutputFunc is user's override for the suggestion output.
+	suggestOutputFunc func([]string) string
 
 	// completionCommandGroupID is the group id for the completion command
 	completionCommandGroupID string
@@ -346,6 +348,10 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 	}
 	// helpCommandGroupID is used if no helpCommand is defined by the user
 	c.helpCommandGroupID = groupID
+}
+
+func (c *Command) SetSuggestOutputFunc(f func([]string) string) {
+	c.suggestOutputFunc = f
 }
 
 // SetCompletionCommandGroupID sets the group id of the completion command.
@@ -778,15 +784,41 @@ func (c *Command) Find(args []string) (*Command, []string, error) {
 	return commandFound, a, nil
 }
 
-func (c *Command) findSuggestions(arg string) string {
+// findSuggestions returns suggestions for the provided typedName if suggestions aren't disabled.
+// The output building function can be overridden by setting it with the SetSuggestOutputFunc.
+// If the output override is, instead, set on a parent, it uses the first one found.
+// If none is set, a default is used.
+func (c *Command) findSuggestions(typedName string) string {
 	if c.DisableSuggestions {
 		return ""
 	}
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
+
+	suggestions := c.SuggestionsFor(typedName)
+
+	if c.suggestOutputFunc != nil {
+		return c.suggestOutputFunc(suggestions)
+	}
+	if c.HasParent() {
+		var getParentFunc func(*Command) func([]string) string
+		getParentFunc = func(parent *Command) func([]string) string {
+			if parent.suggestOutputFunc != nil {
+				return parent.suggestOutputFunc
+			}
+			if !parent.HasParent() {
+				return nil
+			}
+			return getParentFunc(parent.Parent())
+		}
+		if parentFunc := getParentFunc(c.Parent()); parentFunc != nil {
+			return parentFunc(suggestions)
+		}
+	}
+
 	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
+	if len(suggestions) > 0 {
 		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
 			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
