@@ -2601,9 +2601,10 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
+const val = "foobar"
+
 func TestSetContext(t *testing.T) {
 	type key struct{}
-	val := "foobar"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
@@ -2957,7 +2958,6 @@ func TestHelpFuncExecuted(t *testing.T) {
 func TestOnFinalizeCmdRunE(t *testing.T) {
 	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
 	type key struct{}
-	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		key := cmd.Context().Value(key{})
@@ -2994,7 +2994,6 @@ func TestOnFinalizeCmdRunE(t *testing.T) {
 func TestOnFinalizeCmdPostRunE(t *testing.T) {
 	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
 	type key struct{}
-	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		key := cmd.Context().Value(key{})
@@ -3034,7 +3033,6 @@ func TestOnFinalizeCmdPostRunE(t *testing.T) {
 func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
 	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
 	type key struct{}
-	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		c := cmd.Context()
