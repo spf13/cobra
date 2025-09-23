@@ -2955,18 +2955,27 @@ func TestHelpFuncExecuted(t *testing.T) {
 }
 
 func TestOnFinalizeCmdRunE(t *testing.T) {
+	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
+	type key struct{}
+	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
-	finalized := false
 	var errOut error
 	var cmdOut *Command
+	var got string
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		errOut = err
 		cmdOut = cmd
-		finalized = true
+		key := cmd.Context().Value(key{})
+		keyOut, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		got = keyOut
 	})
 	rootCmd := &Command{
 		Use: "root",
-		RunE: func(_ *Command, _ []string) error {
+		RunE: func(cmd *Command, _ []string) error {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
 			return testErr
 		},
 	}
@@ -2975,9 +2984,7 @@ func TestOnFinalizeCmdRunE(t *testing.T) {
 	if !errors.Is(err, testErr) {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if !finalized {
-		t.Error("OnFinalizedCmd not called")
-	}
+
 	if cmdOut.Name() != rootCmd.Use {
 		t.Errorf("Unexpected OnFinalizeCmd: %s", cmdOut.Name())
 	}
@@ -2985,21 +2992,36 @@ func TestOnFinalizeCmdRunE(t *testing.T) {
 	if !errors.Is(errOut, testErr) {
 		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
 	}
+
+	if got != val {
+		t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
+	}
 }
 
 func TestOnFinalizeCmdPostRunE(t *testing.T) {
+	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
+	type key struct{}
+	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
-	finalized := false
 	var errOut error
 	var cmdOut *Command
+	var got string
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		errOut = err
 		cmdOut = cmd
-		finalized = true
+		key := cmd.Context().Value(key{})
+		keyOut, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		got = keyOut
 	})
+
 	rootCmd := &Command{
 		Use: "root",
-		Run: func(cmd *Command, args []string) {},
+		Run: func(cmd *Command, args []string) {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
+		},
 		PostRunE: func(_ *Command, _ []string) error {
 			return testErr
 		},
@@ -3009,9 +3031,7 @@ func TestOnFinalizeCmdPostRunE(t *testing.T) {
 	if !errors.Is(err, testErr) {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if !finalized {
-		t.Error("OnFinalizedCmd not called")
-	}
+
 	if cmdOut.Name() != rootCmd.Use {
 		t.Errorf("unexpected OnFinalizeCmd: %s", cmdOut.Name())
 	}
@@ -3019,21 +3039,34 @@ func TestOnFinalizeCmdPostRunE(t *testing.T) {
 	if !errors.Is(errOut, testErr) {
 		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
 	}
+
+	if got != val {
+		t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
+	}
 }
 
 func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
+	defer func() { cmdFinalizers = []func(*Command, error){} }()
+	type key struct{}
+	val := "foobar"
 	testErr := fmt.Errorf("Test Error")
-	finalized := false
 	var errOut error
 	var cmdOut *Command
+	var got string
 	OnFinalizeCmd(func(cmd *Command, err error) {
 		errOut = err
 		cmdOut = cmd
-		finalized = true
+		c := cmd.Context()
+		key := c.Value(key{})
+		keyOut, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		got = keyOut
 	})
 	rootCmd := &Command{
 		Use: "root",
-		Run: func(cmd *Command, args []string) {},
+		Run: func(_ *Command, args []string) {},
 		PersistentPostRunE: func(_ *Command, _ []string) error {
 			return testErr
 		},
@@ -3041,7 +3074,9 @@ func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
 
 	childCmd := &Command{
 		Use: "child",
-		Run: func(_ *Command, args []string) {},
+		Run: func(cmd *Command, args []string) {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
+		},
 	}
 
 	rootCmd.AddCommand(childCmd)
@@ -3050,14 +3085,16 @@ func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
 	if !errors.Is(err, testErr) {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if !finalized {
-		t.Error("OnFinalizedCmd not called")
-	}
+
 	if cmdOut.Name() != childCmd.Use {
 		t.Errorf("unexpected OnFinalizeCmd: %s", cmdOut.Name())
 	}
 
 	if !errors.Is(errOut, testErr) {
 		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+	}
+
+	if got != val {
+		t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
 	}
 }
