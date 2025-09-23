@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -2951,4 +2952,112 @@ func TestHelpFuncExecuted(t *testing.T) {
 	}
 
 	checkStringContains(t, output, helpText)
+}
+
+func TestOnFinalizeCmdRunE(t *testing.T) {
+	testErr := fmt.Errorf("Test Error")
+	finalized := false
+	var errOut error
+	var cmdOut *Command
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		errOut = err
+		cmdOut = cmd
+		finalized = true
+	})
+	rootCmd := &Command{
+		Use: "root",
+		RunE: func(_ *Command, _ []string) error {
+			return testErr
+		},
+	}
+
+	_, err := executeCommand(rootCmd)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !finalized {
+		t.Error("OnFinalizedCmd not called")
+	}
+	if cmdOut.Name() != rootCmd.Use {
+		t.Errorf("Unexpected OnFinalizeCmd: %s", cmdOut.Name())
+	}
+
+	if !errors.Is(errOut, testErr) {
+		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+	}
+}
+
+func TestOnFinalizeCmdPostRunE(t *testing.T) {
+	testErr := fmt.Errorf("Test Error")
+	finalized := false
+	var errOut error
+	var cmdOut *Command
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		errOut = err
+		cmdOut = cmd
+		finalized = true
+	})
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(cmd *Command, args []string) {},
+		PostRunE: func(_ *Command, _ []string) error {
+			return testErr
+		},
+	}
+
+	_, err := executeCommand(rootCmd)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !finalized {
+		t.Error("OnFinalizedCmd not called")
+	}
+	if cmdOut.Name() != rootCmd.Use {
+		t.Errorf("unexpected OnFinalizeCmd: %s", cmdOut.Name())
+	}
+
+	if !errors.Is(errOut, testErr) {
+		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+	}
+}
+
+func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
+	testErr := fmt.Errorf("Test Error")
+	finalized := false
+	var errOut error
+	var cmdOut *Command
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		errOut = err
+		cmdOut = cmd
+		finalized = true
+	})
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(cmd *Command, args []string) {},
+		PersistentPostRunE: func(_ *Command, _ []string) error {
+			return testErr
+		},
+	}
+
+	childCmd := &Command{
+		Use: "child",
+		Run: func(_ *Command, args []string) {},
+	}
+
+	rootCmd.AddCommand(childCmd)
+
+	_, err := executeCommand(rootCmd, childCmd.Use)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !finalized {
+		t.Error("OnFinalizedCmd not called")
+	}
+	if cmdOut.Name() != childCmd.Use {
+		t.Errorf("unexpected OnFinalizeCmd: %s", cmdOut.Name())
+	}
+
+	if !errors.Is(errOut, testErr) {
+		t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+	}
 }
