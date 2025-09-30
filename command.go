@@ -190,6 +190,8 @@ type Command struct {
 
 	// versionTemplate is the version template defined by user.
 	versionTemplate *tmplFunc
+	// versionFunc is the version func defined by user.
+	versionFunc func(*Command) error
 
 	// errPrefix is the error message prefix defined by user.
 	errPrefix string
@@ -361,6 +363,14 @@ func (c *Command) SetHelpTemplate(s string) {
 		return
 	}
 	c.helpTemplate = tmpl(s)
+}
+
+// SetVersionFunc sets version function. Can be defined by Application.
+//
+// Setting this means that [Command.SetVersionTemplate] will not have any
+// effect any more.
+func (c *Command) SetVersionFunc(f func(*Command) error) {
+	c.versionFunc = f
 }
 
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
@@ -637,6 +647,18 @@ func (c *Command) getVersionTemplateFunc() func(w io.Writer, data interface{}) e
 		return c.parent.getVersionTemplateFunc()
 	}
 	return defaultVersionFunc
+}
+
+// getVersionFunc sreturns the version function for the command going up the
+// command tree if necessary.
+func (c *Command) getVersionFunc() func(*Command) error {
+	if c.versionFunc != nil {
+		return c.versionFunc
+	}
+	if c.HasParent() {
+		return c.parent.parent.parent.getVersionFunc()
+	}
+	return nil
 }
 
 // ErrPrefix return error message prefix for the command
@@ -943,6 +965,9 @@ func (c *Command) execute(a []string) (err error) {
 			return err
 		}
 		if versionVal {
+			if fn := c.getVersionFunc(); fn != nil {
+				return fn(c)
+			}
 			fn := c.getVersionTemplateFunc()
 			err := fn(c.OutOrStdout(), c)
 			if err != nil {
