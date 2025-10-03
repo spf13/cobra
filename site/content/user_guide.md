@@ -366,6 +366,73 @@ In these cases:
   - a flag may appear in multiple groups
   - a group may contain any number of flags
 
+### Repeated Flags
+
+Cobra supports two types of repeated flags, useful for implementing SSH-like verbose flags (`-v`, `-vv`, `-vvv`) or collecting multiple values.
+
+#### Count Flags
+
+For implementing verbose-style flags where repeated usage increases a counter (like SSH's `-v`, `-vv`, `-vvv`):
+
+```go
+var verbose int
+
+func init() {
+  // CountVarP allows the flag to be repeated to increment the counter
+  rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (can be repeated: -v, -vv, -vvv)")
+}
+```
+
+Usage examples:
+- `myapp -v` → verbose = 1 (info level)
+- `myapp -vv` or `myapp -v -v` → verbose = 2 (debug level)
+- `myapp -vvv` or `myapp -v -v -v` → verbose = 3 (trace level)
+
+Then in your command logic:
+```go
+Run: func(cmd *cobra.Command, args []string) {
+  switch verbose {
+  case 0:
+    // Default: no verbose output
+  case 1:
+    // Info level logging
+    log.SetLevel(log.InfoLevel)
+  case 2:
+    // Debug level logging
+    log.SetLevel(log.DebugLevel)
+  case 3:
+    // Trace level logging
+    log.SetLevel(log.TraceLevel)
+  default:
+    // Maximum verbosity
+    log.SetLevel(log.TraceLevel)
+  }
+},
+```
+
+#### Array/Slice Flags
+
+For collecting multiple values of the same flag:
+
+```go
+var inputFiles []string
+
+func init() {
+  // StringArrayVarP allows multiple values: --input file1.txt --input file2.txt
+  rootCmd.Flags().StringArrayVarP(&inputFiles, "input", "i", []string{}, "input files (can be repeated)")
+
+  // Alternative: StringSliceVarP for comma-separated values
+  // rootCmd.Flags().StringSliceVarP(&inputFiles, "input", "i", []string{}, "input files (comma-separated or repeated)")
+}
+```
+
+Usage examples:
+- `myapp --input file1.txt --input file2.txt`
+- `myapp -i file1.txt -i file2.txt`
+- With StringSlice: `myapp --input file1.txt,file2.txt,file3.txt`
+
+**Note**: Both `CountVar` and array flags leverage the underlying [pflag](https://github.com/spf13/pflag) library's support for repeated flags.
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field of `Command`.
