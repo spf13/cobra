@@ -656,7 +656,7 @@ func (c *Command) getVersionFunc() func(*Command) error {
 		return c.versionFunc
 	}
 	if c.HasParent() {
-		return c.parent.parent.parent.getVersionFunc()
+		return c.parent.getVersionFunc()
 	}
 	return nil
 }
