@@ -649,7 +649,7 @@ func (c *Command) getVersionTemplateFunc() func(w io.Writer, data interface{}) e
 	return defaultVersionFunc
 }
 
-// getVersionFunc sreturns the version function for the command going up the
+// getVersionFunc returns the version function for the command going up the
 // command tree if necessary.
 func (c *Command) getVersionFunc() func(*Command) error {
 	if c.versionFunc != nil {
