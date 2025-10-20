@@ -167,8 +167,14 @@ func collectFlagInput(cmd *Command, f *pflag.Flag, flagRequired bool, defValue, 
 }
 
 func collectRepeatedFlagInput(cmd *Command, f *pflag.Flag, defValue, skipTxt string, reader *bufio.Reader) {
+	bFirst := true
 	for {
-		fmt.Printf("\n%s (default: %s), %s\nmultiple values possible, press ⏎ to finish: ", f.Usage, defValue, skipTxt)
+		if bFirst {
+			fmt.Printf("\n%s (default: %s), %s\nmultiple values possible, press ⏎ to finish: ", f.Usage, defValue, skipTxt)
+			bFirst = false
+		} else {
+			fmt.Printf("\nnext value, press ⏎ to finish: ")
+		}
 		input, _ := reader.ReadString('\n') // read entire line
 		input = strings.TrimSpace(input)    // remove newline and spaces
 

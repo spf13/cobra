@@ -220,7 +220,7 @@ func TestRunInteractive_InitFlags(t *testing.T) {
 			commandToCall: "two",
 			hasFlags:      true,
 			// the flags are queried in the order, that first the normal flags are queried and then persistence flags
-			flagsInput: "false\ntest content\n540\nanother value\n\ntrue\nI am ä sentence\n666\nää üüü 00\n\n",
+			flagsInput: "false\ntest content\n540\nanother value\njust another value\nanother value again\n \ntrue\nI am ä sentence\n666\nää üüü 00\n \n",
 
 			initFlagsFunc: func(testData *TestData, cmd *cobra.Command) {
 				rootCmd := cmd.Parent()
@@ -267,12 +267,22 @@ func TestRunInteractive_InitFlags(t *testing.T) {
 					ret = false
 					t.Errorf("seems fString has wrong value: %v", testData.flagVars.fString)
 				}
-				if len(testData.flagVars.fStringArray) != 1 {
+				if len(testData.flagVars.fStringArray) != 3 {
 					ret = false
 					t.Error("seems fStringArray wasn't set")
-				} else if testData.flagVars.fStringArray[0] != "another value" {
-					ret = false
-					t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+				} else {
+					if testData.flagVars.fStringArray[0] != "another value" {
+						ret = false
+						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+					}
+					if testData.flagVars.fStringArray[1] != "just another value" {
+						ret = false
+						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+					}
+					if testData.flagVars.fStringArray[1] != "another value again" {
+						ret = false
+						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+					}
 				}
 				return ret
 			},
