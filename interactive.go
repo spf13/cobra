@@ -102,7 +102,7 @@ func isFlagRequired(f *pflag.Flag) bool {
 
 func isRepeatableFlag(f *pflag.Flag) bool {
 	switch f.Value.Type() {
-	case "stringSlice", "intSlice", "floatSlice", "boolSlice", "stringArray":
+	case "stringSlice", "intSlice", "float32Slice", "boolSlice", "stringArray":
 		return true
 	default:
 		return false

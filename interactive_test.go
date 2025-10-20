@@ -133,6 +133,9 @@ type TestData struct {
 		pInt         int
 		pString      string
 		pStringArray []string
+		pBoolArray   []bool
+		pIntArray    []int
+		pFloatArray  []float32
 		fBool        bool
 		fInt         int
 		fString      string
@@ -182,37 +185,37 @@ func noFlags(testData *TestData, t *testing.T) bool {
 
 func TestRunInteractive_InitFlags(t *testing.T) {
 	tests := []TestData{
-		// {
-		// 	rootWasCalled: true,
-		// 	oneWasCalled:  true,
-		// 	twoWasCalled:  false,
-		// 	commandToCall: "one",
-		// 	hasFlags:      false,
-		// 	flagsInput:    "",
-		// 	checkFunc:     noFlags,
-		// },
-		// {
-		// 	rootWasCalled: true,
-		// 	oneWasCalled:  false,
-		// 	twoWasCalled:  true,
-		// 	commandToCall: "two",
-		// 	hasFlags:      true,
-		// 	flagsInput:    "\n\n\n\n\n\n\n\n",
+		{
+			rootWasCalled: true,
+			oneWasCalled:  true,
+			twoWasCalled:  false,
+			commandToCall: "one",
+			hasFlags:      false,
+			flagsInput:    "",
+			checkFunc:     noFlags,
+		},
+		{
+			rootWasCalled: true,
+			oneWasCalled:  false,
+			twoWasCalled:  true,
+			commandToCall: "two",
+			hasFlags:      true,
+			flagsInput:    "\n\n\n\n\n\n\n\n\n\n",
 
-		// 	initFlagsFunc: func(testData *TestData, cmd *cobra.Command) {
-		// 		rootCmd := cmd.Parent()
-		// 		rootCmd.PersistentFlags().BoolVar(&testData.flagVars.pBool, "a", false, "i am a bool var")
-		// 		rootCmd.PersistentFlags().StringVar(&testData.flagVars.pString, "b", "", "i am a string var")
-		// 		rootCmd.PersistentFlags().IntVar(&testData.flagVars.pInt, "c", 0, "i am an int var")
-		// 		rootCmd.PersistentFlags().StringArrayVar(&testData.flagVars.pStringArray, "d", []string{}, "i am an string array var")
+			initFlagsFunc: func(testData *TestData, cmd *cobra.Command) {
+				rootCmd := cmd.Parent()
+				rootCmd.PersistentFlags().BoolVar(&testData.flagVars.pBool, "a", false, "i am a bool var")
+				rootCmd.PersistentFlags().StringVar(&testData.flagVars.pString, "b", "", "i am a string var")
+				rootCmd.PersistentFlags().IntVar(&testData.flagVars.pInt, "c", 0, "i am an int var")
+				rootCmd.PersistentFlags().StringArrayVar(&testData.flagVars.pStringArray, "d", []string{}, "i am an string array var")
 
-		// 		cmd.Flags().BoolVar(&testData.flagVars.fBool, "e", false, "i am a bool var")
-		// 		cmd.Flags().StringVar(&testData.flagVars.fString, "f", "", "i am a string var")
-		// 		cmd.Flags().IntVar(&testData.flagVars.fInt, "g", 0, "i am an int var")
-		// 		cmd.Flags().StringArrayVar(&testData.flagVars.fStringArray, "h", []string{}, "i am an string array var")
-		// 	},
-		// 	checkFunc: noFlags,
-		// },
+				cmd.Flags().BoolVar(&testData.flagVars.fBool, "e", false, "i am a bool var")
+				cmd.Flags().StringVar(&testData.flagVars.fString, "f", "", "i am a string var")
+				cmd.Flags().IntVar(&testData.flagVars.fInt, "g", 0, "i am an int var")
+				cmd.Flags().StringArrayVar(&testData.flagVars.fStringArray, "h", []string{}, "i am an string array var")
+			},
+			checkFunc: noFlags,
+		},
 		{
 			rootWasCalled: true,
 			oneWasCalled:  false,
@@ -220,7 +223,7 @@ func TestRunInteractive_InitFlags(t *testing.T) {
 			commandToCall: "two",
 			hasFlags:      true,
 			// the flags are queried in the order, that first the normal flags are queried and then persistence flags
-			flagsInput: "false\ntest content\n540\nanother value\njust another value\nanother value again\n \ntrue\nI am ä sentence\n666\nää üüü 00\n \n",
+			flagsInput: "false\ntest content\n540\nanother value\njust another value\nanother value again\n \ntrue\nI am ä sentence\n666\nää üüü 00\n \n true\n false\n true\n \n 13\n 14\n 15\n 16\n \n1.5\n1.6\n \n",
 
 			initFlagsFunc: func(testData *TestData, cmd *cobra.Command) {
 				rootCmd := cmd.Parent()
@@ -228,6 +231,9 @@ func TestRunInteractive_InitFlags(t *testing.T) {
 				rootCmd.PersistentFlags().StringVar(&testData.flagVars.pString, "b", "", "i am a persistent string var")
 				rootCmd.PersistentFlags().IntVar(&testData.flagVars.pInt, "c", 0, "i am an persistent int var")
 				rootCmd.PersistentFlags().StringArrayVar(&testData.flagVars.pStringArray, "d", []string{}, "i am an persistent string array var")
+				rootCmd.PersistentFlags().BoolSliceVar(&testData.flagVars.pBoolArray, "dd", []bool{}, "i am an persistent bool slice var")
+				rootCmd.PersistentFlags().IntSliceVar(&testData.flagVars.pIntArray, "de", []int{}, "i am an persistent int slice var")
+				rootCmd.PersistentFlags().Float32SliceVar(&testData.flagVars.pFloatArray, "df", []float32{}, "i am an persistent float slice var")
 
 				cmd.Flags().BoolVar(&testData.flagVars.fBool, "e", false, "i am a bool var")
 				cmd.Flags().StringVar(&testData.flagVars.fString, "f", "", "i am a string var")
@@ -277,11 +283,62 @@ func TestRunInteractive_InitFlags(t *testing.T) {
 					}
 					if testData.flagVars.fStringArray[1] != "just another value" {
 						ret = false
-						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[1])
 					}
-					if testData.flagVars.fStringArray[1] != "another value again" {
+					if testData.flagVars.fStringArray[2] != "another value again" {
 						ret = false
-						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[0])
+						t.Error("seems fStringArray has wrong content: " + testData.flagVars.fStringArray[2])
+					}
+				}
+				if len(testData.flagVars.pBoolArray) != 3 {
+					ret = false
+					t.Error("seems pBoolArray wasn't proper set")
+				} else {
+					if testData.flagVars.pBoolArray[0] != true {
+						ret = false
+						t.Errorf("seems pBoolArray[0] has wrong content: %v", testData.flagVars.pBoolArray[0])
+					}
+					if testData.flagVars.pBoolArray[1] != false {
+						ret = false
+						t.Errorf("seems pBoolArray[1] has wrong content: %v", testData.flagVars.pBoolArray[1])
+					}
+					if testData.flagVars.pBoolArray[2] != true {
+						ret = false
+						t.Errorf("seems pBoolArray[2] has wrong content: %v", testData.flagVars.pBoolArray[2])
+					}
+				}
+				if len(testData.flagVars.pIntArray) != 4 {
+					ret = false
+					t.Error("seems pIntArray wasn't proper set")
+				} else {
+					if testData.flagVars.pIntArray[0] != 13 {
+						ret = false
+						t.Errorf("seems pIntArray[0] has wrong content: %v", testData.flagVars.pIntArray[0])
+					}
+					if testData.flagVars.pIntArray[1] != 14 {
+						ret = false
+						t.Errorf("seems pIntArray[1] has wrong content: %v", testData.flagVars.pIntArray[1])
+					}
+					if testData.flagVars.pIntArray[2] != 15 {
+						ret = false
+						t.Errorf("seems pIntArray[2] has wrong content: %v", testData.flagVars.pIntArray[2])
+					}
+					if testData.flagVars.pIntArray[3] != 16 {
+						ret = false
+						t.Errorf("seems pIntArray[3] has wrong content: %v", testData.flagVars.pIntArray[3])
+					}
+				}
+				if len(testData.flagVars.pFloatArray) != 2 {
+					ret = false
+					t.Error("seems pFloatArray wasn't proper set")
+				} else {
+					if testData.flagVars.pFloatArray[0] != 1.5 {
+						ret = false
+						t.Errorf("seems pFloatArray has wrong content (1): %v", testData.flagVars.pFloatArray[0])
+					}
+					if testData.flagVars.pFloatArray[1] != 1.6 {
+						ret = false
+						t.Errorf("seems pFloatArray has wrong content (2): %v", testData.flagVars.pFloatArray[1])
 					}
 				}
 				return ret
