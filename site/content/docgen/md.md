@@ -1,4 +1,4 @@
-# Generating Markdown Docs For Your Own cobra.Command
+# Generating Markdown Docs For Your Own kcli.Command
 
 Generating Markdown pages from a cobra command is incredibly easy. An example is as follows:
 
@@ -8,12 +8,12 @@ package main
 import (
 	"log"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
+	"github.com/kumose/kcli"
+	"github.com/kumose/kcli/doc"
 )
 
 func main() {
-	cmd := &cobra.Command{
+	cmd := &kcli.Command{
 		Use:   "test",
 		Short: "my test program",
 	}
@@ -41,7 +41,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
-	"github.com/spf13/cobra/doc"
+	"github.com/kumose/kcli/doc"
 )
 
 func main() {

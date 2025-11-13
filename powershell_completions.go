@@ -15,7 +15,7 @@
 // The generated scripts require PowerShell v5.0+ (which comes Windows 10, but
 // can be downloaded separately for windows 7 or 8.1).
 
-package cobra
+package kcli
 
 import (
 	"bytes"

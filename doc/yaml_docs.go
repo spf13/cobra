@@ -22,7 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
@@ -50,14 +50,14 @@ type cmdDoc struct {
 // correctly if your command names have `-` in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
-func GenYamlTree(cmd *cobra.Command, dir string) error {
+func GenYamlTree(cmd *kcli.Command, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
 	return GenYamlTreeCustom(cmd, dir, emptyStr, identity)
 }
 
 // GenYamlTreeCustom creates yaml structured ref files.
-func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
+func GenYamlTreeCustom(cmd *kcli.Command, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
@@ -85,12 +85,12 @@ func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandle
 }
 
 // GenYaml creates yaml output.
-func GenYaml(cmd *cobra.Command, w io.Writer) error {
+func GenYaml(cmd *kcli.Command, w io.Writer) error {
 	return GenYamlCustom(cmd, w, func(s string) string { return s })
 }
 
 // GenYamlCustom creates custom yaml output.
-func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
+func GenYamlCustom(cmd *kcli.Command, w io.Writer, linkHandler func(string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 

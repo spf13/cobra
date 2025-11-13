@@ -15,7 +15,7 @@
 //go:build windows
 // +build windows
 
-package cobra
+package kcli
 
 import (
 	"fmt"

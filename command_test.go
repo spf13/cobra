@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cobra
+package kcli
 
 import (
 	"bytes"
@@ -1088,7 +1088,7 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 // TestHelpFlagInHelp checks,
 // if '--help' flag is shown in help for child (executing `parent help child`),
 // that has no other flags.
-// Related to https://github.com/spf13/cobra/issues/302.
+// Related to https://github.com/kumose/kcli/issues/302.
 func TestHelpFlagInHelp(t *testing.T) {
 	parentCmd := &Command{Use: "parent", Run: func(*Command, []string) {}}
 
@@ -1785,7 +1785,7 @@ func testPersistentHooks(t *testing.T, expectedHookRunOrder []string) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// Related to https://github.com/kumose/kcli/issues/521.
 func TestGlobalNormFuncPropagation(t *testing.T) {
 	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(name)
@@ -1805,7 +1805,7 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// Related to https://github.com/kumose/kcli/issues/521.
 func TestNormPassedOnLocal(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -1819,7 +1819,7 @@ func TestNormPassedOnLocal(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// Related to https://github.com/kumose/kcli/issues/521.
 func TestNormPassedOnInherited(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -1847,7 +1847,7 @@ func TestNormPassedOnInherited(t *testing.T) {
 	}
 }
 
-// Related to https://github.com/spf13/cobra/issues/521.
+// Related to https://github.com/kumose/kcli/issues/521.
 func TestConsistentNormalizedName(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(strings.ToUpper(name))
@@ -2266,7 +2266,7 @@ Flags:
 
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
-// Related to https://github.com/spf13/cobra/issues/404.
+// Related to https://github.com/kumose/kcli/issues/404.
 func TestSortedFlags(t *testing.T) {
 	c := &Command{}
 	c.Flags().SortFlags = false
@@ -2292,7 +2292,7 @@ func TestSortedFlags(t *testing.T) {
 // TestMergeCommandLineToFlags checks,
 // if pflag.CommandLine is correctly merged to c.Flags() after first call
 // of c.mergePersistentFlags.
-// Related to https://github.com/spf13/cobra/issues/443.
+// Related to https://github.com/kumose/kcli/issues/443.
 func TestMergeCommandLineToFlags(t *testing.T) {
 	pflag.Bool("boolflag", false, "")
 	c := &Command{Use: "c", Run: emptyRun}
@@ -2305,8 +2305,8 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 }
 
 // TestUseDeprecatedFlags checks,
-// if cobra.Execute() prints a message, if a deprecated flag is used.
-// Related to https://github.com/spf13/cobra/issues/463.
+// if kcli.Execute() prints a message, if a deprecated flag is used.
+// Related to https://github.com/kumose/kcli/issues/463.
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
@@ -2421,7 +2421,7 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 }
 
 // TestUpdateName checks if c.Name() updates on changed c.Use.
-// Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
+// Related to https://github.com/kumose/kcli/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
 	c := &Command{Use: "name xyz"}
 	originalName := c.Name()
@@ -2936,7 +2936,7 @@ func TestHelpFuncExecuted(t *testing.T) {
 			t.Error(err)
 		}
 
-		// Test for https://github.com/spf13/cobra/issues/2240
+		// Test for https://github.com/kumose/kcli/issues/2240
 		if cmd.Context() != executionCtx {
 			t.Error("Context doesn't equal the execution context")
 		}

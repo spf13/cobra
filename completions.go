@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cobra
+package kcli
 
 import (
 	"fmt"
@@ -676,7 +676,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 				// Flag is shorthand
 				// We have to get the last shorthand flag name
 				// e.g. `-asd` => d to provide the correct completion
-				// https://github.com/spf13/cobra/issues/1257
+				// https://github.com/kumose/kcli/issues/1257
 				flagName = lastArg[index-1 : index]
 			}
 			lastArg = lastArg[index+1:]
@@ -702,7 +702,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 						// Flag is shorthand
 						// We have to get the last shorthand flag name
 						// e.g. `-asd` => d to provide the correct completion
-						// https://github.com/spf13/cobra/issues/1257
+						// https://github.com/kumose/kcli/issues/1257
 						flagName = prevArg[len(prevArg)-1:]
 					}
 					// Remove the uncompleted flag or else there could be an error created

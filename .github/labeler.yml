@@ -6,7 +6,7 @@
 # changes to the core cobra command
 "area/cobra-command":
 - changed-files:
-  - any-glob-to-any-file: ['./cobra.go', './cobra_test.go', './*command*.go']
+  - any-glob-to-any-file: ['./kcli.go', './cobra_test.go', './*command*.go']
 
 # changes made to command flags/args
 "area/flags":

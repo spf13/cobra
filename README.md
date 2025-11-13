@@ -1,21 +1,21 @@
 <div align="center">
-<a href="https://cobra.dev">
+<a href="https://kcli.dev">
 <img width="512" height="535" alt="cobra-logo" src="https://github.com/user-attachments/assets/c8bf9aad-b5ae-41d3-8899-d83baec10af8" />
 </a>
 </div>
 
 Cobra is a library for creating powerful modern CLI applications.
 
-<a href="https://cobra.dev">Visit Cobra.dev for extensive documentation</a> 
+<a href="https://kcli.dev">Visit Cobra.dev for extensive documentation</a> 
 
 
 Cobra is used in many Go projects such as [Kubernetes](https://kubernetes.io/),
 [Hugo](https://gohugo.io), and [GitHub CLI](https://github.com/cli/cli) to
 name a few. [This list](site/content/projects_using_cobra.md) contains a more extensive list of projects using Cobra.
 
-[![](https://img.shields.io/github/actions/workflow/status/spf13/cobra/test.yml?branch=main&longCache=true&label=Test&logo=github%20actions&logoColor=fff)](https://github.com/spf13/cobra/actions?query=workflow%3ATest)
-[![Go Reference](https://pkg.go.dev/badge/github.com/spf13/cobra.svg)](https://pkg.go.dev/github.com/spf13/cobra)
-[![Go Report Card](https://goreportcard.com/badge/github.com/spf13/cobra)](https://goreportcard.com/report/github.com/spf13/cobra)
+[![](https://img.shields.io/github/actions/workflow/status/spf13/cobra/test.yml?branch=main&longCache=true&label=Test&logo=github%20actions&logoColor=fff)](https://github.com/kumose/kcli/actions?query=workflow%3ATest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/kumose/kcli.svg)](https://pkg.go.dev/github.com/kumose/kcli)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kumose/kcli)](https://goreportcard.com/report/github.com/kumose/kcli)
 [![Slack](https://img.shields.io/badge/Slack-cobra-brightgreen)](https://gophers.slack.com/archives/CD3LP1199)
 <hr>
 <div align="center" markdown="1">
@@ -84,7 +84,7 @@ have children commands and optionally run an action.
 
 In the example above, 'server' is the command.
 
-[More about cobra.Command](https://pkg.go.dev/github.com/spf13/cobra#Command)
+[More about kcli.Command](https://pkg.go.dev/github.com/kumose/kcli#Command)
 
 ## Flags
 
@@ -104,13 +104,13 @@ Using Cobra is easy. First, use `go get` to install the latest version
 of the library.
 
 ```
-go get -u github.com/spf13/cobra@latest
+go get -u github.com/kumose/kcli@latest
 ```
 
 Next, include Cobra in your application:
 
 ```go
-import "github.com/spf13/cobra"
+import "github.com/kumose/kcli"
 ```
 
 # Usage
@@ -121,10 +121,10 @@ develop a Cobra-based application. It is the easiest way to incorporate Cobra in
 It can be installed by running:
 
 ```
-go install github.com/spf13/cobra-cli@latest
+go install github.com/kumose/kcli-cli@latest
 ```
 
-For complete details on using the Cobra-CLI generator, please read [The Cobra Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
+For complete details on using the Cobra-CLI generator, please read [The Cobra Generator README](https://github.com/kumose/kcli-cli/blob/main/README.md)
 
 For complete details on using the Cobra library, please read [The Cobra User Guide](site/content/user_guide.md).
 

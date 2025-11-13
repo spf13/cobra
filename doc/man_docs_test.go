@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 )
 
 func assertNoErr(t *testing.T, e error) {
@@ -125,10 +125,10 @@ func TestGenManNoGenTag(t *testing.T) {
 }
 
 func TestGenManSeeAlso(t *testing.T) {
-	rootCmd := &cobra.Command{Use: "root", Run: emptyRun}
-	aCmd := &cobra.Command{Use: "aaa", Run: emptyRun, Hidden: true} // #229
-	bCmd := &cobra.Command{Use: "bbb", Run: emptyRun}
-	cCmd := &cobra.Command{Use: "ccc", Run: emptyRun}
+	rootCmd := &kcli.Command{Use: "root", Run: emptyRun}
+	aCmd := &kcli.Command{Use: "aaa", Run: emptyRun, Hidden: true} // #229
+	bCmd := &kcli.Command{Use: "bbb", Run: emptyRun}
+	cCmd := &kcli.Command{Use: "ccc", Run: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd, cCmd)
 
 	buf := new(bytes.Buffer)
@@ -147,7 +147,7 @@ func TestGenManSeeAlso(t *testing.T) {
 }
 
 func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
-	c := &cobra.Command{}
+	c := &kcli.Command{}
 	c.Flags().StringP("foo", "f", "default", "Foo flag")
 	assertNoErr(t, c.Flags().MarkShorthandDeprecated("foo", "don't use it no more"))
 
@@ -162,7 +162,7 @@ func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 }
 
 func TestGenManTree(t *testing.T) {
-	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
+	c := &kcli.Command{Use: "do [OPTIONS] arg1 arg2"}
 	header := &GenManHeader{Section: "2"}
 	tmpdir, err := os.MkdirTemp("", "test-gen-man-tree")
 	if err != nil {

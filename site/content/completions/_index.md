@@ -18,7 +18,7 @@ provide your own, which will take precedence over the default one. (This also pr
 backwards-compatibility with programs that already have their own `completion` command.)
 
 If you are using the `cobra-cli` generator,
-which can be found at [spf13/cobra-cli](https://github.com/spf13/cobra-cli),
+which can be found at [spf13/cobra-cli](https://github.com/kumose/kcli-cli),
 you can create a completion command by running
 
 ```bash
@@ -28,7 +28,7 @@ and then modifying the generated `cmd/completion.go` file to look something like
 (writing the shell script to stdout allows the most flexible use):
 
 ```go
-var completionCmd = &cobra.Command{
+var completionCmd = &kcli.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
@@ -72,8 +72,8 @@ PowerShell:
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:                  kcli.MatchAll(kcli.ExactArgs(1), kcli.OnlyValidArgs),
+	Run: func(cmd *kcli.Command, args []string) {
 		switch args[0] {
 		case "bash":
 			cmd.Root().GenBashCompletion(os.Stdout)
@@ -130,13 +130,13 @@ Some simplified code from `kubectl get` looks like:
 ```go
 validArgs = []string{ "pod", "node", "service", "replicationcontroller" }
 
-cmd := &cobra.Command{
+cmd := &kcli.Command{
 	Use:     "get [(-o|--output=)json|yaml|template|...] (RESOURCE [NAME] | RESOURCE/NAME ...)",
 	Short:   "Display one or many resources",
 	Long:    get_long,
 	Example: get_example,
-	Run: func(cmd *cobra.Command, args []string) {
-		cobra.CheckErr(RunGet(f, out, cmd, args))
+	Run: func(cmd *kcli.Command, args []string) {
+		kcli.CheckErr(RunGet(f, out, cmd, args))
 	},
 	ValidArgs: validArgs,
 }
@@ -156,7 +156,7 @@ If your nouns have aliases, you can define them alongside `ValidArgs` using `Arg
 ```go
 argAliases = []string { "pods", "nodes", "services", "svc", "replicationcontrollers", "rc" }
 
-cmd := &cobra.Command{
+cmd := &kcli.Command{
     ...
 	ValidArgs:  validArgs,
 	ArgAliases: argAliases
@@ -171,18 +171,18 @@ In some cases it is not possible to provide a list of completions in advance.  I
 Simplified code from `helm status` looks like:
 
 ```go
-cmd := &cobra.Command{
+cmd := &kcli.Command{
 	Use:   "status RELEASE_NAME",
 	Short: "Display the status of the named release",
 	Long:  status_long,
-	RunE: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *kcli.Command, args []string) {
 		RunGet(args[0])
 	},
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+	ValidArgsFunction: func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
 		if len(args) != 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
+			return nil, kcli.ShellCompDirectiveNoFileComp
 		}
-		return getReleasesFromCluster(toComplete), cobra.ShellCompDirectiveNoFileComp
+		return getReleasesFromCluster(toComplete), kcli.ShellCompDirectiveNoFileComp
 	},
 }
 ```
@@ -193,7 +193,7 @@ Notice we put the `ValidArgsFunction` on the `status` sub-command. Let's assume 
 $ helm status [tab][tab]
 harbor notary rook thanos
 ```
-You may have noticed the use of `cobra.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp`
+You may have noticed the use of `kcli.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `kcli.ShellCompDirectiveNoSpace | kcli.ShellCompDirectiveNoFileComp`
 ```go
 // Indicates that the shell will perform its default behavior after completions
 // have been provided (this implies none of the other directives).
@@ -212,7 +212,7 @@ ShellCompDirectiveNoFileComp
 
 // Indicates that the returned completions should be used as file extension filters.
 // For example, to complete only files of the form *.json or *.yaml:
-//    return []cobra.Completion{"yaml", "json"}, cobra.ShellCompDirectiveFilterFileExt
+//    return []kcli.Completion{"yaml", "json"}, kcli.ShellCompDirectiveFilterFileExt
 // For flags, using MarkFlagFilename() and MarkPersistentFlagFilename()
 // is a shortcut to using this directive explicitly.
 //
@@ -220,13 +220,13 @@ ShellCompDirectiveFilterFileExt
 
 // Indicates that only directory names should be provided in file completion.
 // For example:
-//    return nil, cobra.ShellCompDirectiveFilterDirs
+//    return nil, kcli.ShellCompDirectiveFilterDirs
 // For flags, using MarkFlagDirname() is a shortcut to using this directive explicitly.
 //
 // To request directory names within another directory, the returned completions
 // should specify a single directory name within which to search. For example,
 // to complete directories within "themes/":
-//    return []cobra.Completion{"themes"}, cobra.ShellCompDirectiveFilterDirs
+//    return []kcli.Completion{"themes"}, kcli.ShellCompDirectiveFilterDirs
 //
 ShellCompDirectiveFilterDirs
 
@@ -260,13 +260,13 @@ Calling the `__complete` command directly allows you to run the Go debugger to t
 ```go
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and optionally prints to stderr.
-cobra.CompDebug(msg string, printToStdErr bool)
-cobra.CompDebugln(msg string, printToStdErr bool)
+kcli.CompDebug(msg string, printToStdErr bool)
+kcli.CompDebugln(msg string, printToStdErr bool)
 
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and to stderr.
-cobra.CompError(msg string)
-cobra.CompErrorln(msg string)
+kcli.CompError(msg string)
+kcli.CompErrorln(msg string)
 ```
 ***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the cobra-provided debugging traces functions mentioned above.
 
@@ -294,8 +294,8 @@ As for nouns, Cobra provides a way of defining dynamic completion of flags.  To 
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	return []cobra.Completion{"json", "table", "yaml"}, cobra.ShellCompDirectiveDefault
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	return []kcli.Completion{"json", "table", "yaml"}, kcli.ShellCompDirectiveDefault
 })
 ```
 Notice that calling `RegisterFlagCompletionFunc()` is done through the `command` with which the flag is associated.  In our example this dynamic completion will give results like so:
@@ -315,7 +315,7 @@ completion function for that command/flag.
 For example:
 
 ```go
-cmd.RegisterFlagCompletionFunc("flag-name", cobra.NoFileCompletions)
+cmd.RegisterFlagCompletionFunc("flag-name", kcli.NoFileCompletions)
 ```
 
 If you find that there are more situations where file completion should be turned off than
@@ -330,7 +330,7 @@ If doing so, keep in mind that you should instead register a completion function
 flags where file completion is applicable. For example:
 
 ```go
-cmd.RegisterFlagCompletionFunc("flag-name", cobra.FixedCompletions(nil, ShellCompDirectiveDefault))
+cmd.RegisterFlagCompletionFunc("flag-name", kcli.FixedCompletions(nil, ShellCompDirectiveDefault))
 ```
 
 To change the default directive for the entire program, set the DefaultShellCompDirective on the root command.
@@ -358,8 +358,8 @@ cmd.MarkFlagFilename(flagName, "yaml", "json")
 or
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	return []cobra.Completion{"yaml", "json"}, cobra.ShellCompDirectiveFilterFileExt})
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	return []kcli.Completion{"yaml", "json"}, kcli.ShellCompDirectiveFilterFileExt})
 ```
 
 ### Limit flag completions to directory names
@@ -372,15 +372,15 @@ cmd.MarkFlagDirname(flagName)
 or
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	return nil, cobra.ShellCompDirectiveFilterDirs
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	return nil, kcli.ShellCompDirectiveFilterDirs
 })
 ```
 To limit completions of flag values to directory names *within another directory* you can use a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs` like so:
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	return []cobra.Completion{"themes"}, cobra.ShellCompDirectiveFilterDirs
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	return []kcli.Completion{"themes"}, kcli.ShellCompDirectiveFilterDirs
 })
 ```
 ### Descriptions for completions
@@ -403,18 +403,18 @@ search  (search for a keyword in charts)  show  (show information of a chart)  s
 
 Cobra allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator. Cobra provides the helper function `CompletionWithDesc(string, string)` to create a completion with a description. This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
 ```go
-ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	return []cobra.Completion{
-		cobra.CompletionWithDesc("harbor", "An image registry"),
-		cobra.CompletionWithDesc("thanos", "Long-term metrics")
-		}, cobra.ShellCompDirectiveNoFileComp
+ValidArgsFunction: func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	return []kcli.Completion{
+		kcli.CompletionWithDesc("harbor", "An image registry"),
+		kcli.CompletionWithDesc("thanos", "Long-term metrics")
+		}, kcli.ShellCompDirectiveNoFileComp
 }}
 ```
 or
 ```go
-ValidArgs: []cobra.Completion{
-	cobra.CompletionWithDesc("bash", "Completions for bash"),
-	cobra.CompletionWithDesc("zsh", "Completions for zsh")
+ValidArgs: []kcli.Completion{
+	kcli.CompletionWithDesc("bash", "Completions for bash"),
+	kcli.CompletionWithDesc("zsh", "Completions for zsh")
 	}
 ```
 
@@ -491,7 +491,7 @@ search  show  status
 **Note**: Cobra's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command.
 ## Zsh completions
 
-Cobra supports native zsh completion generated from the root `cobra.Command`.
+Cobra supports native zsh completion generated from the root `kcli.Command`.
 The generated completion script should be put somewhere in your `$fpath` and be named
 `_<yourProgram>`.  You will need to start a new shell for the completions to become available.
 
@@ -526,7 +526,7 @@ Please refer to [Zsh Completions](zsh.md) for details.
 
 ## fish completions
 
-Cobra supports native fish completions generated from the root `cobra.Command`.  You can use the `command.GenFishCompletion()` or `command.GenFishCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
+Cobra supports native fish completions generated from the root `kcli.Command`.  You can use the `command.GenFishCompletion()` or `command.GenFishCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
 ```
 # With descriptions
 $ helm s[tab]
@@ -556,7 +556,7 @@ search  show  status
 
 ## PowerShell completions
 
-Cobra supports native PowerShell completions generated from the root `cobra.Command`. You can use the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions. To include descriptions use `command.GenPowerShellCompletionWithDesc()` and `command.GenPowerShellCompletionFileWithDesc()`. Cobra will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
+Cobra supports native PowerShell completions generated from the root `kcli.Command`. You can use the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions. To include descriptions use `command.GenPowerShellCompletionWithDesc()` and `command.GenPowerShellCompletionFileWithDesc()`. Cobra will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
 
 The script is designed to support all three PowerShell completion modes:
 

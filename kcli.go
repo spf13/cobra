@@ -15,7 +15,7 @@
 // Commands similar to git, go tools and other modern CLI tools
 // inspired by go, go-Commander, gh and subcommand
 
-package cobra
+package kcli
 
 import (
 	"fmt"
@@ -106,7 +106,7 @@ func OnFinalize(y ...func()) {
 	finalizers = append(finalizers, y...)
 }
 
-// FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
+// FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of kcli.
 
 // Gt takes two types and checks whether the first type is greater than the second. In case of types Arrays, Chans,
 // Maps and Slices, Gt will compare their lengths. Ints are compared directly while strings are first parsed as
@@ -138,7 +138,7 @@ func Gt(a interface{}, b interface{}) bool {
 	return left > right
 }
 
-// FIXME Eq is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
+// FIXME Eq is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of kcli.
 
 // Eq takes two types and checks whether they are equal. Supported types are int and string. Unsupported types will panic.
 func Eq(a interface{}, b interface{}) bool {
@@ -160,7 +160,7 @@ func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
-// FIXME appendIfNotPresent is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
+// FIXME appendIfNotPresent is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of kcli.
 
 // appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s.
 func appendIfNotPresent(s, stringToAppend string) string {

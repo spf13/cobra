@@ -1,4 +1,4 @@
-# Generating Man Pages For Your Own cobra.Command
+# Generating Man Pages For Your Own kcli.Command
 
 Generating man pages from a cobra command is incredibly easy. An example is as follows:
 
@@ -8,12 +8,12 @@ package main
 import (
 	"log"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
+	"github.com/kumose/kcli"
+	"github.com/kumose/kcli/doc"
 )
 
 func main() {
-	cmd := &cobra.Command{
+	cmd := &kcli.Command{
 		Use:   "test",
 		Short: "my test program",
 	}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cobra
+package kcli
 
 import (
 	"os"
@@ -241,7 +241,7 @@ func TestRpad(t *testing.T) {
 // default configuration that code path can be proven to be unreachable by
 // the linker.
 //
-// See also: https://github.com/spf13/cobra/pull/1956
+// See also: https://github.com/kumose/kcli/pull/1956
 func TestDeadcodeElimination(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("go tool nm fails on windows")
@@ -262,14 +262,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 )
 
-var rootCmd = &cobra.Command{
+var rootCmd = &kcli.Command{
 	Version: "1.0",
 	Use:     "example_program",
 	Short:   "example_program - test fixture to check that deadcode elimination is allowed",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *kcli.Command, args []string) {
 		fmt.Println("hello world")
 	},
 	Aliases: []string{"alias1", "alias2"},

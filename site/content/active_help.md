@@ -27,30 +27,30 @@ Active Help is currently only supported for the following shells:
 
 As Active Help uses the shell completion system, the implementation of Active Help messages is done by enhancing custom dynamic completions.  If you are not familiar with dynamic completions, please refer to [Shell Completions](completions/_index.md).
 
-Adding Active Help is done through the use of the `cobra.AppendActiveHelp(...)` function, where the program repeatedly adds Active Help messages to the list of completions.  Keep reading for details.
+Adding Active Help is done through the use of the `kcli.AppendActiveHelp(...)` function, where the program repeatedly adds Active Help messages to the list of completions.  Keep reading for details.
 
 ### Active Help for nouns
 
-Adding Active Help when completing a noun is done within the `ValidArgsFunction(...)` of a command.  Please notice the use of `cobra.AppendActiveHelp(...)` in the following example:
+Adding Active Help when completing a noun is done within the `ValidArgsFunction(...)` of a command.  Please notice the use of `kcli.AppendActiveHelp(...)` in the following example:
 
 ```go
-cmd := &cobra.Command{
+cmd := &kcli.Command{
 	Use:   "add [NAME] [URL]",
 	Short: "add a chart repository",
 	Args:  require.ExactArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *kcli.Command, args []string) error {
 		return addRepo(args)
 	},
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-		var comps []cobra.Completion
+	ValidArgsFunction: func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+		var comps []kcli.Completion
 		if len(args) == 0 {
-			comps = cobra.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")
+			comps = kcli.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")
 		} else if len(args) == 1 {
-			comps = cobra.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
+			comps = kcli.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
 		} else {
-			comps = cobra.AppendActiveHelp(comps, "This command does not take any more arguments")
+			comps = kcli.AppendActiveHelp(comps, "This command does not take any more arguments")
 		}
-		return comps, cobra.ShellCompDirectiveNoFileComp
+		return comps, kcli.ShellCompDirectiveNoFileComp
 	},
 }
 ```
@@ -75,9 +75,9 @@ This command does not take any more arguments
 Providing Active Help for flags is done in the same fashion as for nouns, but using the completion function registered for the flag.  For example:
 
 ```go
-_ = cmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+_ = cmd.RegisterFlagCompletionFunc("version", func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
 		if len(args) != 2 {
-			return cobra.AppendActiveHelp(nil, "You must first specify the chart to install before the --version flag can be completed"), cobra.ShellCompDirectiveNoFileComp
+			return kcli.AppendActiveHelp(nil, "You must first specify the chart to install before the --version flag can be completed"), kcli.ShellCompDirectiveNoFileComp
 		}
 		return compVersionFlag(args[1], toComplete)
 	})
@@ -106,38 +106,38 @@ For example, say `helm` has chosen to support three levels for Active Help: `on`
 would set the desired behavior to `local` by doing `export HELM_ACTIVE_HELP=local` in their shell.
 
 For simplicity, when in `cmd.ValidArgsFunction(...)` or a flag's completion function, the program should read the
-Active Help configuration using the `cobra.GetActiveHelpConfig(cmd)` function and select what Active Help messages
+Active Help configuration using the `kcli.GetActiveHelpConfig(cmd)` function and select what Active Help messages
 should or should not be added (instead of reading the environment variable directly).
 
 For example:
 
 ```go
-ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-	activeHelpLevel := cobra.GetActiveHelpConfig(cmd)
+ValidArgsFunction: func(cmd *kcli.Command, args []string, toComplete string) ([]kcli.Completion, kcli.ShellCompDirective) {
+	activeHelpLevel := kcli.GetActiveHelpConfig(cmd)
 
-	var comps []cobra.Completion
+	var comps []kcli.Completion
 	if len(args) == 0 {
 		if activeHelpLevel != "off"  {
-			comps = cobra.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")
+			comps = kcli.AppendActiveHelp(comps, "You must choose a name for the repo you are adding")
 		}
 	} else if len(args) == 1 {
 		if activeHelpLevel != "off" {
-			comps = cobra.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
+			comps = kcli.AppendActiveHelp(comps, "You must specify the URL for the repo you are adding")
 		}
 	} else {
 		if activeHelpLevel == "local" {
-			comps = cobra.AppendActiveHelp(comps, "This command does not take any more arguments")
+			comps = kcli.AppendActiveHelp(comps, "This command does not take any more arguments")
 		}
 	}
-	return comps, cobra.ShellCompDirectiveNoFileComp
+	return comps, kcli.ShellCompDirectiveNoFileComp
 },
 ```
 
-**Note 1**: If the `<PROGRAM>_ACTIVE_HELP` environment variable is set to the string "0", Cobra will automatically disable all Active Help output (even if some output was specified by the program using the `cobra.AppendActiveHelp(...)` function).  Using "0" can simplify your code in situations where you want to blindly disable Active Help without having to call `cobra.GetActiveHelpConfig(cmd)` explicitly.
+**Note 1**: If the `<PROGRAM>_ACTIVE_HELP` environment variable is set to the string "0", Cobra will automatically disable all Active Help output (even if some output was specified by the program using the `kcli.AppendActiveHelp(...)` function).  Using "0" can simplify your code in situations where you want to blindly disable Active Help without having to call `kcli.GetActiveHelpConfig(cmd)` explicitly.
 
-**Note 2**: If a user wants to disable Active Help for every single program based on Cobra, she can set the environment variable `COBRA_ACTIVE_HELP` to "0".  In this case `cobra.GetActiveHelpConfig(cmd)` will return "0" no matter what the variable `<PROGRAM>_ACTIVE_HELP` is set to.
+**Note 2**: If a user wants to disable Active Help for every single program based on Cobra, she can set the environment variable `COBRA_ACTIVE_HELP` to "0".  In this case `kcli.GetActiveHelpConfig(cmd)` will return "0" no matter what the variable `<PROGRAM>_ACTIVE_HELP` is set to.
 
-**Note 3**: If the user does not set `<PROGRAM>_ACTIVE_HELP` or `COBRA_ACTIVE_HELP` (which will be a common case), the default value for the Active Help configuration returned by `cobra.GetActiveHelpConfig(cmd)` will be the empty string. 
+**Note 3**: If the user does not set `<PROGRAM>_ACTIVE_HELP` or `COBRA_ACTIVE_HELP` (which will be a common case), the default value for the Active Help configuration returned by `kcli.GetActiveHelpConfig(cmd)` will be the empty string. 
 
 ## Active Help with Cobra's default completion command
 

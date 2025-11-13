@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 )
 
 func TestGenMdDoc(t *testing.T) {
@@ -92,7 +92,7 @@ func TestGenMdNoTag(t *testing.T) {
 }
 
 func TestGenMdTree(t *testing.T) {
-	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
+	c := &kcli.Command{Use: "do [OPTIONS] arg1 arg2"}
 	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %v", err)

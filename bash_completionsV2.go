@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cobra
+package kcli
 
 import (
 	"bytes"
@@ -275,7 +275,7 @@ __%[1]s_handle_completion_types() {
         # Type: menu-complete/menu-complete-backward and insert-completions
         # If the user requested inserting one completion at a time, or all
         # completions at once on the command-line we must remove the descriptions.
-        # https://github.com/spf13/cobra/issues/1508
+        # https://github.com/kumose/kcli/issues/1508
 
         # If there are no completions, we don't need to do anything
         (( ${#completions[@]} == 0 )) && return 0

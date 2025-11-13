@@ -30,7 +30,7 @@ func main() {
 Cobra-CLI is its own program that will create your application and add any commands you want.
 It's the easiest way to incorporate Cobra into your application.
 
-For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
+For complete details on using the Cobra generator, please refer to [The Cobra-CLI Generator README](https://github.com/kumose/kcli-cli/blob/main/README.md)
 
 ## Using the Cobra Library
 
@@ -44,13 +44,13 @@ Cobra doesn't require any special constructors. Simply create your commands.
 Ideally you place this in app/cmd/root.go:
 
 ```go
-var rootCmd = &cobra.Command{
+var rootCmd = &kcli.Command{
   Use:   "hugo",
   Short: "Hugo is a very fast static site generator",
   Long: `A Fast and Flexible Static Site Generator built with
                 love by spf13 and friends in Go.
                 Complete documentation is available at https://gohugo.io/documentation/`,
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *kcli.Command, args []string) {
     // Do Stuff Here
   },
 }
@@ -74,7 +74,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 	"github.com/spf13/viper"
 )
 
@@ -83,7 +83,7 @@ var (
 	cfgFile     string
 	userLicense string
 
-	rootCmd = &cobra.Command{
+	rootCmd = &kcli.Command{
 		Use:   "cobra-cli",
 		Short: "A generator for Cobra based Applications",
 		Long: `Cobra is a CLI library for Go that empowers applications.
@@ -98,9 +98,9 @@ func Execute() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	kcli.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kcli.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
@@ -120,7 +120,7 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		kcli.CheckErr(err)
 
 		// Search config in home directory with name ".cobra" (without extension).
 		viper.AddConfigPath(home)
@@ -167,18 +167,18 @@ package cmd
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/kumose/kcli"
 )
 
 func init() {
   rootCmd.AddCommand(versionCmd)
 }
 
-var versionCmd = &cobra.Command{
+var versionCmd = &kcli.Command{
   Use:   "version",
   Short: "Print the version number of Hugo",
   Long:  `All software has versions. This is Hugo's`,
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *kcli.Command, args []string) {
     fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
   },
 }
@@ -225,17 +225,17 @@ package cmd
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/kumose/kcli"
 )
 
 func init() {
   rootCmd.AddCommand(tryCmd)
 }
 
-var tryCmd = &cobra.Command{
+var tryCmd = &kcli.Command{
   Use:   "try",
   Short: "Try and possibly fail at something",
-  RunE: func(cmd *cobra.Command, args []string) error {
+  RunE: func(cmd *kcli.Command, args []string) error {
     if err := someFunc(); err != nil {
 	return err
     }
@@ -288,7 +288,7 @@ parent commands are ignored. By enabling `Command.TraverseChildren`, Cobra will
 parse local flags on each command before executing the target command.
 
 ```go
-command := cobra.Command{
+command := kcli.Command{
   Use: "print [OPTIONS] [COMMANDS]",
   TraverseChildren: true,
 }
@@ -389,24 +389,24 @@ args that are not in the `ValidArgs` field of `Command`, you can call `MatchAll`
 shown below:
 
 ```go
-var cmd = &cobra.Command{
+var cmd = &kcli.Command{
   Short: "hello",
-  Args: cobra.MatchAll(cobra.ExactArgs(2), cobra.OnlyValidArgs),
-  Run: func(cmd *cobra.Command, args []string) {
+  Args: kcli.MatchAll(kcli.ExactArgs(2), kcli.OnlyValidArgs),
+  Run: func(cmd *kcli.Command, args []string) {
     fmt.Println("Hello, World!")
   },
 }
 ```
 
-It is possible to set any custom validator that satisfies `func(cmd *cobra.Command, args []string) error`.
+It is possible to set any custom validator that satisfies `func(cmd *kcli.Command, args []string) error`.
 For example:
 
 ```go
-var cmd = &cobra.Command{
+var cmd = &kcli.Command{
   Short: "hello",
-  Args: func(cmd *cobra.Command, args []string) error {
+  Args: func(cmd *kcli.Command, args []string) error {
     // Optionally run one of the validators provided by cobra
-    if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+    if err := kcli.MinimumNArgs(1)(cmd, args); err != nil {
         return err
     }
     // Run the custom validation logic
@@ -415,7 +415,7 @@ var cmd = &cobra.Command{
     }
     return fmt.Errorf("invalid color specified: %s", args[0])
   },
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *kcli.Command, args []string) {
     fmt.Println("Hello, World!")
   },
 }
@@ -439,41 +439,41 @@ import (
   "fmt"
   "strings"
 
-  "github.com/spf13/cobra"
+  "github.com/kumose/kcli"
 )
 
 func main() {
   var echoTimes int
 
-  var cmdPrint = &cobra.Command{
+  var cmdPrint = &kcli.Command{
     Use:   "print [string to print]",
     Short: "Print anything to the screen",
     Long: `print is for printing anything back to the screen.
 For many years people have printed back to the screen.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: kcli.MinimumNArgs(1),
+    Run: func(cmd *kcli.Command, args []string) {
       fmt.Println("Print: " + strings.Join(args, " "))
     },
   }
 
-  var cmdEcho = &cobra.Command{
+  var cmdEcho = &kcli.Command{
     Use:   "echo [string to echo]",
     Short: "Echo anything to the screen",
     Long: `echo is for echoing anything back.
 Echo works a lot like print, except it has a child command.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: kcli.MinimumNArgs(1),
+    Run: func(cmd *kcli.Command, args []string) {
       fmt.Println("Echo: " + strings.Join(args, " "))
     },
   }
 
-  var cmdTimes = &cobra.Command{
+  var cmdTimes = &kcli.Command{
     Use:   "times [string to echo]",
     Short: "Echo anything to the screen more times",
     Long: `echo things multiple times back to the user by providing
 a count and a string.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: kcli.MinimumNArgs(1),
+    Run: func(cmd *kcli.Command, args []string) {
       for i := 0; i < echoTimes; i++ {
         fmt.Println("Echo: " + strings.Join(args, " "))
       }
@@ -482,7 +482,7 @@ a count and a string.`,
 
   cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
-  var rootCmd = &cobra.Command{Use: "app"}
+  var rootCmd = &kcli.Command{Use: "app"}
   rootCmd.AddCommand(cmdPrint, cmdEcho)
   cmdEcho.AddCommand(cmdTimes)
   rootCmd.Execute()
@@ -522,7 +522,7 @@ Available Commands:
 
 Flags:
   -a, --author string    author name for copyright attribution (default "YOUR NAME")
-      --config string    config file (default is $HOME/.cobra.yaml)
+      --config string    config file (default is $HOME/.kcli.yaml)
   -h, --help             help for cobra-cli
   -l, --license string   name of license for the project
       --viper            use Viper for configuration
@@ -580,7 +580,7 @@ Available Commands:
 
 Flags:
   -a, --author string    author name for copyright attribution (default "YOUR NAME")
-      --config string    config file (default is $HOME/.cobra.yaml)
+      --config string    config file (default is $HOME/.kcli.yaml)
   -h, --help             help for cobra-cli
   -l, --license string   name of license for the project
       --viper            use Viper for configuration
@@ -635,44 +635,44 @@ package main
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/kumose/kcli"
 )
 
 func main() {
 
-  var rootCmd = &cobra.Command{
+  var rootCmd = &kcli.Command{
     Use:   "root [sub]",
     Short: "My root command",
-    PersistentPreRun: func(cmd *cobra.Command, args []string) {
+    PersistentPreRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
     },
-    PreRun: func(cmd *cobra.Command, args []string) {
+    PreRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside rootCmd PreRun with args: %v\n", args)
     },
-    Run: func(cmd *cobra.Command, args []string) {
+    Run: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside rootCmd Run with args: %v\n", args)
     },
-    PostRun: func(cmd *cobra.Command, args []string) {
+    PostRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside rootCmd PostRun with args: %v\n", args)
     },
-    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+    PersistentPostRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
     },
   }
 
-  var subCmd = &cobra.Command{
+  var subCmd = &kcli.Command{
     Use:   "sub [no options!]",
     Short: "My subcommand",
-    PreRun: func(cmd *cobra.Command, args []string) {
+    PreRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside subCmd PreRun with args: %v\n", args)
     },
-    Run: func(cmd *cobra.Command, args []string) {
+    Run: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside subCmd Run with args: %v\n", args)
     },
-    PostRun: func(cmd *cobra.Command, args []string) {
+    PostRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside subCmd PostRun with args: %v\n", args)
     },
-    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+    PersistentPostRun: func(cmd *kcli.Command, args []string) {
       fmt.Printf("Inside subCmd PersistentPostRun with args: %v\n", args)
     },
   }
@@ -769,7 +769,7 @@ Read more about it in [Active Help](active_help.md).
 When creating a plugin for tools like *kubectl*, the executable is named
 `kubectl-myplugin`, but it is used as `kubectl myplugin`. To fix help
 messages and completions, annotate the root command with the
-`cobra.CommandDisplayNameAnnotation` annotation.
+`kcli.CommandDisplayNameAnnotation` annotation.
 
 ### Example kubectl plugin
 
@@ -779,19 +779,19 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 )
 
 func main() {
-	rootCmd := &cobra.Command{
+	rootCmd := &kcli.Command{
 		Use: "kubectl-myplugin",
 		Annotations: map[string]string{
-			cobra.CommandDisplayNameAnnotation: "kubectl myplugin",
+			kcli.CommandDisplayNameAnnotation: "kubectl myplugin",
 		},
 	}
-	subCmd := &cobra.Command{
+	subCmd := &kcli.Command{
 		Use: "subcmd",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *kcli.Command, args []string) {
 			fmt.Println("kubectl myplugin subcmd")
 		},
 	}

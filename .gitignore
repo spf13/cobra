@@ -32,7 +32,7 @@ Session.vim
 tags
 
 *.exe
-cobra.test
+kcli.test
 bin
 
 .idea/

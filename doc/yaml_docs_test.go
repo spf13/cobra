@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/cobra"
+	"github.com/kumose/kcli"
 )
 
 func TestGenYamlDoc(t *testing.T) {
@@ -55,7 +55,7 @@ func TestGenYamlNoTag(t *testing.T) {
 }
 
 func TestGenYamlTree(t *testing.T) {
-	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
+	c := &kcli.Command{Use: "do [OPTIONS] arg1 arg2"}
 
 	tmpdir, err := os.MkdirTemp("", "test-gen-yaml-tree")
 	if err != nil {
