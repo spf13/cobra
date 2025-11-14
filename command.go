@@ -557,7 +557,7 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 	}
 }
 
-var minUsagePadding = 25
+const minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
 func (c *Command) UsagePadding() int {
