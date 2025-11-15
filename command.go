@@ -2039,7 +2039,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 	return nil
 }
 
-var defaultHelpTemplate = `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
+const defaultHelpTemplate = `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 
@@ -2061,7 +2061,7 @@ func defaultHelpFunc(w io.Writer, in interface{}) error {
 	return nil
 }
 
-var defaultVersionTemplate = `{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
+const defaultVersionTemplate = `{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
 
 // defaultVersionFunc is equivalent to executing defaultVersionTemplate. The two should be changed in sync.
