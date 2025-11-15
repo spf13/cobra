@@ -567,7 +567,7 @@ func (c *Command) UsagePadding() int {
 	return c.parent.commandsMaxUseLen
 }
 
-var minCommandPathPadding = 11
+const minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
 func (c *Command) CommandPathPadding() int {
@@ -577,7 +577,7 @@ func (c *Command) CommandPathPadding() int {
 	return c.parent.commandsMaxCommandPathLen
 }
 
-var minNamePadding = 11
+const minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
@@ -1939,7 +1939,7 @@ type tmplFunc struct {
 	fn   func(io.Writer, interface{}) error
 }
 
-var defaultUsageTemplate = `Usage:{{if .Runnable}}
+const defaultUsageTemplate = `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
