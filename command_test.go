@@ -868,6 +868,20 @@ func TestRequiredFlags(t *testing.T) {
 	}
 }
 
+func TestIsFlagRequired(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.Flags().String("foo", "", "")
+	assertNoErr(t, c.MarkFlagRequired("foo"))
+	c.Flags().String("bar", "", "")
+
+	expected := true
+	got := c.IsFlagRequired("foo")
+
+	if got != expected {
+		t.Errorf("Expected %v: got: %v", expected, got)
+	}
+}
+
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
 	parent.PersistentFlags().String("foo1", "", "")
@@ -890,6 +904,20 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	_, err := executeCommand(parent, "child")
 	if err.Error() != expected {
 		t.Errorf("Expected %q, got %q", expected, err.Error())
+	}
+}
+
+func TestIsPersistentFlagRequired(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.PersistentFlags().String("foo", "", "")
+	assertNoErr(t, c.MarkPersistentFlagRequired("foo"))
+	c.PersistentFlags().String("bar", "", "")
+
+	expected := true
+	got := c.IsPersistentFlagRequired("foo")
+
+	if got != expected {
+		t.Errorf("Expected %v: got: %v", expected, got)
 	}
 }
 
