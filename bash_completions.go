@@ -162,7 +162,7 @@ __%[1]s_handle_go_custom_completion()
     else
         while IFS='' read -r comp; do
             COMPREPLY+=("$comp")
-        done < <(compgen -W "${out}" -- "$cur")
+        done <<< "$(compgen -W "${out}" -- "$cur")"
     fi
 }
 
@@ -183,7 +183,7 @@ __%[1]s_handle_reply()
             fi
             while IFS='' read -r comp; do
                 COMPREPLY+=("$comp")
-            done < <(compgen -W "${allflags[*]}" -- "$cur")
+            done <<< "$(compgen -W "${allflags[*]}" -- "$cur")"
             if [[ $(type -t compopt) = "builtin" ]]; then
                 [[ "${COMPREPLY[0]}" == *= ]] || compopt +o nospace
             fi
@@ -244,12 +244,12 @@ __%[1]s_handle_reply()
     fi
     while IFS='' read -r comp; do
         COMPREPLY+=("$comp")
-    done < <(compgen -W "${completions[*]}" -- "$cur")
+    done <<< "$(compgen -W "${completions[*]}" -- "$cur")"
 
     if [[ ${#COMPREPLY[@]} -eq 0 && ${#noun_aliases[@]} -gt 0 && ${#must_have_one_noun[@]} -ne 0 ]]; then
         while IFS='' read -r comp; do
             COMPREPLY+=("$comp")
-        done < <(compgen -W "${noun_aliases[*]}" -- "$cur")
+        done <<< "$(compgen -W "${noun_aliases[*]}" -- "$cur")"
     fi
 
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
