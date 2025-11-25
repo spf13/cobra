@@ -326,7 +326,7 @@ __%[1]s_handle_standard_completion_case() {
     local longest=0
     local compline
     # Look for the longest completion so that we can format things nicely
-    while IFS='' read -r compline; do
+    for compline in "${completions[@]}"; do
         [[ -z $compline ]] && continue
 
         # Before checking if the completion matches what the user typed,
@@ -352,7 +352,7 @@ __%[1]s_handle_standard_completion_case() {
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%%s\n" "${completions[@]}")
+    done
 
     # If there is a single completion left, remove the description text and escape any special characters
     if ((${#COMPREPLY[*]} == 1)); then
