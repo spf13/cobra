@@ -288,16 +288,40 @@ __%[1]s_handle_completion_types() {
         # Only consider the completions that match
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${completions[*]}" -- "${cur}")
 
-        # compgen looses the escaping so we need to escape all completions again since they will
+        # compgen removes escaping so we need to escape all completions again since they will
         # all be inserted on the command-line.
-        IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
+        __%[1]s_escape_compreply
+        ;;
+
+    63)
+        # Type: Listing completions after successive tabs
+        __%[1]s_handle_standard_completion_case
+
+        # It seems unlikely that this should happen. If there's only a single
+        # completion, why wouldn't it have been inserted with the first tab?
+        # Regardless, if there's only a single completion, escape it.
+        if (( ${#COMPREPLY[@]} == 1)); then
+          __%[1]s_escape_compreply
+        fi
+				# Otherwise, these completion options will be displayed to the user in a
+				# list, and we don't want to show them escape sequences.
         ;;
 
     *)
         # Type: complete (normal completion)
         __%[1]s_handle_standard_completion_case
+        # On the first tab, Bash will automatically insert the common prefix of
+        # all the completion options. We need to make sure these options are
+        # escaped since some part of them may be inserted on the command-line.
+        # These completion options shouldn't be displayed to the user in a list
+        # yet. That'll happen on their next tab which will come in as COMP_TYPE=63.
+        __%[1]s_escape_compreply
         ;;
     esac
+}
+
+__%[1]s_escape_compreply() {
+  IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
 }
 
 __%[1]s_handle_standard_completion_case() {
@@ -312,14 +336,8 @@ __%[1]s_handle_standard_completion_case() {
         IFS=$'\n' read -ra completions -d '' < <(printf "%%q\n" "${completions[@]}")
         # Only consider the completions that match what the user typed
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n'; compgen -W "${completions[*]}" -- "${cur}")
+        # Compgen removes escaping, so COMPREPLY will be unescaped here.
 
-        # compgen looses the escaping so, if there is only a single completion, we need to
-        # escape it again because it will be inserted on the command-line.  If there are multiple
-        # completions, we don't want to escape them because they will be printed in a list
-        # and we don't want to show escape characters in that list.
-        if (( ${#COMPREPLY[@]} == 1 )); then
-            COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]}")
-        fi
         return 0
     fi
 
@@ -354,10 +372,10 @@ __%[1]s_handle_standard_completion_case() {
         fi
     done < <(printf "%%s\n" "${completions[@]}")
 
-    # If there is a single completion left, remove the description text and escape any special characters
+    # If there is a single completion left, remove the description text.
     if ((${#COMPREPLY[*]} == 1)); then
         __%[1]s_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
-        COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]%%%%$tab*}")
+        COMPREPLY[0]="${COMPREPLY[0]%%%%$tab*}"
         __%[1]s_debug "Removed description from single completion, which is now: ${COMPREPLY[0]}"
     else
         # Format the descriptions
