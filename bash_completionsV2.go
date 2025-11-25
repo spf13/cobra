@@ -303,8 +303,8 @@ __%[1]s_handle_completion_types() {
         if (( ${#COMPREPLY[@]} == 1)); then
           __%[1]s_escape_compreply
         fi
-				# Otherwise, these completion options will be displayed to the user in a
-				# list, and we don't want to show them escape sequences.
+        # Otherwise, these completion options will be displayed to the user in a
+        # list, and we don't want to show them escape sequences.
         ;;
 
     *)
