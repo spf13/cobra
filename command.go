@@ -2055,7 +2055,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			fmt.Fprintf(w, "\n\nAvailable Commands:")
 			for _, subcmd := range cmds {
 				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
-					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 				}
 			}
 		} else {
@@ -2063,7 +2063,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				fmt.Fprintf(w, "\n\n%s", group.Title)
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
-						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
 			}
@@ -2071,7 +2071,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				fmt.Fprintf(w, "\n\nAdditional Commands:")
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
-						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
 			}
