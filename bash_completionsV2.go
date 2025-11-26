@@ -321,6 +321,9 @@ __%[1]s_handle_completion_types() {
 }
 
 __%[1]s_escape_compreply() {
+  if (( ${#COMPREPLY[@]} == 0 )); then
+    return
+  fi
   IFS=$'\n' read -ra COMPREPLY -d '' < <(printf "%%q\n" "${COMPREPLY[@]}")
 }
 
