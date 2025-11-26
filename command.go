@@ -47,6 +47,34 @@ type Group struct {
 	Title string
 }
 
+// TerminalColor is a type used for the names of the different
+// colors in the terminal
+type TerminalColor int
+
+// Colors represents the different colors one can use in the terminal
+const (
+	ColorBlack TerminalColor = iota + 30
+	ColorRed
+	ColorGreen
+	ColorYellow
+	ColorBlue
+	ColorMagenta
+	ColorCyan
+	ColorLightGray
+)
+
+// This sequence starts at 90, so we reset iota
+const (
+	ColorDarkGray TerminalColor = iota + 90
+	ColorLightRed
+	ColorLightGreen
+	ColorLightYellow
+	ColorLightBlue
+	ColorLightMagenta
+	ColorLightCyan
+	ColorWhite
+)
+
 // Command is just that, a command for your application.
 // E.g.  'go run ...' - 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
@@ -62,6 +90,12 @@ type Command struct {
 	//       optional, they are enclosed in brackets ([ ]).
 	// Example: add [-F file | -D dir]... [-f format] profile
 	Use string
+
+	// DisableColors is a boolean used to disable the coloring in the command line
+	DisableColors bool
+
+	// Color represents the color to use to print the command in the terminal
+	Color TerminalColor
 
 	// Aliases is an array of aliases that can be used instead of the first word in Use.
 	Aliases []string
@@ -581,10 +615,18 @@ const minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
+	additionalPadding := c.additionalNamePadding()
 	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
-		return minNamePadding
+		return minNamePadding + additionalPadding
 	}
-	return c.parent.commandsMaxNameLen
+	return c.parent.commandsMaxNameLen + additionalPadding
+}
+
+func (c *Command) additionalNamePadding() int {
+	// additionalPadding is used to pad non visible characters
+	// This happens for example when using colors, where \033[31m isn't seen
+	// but still is counted towards the padding
+	return len(c.ColoredName()) - len(c.Name())
 }
 
 // UsageTemplate returns usage template for the command.
@@ -1547,6 +1589,25 @@ func (c *Command) Name() string {
 	return name
 }
 
+// isColoringEnabled will be queried to know whether or not we should enable
+// the coloring on a command. This will usually be called on the Root command
+// and applied for every command.
+func (c *Command) isColoringEnabled() bool {
+	_, noColorEnv := os.LookupEnv("NO_COLOR")
+	if c.DisableColors || noColorEnv {
+		return false
+	}
+	return true
+}
+
+// ColoredName returns the command's Name in the correct color if specified
+func (c *Command) ColoredName() string {
+	if c.Color != 0 && c.Root().isColoringEnabled() {
+		return fmt.Sprintf("\033[%dm%s\033[0m", c.Color, c.Name())
+	}
+	return c.Name()
+}
+
 // HasAlias determines if a given string is an alias of the command.
 func (c *Command) HasAlias(s string) bool {
 	for _, a := range c.Aliases {
@@ -1950,13 +2011,13 @@ Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
 Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
 {{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
 Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .ColoredName .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -1994,7 +2055,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			fmt.Fprintf(w, "\n\nAvailable Commands:")
 			for _, subcmd := range cmds {
 				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
-					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 				}
 			}
 		} else {
@@ -2002,7 +2063,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				fmt.Fprintf(w, "\n\n%s", group.Title)
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
-						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
 			}
@@ -2010,7 +2071,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				fmt.Fprintf(w, "\n\nAdditional Commands:")
 				for _, subcmd := range cmds {
 					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
-						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
+						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.ColoredName(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
 			}
