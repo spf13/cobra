@@ -225,6 +225,9 @@ type Command struct {
 	commandsMaxUseLen         int
 	commandsMaxCommandPathLen int
 	commandsMaxNameLen        int
+	namePadding               int
+	usagePadding              int
+	commandPathPadding        int
 
 	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
@@ -375,6 +378,24 @@ func (c *Command) SetVersionTemplate(s string) {
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
 func (c *Command) SetErrPrefix(s string) {
 	c.errPrefix = s
+}
+
+// SetNamePadding sets the padding width used when the command lists its subcommands.
+// A padding value of zero clears the override and reverts to the automatic calculation.
+func (c *Command) SetNamePadding(padding int) {
+	c.namePadding = padding
+}
+
+// SetUsagePadding sets the padding width used for aligning the usage column.
+// A padding value of zero clears the override and reverts to the automatic calculation.
+func (c *Command) SetUsagePadding(padding int) {
+	c.usagePadding = padding
+}
+
+// SetCommandPathPadding sets the padding width used for aligning command paths.
+// A padding value of zero clears the override and reverts to the automatic calculation.
+func (c *Command) SetCommandPathPadding(padding int) {
+	c.commandPathPadding = padding
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
@@ -561,9 +582,21 @@ const minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
 func (c *Command) UsagePadding() int {
-	if c.parent == nil || minUsagePadding > c.parent.commandsMaxUseLen {
+	if c.parent == nil {
+		if c.usagePadding > 0 {
+			return c.usagePadding
+		}
 		return minUsagePadding
 	}
+
+	if c.parent.usagePadding > 0 {
+		return c.parent.usagePadding
+	}
+
+	if minUsagePadding > c.parent.commandsMaxUseLen {
+		return minUsagePadding
+	}
+
 	return c.parent.commandsMaxUseLen
 }
 
@@ -571,9 +604,21 @@ const minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
 func (c *Command) CommandPathPadding() int {
-	if c.parent == nil || minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
+	if c.parent == nil {
+		if c.commandPathPadding > 0 {
+			return c.commandPathPadding
+		}
 		return minCommandPathPadding
 	}
+
+	if c.parent.commandPathPadding > 0 {
+		return c.parent.commandPathPadding
+	}
+
+	if minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
+		return minCommandPathPadding
+	}
+
 	return c.parent.commandsMaxCommandPathLen
 }
 
@@ -581,9 +626,21 @@ const minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
-	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
+	if c.parent == nil {
+		if c.namePadding > 0 {
+			return c.namePadding
+		}
 		return minNamePadding
 	}
+
+	if c.parent.namePadding > 0 {
+		return c.parent.namePadding
+	}
+
+	if minNamePadding > c.parent.commandsMaxNameLen {
+		return minNamePadding
+	}
+
 	return c.parent.commandsMaxNameLen
 }
 
