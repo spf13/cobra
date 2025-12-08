@@ -128,6 +128,16 @@ For complete details on using the Cobra-CLI generator, please read [The Cobra Ge
 
 For complete details on using the Cobra library, please read [The Cobra User Guide](site/content/user_guide.md).
 
+# Fuzz testing
+
+Cobra includes Go fuzz tests (Go 1.18+). To run a short fuzzing session locally:
+
+```
+go test ./... -run=^$ -fuzz=Fuzz -fuzztime=30s
+```
+
+We are exploring integration with Google's OSS-Fuzz to further harden Cobra. See Go's official fuzzing docs at [`https://go.dev/doc/security/fuzz/`](https://go.dev/doc/security/fuzz/).
+
 # License
 
 Cobra is released under the Apache 2.0 license. See [LICENSE.txt](LICENSE.txt)
