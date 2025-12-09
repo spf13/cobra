@@ -952,18 +952,21 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
-	if !c.Runnable() {
-		return flag.ErrHelp
-	}
-
-	c.preRun()
-
-	defer c.postRun()
-
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
 		argWoFlags = a
 	}
+
+	if !c.Runnable() {
+		if EnableErrorOnUnknownSubcommand && len(argWoFlags) > 0 {
+			return fmt.Errorf("unknown command %q for %q%s", argWoFlags[0], c.CommandPath(), c.findSuggestions(argWoFlags[0]))
+		} else {
+			return flag.ErrHelp
+		}
+	}
+	c.preRun()
+
+	defer c.postRun()
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err
