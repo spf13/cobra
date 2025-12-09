@@ -43,22 +43,25 @@ func TestValidateFlagGroups(t *testing.T) {
 
 	// Each test case uses a unique command from the function above.
 	testcases := []struct {
-		desc                        string
-		flagGroupsRequired          []string
-		flagGroupsOneRequired       []string
-		flagGroupsExclusive         []string
-		subCmdFlagGroupsRequired    []string
-		subCmdFlagGroupsOneRequired []string
-		subCmdFlagGroupsExclusive   []string
-		args                        []string
-		expectErr                   string
+		desc                                  string
+		flagGroupsRequired                    []string
+		flagGroupsOneRequired                 []string
+		flagGroupsExclusive                   []string
+		flagGroupsIfPresentThenRequired       []string
+		subCmdFlagGroupsRequired              []string
+		subCmdFlagGroupsOneRequired           []string
+		subCmdFlagGroupsExclusive             []string
+		subCmdFlagGroupsIfPresentThenRequired []string
+		args                                  []string
+		expectErr                             string
 	}{
 		{
 			desc: "No flags no problem",
 		}, {
-			desc:                "No flags no problem even with conflicting groups",
-			flagGroupsRequired:  []string{"a b"},
-			flagGroupsExclusive: []string{"a b"},
+			desc:                            "No flags no problem even with conflicting groups",
+			flagGroupsRequired:              []string{"a b"},
+			flagGroupsExclusive:             []string{"a b"},
+			flagGroupsIfPresentThenRequired: []string{"a b", "b a"},
 		}, {
 			desc:               "Required flag group not satisfied",
 			flagGroupsRequired: []string{"a b c"},
@@ -75,6 +78,11 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:                []string{"--a=foo", "--b=foo"},
 			expectErr:           "if any flags in the group [a b c] are set none of the others can be; [a b] were all set",
 		}, {
+			desc:                            "If present then others required flag group not satisfied",
+			flagGroupsIfPresentThenRequired: []string{"a b"},
+			args:                            []string{"--a=foo"},
+			expectErr:                       "a is set, the following flags must be provided: [b]",
+		}, {
 			desc:               "Multiple required flag group not satisfied returns first error",
 			flagGroupsRequired: []string{"a b c", "a d"},
 			args:               []string{"--c=foo", "--d=foo"},
@@ -89,6 +97,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsExclusive: []string{"a b c", "a d"},
 			args:                []string{"--a=foo", "--c=foo", "--d=foo"},
 			expectErr:           `if any flags in the group [a b c] are set none of the others can be; [a c] were all set`,
+		},
+		{
+			desc:                            "Multiple if present then others required flag group not satisfied returns first error",
+			flagGroupsIfPresentThenRequired: []string{"a b", "d e"},
+			args:                            []string{"--a=foo", "--f=foo"},
+			expectErr:                       `a is set, the following flags must be provided: [b]`,
 		}, {
 			desc:               "Validation of required groups occurs on groups in sorted order",
 			flagGroupsRequired: []string{"a d", "a b", "a c"},
@@ -182,6 +196,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			for _, flagGroup := range tc.subCmdFlagGroupsExclusive {
 				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
 			}
+			for _, flagGroup := range tc.flagGroupsIfPresentThenRequired {
+				c.MarkIfFlagPresentThenOthersRequired(strings.Split(flagGroup, " ")...)
+			}
+			for _, flagGroup := range tc.subCmdFlagGroupsIfPresentThenRequired {
+				sub.MarkIfFlagPresentThenOthersRequired(strings.Split(flagGroup, " ")...)
+			}
 			c.SetArgs(tc.args)
 			err := c.Execute()
 			switch {
@@ -191,5 +211,74 @@ func TestValidateFlagGroups(t *testing.T) {
 				t.Errorf("Expected error %q but got %q", tc.expectErr, err)
 			}
 		})
+	}
+}
+
+func TestMarkIfFlagPresentThenOthersRequiredAnnotations(t *testing.T) {
+	// Create a new command with some flags.
+	cmd := &Command{
+		Use: "testcmd",
+	}
+	f := cmd.Flags()
+	f.String("a", "", "flag a")
+	f.String("b", "", "flag b")
+	f.String("c", "", "flag c")
+
+	// Call the function with one group: ["a", "b"].
+	cmd.MarkIfFlagPresentThenOthersRequired("a", "b")
+
+	// Check that flag "a" has the correct annotation.
+	aFlag := f.Lookup("a")
+	if aFlag == nil {
+		t.Fatal("Flag 'a' not found")
+	}
+	annA := aFlag.Annotations[annotationGroupDependent]
+	expected1 := "a b" // since strings.Join(["a","b"], " ") yields "a b"
+	if len(annA) != 1 || annA[0] != expected1 {
+		t.Errorf("Expected flag 'a' annotation to be [%q], got %v", expected1, annA)
+	}
+
+	// Also check that flag "b" has the correct annotation.
+	bFlag := f.Lookup("b")
+	if bFlag == nil {
+		t.Fatal("Flag 'b' not found")
+	}
+	annB := bFlag.Annotations[annotationGroupDependent]
+	if len(annB) != 1 || annB[0] != expected1 {
+		t.Errorf("Expected flag 'b' annotation to be [%q], got %v", expected1, annB)
+	}
+
+	// Now, call MarkIfFlagPresentThenOthersRequired again with a different group involving "a" and "c".
+	cmd.MarkIfFlagPresentThenOthersRequired("a", "c")
+
+	// The annotation for flag "a" should now have both groups: "a b" and "a c"
+	annA = aFlag.Annotations[annotationGroupDependent]
+	expectedAnnotations := []string{"a b", "a c"}
+	if len(annA) != 2 {
+		t.Errorf("Expected 2 annotations on flag 'a', got %v", annA)
+	}
+	// Check that both expected annotation strings are present.
+	for _, expected := range expectedAnnotations {
+		found := false
+		for _, ann := range annA {
+			if ann == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected annotation %q not found on flag 'a': %v", expected, annA)
+		}
+	}
+
+	// Similarly, check that flag "c" now has the annotation "a c".
+	cFlag := f.Lookup("c")
+	if cFlag == nil {
+		t.Fatal("Flag 'c' not found")
+	}
+	annC := cFlag.Annotations[annotationGroupDependent]
+	expected2 := "a c"
+	if len(annC) != 1 || annC[0] != expected2 {
+		t.Errorf("Expected flag 'c' annotation to be [%q], got %v", expected2, annC)
 	}
 }
