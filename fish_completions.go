@@ -53,7 +53,7 @@ function __%[1]s_perform_completion
     __%[1]s_debug "last arg: $lastArg"
 
     # Disable ActiveHelp which is not supported for fish shell
-    set -l requestComp "%[10]s=0 $args[1] %[3]s $(string join ' ' (string escape $args[2..-1])) $lastArg"
+    set -l requestComp "%[10]s=0 $args[1] %[3]s $(string join ' ' -- (string escape -- $args[2..-1])) $lastArg"
 
     __%[1]s_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
