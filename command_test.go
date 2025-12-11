@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -866,6 +867,21 @@ func TestRequiredFlags(t *testing.T) {
 	if got != expected {
 		t.Errorf("Expected error: %q, got: %q", expected, got)
 	}
+
+	// Test it returns valid RequiredFlagError.
+	var requiredFlagErr RequiredFlagError
+	if !errors.As(err, &requiredFlagErr) {
+		t.Fatalf("Expected error to be RequiredFlagError, got %T", err)
+	}
+
+	expectedMissingFlagNames := "foo1 foo2"
+	gotMissingFlagNames := strings.Join(requiredFlagErr.missingFlagNames, " ")
+	if expectedMissingFlagNames != gotMissingFlagNames {
+		t.Errorf("Expected error missingFlagNames to be %q, got %q",
+			expectedMissingFlagNames, gotMissingFlagNames)
+	}
+
+	expectErrorHasCommand(err, c, t)
 }
 
 func TestPersistentRequiredFlags(t *testing.T) {

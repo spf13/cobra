@@ -884,3 +884,41 @@ Flags:
 
 Use "kubectl myplugin [command] --help" for more information about a command.
 ```
+
+## Error Structs
+
+Cobra uses structs for errors related to command-line argument validation.
+If you need fine-grained details on why a command failed to execute, you can
+use [errors.As](https://pkg.go.dev/errors#As) to unwrap the `error` as an
+error struct.
+
+```go
+package main
+
+import (
+  "errors"
+  "fmt"
+
+  "github.com/spf13/cobra"
+)
+
+func main() {
+  var rootCmd = &cobra.Command{
+    Use:   "echo [value]",
+    Short: "Echo the first argument back",
+    Args: cobra.MinimumNArgs(1),
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Println(args[0])
+    },
+  }
+
+  err := rootCmd.Execute()
+
+  var invalidArgCountErr cobra.InvalidArgCountError
+  if errors.As(err, &invalidArgCountErr) {
+    fmt.Printf("At least %d arg(s) were needed for %q\n",
+      invalidArgCountErr.GetMinArgumentCount(),
+      invalidArgCountErr.GetCommand().Name())
+  }
+}
+```
