@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -2600,9 +2601,10 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
+const val = "foobar"
+
 func TestSetContext(t *testing.T) {
 	type key struct{}
-	val := "foobar"
 	root := &Command{
 		Use: "root",
 		Run: func(cmd *Command, args []string) {
@@ -2951,4 +2953,125 @@ func TestHelpFuncExecuted(t *testing.T) {
 	}
 
 	checkStringContains(t, output, helpText)
+}
+
+func TestOnFinalizeCmdRunE(t *testing.T) {
+	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
+	type key struct{}
+	testErr := fmt.Errorf("Test Error")
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		key := cmd.Context().Value(key{})
+		got, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		if cmd.Name() != "root" {
+			t.Errorf("Unexpected OnFinalizeCmd: %s", cmd.Name())
+		}
+
+		if !errors.Is(err, testErr) {
+			t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+		}
+
+		if got != val {
+			t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
+		}
+	})
+	rootCmd := &Command{
+		Use: "root",
+		RunE: func(cmd *Command, _ []string) error {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
+			return testErr
+		},
+	}
+
+	_, err := executeCommand(rootCmd)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestOnFinalizeCmdPostRunE(t *testing.T) {
+	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
+	type key struct{}
+	testErr := fmt.Errorf("Test Error")
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		key := cmd.Context().Value(key{})
+		got, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		if cmd.Name() != "root" {
+			t.Errorf("unexpected OnFinalizeCmd: %s", cmd.Name())
+		}
+
+		if !errors.Is(err, testErr) {
+			t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+		}
+
+		if got != val {
+			t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
+		}
+	})
+
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(cmd *Command, args []string) {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
+		},
+		PostRunE: func(_ *Command, _ []string) error {
+			return testErr
+		},
+	}
+
+	_, err := executeCommand(rootCmd)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestOnFinalizeCmdPersistentPostRunE(t *testing.T) {
+	t.Cleanup(func() { cmdFinalizers = []func(*Command, error){} })
+	type key struct{}
+	testErr := fmt.Errorf("Test Error")
+	OnFinalizeCmd(func(cmd *Command, err error) {
+		c := cmd.Context()
+		key := c.Value(key{})
+		got, ok := key.(string)
+		if !ok {
+			t.Error("key not found in context")
+		}
+		if cmd.Name() != "child" {
+			t.Errorf("unexpected OnFinalizeCmd: %s", cmd.Name())
+		}
+
+		if !errors.Is(err, testErr) {
+			t.Errorf("Unexpected OnFinalizeCmd error: %v", err)
+		}
+
+		if got != val {
+			t.Errorf("Expected value: \n %v\nGot:\n %v\n", val, got)
+		}
+	})
+	rootCmd := &Command{
+		Use: "root",
+		Run: func(_ *Command, args []string) {},
+		PersistentPostRunE: func(_ *Command, _ []string) error {
+			return testErr
+		},
+	}
+
+	childCmd := &Command{
+		Use: "child",
+		Run: func(cmd *Command, args []string) {
+			cmd.SetContext(context.WithValue(cmd.Context(), key{}, val))
+		},
+	}
+
+	rootCmd.AddCommand(childCmd)
+
+	_, err := executeCommand(rootCmd, childCmd.Use)
+	if !errors.Is(err, testErr) {
+		t.Errorf("Unexpected error: %v", err)
+	}
 }
