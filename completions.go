@@ -916,14 +916,46 @@ to your powershell profile.
 				return cmd.Root().GenPowerShellCompletion(out)
 			}
 			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
 		},
 	}
 	if haveNoDescFlag {
 		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
-	completionCmd.AddCommand(bash, zsh, fish, powershell)
+	nushell := &Command{
+		Use:   "nushell",
+		Short: fmt.Sprintf(shortDesc, "nushell"),
+		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
+
+To configure the Nushell cobra external completer for the first time:
+  # 1. Edit the nushell config file:
+  > config nu
+  # 2. Copy the output of %[1]s completion nushell to the end of the file.
+  # 3. Add a section like the following below at the end of the file:
+    $env.config.completions.external = {
+        enable: true
+        max_results: 100
+        completer: $cobra_completer
+    }
+
+This completer will work for all cobra based commands. 
+More information can be found in the External Completions section of the Nushell book: 
+https://www.nushell.sh/book/custom_completions.html#external-completions
+
+Information on setting up more than one external completer can be found in the Multiple completer section of the Nushell cookbook:
+https://www.nushell.sh/cookbook/external_completers.html#multiple-completer
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenNushellCompletion(out)
+		},
+	}
+	if haveNoDescFlag {
+		nushell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	completionCmd.AddCommand(bash, zsh, fish, powershell, nushell)
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {
@@ -956,7 +988,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
 		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)
