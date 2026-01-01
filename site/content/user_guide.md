@@ -37,6 +37,23 @@ For complete details on using the Cobra generator, please refer to [The Cobra-CL
 To manually implement Cobra you need to create a bare main.go file and a rootCmd file.
 You will optionally provide additional commands as you see fit.
 
+### Initialize a Go module
+
+Before you can use the Cobra library, you need to create a Go module for your project.
+If you don't already have a Go module, follow these steps:
+
+```console
+mkdir myapp
+cd myapp
+go mod init github.com/your-username/myapp
+```
+
+Replace `github.com/your-username/myapp` with your actual module path. After initializing the module, you can fetch the Cobra library:
+
+```console
+go get github.com/spf13/cobra@latest
+```
+
 ### Create rootCmd
 
 Cobra doesn't require any special constructors. Simply create your commands.
