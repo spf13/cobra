@@ -79,9 +79,9 @@ import (
 )
 
 var (
-	// Used for flags.
 	cfgFile     string
 	userLicense string
+	v           *viper.Viper
 
 	rootCmd = &cobra.Command{
 		Use:   "cobra-cli",
@@ -98,16 +98,17 @@ func Execute() error {
 }
 
 func init() {
+	v = viper.New()
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
-	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
-	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
-	viper.SetDefault("license", "apache")
+	v.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
+	v.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
+	v.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
+	v.SetDefault("license", "apache")
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
@@ -116,22 +117,22 @@ func init() {
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		v.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".cobra" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".cobra")
+		v.AddConfigPath(home)
+		v.SetConfigType("yaml")
+		v.SetConfigName(".cobra")
 	}
 
-	viper.AutomaticEnv()
+	v.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := v.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", v.ConfigFileUsed())
 	}
 }
 ```
@@ -300,14 +301,16 @@ You can also bind your flags with [viper](https://github.com/spf13/viper):
 
 ```go
 var author string
+var v *viper.Viper
 
 func init() {
+  v = viper.New()
   rootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-  viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
+  v.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
 }
 ```
 
-In this example, the persistent flag `author` is bound with `viper`.
+In this example, the persistent flag `author` is bound with the viper instance `v`.
 **Note**: the variable `author` will not be set to the value from config,
 when the `--author` flag is provided by user.
 
