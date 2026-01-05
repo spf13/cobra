@@ -73,8 +73,34 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	}
 
 	if len(cmd.Example) > 0 {
-		buf.WriteString("### Examples\n\n")
-		fmt.Fprintf(buf, "```\n%s\n```\n\n", cmd.Example)
+		buf.WriteString("### Examples\n\n```\n")
+		lines := strings.Split(cmd.Example, "\n")
+
+		// When printing the usage message, the examples string is not indented,
+		// in contrast to the other sections like "Usage" and "Flags". That's
+		// why many commands prefix each line in the examples string with two
+		// spaces, so that it shows with the same indentation as the other
+		// sections in the usage message.
+		// However, that looks odd in the generated markdown, so we remove the
+		// two-space prefix here, if all lines are prefixed like that.
+		allPrefixed := true
+		var trimmedLines []string
+		for _, line := range lines {
+			trimmedLine, ok := strings.CutPrefix(line, "  ")
+			if !ok {
+				allPrefixed = false
+				break
+			}
+			trimmedLines = append(trimmedLines, trimmedLine)
+		}
+
+		if allPrefixed {
+			buf.WriteString(strings.Join(trimmedLines, "\n"))
+		} else {
+			buf.WriteString(cmd.Example)
+		}
+
+		buf.WriteString("\n```\n\n")
 	}
 
 	if err := printOptions(buf, cmd, name); err != nil {
