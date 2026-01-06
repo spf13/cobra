@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -123,9 +122,7 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 			parent := cmd.Parent()
 			result = append(result, parent.CommandPath()+" - "+parent.Short)
 		}
-		children := cmd.Commands()
-		sort.Sort(byName(children))
-		for _, child := range children {
+		for _, child := range cmd.Commands() {
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
