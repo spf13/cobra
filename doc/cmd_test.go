@@ -15,10 +15,14 @@
 package doc
 
 import (
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
+	"go.yaml.in/yaml/v3"
 )
 
 func emptyRun(*cobra.Command, []string) {}
@@ -101,5 +105,96 @@ func checkStringContains(t *testing.T, got, expected string) {
 func checkStringOmits(t *testing.T, got, expected string) {
 	if strings.Contains(got, expected) {
 		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
+	}
+}
+
+// loadFixture loads a YAML fixture file from __fixtures__ directory and returns its contents
+func loadFixture(t *testing.T, parts ...string) []byte {
+	path := filepath.Join(append([]string{"__fixtures__"}, parts...)...)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("Failed to read fixture file %s: %v", path, err)
+	}
+	return data
+}
+
+// compareNormalizedYAML compares two YAML byte slices after normalizing them
+func compareNormalizedYAML(t *testing.T, expected, actual []byte) {
+	expectedNormalized, err := normalizeYAML(expected)
+	if err != nil {
+		t.Fatalf("Failed to normalize expected YAML: %v", err)
+	}
+
+	actualNormalized, err := normalizeYAML(actual)
+	if err != nil {
+		t.Fatalf("Failed to normalize actual YAML: %v", err)
+	}
+
+	if string(expectedNormalized) != string(actualNormalized) {
+		t.Errorf("Generated OpenCLI does not match fixture")
+		t.Logf("Expected:\n%s", string(expectedNormalized))
+		t.Logf("Actual:\n%s", string(actualNormalized))
+	}
+}
+
+// normalizeYAML normalizes YAML data by recursively sorting map keys
+// and re-marshaling to ensure consistent ordering
+func normalizeYAML(data []byte) ([]byte, error) {
+	var v interface{}
+	if err := yaml.Unmarshal(data, &v); err != nil {
+		return nil, err
+	}
+	normalized := sortYAMLKeys(v)
+	return yaml.Marshal(normalized)
+}
+
+// sortYAMLKeys recursively sorts map keys in a YAML structure
+func sortYAMLKeys(v interface{}) interface{} {
+	switch val := v.(type) {
+	case map[interface{}]interface{}:
+		// Create a new map with sorted keys
+		sorted := make(map[interface{}]interface{})
+		keys := make([]string, 0, len(val))
+		keyMap := make(map[string]interface{})
+
+		// Collect all keys and convert to strings for sorting
+		for k := range val {
+			keyStr := toString(k)
+			keys = append(keys, keyStr)
+			keyMap[keyStr] = k
+		}
+
+		// Sort keys
+		sort.Strings(keys)
+
+		// Rebuild map with sorted keys, recursively sorting values
+		for _, keyStr := range keys {
+			originalKey := keyMap[keyStr]
+			sorted[originalKey] = sortYAMLKeys(val[originalKey])
+		}
+		return sorted
+	case []interface{}:
+		// Recursively sort elements in slices
+		sorted := make([]interface{}, len(val))
+		for i, item := range val {
+			sorted[i] = sortYAMLKeys(item)
+		}
+		return sorted
+	default:
+		// Primitive types, return as-is
+		return v
+	}
+}
+
+// toString converts a key to string for sorting
+func toString(k interface{}) string {
+	switch v := k.(type) {
+	case string:
+		return v
+	case int:
+		return string(rune(v))
+	default:
+		// For other types, try to convert to string
+		return ""
 	}
 }
