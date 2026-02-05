@@ -814,11 +814,11 @@ To load completions for every new session, execute once:
 
 #### Linux:
 
-	%[1]s completion bash > /etc/bash_completion.d/%[1]s
+	%[1]s completion bash > /usr/share/bash-completion/completions/%[1]s.bash
 
 #### macOS:
 
-	%[1]s completion bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
+	%[1]s completion bash > $(brew --prefix)/share/bash-completion/completions/%[1]s.bash
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
