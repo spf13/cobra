@@ -126,8 +126,17 @@ go install github.com/spf13/cobra-cli@latest
 
 For complete details on using the Cobra-CLI generator, please read [The Cobra Generator README](https://github.com/spf13/cobra-cli/blob/main/README.md)
 
-For complete details on using the Cobra library, please read [The Cobra User Guide](site/content/user_guide.md).
+For complete details on using the Cobra library, please read [The Cobra User Guide](site/content/user_guide.md)
 
 # License
 
 Cobra is released under the Apache 2.0 license. See [LICENSE.txt](LICENSE.txt)
+
+## Alternatives Considered
+
+While there are several alternatives in the ecosystem, the following were considered:
+
+- **charmbracelet/glow**: A static site generator focused on Markdown and HTML, ideal for documentation websites. However, Cobra offers broader CLI capabilities and integrates well with Go projects.
+- **golang-standards/project-layout**: A guideline for structuring Go projects, which is helpful for consistency but lacks the dynamic CLI generation features provided by Cobra.
+
+Cobra was ultimately selected due to its robust support for building complex CLI applications with ease of use and extensibility.
