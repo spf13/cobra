@@ -4072,3 +4072,44 @@ func TestCustomDefaultShellCompDirective(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletionDoesNotMutateArgs(t *testing.T) {
+	// Test for https://github.com/spf13/cobra/issues/2257
+	// When TraverseChildren is set and completions are requested,
+	// the getCompletions function should not modify the caller's
+	// args slice via append side effects.
+
+	rootCmd := &Command{
+		Use:              "root",
+		TraverseChildren: true,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"mycompletion"}, ShellCompDirectiveDefault
+		},
+		Run: emptyRun,
+	}
+
+	// Create args with extra capacity to simulate os.Args slicing behavior.
+	// The slice has room for 3 elements but only 2 are used.
+	// Without the fix, append(finalArgs, "--") in getCompletions would
+	// write "--" into the extra capacity, corrupting args[1].
+	args := make([]string, 2, 3)
+	args[0] = ShellCompNoDescRequestCmd
+	args[1] = "x"
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs(args)
+
+	_, err := rootCmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Without the fix, args[1] would be changed from "x" to "--"
+	// because append(finalArgs, "--") in getCompletions wrote into
+	// the shared backing array.
+	if args[1] != "x" {
+		t.Errorf("args slice was mutated: args[1] expected %q, got %q", "x", args[1])
+	}
+}
