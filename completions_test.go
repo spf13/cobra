@@ -4073,11 +4073,25 @@ func TestCustomDefaultShellCompDirective(t *testing.T) {
 	}
 }
 
-func TestCompletionDoesNotMutateArgs(t *testing.T) {
+func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 	// Test for https://github.com/spf13/cobra/issues/2257
-	// When TraverseChildren is set and completions are requested,
-	// the getCompletions function should not modify the caller's
-	// args slice via append side effects.
+	// Verify that os.Args is not corrupted when shell completion runs
+	// with TraverseChildren enabled.
+	//
+	// The bug: getCompletions() calls append(finalArgs, "--") where
+	// finalArgs is a sub-slice of the original args (from os.Args[1:]).
+	// If there's spare capacity, append writes "--" into the shared
+	// backing array, mutating os.Args in place.
+
+	// Save and restore os.Args since we need to override it.
+	origArgs := os.Args
+	defer func() { os.Args = origArgs }()
+
+	// Set os.Args to simulate: prog __completeNoDesc x
+	// We do NOT use SetArgs so the code falls through to os.Args[1:].
+	// The program name must not be "cobra.test" to bypass the test guard
+	// in ExecuteC().
+	os.Args = []string{"prog", ShellCompNoDescRequestCmd, "x"}
 
 	rootCmd := &Command{
 		Use:              "root",
@@ -4088,28 +4102,28 @@ func TestCompletionDoesNotMutateArgs(t *testing.T) {
 		Run: emptyRun,
 	}
 
-	// Create args with extra capacity to simulate os.Args slicing behavior.
-	// The slice has room for 3 elements but only 2 are used.
-	// Without the fix, append(finalArgs, "--") in getCompletions would
-	// write "--" into the extra capacity, corrupting args[1].
-	args := make([]string, 2, 3)
-	args[0] = ShellCompNoDescRequestCmd
-	args[1] = "x"
-
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
-	rootCmd.SetArgs(args)
 
 	_, err := rootCmd.ExecuteC()
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	// Without the fix, args[1] would be changed from "x" to "--"
+	// Without the fix, os.Args[2] would be changed from "x" to "--"
 	// because append(finalArgs, "--") in getCompletions wrote into
-	// the shared backing array.
-	if args[1] != "x" {
-		t.Errorf("args slice was mutated: args[1] expected %q, got %q", "x", args[1])
+	// the shared backing array of os.Args.
+	if len(os.Args) != 3 {
+		t.Fatalf("os.Args length changed: expected 3, got %d", len(os.Args))
+	}
+	if os.Args[0] != "prog" {
+		t.Errorf("os.Args[0] was mutated: expected %q, got %q", "prog", os.Args[0])
+	}
+	if os.Args[1] != ShellCompNoDescRequestCmd {
+		t.Errorf("os.Args[1] was mutated: expected %q, got %q", ShellCompNoDescRequestCmd, os.Args[1])
+	}
+	if os.Args[2] != "x" {
+		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
