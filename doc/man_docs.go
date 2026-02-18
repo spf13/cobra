@@ -140,6 +140,15 @@ func fillHeader(header *GenManHeader, name string, disableAutoGen bool) error {
 	return nil
 }
 
+// escapeAngleBrackets escapes angle brackets so they are not stripped by md2man
+// which interprets them as HTML tags. This is necessary for command usage strings
+// that contain placeholders like [<remote>:]<instance>.
+func escapeAngleBrackets(s string) string {
+	s = strings.ReplaceAll(s, "<", `\<`)
+	s = strings.ReplaceAll(s, ">", `\>`)
+	return s
+}
+
 func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command, dashedName string) {
 	description := cmd.Long
 	if len(description) == 0 {
@@ -149,11 +158,11 @@ func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command, 
 	cobra.WriteStringAndCheck(buf, fmt.Sprintf(`%% "%s" "%s" "%s" "%s" "%s"
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual))
-	cobra.WriteStringAndCheck(buf, fmt.Sprintf("%s \\- %s\n\n", dashedName, cmd.Short))
+	cobra.WriteStringAndCheck(buf, fmt.Sprintf("%s \\- %s\n\n", dashedName, escapeAngleBrackets(cmd.Short)))
 	cobra.WriteStringAndCheck(buf, "# SYNOPSIS\n")
-	cobra.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\n", cmd.UseLine()))
+	cobra.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\n", escapeAngleBrackets(cmd.UseLine())))
 	cobra.WriteStringAndCheck(buf, "# DESCRIPTION\n")
-	cobra.WriteStringAndCheck(buf, description+"\n\n")
+	cobra.WriteStringAndCheck(buf, escapeAngleBrackets(description)+"\n\n")
 }
 
 func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
@@ -180,7 +189,7 @@ func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
 			format += "]"
 		}
 		format += "\n\t%s\n\n"
-		cobra.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, flag.Usage))
+		cobra.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, escapeAngleBrackets(flag.Usage)))
 	})
 }
 
