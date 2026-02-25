@@ -33,6 +33,7 @@ import (
 const (
 	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
 	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
+	HiddenAliasesAnnotation      = "cobra_annotation_hidden_aliases"
 
 	helpFlagName    = "help"
 	helpCommandName = "help"
@@ -1557,6 +1558,86 @@ func (c *Command) HasAlias(s string) bool {
 	return false
 }
 
+// MarkAliasesHidden marks the provided aliases as hidden from help output.
+// Hidden aliases remain functional but are omitted from usage and help text.
+// Passing an empty slice clears previously hidden aliases.
+func (c *Command) MarkAliasesHidden(aliases ...string) error {
+	if len(aliases) == 0 {
+		if c.Annotations != nil {
+			delete(c.Annotations, HiddenAliasesAnnotation)
+		}
+		return nil
+	}
+	if len(c.Aliases) == 0 {
+		return nil
+	}
+
+	existing := make(map[string]struct{}, len(c.Aliases))
+	for _, a := range c.Aliases {
+		existing[a] = struct{}{}
+	}
+
+	unique := make(map[string]struct{}, len(aliases))
+	result := make([]string, 0, len(aliases))
+	for _, hiddenAlias := range aliases {
+		if hiddenAlias == "" {
+			return fmt.Errorf("hidden alias cannot be empty")
+		}
+		if _, ok := existing[hiddenAlias]; !ok {
+			return fmt.Errorf("alias %q not found", hiddenAlias)
+		}
+		if _, ok := unique[hiddenAlias]; ok {
+			continue
+		}
+		unique[hiddenAlias] = struct{}{}
+		result = append(result, hiddenAlias)
+	}
+
+	sort.Strings(result)
+
+	if c.Annotations == nil {
+		c.Annotations = make(map[string]string, 1)
+	}
+	c.Annotations[HiddenAliasesAnnotation] = strings.Join(result, ",")
+	return nil
+}
+
+func (c *Command) hiddenAliases() map[string]struct{} {
+	if c.Annotations == nil {
+		return nil
+	}
+
+	v, ok := c.Annotations[HiddenAliasesAnnotation]
+	if !ok || v == "" {
+		return nil
+	}
+
+	aliases := strings.Split(v, ",")
+	result := make(map[string]struct{}, len(aliases))
+	for _, alias := range aliases {
+		result[alias] = struct{}{}
+	}
+	return result
+}
+
+func (c *Command) HasVisibleAliases() bool {
+	if len(c.Aliases) == 0 {
+		return false
+	}
+
+	hidden := c.hiddenAliases()
+	if hidden == nil {
+		return true
+	}
+
+	for _, a := range c.Aliases {
+		if _, ok := hidden[a]; !ok {
+			return true
+		}
+	}
+	return false
+}
+
 // CalledAs returns the command name or alias that was used to invoke
 // this command or an empty string if the command has not been called.
 func (c *Command) CalledAs() string {
@@ -1584,7 +1665,21 @@ func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
 
 // NameAndAliases returns a list of the command name and all aliases
 func (c *Command) NameAndAliases() string {
-	return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
+	hidden := c.hiddenAliases()
+	if hidden == nil {
+		return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
+	}
+
+	aliases := make([]string, 0, len(c.Aliases)+1)
+	aliases = append(aliases, c.Name())
+
+	for _, alias := range c.Aliases {
+		if _, ok := hidden[alias]; !ok {
+			aliases = append(aliases, alias)
+		}
+	}
+
+	return strings.Join(aliases, ", ")
 }
 
 // HasExample determines if the command has example.
@@ -1941,7 +2036,7 @@ type tmplFunc struct {
 
 const defaultUsageTemplate = `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
+  {{.CommandPath}} [command]{{end}}{{if .HasVisibleAliases}}
 
 Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
@@ -1980,7 +2075,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 	if c.HasAvailableSubCommands() {
 		fmt.Fprintf(w, "\n  %s [command]", c.CommandPath())
 	}
-	if len(c.Aliases) > 0 {
+	if c.HasVisibleAliases() {
 		fmt.Fprintf(w, "\n\nAliases:\n")
 		fmt.Fprintf(w, "  %s", c.NameAndAliases())
 	}
