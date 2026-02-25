@@ -2952,3 +2952,259 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestCommandNameAndAliases(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  *Command
+		want string
+	}{
+		{
+			name: "no aliases",
+			cmd:  &Command{Use: "signin"},
+			want: "signin",
+		},
+		{
+			name: "aliases without hidden annotation",
+			cmd:  &Command{Use: "signin", Aliases: []string{"login", "in"}},
+			want: "signin, login, in",
+		},
+		{
+			name: "hide one alias",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login", "in"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: "in"},
+			},
+			want: "signin, login",
+		},
+		{
+			name: "hide all aliases",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login", "in"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: "login,in"},
+			},
+			want: "signin",
+		},
+		{
+			name: "empty hidden annotation value is ignored",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: ""},
+			},
+			want: "signin, login",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.cmd.NameAndAliases()
+			if got != tt.want {
+				t.Fatalf("NameAndAliases() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCommandMarkAliasesHidden(t *testing.T) {
+	t.Run("hide single alias", func(t *testing.T) {
+		cmd := &Command{
+			Use:     "signin",
+			Aliases: []string{"login", "in"},
+		}
+
+		err := cmd.MarkAliasesHidden("in")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if cmd.Annotations == nil {
+			t.Fatalf("annotations should not be nil")
+		}
+
+		v := cmd.Annotations[HiddenAliasesAnnotation]
+		if v != "in" {
+			t.Fatalf("expected hidden alias to be 'in', got %q", v)
+		}
+	})
+
+	t.Run("hide multiple aliases", func(t *testing.T) {
+		cmd := &Command{
+			Use:     "signin",
+			Aliases: []string{"login", "in"},
+		}
+
+		err := cmd.MarkAliasesHidden("login", "in")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		v := cmd.Annotations[HiddenAliasesAnnotation]
+		if v != "in,login" {
+			t.Fatalf("expected sorted hidden aliases 'in,login', got %q", v)
+		}
+	})
+
+	t.Run("clear hidden aliases", func(t *testing.T) {
+		cmd := &Command{
+			Use:     "signin",
+			Aliases: []string{"login"},
+			Annotations: map[string]string{
+				HiddenAliasesAnnotation: "login",
+			},
+		}
+
+		err := cmd.MarkAliasesHidden()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if cmd.Annotations != nil {
+			if _, ok := cmd.Annotations[HiddenAliasesAnnotation]; ok {
+				t.Fatalf("hidden aliases should be removed")
+			}
+		}
+	})
+
+	t.Run("error on unknown alias", func(t *testing.T) {
+		cmd := &Command{
+			Use:     "signin",
+			Aliases: []string{"login"},
+		}
+
+		err := cmd.MarkAliasesHidden("unknown")
+		if err == nil {
+			t.Fatalf("expected error for unknown alias")
+		}
+	})
+
+	t.Run("deduplicate input", func(t *testing.T) {
+		cmd := &Command{
+			Use:     "signin",
+			Aliases: []string{"login"},
+		}
+
+		err := cmd.MarkAliasesHidden("login", "login")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		v := cmd.Annotations[HiddenAliasesAnnotation]
+		if v != "login" {
+			t.Fatalf("expected deduplicated value 'login', got %q", v)
+		}
+	})
+}
+
+func TestHelpHidesMarkedAliases(t *testing.T) {
+	child := &Command{
+		Use:     "signin",
+		Short:   "Sign in",
+		Run:     emptyRun,
+		Aliases: []string{"login", "in"},
+	}
+
+	if err := child.MarkAliasesHidden("login"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(child)
+
+	output, err := executeCommand(rootCmd, "help", "signin")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "in")
+
+	if strings.Contains(output, "login") {
+		t.Fatalf("help output should not contain hidden alias %q\nOutput:\n%s", "login", output)
+	}
+}
+
+func TestHelpOmitsAliasesSectionWhenAllAliasesHidden(t *testing.T) {
+	child := &Command{
+		Use:     "signin",
+		Short:   "Sign in",
+		Run:     emptyRun,
+		Aliases: []string{"login"},
+	}
+
+	if err := child.MarkAliasesHidden("login"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(child)
+
+	output, err := executeCommand(rootCmd, "help", "signin")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if strings.Contains(output, "login") {
+		t.Fatalf("help output should not contain hidden alias %q\nOutput:\n%s", "login", output)
+	}
+
+	if strings.Contains(output, "Aliases:") {
+		t.Fatalf("help output should not include Aliases section when all aliases are hidden\nOutput:\n%s", output)
+	}
+}
+
+func TestCommandHasVisibleAliases(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  *Command
+		want bool
+	}{
+		{
+			name: "no aliases",
+			cmd:  &Command{Use: "signin"},
+			want: false,
+		},
+		{
+			name: "aliases without hidden annotation",
+			cmd:  &Command{Use: "signin", Aliases: []string{"login"}},
+			want: true,
+		},
+		{
+			name: "hide one of two aliases",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login", "in"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: "in"},
+			},
+			want: true,
+		},
+		{
+			name: "hide all aliases",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login", "in"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: "login,in"},
+			},
+			want: false,
+		},
+		{
+			name: "empty hidden annotation value is ignored",
+			cmd: &Command{
+				Use:         "signin",
+				Aliases:     []string{"login"},
+				Annotations: map[string]string{HiddenAliasesAnnotation: ""},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.cmd.HasVisibleAliases()
+			if got != tt.want {
+				t.Fatalf("HasVisibleAliases() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
