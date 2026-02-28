@@ -2952,3 +2952,266 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestMarkFlagEnum_SingleValue(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		value     string
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			desc:      "valid enum value",
+			value:     "json",
+			expectErr: false,
+		},
+		{
+			desc:      "another valid enum value",
+			value:     "yaml",
+			expectErr: false,
+		},
+		{
+			desc:      "invalid enum value",
+			value:     "invalid",
+			expectErr: true,
+			errMsg:    `invalid argument "invalid" for "--format" flag: must be one of [json, yaml, xml]`,
+		},
+		{
+			desc:      "empty string is invalid",
+			value:     "txt",
+			expectErr: true,
+			errMsg:    `invalid argument "txt" for "--format" flag: must be one of [json, yaml, xml]`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			cmd := &Command{
+				Use: "test",
+				Run: emptyRun,
+			}
+			cmd.Flags().String("format", "", "output format")
+			err := cmd.MarkFlagEnum("format", "json", "yaml", "xml")
+			if err != nil {
+				t.Fatalf("MarkFlagEnum failed: %v", err)
+			}
+
+			_, err = executeCommand(cmd, "--format="+tc.value)
+			if tc.expectErr {
+				if err == nil {
+					t.Errorf("expected error but got none")
+				} else {
+					checkStringContains(t, err.Error(), tc.errMsg)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestMarkFlagEnum_SliceValues(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		values    string
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			desc:      "all valid values",
+			values:    "urgent,feature",
+			expectErr: false,
+		},
+		{
+			desc:      "single valid value in slice",
+			values:    "bug",
+			expectErr: false,
+		},
+		{
+			desc:      "one invalid value in slice",
+			values:    "urgent,invalid",
+			expectErr: true,
+			errMsg:    `invalid argument "invalid" for "--tags" flag: must be one of [urgent, feature, bug]`,
+		},
+		{
+			desc:      "all invalid values in slice",
+			values:    "invalid1,invalid2",
+			expectErr: true,
+			errMsg:    `invalid argument "invalid1" for "--tags" flag: must be one of [urgent, feature, bug]`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			cmd := &Command{
+				Use: "test",
+				Run: emptyRun,
+			}
+			cmd.Flags().StringSlice("tags", nil, "tags")
+			err := cmd.MarkFlagEnum("tags", "urgent", "feature", "bug")
+			if err != nil {
+				t.Fatalf("MarkFlagEnum failed: %v", err)
+			}
+
+			_, err = executeCommand(cmd, "--tags="+tc.values)
+			if tc.expectErr {
+				if err == nil {
+					t.Errorf("expected error but got none")
+				} else {
+					checkStringContains(t, err.Error(), tc.errMsg)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestMarkFlagEnum_EmptyOptions(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	cmd.Flags().String("format", "", "output format")
+	err := cmd.MarkFlagEnum("format")
+	if err == nil {
+		t.Error("expected error for empty options, got nil")
+	}
+	checkStringContains(t, err.Error(), "enum options cannot be empty")
+}
+
+func TestMarkFlagEnum_PersistentInheritance(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	rootCmd.PersistentFlags().String("log-level", "", "log level")
+	err := rootCmd.MarkPersistentFlagEnum("log-level", "debug", "info", "warn", "error")
+	if err != nil {
+		t.Fatalf("MarkPersistentFlagEnum failed: %v", err)
+	}
+
+	childCmd := &Command{
+		Use: "child",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	// Valid value should work on child command
+	_, err = executeCommand(rootCmd, "child", "--log-level=debug")
+	if err != nil {
+		t.Errorf("unexpected error with valid value: %v", err)
+	}
+
+	// Invalid value should fail on child command
+	_, err = executeCommand(rootCmd, "child", "--log-level=invalid")
+	if err == nil {
+		t.Error("expected error for invalid value on child command")
+	} else {
+		checkStringContains(t, err.Error(), `invalid argument "invalid" for "--log-level" flag`)
+	}
+}
+
+func TestMarkFlagEnum_UnsetFlag(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	cmd.Flags().String("format", "", "output format")
+	err := cmd.MarkFlagEnum("format", "json", "yaml", "xml")
+	if err != nil {
+		t.Fatalf("MarkFlagEnum failed: %v", err)
+	}
+
+	// Executing without the flag should not cause an error
+	_, err = executeCommand(cmd)
+	if err != nil {
+		t.Errorf("unexpected error for unset flag: %v", err)
+	}
+}
+
+func TestMarkFlagEnum_DefaultValue(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	// Set default value that's NOT in the enum list
+	cmd.Flags().String("format", "default", "output format")
+	err := cmd.MarkFlagEnum("format", "json", "yaml", "xml")
+	if err != nil {
+		t.Fatalf("MarkFlagEnum failed: %v", err)
+	}
+
+	// Default value should not be validated (flag.Changed is false)
+	_, err = executeCommand(cmd)
+	if err != nil {
+		t.Errorf("unexpected error for default value: %v", err)
+	}
+
+	// But explicitly setting an invalid value should fail
+	_, err = executeCommand(cmd, "--format=invalid")
+	if err == nil {
+		t.Error("expected error for explicitly set invalid value")
+	}
+}
+
+func TestGetFlagValues_SingleValue(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	cmd.Flags().String("flag", "value", "a string flag")
+	cmd.ParseFlags([]string{"--flag=test"})
+
+	flag := cmd.Flags().Lookup("flag")
+	values := getFlagValues(flag)
+
+	if len(values) != 1 {
+		t.Errorf("expected 1 value, got %d", len(values))
+	}
+	if values[0] != "test" {
+		t.Errorf("expected 'test', got '%s'", values[0])
+	}
+}
+
+func TestGetFlagValues_SliceValue(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	cmd.Flags().StringSlice("flag", nil, "a string slice flag")
+	cmd.ParseFlags([]string{"--flag=a,b,c"})
+
+	flag := cmd.Flags().Lookup("flag")
+	values := getFlagValues(flag)
+
+	if len(values) != 3 {
+		t.Errorf("expected 3 values, got %d", len(values))
+	}
+	expected := []string{"a", "b", "c"}
+	for i, v := range values {
+		if v != expected[i] {
+			t.Errorf("expected '%s' at index %d, got '%s'", expected[i], i, v)
+		}
+	}
+}
+
+func TestGetFlagValues_EmptySlice(t *testing.T) {
+	cmd := &Command{
+		Use: "test",
+		Run: emptyRun,
+	}
+	cmd.Flags().StringSlice("flag", nil, "a string slice flag")
+	// Don't set the flag
+
+	flag := cmd.Flags().Lookup("flag")
+	values := getFlagValues(flag)
+
+	if values != nil && len(values) != 0 {
+		t.Errorf("expected nil or empty slice, got %v", values)
+	}
+}
