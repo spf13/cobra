@@ -4072,3 +4072,82 @@ func TestCustomDefaultShellCompDirective(t *testing.T) {
 		})
 	}
 }
+
+func TestMarkFlagEnum_ManualCompletion(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	rootCmd.Flags().String("format", "", "output format")
+
+	// Mark as enum
+	err := rootCmd.MarkFlagEnum("format", "json", "yaml", "xml")
+	if err != nil {
+		t.Fatalf("MarkFlagEnum failed: %v", err)
+	}
+
+	// Manually register completion function (users need to do this themselves)
+	rootCmd.RegisterFlagCompletionFunc("format", func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+		return []Completion{"json", "yaml", "xml"}, ShellCompDirectiveNoFileComp
+	})
+
+	// Test completion
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--format", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"json",
+		"yaml",
+		"xml",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
+func TestMarkFlagEnum_PersistentCompletion(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	rootCmd.PersistentFlags().String("log-level", "", "log level")
+
+	// Mark persistent flag as enum
+	err := rootCmd.MarkPersistentFlagEnum("log-level", "debug", "info", "warn", "error")
+	if err != nil {
+		t.Fatalf("MarkPersistentFlagEnum failed: %v", err)
+	}
+
+	// Manually register completion function
+	rootCmd.RegisterFlagCompletionFunc("log-level", func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+		return []Completion{"debug", "info", "warn", "error"}, ShellCompDirectiveNoFileComp
+	})
+
+	childCmd := &Command{
+		Use: "child",
+		Run: emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	// Test completion on child command
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "--log-level", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"debug",
+		"info",
+		"warn",
+		"error",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}

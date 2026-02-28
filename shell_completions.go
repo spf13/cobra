@@ -15,6 +15,8 @@
 package cobra
 
 import (
+	"fmt"
+
 	"github.com/spf13/pflag"
 )
 
@@ -95,4 +97,24 @@ func (c *Command) MarkPersistentFlagDirname(name string) error {
 // limit completions for the named flag to directory names.
 func MarkFlagDirname(flags *pflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompSubdirsInDir, []string{})
+}
+
+// MarkFlagEnum restricts the named flag to a set of valid enum values.
+// Use RegisterFlagCompletionFunc to enable shell completion for the enum values.
+func (c *Command) MarkFlagEnum(name string, options ...string) error {
+	return MarkFlagEnum(c.Flags(), name, options...)
+}
+
+// MarkPersistentFlagEnum restricts the named persistent flag to a set of valid enum values.
+// Use RegisterFlagCompletionFunc to enable shell completion for the enum values.
+func (c *Command) MarkPersistentFlagEnum(name string, options ...string) error {
+	return MarkFlagEnum(c.PersistentFlags(), name, options...)
+}
+
+// MarkFlagEnum restricts the named flag to a set of valid enum values.
+func MarkFlagEnum(flags *pflag.FlagSet, name string, options ...string) error {
+	if len(options) == 0 {
+		return fmt.Errorf("enum options cannot be empty for flag %q", name)
+	}
+	return flags.SetAnnotation(name, flagEnumAnnotation, options)
 }

@@ -33,6 +33,7 @@ import (
 const (
 	FlagSetByCobraAnnotation     = "cobra_annotation_flag_set_by_cobra"
 	CommandDisplayNameAnnotation = "cobra_annotation_command_display_name"
+	flagEnumAnnotation           = "cobra_annotation_flag_enum_values"
 
 	helpFlagName    = "help"
 	helpCommandName = "help"
@@ -1011,6 +1012,10 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
+	if err := c.ValidateFlagEnum(); err != nil {
+		return err
+	}
+
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
@@ -1176,6 +1181,44 @@ func (c *Command) ValidateArgs(args []string) error {
 	return c.Args(c, args)
 }
 
+// getFlagValues extracts all values from a flag (handles both single and slice types).
+func getFlagValues(pflag *flag.Flag) []string {
+	// Try SliceValue interface first (most efficient)
+	if sliceValue, ok := pflag.Value.(SliceValue); ok {
+		return sliceValue.GetSlice()
+	}
+
+	// Handle slice types that don't implement SliceValue
+	// Pattern from completions.go:445-449
+	if strings.Contains(pflag.Value.Type(), "Slice") ||
+		strings.Contains(pflag.Value.Type(), "Array") ||
+		strings.HasPrefix(pflag.Value.Type(), "stringTo") {
+		valueStr := pflag.Value.String()
+		if valueStr == "" || valueStr == "[]" {
+			return nil
+		}
+		valueStr = strings.Trim(valueStr, "[]")
+		values := strings.Split(valueStr, ",")
+		for i := range values {
+			values[i] = strings.TrimSpace(values[i])
+		}
+		return values
+	}
+
+	// Single value flag
+	return []string{pflag.Value.String()}
+}
+
+// contains checks if a string exists in a slice.
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 // ValidateRequiredFlags validates all required flags are present and returns an error otherwise
 func (c *Command) ValidateRequiredFlags() error {
 	if c.DisableFlagParsing {
@@ -1196,6 +1239,40 @@ func (c *Command) ValidateRequiredFlags() error {
 
 	if len(missingFlagNames) > 0 {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+	}
+	return nil
+}
+
+// ValidateFlagEnum validates that all flags marked with enum annotations
+// have values that match the allowed enum options.
+func (c *Command) ValidateFlagEnum() error {
+	if c.DisableFlagParsing {
+		return nil
+	}
+
+	var enumViolations []string
+
+	c.Flags().VisitAll(func(pflag *flag.Flag) {
+		enumValues, found := pflag.Annotations[flagEnumAnnotation]
+		if !found || !pflag.Changed {
+			return
+		}
+
+		for _, actualValue := range getFlagValues(pflag) {
+			if actualValue == "" {
+				continue
+			}
+
+			if !contains(enumValues, actualValue) {
+				enumViolations = append(enumViolations,
+					fmt.Sprintf("invalid argument %q for \"--%s\" flag: must be one of [%s]",
+						actualValue, pflag.Name, strings.Join(enumValues, ", ")))
+			}
+		}
+	})
+
+	if len(enumViolations) > 0 {
+		return fmt.Errorf("%s", strings.Join(enumViolations, "\n"))
 	}
 	return nil
 }
