@@ -938,6 +938,26 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 	}
 }
 
+// related to https://github.com/spf13/cobra/issues/2359
+func TestInitDefaultHelpFlagDoesNotPanicWhenHShorthandAlreadyUsed(t *testing.T) {
+	cmd := &Command{Use: "root"}
+
+	cmd.PersistentFlags().BoolP("ayuda", "h", false, "help")
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("expected InitDefaultHelpFlag not to panic, got: %v", r)
+			}
+		}()
+		cmd.InitDefaultHelpFlag()
+	}()
+
+	if cmd.Flags().Lookup("help") == nil {
+		t.Fatalf("expected default help flag to be defined")
+	}
+}
+
 func TestHelpCommandExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
