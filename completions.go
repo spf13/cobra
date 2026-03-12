@@ -317,7 +317,10 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// The last argument, which is not completely typed by the user,
 	// should not be part of the list of arguments
 	toComplete := args[len(args)-1]
-	trimmedArgs := args[:len(args)-1]
+	// Copy trimmedArgs to a new slice to avoid mutating the caller's
+	// backing array (which may be os.Args) when later appending "--".
+	trimmedArgs := make([]string, len(args)-1)
+	copy(trimmedArgs, args[:len(args)-1])
 
 	var finalCmd *Command
 	var finalArgs []string
