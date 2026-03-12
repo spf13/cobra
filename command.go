@@ -1226,11 +1226,10 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += name
 		}
-		if c.Flags().ShorthandLookup("h") == nil {
-			c.Flags().BoolP(helpFlagName, "h", false, usage)
-		} else {
-			c.Flags().Bool(helpFlagName, false, usage)
+		if f := c.Flags().ShorthandLookup("h"); f != nil {
+			panic(fmt.Sprintf("shorthand '-h' is reserved for the help flag, but is already used by flag '%s'", f.Name))
 		}
+		c.Flags().BoolP(helpFlagName, "h", false, usage)
 		_ = c.Flags().SetAnnotation(helpFlagName, FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
