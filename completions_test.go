@@ -4087,11 +4087,11 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 	origArgs := os.Args
 	defer func() { os.Args = origArgs }()
 
-	// Set os.Args to simulate: prog __completeNoDesc x
+	// Set os.Args to simulate: root __completeNoDesc x
 	// We do NOT use SetArgs so the code falls through to os.Args[1:].
 	// The program name must not be "cobra.test" to bypass the test guard
 	// in ExecuteC().
-	os.Args = []string{"prog", ShellCompNoDescRequestCmd, "x"}
+	os.Args = []string{"root", ShellCompNoDescRequestCmd, "x"}
 
 	rootCmd := &Command{
 		Use:              "root",
@@ -4117,8 +4117,8 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 	if len(os.Args) != 3 {
 		t.Fatalf("os.Args length changed: expected 3, got %d", len(os.Args))
 	}
-	if os.Args[0] != "prog" {
-		t.Errorf("os.Args[0] was mutated: expected %q, got %q", "prog", os.Args[0])
+	if os.Args[0] != "root" {
+		t.Errorf("os.Args[0] was mutated: expected %q, got %q", "root", os.Args[0])
 	}
 	if os.Args[1] != ShellCompNoDescRequestCmd {
 		t.Errorf("os.Args[1] was mutated: expected %q, got %q", ShellCompNoDescRequestCmd, os.Args[1])
