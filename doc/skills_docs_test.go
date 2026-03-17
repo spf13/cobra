@@ -259,6 +259,42 @@ func TestGenSkillsNoNotesSection(t *testing.T) {
 	checkStringOmits(t, output, "## Notes")
 }
 
+func TestCollectTips(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "Test command",
+		Run:   emptyRun,
+		Annotations: map[string]string{
+			"skills:tip:output": "Use `-o json` for machine-readable output.",
+			"skills:tip:slug":   "Pass slug as positional argument or `--slug` flag.",
+			"unrelated":         "should be ignored",
+		},
+	}
+	tips := collectTips(cmd)
+	if len(tips) != 2 {
+		t.Fatalf("expected 2 tips, got %d", len(tips))
+	}
+	// Should be sorted by key for deterministic output
+	if tips[0] != "Use `-o json` for machine-readable output." {
+		t.Errorf("unexpected first tip: %s", tips[0])
+	}
+	if tips[1] != "Pass slug as positional argument or `--slug` flag." {
+		t.Errorf("unexpected second tip: %s", tips[1])
+	}
+}
+
+func TestCollectTipsEmpty(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "test",
+		Short: "Test command",
+		Run:   emptyRun,
+	}
+	tips := collectTips(cmd)
+	if len(tips) != 0 {
+		t.Fatalf("expected 0 tips, got %d", len(tips))
+	}
+}
+
 func BenchmarkGenSkillsToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {

@@ -247,6 +247,30 @@ func cmdRefFilename(cmd *cobra.Command) string {
 	return strings.ReplaceAll(cmd.CommandPath(), " ", "_") + markdownExtension
 }
 
+// collectTips extracts tips from a command's Annotations.
+// Any annotation key starting with "skills:tip" is collected.
+// Tips are sorted by annotation key for deterministic output.
+func collectTips(cmd *cobra.Command) []string {
+	if len(cmd.Annotations) == 0 {
+		return nil
+	}
+	var keys []string
+	for k := range cmd.Annotations {
+		if strings.HasPrefix(k, "skills:tip") {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	sort.Strings(keys)
+	tips := make([]string, 0, len(keys))
+	for _, k := range keys {
+		tips = append(tips, cmd.Annotations[k])
+	}
+	return tips
+}
+
 // genRefFile writes a detailed reference file for a single command.
 func genRefFile(cmd *cobra.Command, w io.Writer) error {
 	cmd.InitDefaultHelpCmd()
