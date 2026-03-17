@@ -295,6 +295,14 @@ func genRefFile(cmd *cobra.Command, w io.Writer) error {
 		fmt.Fprintf(buf, "```\n%s\n```\n\n", cmd.Example)
 	}
 
+	if tips := collectTips(cmd); len(tips) > 0 {
+		buf.WriteString("### Tips\n\n")
+		for _, tip := range tips {
+			fmt.Fprintf(buf, "- %s\n", tip)
+		}
+		buf.WriteString("\n")
+	}
+
 	if err := printOptions(buf, cmd, name); err != nil {
 		return err
 	}

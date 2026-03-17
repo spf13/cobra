@@ -259,6 +259,45 @@ func TestGenSkillsNoNotesSection(t *testing.T) {
 	checkStringOmits(t, output, "## Notes")
 }
 
+func TestGenRefFileWithTips(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List items",
+		Long:  "List all items in the workspace",
+		Run:   emptyRun,
+		Annotations: map[string]string{
+			"skills:tip:output": "Use `-o json` for machine-readable output.",
+			"skills:tip:mode":   "Use `--mode draft` to see unpublished changes.",
+		},
+	}
+
+	buf := new(bytes.Buffer)
+	if err := genRefFile(cmd, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, "### Tips")
+	checkStringContains(t, output, "- Use `--mode draft` to see unpublished changes.")
+	checkStringContains(t, output, "- Use `-o json` for machine-readable output.")
+}
+
+func TestGenRefFileWithoutTips(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "pull",
+		Short: "Pull items",
+		Run:   emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	if err := genRefFile(cmd, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringOmits(t, output, "### Tips")
+}
+
 func TestCollectTips(t *testing.T) {
 	cmd := &cobra.Command{
 		Use:   "test",
