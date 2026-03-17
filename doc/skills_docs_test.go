@@ -97,6 +97,9 @@ func TestGenSkillsDir(t *testing.T) {
 	config := SkillsConfig{
 		Name:        "my-tool",
 		Description: "A test tool",
+		Notes: []string{
+			"Most list commands support -o json.",
+		},
 	}
 	if err := GenSkillsDir(rootCmd, tmpdir, config); err != nil {
 		t.Fatalf("GenSkillsDir failed: %v", err)
@@ -118,6 +121,8 @@ func TestGenSkillsDir(t *testing.T) {
 	checkStringContains(t, skillContent, "references/root.md")
 	checkStringOmits(t, skillContent, "### Examples")
 	checkStringOmits(t, skillContent, "### Options")
+	checkStringContains(t, skillContent, "## Notes")
+	checkStringContains(t, skillContent, "- Most list commands support -o json.")
 
 	refDir := filepath.Join(tmpdir, "my-tool", "references")
 	expectedRefs := []string{
