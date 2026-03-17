@@ -141,6 +141,8 @@ func TestGenSkillsDir(t *testing.T) {
 	checkStringContains(t, echoContent, echoCmd.Long)
 	checkStringContains(t, echoContent, echoCmd.Example)
 	checkStringContains(t, echoContent, "boolone")
+	checkStringContains(t, echoContent, "### Tips")
+	checkStringContains(t, echoContent, "- Supports JSON output via -o json.")
 
 	timesRef, err := os.ReadFile(filepath.Join(refDir, "root_echo_times.md"))
 	if err != nil {
@@ -150,6 +152,7 @@ func TestGenSkillsDir(t *testing.T) {
 	checkStringContains(t, timesContent, "# root echo times")
 	checkStringContains(t, timesContent, timesCmd.Short)
 	checkStringContains(t, timesContent, "Options inherited from parent commands")
+	checkStringOmits(t, timesContent, "### Tips")
 }
 
 func TestGenSkillsDirDefaultName(t *testing.T) {
