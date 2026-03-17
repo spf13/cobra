@@ -109,7 +109,7 @@ func genSkillsInternal(cmd *cobra.Command, w io.Writer, config SkillsConfig, has
 	}
 
 	genFrontmatter(buf, name, description, config)
-	genSkillsBody(buf, cmd, hasReference)
+	genSkillsBody(buf, cmd, hasReference, config)
 
 	_, err := buf.WriteTo(w)
 	return err
@@ -200,7 +200,7 @@ func genFrontmatter(buf *bytes.Buffer, name, description string, config SkillsCo
 }
 
 // genSkillsBody writes the concise SKILL.md body with a command summary.
-func genSkillsBody(buf *bytes.Buffer, cmd *cobra.Command, hasReference bool) {
+func genSkillsBody(buf *bytes.Buffer, cmd *cobra.Command, hasReference bool, config SkillsConfig) {
 	commands := collectCommands(cmd)
 
 	buf.WriteString("# " + cmd.Name() + "\n\n")
@@ -208,6 +208,14 @@ func genSkillsBody(buf *bytes.Buffer, cmd *cobra.Command, hasReference bool) {
 		buf.WriteString(cmd.Long + "\n\n")
 	} else {
 		buf.WriteString(cmd.Short + "\n\n")
+	}
+
+	if len(config.Notes) > 0 {
+		buf.WriteString("## Notes\n\n")
+		for _, note := range config.Notes {
+			fmt.Fprintf(buf, "- %s\n", note)
+		}
+		buf.WriteString("\n")
 	}
 
 	if cmd.Runnable() {

@@ -231,6 +231,34 @@ func TestYamlEscapeString(t *testing.T) {
 	}
 }
 
+func TestGenSkillsNotes(t *testing.T) {
+	buf := new(bytes.Buffer)
+	config := SkillsConfig{
+		Notes: []string{
+			"Most list commands support `-o json` for machine-readable output.",
+			"Use `--workspace` to target a specific workspace.",
+		},
+	}
+	if err := GenSkills(rootCmd, buf, config); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, "## Notes")
+	checkStringContains(t, output, "- Most list commands support `-o json` for machine-readable output.")
+	checkStringContains(t, output, "- Use `--workspace` to target a specific workspace.")
+}
+
+func TestGenSkillsNoNotesSection(t *testing.T) {
+	buf := new(bytes.Buffer)
+	if err := GenSkills(rootCmd, buf, SkillsConfig{}); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringOmits(t, output, "## Notes")
+}
+
 func BenchmarkGenSkillsToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {
