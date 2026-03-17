@@ -55,6 +55,11 @@ type SkillsConfig struct {
 	// DisableModelInvocation prevents agents from automatically loading
 	// this skill. Set to true for workflows triggered manually.
 	DisableModelInvocation bool
+
+	// Notes are global notes rendered in SKILL.md body as a "Notes" section.
+	// Each entry becomes a bullet point. Useful for cross-cutting information
+	// that applies to multiple commands (e.g., "Most list commands support -o json").
+	Notes []string
 }
 
 // toSkillName converts a command name to a valid skill name.
