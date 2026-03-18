@@ -86,6 +86,16 @@ jobs:
         go install github.com/mitchellh/gox@latest
 
     - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH make richtest
+      if: ${{ !(matrix.platform == 'ubuntu' && matrix.go == 24) }}
+
+    - run: RICHGO_FORCE_COLOR=1 PATH=$HOME/go/bin/:$PATH richgo test -v -coverprofile=coverage.out ./...
+      if: ${{ matrix.platform == 'ubuntu' && matrix.go == 24 }}
+
+    - uses: qltysh/qlty-action/coverage@v2
+      if: ${{ matrix.platform == 'ubuntu' && matrix.go == 24 }}
+      with:
+        token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
+        files: coverage.out
 
 
   test-win:
