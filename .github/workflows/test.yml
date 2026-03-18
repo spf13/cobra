@@ -93,8 +93,9 @@ jobs:
 
     - uses: qltysh/qlty-action/coverage@v2
       if: ${{ matrix.platform == 'ubuntu' && matrix.go == 24 }}
+      env:
+        QLTY_COVERAGE_TOKEN: ${{ secrets.QLTY_COVERAGE_TOKEN }}
       with:
-        token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
         files: coverage.out
 
 
