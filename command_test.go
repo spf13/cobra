@@ -1910,6 +1910,26 @@ func TestHiddenCommandIsHidden(t *testing.T) {
 	}
 }
 
+func TestHiddenHelpCommandIsHidden(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	rootCmd.InitDefaultHelpCmd()
+
+	// Help command should appear in usage by default.
+	usage := rootCmd.UsageString()
+	if !strings.Contains(usage, "help") {
+		t.Error("help command should appear in usage by default")
+	}
+
+	// Hiding the help command should remove it from usage.
+	rootCmd.helpCommand.Hidden = true
+	usage = rootCmd.UsageString()
+	if strings.Contains(usage, "  help") {
+		t.Error("hidden help command should not appear in usage")
+	}
+}
+
 func TestCommandsAreSorted(t *testing.T) {
 	EnableCommandSorting = true
 
