@@ -149,6 +149,13 @@ func renderCommands(cmds []commandInfo, verbose bool) string {
 // NewHelpAllCommand returns a help-all command that prints a complete, aligned
 // command reference. Add it to root with root.AddCommand(). Pass --verbose to
 // include flag placeholders in the output.
+//
+//	rootCmd.AddCommand(cobra.NewHelpAllCommand())
+//
+//	// or with a custom name:
+//	cmd := cobra.NewHelpAllCommand()
+//	cmd.Use = "my-custom-name"
+//	rootCmd.AddCommand(cmd)
 func NewHelpAllCommand() *Command {
 	var verbose bool
 
