@@ -2952,3 +2952,27 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestHiddenCommandsDoNotInflatePadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	longChildCmd := &Command{Use: "long-name-child-abcdefghijklmnopqrstuvwxyz", Run: emptyRun}
+	hiddenChildCmd := &Command{Use: longChildCmd.Use + "-hidden", Hidden: true, Run: emptyRun}
+	deprecatedChildCmd := &Command{Use: longChildCmd.Use + "-deprecated", Deprecated: "deprecated", Run: emptyRun}
+
+	rootCmd.AddCommand(childCmd, longChildCmd, hiddenChildCmd, deprecatedChildCmd)
+
+	expectedUsePad := len(longChildCmd.Use)
+	expectedPathPad := len(longChildCmd.CommandPath())
+	expectedNamePad := len(longChildCmd.Name())
+
+	if got := childCmd.UsagePadding(); got != expectedUsePad {
+		t.Errorf("UsagePadding() = %d, want %d", got, expectedUsePad)
+	}
+	if got := childCmd.CommandPathPadding(); got != expectedPathPad {
+		t.Errorf("CommandPathPadding() = %d, want %d", got, expectedPathPad)
+	}
+	if got := childCmd.NamePadding(); got != expectedNamePad {
+		t.Errorf("NamePadding() = %d, want %d", got, expectedNamePad)
+	}
+}
