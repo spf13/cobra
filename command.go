@@ -238,6 +238,10 @@ type Command struct {
 	// SilenceUsage is an option to silence usage when an error occurs.
 	SilenceUsage bool
 
+	// HelpExitCode is the exit code returned when --help is triggered.
+	// If set to 0 (default), exit code is 0. If set to non-zero, that exit code is returned.
+	HelpExitCode int
+
 	// DisableFlagParsing disables the flag parsing.
 	// If this is true all flags will be passed to the command as arguments.
 	DisableFlagParsing bool
@@ -352,6 +356,11 @@ func (c *Command) SetHelpCommandGroupID(groupID string) {
 func (c *Command) SetCompletionCommandGroupID(groupID string) {
 	// completionCommandGroupID is used if no completion command is defined by the user
 	c.Root().completionCommandGroupID = groupID
+}
+
+// SetHelpExitCode sets the exit code returned when --help is triggered.
+func (c *Command) SetHelpExitCode(code int) {
+	c.HelpExitCode = code
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -1151,6 +1160,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// effect
 		if errors.Is(err, flag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
+			// If HelpExitCode is set to non-zero, return that as the error to set exit code
+			if cmd.HelpExitCode != 0 {
+				return cmd, fmt.Errorf("help exit code: %d", cmd.HelpExitCode)
+			}
 			return cmd, nil
 		}
 

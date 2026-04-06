@@ -2952,3 +2952,40 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestHelpExitCodeDefault(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+
+	_, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestHelpExitCodeCustom(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.SetHelpExitCode(1)
+
+	_, err := executeCommand(rootCmd, "--help")
+	if err == nil {
+		t.Error("Expected error when HelpExitCode is set to 1, got nil")
+	}
+	if err.Error() != "help exit code: 1" {
+		t.Errorf("Expected error message 'help exit code: 1', got: %v", err)
+	}
+}
+
+func TestHelpExitCodeCustomOnChild(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.SetHelpExitCode(2)
+
+	_, err := executeCommand(rootCmd, "child", "--help")
+	if err == nil {
+		t.Error("Expected error when HelpExitCode is set to 2 on child, got nil")
+	}
+	if err.Error() != "help exit code: 2" {
+		t.Errorf("Expected error message 'help exit code: 2', got: %v", err)
+	}
+}
