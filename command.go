@@ -192,7 +192,8 @@ type Command struct {
 	versionTemplate *tmplFunc
 
 	// errPrefix is the error message prefix defined by user.
-	errPrefix string
+	// A nil value means the prefix has not been set explicitly.
+	errPrefix *string
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
@@ -373,8 +374,9 @@ func (c *Command) SetVersionTemplate(s string) {
 }
 
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
+// Setting an empty string explicitly suppresses the default "Error:" prefix.
 func (c *Command) SetErrPrefix(s string) {
-	c.errPrefix = s
+	c.errPrefix = &s
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
@@ -641,8 +643,8 @@ func (c *Command) getVersionTemplateFunc() func(w io.Writer, data interface{}) e
 
 // ErrPrefix return error message prefix for the command
 func (c *Command) ErrPrefix() string {
-	if c.errPrefix != "" {
-		return c.errPrefix
+	if c.errPrefix != nil {
+		return *c.errPrefix
 	}
 
 	if c.HasParent() {
@@ -1128,7 +1130,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln(c.ErrPrefix(), err.Error())
+			c.printErrWithPrefix(c.ErrPrefix(), err.Error())
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1157,7 +1159,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln(cmd.ErrPrefix(), err.Error())
+			c.printErrWithPrefix(cmd.ErrPrefix(), err.Error())
 		}
 
 		// If root command has SilenceUsage flagged,
@@ -1459,6 +1461,16 @@ func (c *Command) PrintErrln(i ...interface{}) {
 // PrintErrf is a convenience method to Printf to the defined Err output, fallback to Stderr if not set.
 func (c *Command) PrintErrf(format string, i ...interface{}) {
 	c.PrintErr(fmt.Sprintf(format, i...))
+}
+
+// printErrWithPrefix prints an error message to stderr, respecting the configured
+// error prefix. When prefix is empty, only the error message is printed (no leading space).
+func (c *Command) printErrWithPrefix(prefix, errMsg string) {
+	if prefix == "" {
+		c.PrintErrln(errMsg)
+	} else {
+		c.PrintErrln(prefix, errMsg)
+	}
 }
 
 // CommandPath returns the full path to this command.
