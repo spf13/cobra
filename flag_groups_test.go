@@ -15,6 +15,7 @@
 package cobra
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -52,6 +53,7 @@ func TestValidateFlagGroups(t *testing.T) {
 		subCmdFlagGroupsExclusive   []string
 		args                        []string
 		expectErr                   string
+		expectErrIs                 error
 	}{
 		{
 			desc: "No flags no problem",
@@ -64,64 +66,76 @@ func TestValidateFlagGroups(t *testing.T) {
 			flagGroupsRequired: []string{"a b c"},
 			args:               []string{"--a=foo"},
 			expectErr:          "if any flags in the group [a b c] are set they must all be set; missing [b c]",
+			expectErrIs:        ErrFlagsAreRequiredTogether,
 		}, {
 			desc:                  "One-required flag group not satisfied",
 			flagGroupsOneRequired: []string{"a b"},
 			args:                  []string{"--c=foo"},
 			expectErr:             "at least one of the flags in the group [a b] is required",
+			expectErrIs:           ErrFlagsAreOneRequired,
 		}, {
 			desc:                "Exclusive flag group not satisfied",
 			flagGroupsExclusive: []string{"a b c"},
 			args:                []string{"--a=foo", "--b=foo"},
 			expectErr:           "if any flags in the group [a b c] are set none of the others can be; [a b] were all set",
+			expectErrIs:         ErrFlagsAreMutuallyExclusive,
 		}, {
 			desc:               "Multiple required flag group not satisfied returns first error",
 			flagGroupsRequired: []string{"a b c", "a d"},
 			args:               []string{"--c=foo", "--d=foo"},
 			expectErr:          `if any flags in the group [a b c] are set they must all be set; missing [a b]`,
+			expectErrIs:        ErrFlagsAreRequiredTogether,
 		}, {
 			desc:                  "Multiple one-required flag group not satisfied returns first error",
 			flagGroupsOneRequired: []string{"a b", "d e"},
 			args:                  []string{"--c=foo", "--f=foo"},
 			expectErr:             `at least one of the flags in the group [a b] is required`,
+			expectErrIs:           ErrFlagsAreOneRequired,
 		}, {
 			desc:                "Multiple exclusive flag group not satisfied returns first error",
 			flagGroupsExclusive: []string{"a b c", "a d"},
 			args:                []string{"--a=foo", "--c=foo", "--d=foo"},
 			expectErr:           `if any flags in the group [a b c] are set none of the others can be; [a c] were all set`,
+			expectErrIs:         ErrFlagsAreMutuallyExclusive,
 		}, {
 			desc:               "Validation of required groups occurs on groups in sorted order",
 			flagGroupsRequired: []string{"a d", "a b", "a c"},
 			args:               []string{"--a=foo"},
 			expectErr:          `if any flags in the group [a b] are set they must all be set; missing [b]`,
+			expectErrIs:        ErrFlagsAreRequiredTogether,
 		}, {
 			desc:                  "Validation of one-required groups occurs on groups in sorted order",
 			flagGroupsOneRequired: []string{"d e", "a b", "f g"},
 			args:                  []string{"--c=foo"},
 			expectErr:             `at least one of the flags in the group [a b] is required`,
+			expectErrIs:           ErrFlagsAreOneRequired,
 		}, {
 			desc:                "Validation of exclusive groups occurs on groups in sorted order",
 			flagGroupsExclusive: []string{"a d", "a b", "a c"},
 			args:                []string{"--a=foo", "--b=foo", "--c=foo"},
 			expectErr:           `if any flags in the group [a b] are set none of the others can be; [a b] were all set`,
+			expectErrIs:         ErrFlagsAreMutuallyExclusive,
 		}, {
 			desc:                "Persistent flags utilize required and exclusive groups and can fail required groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
 			args:                []string{"--a=foo", "--f=foo", "--g=foo"},
 			expectErr:           `if any flags in the group [a e] are set they must all be set; missing [e]`,
+			expectErrIs:         ErrFlagsAreRequiredTogether,
 		}, {
 			desc:                  "Persistent flags utilize one-required and exclusive groups and can fail one-required groups",
 			flagGroupsOneRequired: []string{"a b", "e f"},
 			flagGroupsExclusive:   []string{"e f"},
 			args:                  []string{"--e=foo"},
 			expectErr:             `at least one of the flags in the group [a b] is required`,
+			expectErrIs:           ErrFlagsAreOneRequired,
 		}, {
 			desc:                "Persistent flags utilize required and exclusive groups and can fail mutually exclusive groups",
 			flagGroupsRequired:  []string{"a e", "e f"},
 			flagGroupsExclusive: []string{"f g"},
 			args:                []string{"--a=foo", "--e=foo", "--f=foo", "--g=foo"},
 			expectErr:           `if any flags in the group [f g] are set none of the others can be; [f g] were all set`,
+			expectErrIs:         ErrFlagsAreMutuallyExclusive,
 		}, {
 			desc:                "Persistent flags utilize required and exclusive groups and can pass",
 			flagGroupsRequired:  []string{"a e", "e f"},
@@ -145,11 +159,13 @@ func TestValidateFlagGroups(t *testing.T) {
 			subCmdFlagGroupsOneRequired: []string{"e subonly"},
 			args:                        []string{"subcmd"},
 			expectErr:                   "at least one of the flags in the group [e subonly] is required",
+			expectErrIs:                 ErrFlagsAreOneRequired,
 		}, {
 			desc:                      "Subcmds can use exclusive groups using inherited flags",
 			subCmdFlagGroupsExclusive: []string{"e subonly"},
 			args:                      []string{"subcmd", "--e=foo", "--subonly=foo"},
 			expectErr:                 "if any flags in the group [e subonly] are set none of the others can be; [e subonly] were all set",
+			expectErrIs:               ErrFlagsAreMutuallyExclusive,
 		}, {
 			desc:                      "Subcmds can use exclusive groups using inherited flags and pass",
 			subCmdFlagGroupsExclusive: []string{"e subonly"},
@@ -183,12 +199,38 @@ func TestValidateFlagGroups(t *testing.T) {
 				sub.MarkFlagsMutuallyExclusive(strings.Split(flagGroup, " ")...)
 			}
 			c.SetArgs(tc.args)
-			err := c.Execute()
+			executedCmd, err := c.ExecuteC()
 			switch {
 			case err == nil && len(tc.expectErr) > 0:
 				t.Errorf("Expected error %q but got nil", tc.expectErr)
 			case err != nil && err.Error() != tc.expectErr:
 				t.Errorf("Expected error %q but got %q", tc.expectErr, err)
+			}
+
+			if len(tc.expectErr) > 0 {
+				var flagGroupErr FlagGroupError
+				if !errors.As(err, &flagGroupErr) {
+					t.Fatalf("Expected error to be FlagGroupError, got %T", err)
+				}
+
+				if !errors.Is(err, tc.expectErrIs) {
+					t.Errorf("Expected FlagGroupError wrapped error to be %q, got %q",
+						tc.expectErrIs, flagGroupErr.Unwrap())
+				}
+
+				if flagGroupErr.cmd != executedCmd {
+					t.Errorf("Expected FlagGroupError to have command %v, got %v",
+						getCommandName(executedCmd), getCommandName(flagGroupErr.cmd))
+				}
+
+				if flagGroupErr.flagList == "" {
+					t.Errorf("Expected FlagGroupError to have flagList, but was empty")
+				}
+
+				shouldHaveProblemFlags := errors.Is(err, ErrFlagsAreMutuallyExclusive) || errors.Is(err, ErrFlagsAreRequiredTogether)
+				if shouldHaveProblemFlags && flagGroupErr.problemFlags == nil {
+					t.Errorf("Expected FlagGroupError to have problemFlags, but was nil")
+				}
 			}
 		})
 	}
