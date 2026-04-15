@@ -955,6 +955,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// Such logs are only printed when the user has set the environment
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
+		//nolint:gosec // G703:BASH_COMP_DEBUG_FILE intentionally user-controlled for completion debug logging.
 		f, err := os.OpenFile(path,
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
