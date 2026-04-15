@@ -45,6 +45,7 @@
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [nFPM](https://nfpm.goreleaser.com)
 - [Okteto](https://github.com/okteto/okteto)
+- [Ollama](https://github.com/ollama/ollama)
 - [OpenShift](https://www.openshift.com/)
 - [Ory Hydra](https://github.com/ory/hydra)
 - [Ory Kratos](https://github.com/ory/kratos)
