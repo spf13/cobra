@@ -111,7 +111,7 @@ _%[1]s()
     local shellCompDirectiveFilterDirs=%[7]d
     local shellCompDirectiveKeepOrder=%[8]d
 
-    local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace keepOrder
+    local last_param last_char flag_prefix request_comp out directive comp last_comp noSpace keepOrder
     local -a completions
 
     __%[1]s_debug "\n========= starting completion logic =========="
@@ -124,31 +124,31 @@ _%[1]s()
     words=("${=words[1,CURRENT]}")
     __%[1]s_debug "Truncated words[*]: ${words[*]},"
 
-    lastParam=${words[-1]}
-    lastChar=${lastParam[-1]}
-    __%[1]s_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
+    last_param=${words[-1]}
+    last_char=${last_param[-1]}
+    __%[1]s_debug "last_param: ${last_param}, last_char: ${last_char}"
 
     # For zsh, when completing a flag with an = (e.g., %[1]s -n=<TAB>)
     # completions must be prefixed with the flag
     setopt local_options BASH_REMATCH
-    if [[ "${lastParam}" =~ '-.*=' ]]; then
+    if [[ "${last_param}" =~ '-.*=' ]]; then
         # We are dealing with a flag with an =
         flagPrefix="-P ${BASH_REMATCH}"
     fi
 
     # Prepare the command to obtain completions
-    requestComp="${words[1]} %[2]s ${words[2,-1]}"
+    request_comp="${words[1]} %[2]s ${words[2,-1]}"
     if [ "${lastChar}" = "" ]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go completion code.
         __%[1]s_debug "Adding extra empty parameter"
-        requestComp="${requestComp} \"\""
+        request_comp="${request_comp} \"\""
     fi
 
-    __%[1]s_debug "About to call: eval ${requestComp}"
+    __%[1]s_debug "About to call: eval ${request_comp}"
 
     # Use eval to handle any environment variables and such
-    out=$(eval ${requestComp} 2>/dev/null)
+    out=$(eval ${request_comp} 2>/dev/null)
     __%[1]s_debug "completion output: ${out}"
 
     # Extract the directive integer following a : from the last line
