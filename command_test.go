@@ -2952,3 +2952,18 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestVersionFuncExecuted(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "v2.3.4"}
+	rootCmd.SetVersionFunc(func(cmd *Command) error {
+		_, err := fmt.Fprint(cmd.OutOrStdout(), "custom version function: "+rootCmd.Version)
+		return err
+	})
+
+	output, err := executeCommandWithContext(context.Background(), rootCmd, "-v")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	checkStringContains(t, output, "custom version function: v2.3.4")
+}
