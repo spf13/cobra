@@ -153,6 +153,27 @@ func TestOnlyValidArgs_WithInvalidArgs(t *testing.T) {
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestOnlyValidArgs_SuggestsForInvalidArg(t *testing.T) {
+	c := &Command{
+		Use:       "c",
+		Args:      OnlyValidArgs,
+		Run:       emptyRun,
+		ValidArgs: []string{"alpha", "beta"},
+	}
+	c.AddCommand(&Command{Use: "gamma", Run: emptyRun})
+	_, err := executeCommand(c, "alpha", "gmma")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	if !strings.Contains(got, `invalid argument "gmma"`) {
+		t.Errorf("Expected error to reference the invalid arg %q, got: %q", "gmma", got)
+	}
+	if !strings.Contains(got, "gamma") {
+		t.Errorf("Expected suggestion %q based on invalid arg %q, got: %q", "gamma", "gmma", got)
+	}
+}
+
 // ArbitraryArgs
 
 func TestArbitraryArgs(t *testing.T) {
