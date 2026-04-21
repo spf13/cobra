@@ -617,12 +617,19 @@ with the following functions:
 cmd.SetHelpCommand(cmd *Command)
 cmd.SetHelpFunc(f func(*Command, []string))
 cmd.SetHelpTemplate(s string)
+cmd.SetNamePadding(padding int)
+cmd.SetUsagePadding(padding int)
+cmd.SetCommandPathPadding(padding int)
 ```
 
 The latter two will also apply to any children commands.
 
 Note that templates specified with `SetHelpTemplate` are evaluated using
 `text/template` which can increase the size of the compiled executable.
+
+The `SetNamePadding` helper lets you explicitly control the alignment of the command names shown under "Available Commands". Call it on the parent command to override the automatically calculated padding width. Pass `0` to clear your override and return to the default behavior.
+
+Similarly, `SetUsagePadding` and `SetCommandPathPadding` allow you to pin the widths used for the usage column and command path listings (such as those shown under "Additional help topics"). Set these on the parent command to cascade the override to its children, or pass `0` to fall back to Cobra's automatic sizing.
 
 ## Usage Message
 
