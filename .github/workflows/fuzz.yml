@@ -1,0 +1,25 @@
+name: Fuzz
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz-short:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.22'
+          check-latest: true
+          cache: true
+      - name: Run short fuzzing session
+        run: |
+          # Run all fuzz targets briefly; -run=^$ disables non-fuzz tests
+          go test ./... -run=^$ -fuzz=Fuzz -fuzztime=30s
+
