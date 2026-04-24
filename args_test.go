@@ -107,6 +107,17 @@ func rangeArgsWithInvalidCount(err error, t *testing.T) {
 	}
 }
 
+func noDuplicateArgsWithDuplicate(err error, t *testing.T, arg string) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := `duplicate argument "` + arg + `" for "c"`
+	if got != expected {
+		t.Errorf("Expected: %q, got: %q", expected, got)
+	}
+}
+
 // NoArgs
 
 func TestNoArgs(t *testing.T) {
@@ -150,6 +161,32 @@ func TestOnlyValidArgs(t *testing.T) {
 func TestOnlyValidArgs_WithInvalidArgs(t *testing.T) {
 	c := getCommand(OnlyValidArgs, true)
 	_, err := executeCommand(c, "a")
+	validOnlyWithInvalidArgs(err, t)
+}
+
+// NoDuplicateArgs
+
+func TestNoDuplicateArgs(t *testing.T) {
+	c := getCommand(NoDuplicateArgs, false)
+	output, err := executeCommand(c, "one", "two")
+	expectSuccess(output, err, t)
+}
+
+func TestNoDuplicateArgs_WithDuplicateArgs(t *testing.T) {
+	c := getCommand(NoDuplicateArgs, false)
+	_, err := executeCommand(c, "one", "one")
+	noDuplicateArgsWithDuplicate(err, t, "one")
+}
+
+func TestNoDuplicateArgs_WithValid_WithDuplicateArgs(t *testing.T) {
+	c := getCommand(NoDuplicateArgs, true)
+	_, err := executeCommand(c, "one", "one")
+	noDuplicateArgsWithDuplicate(err, t, "one")
+}
+
+func TestNoDuplicateArgs_WithValidOnly_WithInvalidArgs(t *testing.T) {
+	c := getCommand(MatchAll(OnlyValidArgs, NoDuplicateArgs), true)
+	_, err := executeCommand(c, "a", "a")
 	validOnlyWithInvalidArgs(err, t)
 }
 
