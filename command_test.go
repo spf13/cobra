@@ -1299,7 +1299,7 @@ func TestRootAndSubErrPrefix(t *testing.T) {
 
 func TestRootErrPrefixEmpty(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
-	rootCmd.SetErrPrefix("")
+	rootCmd.SetErrPrefixEmpty(true)
 
 	output, err := executeCommand(rootCmd, "--unknown-root-flag")
 	if err == nil {
@@ -1313,6 +1313,21 @@ func TestRootErrPrefixEmpty(t *testing.T) {
 	if strings.HasPrefix(output, " ") {
 		t.Errorf("Expected no leading space in error output, got %q", output)
 	}
+}
+
+func TestSetErrPrefixEmptyStringRestoresDefault(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.SetErrPrefix("custom error:")
+
+	// Setting it to "" should restore the default "Error:" prefix for backward compatibility
+	rootCmd.SetErrPrefix("")
+
+	output, err := executeCommand(rootCmd, "--unknown-root-flag")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+
+	checkStringContains(t, output, "Error: unknown flag: --unknown-root-flag")
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {

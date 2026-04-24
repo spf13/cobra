@@ -193,8 +193,8 @@ type Command struct {
 
 	// errPrefix is the error message prefix defined by user.
 	errPrefix string
-	// errPrefixSet tracks if the user explicitly set the errPrefix to allow for "" (empty string).
-	errPrefixSet bool
+	// errPrefixEmpty tracks if the user explicitly wants an empty errPrefix.
+	errPrefixEmpty bool
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
@@ -377,7 +377,12 @@ func (c *Command) SetVersionTemplate(s string) {
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
 func (c *Command) SetErrPrefix(s string) {
 	c.errPrefix = s
-	c.errPrefixSet = true
+}
+
+// SetErrPrefixEmpty sets whether the error message prefix should be empty.
+// If set to true, this suppresses the default "Error: " prefix.
+func (c *Command) SetErrPrefixEmpty(empty bool) {
+	c.errPrefixEmpty = empty
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
@@ -644,8 +649,11 @@ func (c *Command) getVersionTemplateFunc() func(w io.Writer, data interface{}) e
 
 // ErrPrefix return error message prefix for the command
 func (c *Command) ErrPrefix() string {
-	if c.errPrefix != "" || c.errPrefixSet {
+	if c.errPrefix != "" {
 		return c.errPrefix
+	}
+	if c.errPrefixEmpty {
+		return ""
 	}
 
 	if c.HasParent() {
