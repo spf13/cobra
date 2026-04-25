@@ -257,6 +257,23 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// helpExitCode is the exit code to return when the help flag is used.
+	// If 0 (default), the program returns nil error (exit code 0).
+	helpExitCode int
+}
+type ExitError struct {
+	Code int
+}
+
+func (e *ExitError) Error() string {
+	return fmt.Sprintf("command requested exit with code %d", e.Code)
+}
+
+// SetHelpExitCode sets the exit code to return when help is shown.
+// If set to a non-zero value, Execute() will return an ExitError wrapping this code.
+func (c *Command) SetHelpExitCode(code int) {
+	c.helpExitCode = code
 }
 
 // Context returns underlying command context. If command was executed
@@ -1151,6 +1168,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// effect
 		if errors.Is(err, flag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
+			// If the user set a custom exit code for help, return a structured ExitError
+			if cmd.helpExitCode != 0 {
+				return cmd, &ExitError{Code: cmd.helpExitCode}
+			}
 			return cmd, nil
 		}
 
