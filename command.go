@@ -193,6 +193,8 @@ type Command struct {
 
 	// errPrefix is the error message prefix defined by user.
 	errPrefix string
+	// errPrefixEmpty tracks if the user explicitly wants an empty errPrefix.
+	errPrefixEmpty bool
 
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
@@ -375,6 +377,12 @@ func (c *Command) SetVersionTemplate(s string) {
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
 func (c *Command) SetErrPrefix(s string) {
 	c.errPrefix = s
+}
+
+// SetErrPrefixEmpty sets whether the error message prefix should be empty.
+// If set to true, this suppresses the default "Error: " prefix.
+func (c *Command) SetErrPrefixEmpty(empty bool) {
+	c.errPrefixEmpty = empty
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
@@ -643,6 +651,9 @@ func (c *Command) getVersionTemplateFunc() func(w io.Writer, data interface{}) e
 func (c *Command) ErrPrefix() string {
 	if c.errPrefix != "" {
 		return c.errPrefix
+	}
+	if c.errPrefixEmpty {
+		return ""
 	}
 
 	if c.HasParent() {
@@ -1128,7 +1139,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln(c.ErrPrefix(), err.Error())
+			if errPrefix := c.ErrPrefix(); errPrefix != "" {
+				c.PrintErrln(errPrefix, err.Error())
+			} else {
+				c.PrintErrln(err.Error())
+			}
 			c.PrintErrf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
@@ -1157,7 +1172,11 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln(cmd.ErrPrefix(), err.Error())
+			if errPrefix := cmd.ErrPrefix(); errPrefix != "" {
+				c.PrintErrln(errPrefix, err.Error())
+			} else {
+				c.PrintErrln(err.Error())
+			}
 		}
 
 		// If root command has SilenceUsage flagged,
