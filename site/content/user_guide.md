@@ -447,6 +447,7 @@ The following validators are built in:
   - `RangeArgs(min, max)` - report an error if the number of args is not between `min` and `max`.
 - Content of the arguments:
   - `OnlyValidArgs` - report an error if there are any positional args not specified in the `ValidArgs` field of `Command`, which can optionally be set to a list of valid values for positional args.
+  - `NoDuplicateArgs` - report an error if any positional argument value is provided more than once.
 
 If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 
