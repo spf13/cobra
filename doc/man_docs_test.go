@@ -214,6 +214,31 @@ func assertNextLineEquals(scanner *bufio.Scanner, expectedLine string) error {
 	return fmt.Errorf("hit EOF before finding %v", expectedLine)
 }
 
+func TestGenManAngleBracketsPreserved(t *testing.T) {
+	// Regression test for https://github.com/spf13/cobra/issues/2330
+	// Angle brackets in Usage strings were stripped by md2man because
+	// it interpreted them as HTML tags.
+	cmd := &cobra.Command{
+		Use:   "transfer [<remote>:]<source> [<remote>:]<dest>",
+		Short: "Transfer <files> between remotes",
+		Long:  "Transfer <files> from <source> to <dest> across remotes.",
+	}
+
+	buf := new(bytes.Buffer)
+	if err := GenMan(cmd, nil, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	// The rendered man page must contain the angle-bracketed placeholders.
+	// Before the fix, md2man stripped everything between < and > (treating
+	// them as HTML tags), leaving only "transfer [:] [:]" in the output.
+	checkStringContains(t, output, "<remote>")
+	checkStringContains(t, output, "<source>")
+	checkStringContains(t, output, "<dest>")
+	checkStringContains(t, output, "<files>")
+}
+
 func BenchmarkGenManToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {
