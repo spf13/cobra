@@ -196,20 +196,22 @@ subcommands. For example, consider the following directory structure:
 ```console
 ├── cmd
 │   ├── root.go
+│   ├── leafA.go
 │   └── sub1
 │       ├── sub1.go
 │       └── sub2
-│           ├── leafA.go
 │           ├── leafB.go
+│           ├── leafC.go
 │           └── sub2.go
 └── main.go
 ```
 
 In this case:
 
-* The `init` function of `root.go` adds the command defined in `sub1.go` to the root command.
+* The `init` function of `root.go` adds the command defined in `leafA.go` and `sub1.go` to the
+  root command.
 * The `init` function of `sub1.go` adds the command defined in `sub2.go` to the sub1 command.
-* The `init` function of `sub2.go` adds the commands defined in `leafA.go` and `leafB.go` to the
+* The `init` function of `sub2.go` adds the commands defined in `leafB.go` and `leafC.go` to the
   sub2 command.
 
 This approach ensures the subcommands are always included at compile time while avoiding cyclic
