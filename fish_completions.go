@@ -186,11 +186,36 @@ function __%[1]s_prepare_completions
     end
 
     set -l filefilter (math (math --scale 0 $directive / $shellCompDirectiveFilterFileExt) %% 2)
-    set -l dirfilter (math (math --scale 0 $directive / $shellCompDirectiveFilterDirs) %% 2)
-    if test $filefilter -eq 1; or test $dirfilter -eq 1
-        __%[1]s_debug "File extension filtering or directory filtering not supported"
+    if test $filefilter -eq 1
+        __%[1]s_debug "File extension filtering not supported"
         # Do full file completion instead
         return 1
+    end
+
+    set -l dirfilter (math (math --scale 0 $directive / $shellCompDirectiveFilterDirs) %% 2)
+    if test $dirfilter -eq 1
+        __%[1]s_debug "Directory filtering requested"
+
+        # Use returned completions as search roots when provided.
+        # Otherwise, complete directories using the current token.
+        set -l dirprefix $__%[1]s_comp_results
+        if test (count $dirprefix) -eq 0
+            set dirprefix (string escape -- (commandline -ct))
+        end
+
+        set --erase __%[1]s_comp_results
+        set --global __%[1]s_comp_results
+        for d in $dirprefix
+            set d (string unescape -- $d)
+            if test -z "$d"
+                set d .
+            end
+            __%[1]s_debug "Completing directories for prefix: $d"
+            set -a __%[1]s_comp_results (__fish_complete_directories $d "Directory")
+        end
+
+        __%[1]s_debug "Directory completions are: $__%[1]s_comp_results"
+        return 0
     end
 
     set -l nospace (math (math --scale 0 $directive / $shellCompDirectiveNoSpace) %% 2)
