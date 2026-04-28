@@ -522,6 +522,76 @@ func TestMatchAll(t *testing.T) {
 	}
 }
 
+func TestMatchAny(t *testing.T) {
+	t.Run("first validator passes", func(t *testing.T) {
+		pargs := MatchAny(
+			ExactArgs(2),
+			ExactArgs(3),
+			MinimumNArgs(5),
+		)
+		c := getCommand(pargs, false)
+		output, err := executeCommand(c, "a", "b")
+		expectSuccess(output, err, t)
+	})
+
+	t.Run("only last validator passes", func(t *testing.T) {
+		pargs := MatchAny(
+			ExactArgs(1),
+			ExactArgs(2),
+			MinimumNArgs(3),
+		)
+		c := getCommand(pargs, false)
+		output, err := executeCommand(c, "a", "b", "c")
+		expectSuccess(output, err, t)
+	})
+
+	t.Run("multiple validators pass", func(t *testing.T) {
+		pargs := MatchAny(
+			MinimumNArgs(2),
+			MaximumNArgs(3),
+			RangeArgs(1, 4),
+		)
+		c := getCommand(pargs, false)
+		output, err := executeCommand(c, "a", "b", "c")
+		expectSuccess(output, err, t)
+	})
+
+	t.Run("all validators fail - combined error format", func(t *testing.T) {
+		pargs := MatchAny(
+			ExactArgs(1),
+			MinimumNArgs(5),
+		)
+		c := getCommand(pargs, false)
+		_, err := executeCommand(c, "a", "b", "c")
+		
+		if err == nil {
+			t.Fatal("Expected an error")
+		}
+		
+		got := err.Error()
+		expectedPart1 := "none of the validators passed:"
+		expectedPart2 := "accepts 1 arg(s), received 3"
+		expectedPart3 := "requires at least 5 arg(s), only received 3"
+		
+		if !strings.Contains(got, expectedPart1) {
+			t.Errorf("Expected error to contain %q, got %q", expectedPart1, got)
+		}
+		if !strings.Contains(got, expectedPart2) {
+			t.Errorf("Expected error to contain %q, got %q", expectedPart2, got)
+		}
+		if !strings.Contains(got, expectedPart3) {
+			t.Errorf("Expected error to contain %q, got %q", expectedPart3, got)
+		}
+	})
+
+	t.Run("zero validators", func(t *testing.T) {
+		pargs := MatchAny()
+		c := getCommand(pargs, false)
+		output, err := executeCommand(c, "a", "b", "c")
+		expectSuccess(output, err, t)
+	})
+}
+
 // DEPRECATED
 
 func TestExactValidArgs(t *testing.T) {

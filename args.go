@@ -135,6 +135,29 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 	}
 }
 
+// MatchAny allows combining several PositionalArgs where at least one must pass.
+func MatchAny(pargs ...PositionalArgs) PositionalArgs {
+	return func(cmd *Command, args []string) error {
+		if len(pargs) == 0 {
+			return nil
+		}
+		var errs []error
+		for _, parg := range pargs {
+			if err := parg(cmd, args); err == nil {
+				return nil
+			} else {
+				errs = append(errs, err)
+			}
+		}
+		var msg strings.Builder
+		msg.WriteString("none of the validators passed:")
+		for _, err := range errs {
+			msg.WriteString("  " + err.Error())
+		}
+		return fmt.Errorf("%s", msg.String())
+	}
+}
+
 // ExactValidArgs returns an error if there are not exactly N positional args OR
 // there are any positional args that are not in the `ValidArgs` field of `Command`
 //
