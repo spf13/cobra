@@ -1,0 +1,135 @@
+opencli: 1.0.0
+info:
+  description: Root long description
+  summary: Root short description
+  title: root
+  version: ""
+conventions:
+  groupOptions: true
+  optionSeparator: ' '
+options:
+  - aliases:
+      - h
+    description: help for root
+    name: help
+  - aliases:
+      - r
+    arguments:
+      - name: rootflag
+    name: rootflag
+    recursive: true
+  - aliases:
+      - t
+    arguments:
+      - description: help message for parent flag strtwo
+        name: strtwo
+    description: help message for parent flag strtwo
+    name: strtwo
+    recursive: true
+commands:
+  - arguments:
+      - name: action
+        required: false
+    description: Performs a dummy action
+    name: dummy
+    options:
+      - aliases:
+          - h
+        description: help for dummy
+        name: help
+  - aliases:
+      - say
+    arguments:
+      - name: string to echo
+        required: false
+    commands:
+      - arguments:
+          - name: string to print
+            required: false
+        description: second sub command for echo
+        name: echosub
+      - arguments:
+          - name: '# times'
+            required: false
+          - name: string to echo
+            required: false
+        description: Echo anything to the screen more times
+        name: times
+        options:
+          - aliases:
+              - c
+            description: help message for flag booltwo
+            name: booltwo
+          - aliases:
+              - j
+            arguments:
+              - description: help message for flag inttwo
+                name: inttwo
+            description: help message for flag inttwo
+            name: inttwo
+          - aliases:
+              - t
+            arguments:
+              - description: help message for child flag strtwo
+                name: strtwo
+            description: help message for child flag strtwo
+            name: strtwo
+            recursive: true
+    description: Echo anything to the screen
+    examples:
+      - Just run cobra-test echo
+    name: echo
+    options:
+      - aliases:
+          - b
+        description: help message for flag boolone
+        name: boolone
+      - aliases:
+          - h
+        description: help for echo
+        name: help
+      - aliases:
+          - i
+        arguments:
+          - description: help message for flag intone
+            name: intone
+        description: help message for flag intone
+        name: intone
+      - aliases:
+          - p
+        description: help message for flag persistentbool
+        name: persistentbool
+        recursive: true
+      - aliases:
+          - s
+        arguments:
+          - description: help message for flag strone
+            name: strone
+        description: help message for flag strone
+        name: strone
+        recursive: true
+  - arguments:
+      - name: string to print
+        required: false
+    description: Print anything to the screen
+    name: print
+    options:
+      - aliases:
+          - b
+        description: help message for flag boolthree
+        name: boolthree
+      - aliases:
+          - i
+        arguments:
+          - description: help message for flag intthree
+            name: intthree
+        description: help message for flag intthree
+        name: intthree
+      - aliases:
+          - s
+        arguments:
+          - description: help message for flag strthree
+            name: strthree
+        description: help message for flag strthree
+        name: strthree
+        recursive: true
