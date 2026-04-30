@@ -1011,16 +1011,23 @@ func (c *Command) execute(a []string) (err error) {
 		return err
 	}
 
+	var runErr error
 	if c.RunE != nil {
-		if err := c.RunE(c, argWoFlags); err != nil {
-			return err
+		runErr = c.RunE(c, argWoFlags)
+		if runErr != nil && !EnablePostRunOnError {
+			return runErr
 		}
 	} else {
 		c.Run(c, argWoFlags)
 	}
 	if c.PostRunE != nil {
 		if err := c.PostRunE(c, argWoFlags); err != nil {
-			return err
+			if !EnablePostRunOnError {
+				return err
+			}
+			if runErr == nil {
+				runErr = err
+			}
 		}
 	} else if c.PostRun != nil {
 		c.PostRun(c, argWoFlags)
@@ -1028,7 +1035,12 @@ func (c *Command) execute(a []string) (err error) {
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPostRunE != nil {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
-				return err
+				if !EnablePostRunOnError {
+					return err
+				}
+				if runErr == nil {
+					runErr = err
+				}
 			}
 			if !EnableTraverseRunHooks {
 				break
@@ -1041,7 +1053,7 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}
 
-	return nil
+	return runErr
 }
 
 func (c *Command) preRun() {
