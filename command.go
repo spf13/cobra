@@ -375,14 +375,19 @@ func (c *Command) SetVersionTemplate(s string) {
 }
 
 // SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
+// To unset the error prefix, this function should be called with the empty string.
+// To prevent an error prefix from being used, the function SetErrPrefixEmpty(true) should be used.
 func (c *Command) SetErrPrefix(s string) {
 	c.errPrefix = s
+	c.errPrefixEmpty = false
 }
 
 // SetErrPrefixEmpty sets whether the error message prefix should be empty.
 // If set to true, this suppresses the default "Error: " prefix.
+// To unset the error prefix (so the parent chain can be checked), please use SetErrPrefix("").
 func (c *Command) SetErrPrefixEmpty(empty bool) {
 	c.errPrefixEmpty = empty
+	c.errPrefix = ""
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
