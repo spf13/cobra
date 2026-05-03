@@ -1165,6 +1165,117 @@ func TestSetUsageTemplate(t *testing.T) {
 	}
 }
 
+func TestSetNamePadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	shortCmd := &Command{Use: "short", Run: emptyRun}
+	longCmd := &Command{Use: "a-very-long-command", Run: emptyRun}
+	rootCmd.AddCommand(shortCmd, longCmd)
+
+	defaultPadding := shortCmd.NamePadding()
+	expectedDefault := len(longCmd.Name())
+	if defaultPadding != expectedDefault {
+		t.Fatalf("expected default padding %d, got %d", expectedDefault, defaultPadding)
+	}
+
+	rootCmd.SetNamePadding(42)
+	if got := shortCmd.NamePadding(); got != 42 {
+		t.Fatalf("expected override padding 42, got %d", got)
+	}
+
+	if got := rootCmd.NamePadding(); got != 42 {
+		t.Fatalf("expected root NamePadding to honor override, got %d", got)
+	}
+
+	rootCmd.SetNamePadding(0)
+	if got := shortCmd.NamePadding(); got != expectedDefault {
+		t.Fatalf("expected clearing override to restore default %d, got %d", expectedDefault, got)
+	}
+
+	nestedParent := &Command{Use: "nested-parent", Run: emptyRun}
+	child := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(nestedParent)
+	nestedParent.AddCommand(child)
+
+	nestedParent.SetNamePadding(25)
+	if got := child.NamePadding(); got != 25 {
+		t.Fatalf("expected nested override 25, got %d", got)
+	}
+}
+
+func TestSetUsagePadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	shortCmd := &Command{Use: "short", Run: emptyRun}
+	longCmd := &Command{Use: "this-command-has-a-long-use-line", Run: emptyRun}
+	rootCmd.AddCommand(shortCmd, longCmd)
+
+	defaultPadding := shortCmd.UsagePadding()
+	expectedDefault := len(longCmd.Use)
+	if defaultPadding != expectedDefault {
+		t.Fatalf("expected default usage padding %d, got %d", expectedDefault, defaultPadding)
+	}
+
+	rootCmd.SetUsagePadding(64)
+	if got := shortCmd.UsagePadding(); got != 64 {
+		t.Fatalf("expected override usage padding 64, got %d", got)
+	}
+
+	if got := rootCmd.UsagePadding(); got != 64 {
+		t.Fatalf("expected root usage padding to honor override, got %d", got)
+	}
+
+	rootCmd.SetUsagePadding(0)
+	if got := shortCmd.UsagePadding(); got != expectedDefault {
+		t.Fatalf("expected clearing usage padding override to restore %d, got %d", expectedDefault, got)
+	}
+
+	nestedParent := &Command{Use: "nested-parent", Run: emptyRun}
+	child := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(nestedParent)
+	nestedParent.AddCommand(child)
+
+	nestedParent.SetUsagePadding(33)
+	if got := child.UsagePadding(); got != 33 {
+		t.Fatalf("expected nested usage padding override 33, got %d", got)
+	}
+}
+
+func TestSetCommandPathPadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	shortCmd := &Command{Use: "short", Run: emptyRun}
+	longCmd := &Command{Use: "long-child-command", Run: emptyRun}
+	rootCmd.AddCommand(shortCmd, longCmd)
+
+	defaultPadding := shortCmd.CommandPathPadding()
+	expectedDefault := len(longCmd.CommandPath())
+	if defaultPadding != expectedDefault {
+		t.Fatalf("expected default command path padding %d, got %d", expectedDefault, defaultPadding)
+	}
+
+	rootCmd.SetCommandPathPadding(58)
+	if got := shortCmd.CommandPathPadding(); got != 58 {
+		t.Fatalf("expected override command path padding 58, got %d", got)
+	}
+
+	if got := rootCmd.CommandPathPadding(); got != 58 {
+		t.Fatalf("expected root command path padding to honor override, got %d", got)
+	}
+
+	rootCmd.SetCommandPathPadding(0)
+	if got := shortCmd.CommandPathPadding(); got != expectedDefault {
+		t.Fatalf("expected clearing command path padding override to restore %d, got %d", expectedDefault, got)
+	}
+
+	nestedParent := &Command{Use: "nested-parent", Run: emptyRun}
+	child := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(nestedParent)
+	nestedParent.AddCommand(child)
+
+	nestedParent.SetCommandPathPadding(29)
+	if got := child.CommandPathPadding(); got != 29 {
+		t.Fatalf("expected nested command path padding override 29, got %d", got)
+	}
+}
+
 func TestVersionFlagExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
 
