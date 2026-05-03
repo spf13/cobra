@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -2951,4 +2952,15 @@ func TestHelpFuncExecuted(t *testing.T) {
 	}
 
 	checkStringContains(t, output, helpText)
+}
+
+func TestValidateRequiredFlags(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.MarkFlagRequired("boola")
+	if err := c.ValidateRequiredFlags(); !errors.Is(err, &RequiredFlagError{
+		Err: errors.New("required flag(s) \"boola\" not set"),
+	}) {
+		t.Fatalf("Expected error: %v, got: %v", "boola", err)
+	}
 }
