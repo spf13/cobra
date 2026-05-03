@@ -659,6 +659,10 @@ func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
+func hasFlag(name string, fs *flag.FlagSet) bool {
+	return fs.Lookup(name) != nil
+}
+
 func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	if len(name) == 0 {
 		return false
@@ -669,6 +673,14 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 		return false
 	}
 	return flag.NoOptDefVal != ""
+}
+
+func shortHasFlag(name string, fs *flag.FlagSet) bool {
+	if len(name) == 0 {
+		return false
+	}
+
+	return fs.ShorthandLookup(name[:1]) != nil
 }
 
 func stripFlags(args []string, c *Command) []string {
@@ -689,18 +701,27 @@ Loop:
 			// "--" terminates the flags
 			break Loop
 		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
-			// If '--flag arg' then
-			// delete arg from args.
-			fallthrough // (do the same as below)
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
-			// If '-f arg' then
-			// delete 'arg' from args or break the loop if len(args) <= 1.
-			if len(args) <= 1 {
-				break Loop
-			} else {
-				args = args[1:]
+			// If '--flag arg' then delete arg from args.
+			// For unknown flags, only consume the next arg when it is not another flag token.
+			if !hasFlag(s[2:], flags) && len(args) > 0 && isFlagArg(args[0]) {
 				continue
 			}
+			if len(args) <= 1 {
+				break Loop
+			}
+			args = args[1:]
+			continue
+		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+			// If '-f arg' then delete arg from args.
+			// For unknown shorthands, only consume the next arg when it is not another flag token.
+			if !shortHasFlag(s[1:], flags) && len(args) > 0 && isFlagArg(args[0]) {
+				continue
+			}
+			if len(args) <= 1 {
+				break Loop
+			}
+			args = args[1:]
+			continue
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
 		}
@@ -727,8 +748,17 @@ Loop:
 			// -- means we have reached the end of the parseable args. Break out of the loop now.
 			break Loop
 		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
-			fallthrough
+			if !hasFlag(s[2:], flags) && pos+1 < len(args) && isFlagArg(args[pos+1]) {
+				continue
+			}
+			// This is a long flag without a default value and without an equal sign. Increment pos
+			// in order to skip over the next arg, because that is the value of this flag.
+			pos++
+			continue
 		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+			if !shortHasFlag(s[1:], flags) && pos+1 < len(args) && isFlagArg(args[pos+1]) {
+				continue
+			}
 			// This is a flag without a default value, and an equal sign is not used. Increment pos in order to skip
 			// over the next arg, because that is the value of this flag.
 			pos++
