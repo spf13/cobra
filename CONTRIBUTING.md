@@ -35,6 +35,16 @@ If you have questions regarding Cobra, feel free to ask it in the community
 1. Since this is golang project, ensure the new code is properly formatted to
    ensure code consistency. Run `make all`.
 
+### Fuzz testing
+
+Go 1.18+ fuzz tests are included. For a short local fuzz run:
+
+```
+go test ./... -run=^$ -fuzz=Fuzz -fuzztime=30s
+```
+
+CI runs a brief fuzz pass on each push/PR. See `site/content/fuzzing.md` for details and OSS-Fuzz onboarding pointers.
+
 ### Quick steps to contribute
 
 1. Fork the project.
