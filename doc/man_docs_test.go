@@ -214,6 +214,31 @@ func assertNextLineEquals(scanner *bufio.Scanner, expectedLine string) error {
 	return fmt.Errorf("hit EOF before finding %v", expectedLine)
 }
 
+func TestGenManAngleBrackets(t *testing.T) {
+	// Test that angle brackets are preserved in man page output.
+	// See https://github.com/spf13/cobra/issues/2330
+	cmd := &cobra.Command{
+		Use:   "cmd [<remote>:]<instance>",
+		Short: "A command with <angle> brackets",
+		Long:  "This is a longer description with <placeholder> values.",
+		Run:   emptyRun,
+	}
+	cmd.Flags().StringP("config", "c", "", "Path to <config> file")
+
+	buf := new(bytes.Buffer)
+	if err := GenMan(cmd, nil, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	// Verify angle brackets are preserved in the rendered man page
+	checkStringContains(t, output, "<remote>")
+	checkStringContains(t, output, "<instance>")
+	checkStringContains(t, output, "<angle>")
+	checkStringContains(t, output, "<placeholder>")
+	checkStringContains(t, output, "<config>")
+}
+
 func BenchmarkGenManToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {
