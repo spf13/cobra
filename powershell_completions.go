@@ -126,7 +126,10 @@ filter __%[1]s_escapeStringWithSpecialChars {
 
     #call the command store the output in $out and redirect stderr and stdout to null
     # $Out is an array contains each line per element
+    $oldEncoding = [Console]::OutputEncoding
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
     Invoke-Expression -OutVariable out "$RequestComp" 2>&1 | Out-Null
+    [Console]::OutputEncoding = $oldEncoding
 
     # get directive from last line
     [int]$Directive = $Out[-1].TrimStart(':')
