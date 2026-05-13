@@ -19,6 +19,64 @@ import (
 	"testing"
 )
 
+func TestNonRepeatableFlag(t *testing.T) {
+	getCmd := func() *Command {
+		c := &Command{
+			Use: "testcmd",
+			Run: func(cmd *Command, args []string) {},
+		}
+		c.Flags().String("name", "", "")
+		c.Flags().Bool("verbose", false, "")
+		c.MarkFlagNonRepeatable("name")
+		c.MarkFlagNonRepeatable("verbose")
+		return c
+	}
+
+	testcases := []struct {
+		desc      string
+		args      []string
+		expectErr string
+	}{
+		{
+			desc: "single use of string flag",
+			args: []string{"--name=foo"},
+		},
+		{
+			desc:      "repeated string flag",
+			args:      []string{"--name=foo", "--name=bar"},
+			expectErr: `cannot be specified more than once`,
+		},
+		{
+			desc: "single use of bool flag",
+			args: []string{"--verbose"},
+		},
+		{
+			desc:      "repeated bool flag",
+			args:      []string{"--verbose", "--verbose"},
+			expectErr: `cannot be specified more than once`,
+		},
+		{
+			desc: "no flags set",
+			args: []string{},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.desc, func(t *testing.T) {
+			c := getCmd()
+			c.SetArgs(tc.args)
+			err := c.Execute()
+			switch {
+			case err == nil && len(tc.expectErr) > 0:
+				t.Errorf("Expected error containing %q but got nil", tc.expectErr)
+			case err != nil && len(tc.expectErr) == 0:
+				t.Errorf("Expected no error but got %q", err)
+			case err != nil && !strings.Contains(err.Error(), tc.expectErr):
+				t.Errorf("Expected error containing %q but got %q", tc.expectErr, err)
+			}
+		})
+	}
+}
+
 func TestValidateFlagGroups(t *testing.T) {
 	getCmd := func() *Command {
 		c := &Command{

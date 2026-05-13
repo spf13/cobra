@@ -76,6 +76,39 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
+// MarkFlagNonRepeatable marks the given flag so that Cobra errors if the flag
+// is specified more than once on the command line.
+func (c *Command) MarkFlagNonRepeatable(name string) {
+	c.mergePersistentFlags()
+	f := c.Flags().Lookup(name)
+	if f == nil {
+		panic(fmt.Sprintf("Failed to find flag %q and mark it as non-repeatable", name))
+	}
+	f.Value = &nonRepeatableValue{Value: f.Value, flagName: name}
+}
+
+// nonRepeatableValue wraps a pflag.Value to reject a second call to Set.
+type nonRepeatableValue struct {
+	flag.Value
+	setCount int
+	flagName string
+}
+
+func (v *nonRepeatableValue) Set(s string) error {
+	v.setCount++
+	if v.setCount > 1 {
+		return fmt.Errorf("flag %q cannot be specified more than once", v.flagName)
+	}
+	return v.Value.Set(s)
+}
+
+// IsBoolFlag forwards the BoolFlag interface so that boolean flags wrapped as
+// non-repeatable still support --flag (without a value) syntax.
+func (v *nonRepeatableValue) IsBoolFlag() bool {
+	bf, ok := v.Value.(interface{ IsBoolFlag() bool })
+	return ok && bf.IsBoolFlag()
+}
+
 // ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the
 // first error encountered.
 func (c *Command) ValidateFlagGroups() error {
