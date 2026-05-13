@@ -23,9 +23,15 @@ import (
 )
 
 const (
+	// Default flag group annotations (used by MarkFlags* methods)
 	requiredAsGroupAnnotation   = "cobra_annotation_required_if_others_set"
 	oneRequiredAnnotation       = "cobra_annotation_one_required"
 	mutuallyExclusiveAnnotation = "cobra_annotation_mutually_exclusive"
+
+	// Custom error message annotations (used by MarkFlags*WithMessage methods)
+	requiredAsGroupMessageAnnotation   = "cobra_annotation_required_if_others_set_message"
+	oneRequiredMessageAnnotation       = "cobra_annotation_one_required_message"
+	mutuallyExclusiveMessageAnnotation = "cobra_annotation_mutually_exclusive_message"
 )
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
@@ -76,6 +82,106 @@ func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
 	}
 }
 
+// MarkFlagsRequiredTogetherWithMessage marks the given flags with annotations and a custom error message so that Cobra errors
+// if the command is invoked with a subset (but not all) of the given flags.
+// The custom message will be used instead of the default Cobra error message.
+// If message is empty string, the default error message will be used.
+func (c *Command) MarkFlagsRequiredTogetherWithMessage(message string, flagNames ...string) {
+	// Edge case: no flag names provided
+	if len(flagNames) == 0 {
+		panic("at least one flag name must be provided")
+	}
+
+	c.mergePersistentFlags()
+	groupKey := strings.Join(flagNames, " ")
+
+	// Mark all flags with the group annotation
+	for _, v := range flagNames {
+		f := c.Flags().Lookup(v)
+		if f == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark it as being required in a flag group", v))
+		}
+		if err := c.Flags().SetAnnotation(v, requiredAsGroupAnnotation, append(f.Annotations[requiredAsGroupAnnotation], groupKey)); err != nil {
+			panic(err)
+		}
+	}
+
+	// Store the custom message for this group ONLY if message is not empty
+	// If message is empty, use the default error message
+	if message != "" {
+		if err := c.Flags().SetAnnotation(flagNames[0], requiredAsGroupMessageAnnotation, append(c.Flags().Lookup(flagNames[0]).Annotations[requiredAsGroupMessageAnnotation], groupKey+"="+message)); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// MarkFlagsOneRequiredWithMessage marks the given flags with annotations and a custom error message so that Cobra errors
+// if the command is invoked without at least one flag from the given set of flags.
+// The custom message will be used instead of the default Cobra error message.
+// If message is empty string, the default error message will be used.
+func (c *Command) MarkFlagsOneRequiredWithMessage(message string, flagNames ...string) {
+	// Edge case: no flag names provided
+	if len(flagNames) == 0 {
+		panic("at least one flag name must be provided")
+	}
+
+	c.mergePersistentFlags()
+	groupKey := strings.Join(flagNames, " ")
+
+	// Mark all flags with the group annotation
+	for _, v := range flagNames {
+		f := c.Flags().Lookup(v)
+		if f == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark it as being in a one-required flag group", v))
+		}
+		if err := c.Flags().SetAnnotation(v, oneRequiredAnnotation, append(f.Annotations[oneRequiredAnnotation], groupKey)); err != nil {
+			panic(err)
+		}
+	}
+
+	// Store the custom message for this group ONLY if message is not empty
+	// If message is empty, use the default error message
+	if message != "" {
+		if err := c.Flags().SetAnnotation(flagNames[0], oneRequiredMessageAnnotation, append(c.Flags().Lookup(flagNames[0]).Annotations[oneRequiredMessageAnnotation], groupKey+"="+message)); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// MarkFlagsMutuallyExclusiveWithMessage marks the given flags with annotations and a custom error message so that Cobra errors
+// if the command is invoked with more than one flag from the given set of flags.
+// The custom message will be used instead of the default Cobra error message.
+// If message is empty string, the default error message will be used.
+func (c *Command) MarkFlagsMutuallyExclusiveWithMessage(message string, flagNames ...string) {
+	// Edge case: no flag names provided
+	if len(flagNames) == 0 {
+		panic("at least one flag name must be provided")
+	}
+
+	c.mergePersistentFlags()
+	groupKey := strings.Join(flagNames, " ")
+
+	// Mark all flags with the group annotation
+	for _, v := range flagNames {
+		f := c.Flags().Lookup(v)
+		if f == nil {
+			panic(fmt.Sprintf("Failed to find flag %q and mark it as being in a mutually exclusive flag group", v))
+		}
+		// Each time this is called is a single new entry; this allows it to be a member of multiple groups if needed.
+		if err := c.Flags().SetAnnotation(v, mutuallyExclusiveAnnotation, append(f.Annotations[mutuallyExclusiveAnnotation], groupKey)); err != nil {
+			panic(err)
+		}
+	}
+
+	// Store the custom message for this group ONLY if message is not empty
+	// If message is empty, use the default error message
+	if message != "" {
+		if err := c.Flags().SetAnnotation(flagNames[0], mutuallyExclusiveMessageAnnotation, append(c.Flags().Lookup(flagNames[0]).Annotations[mutuallyExclusiveMessageAnnotation], groupKey+"="+message)); err != nil {
+			panic(err)
+		}
+	}
+}
+
 // ValidateFlagGroups validates the mutuallyExclusive/oneRequired/requiredAsGroup logic and returns the
 // first error encountered.
 func (c *Command) ValidateFlagGroups() error {
@@ -96,13 +202,18 @@ func (c *Command) ValidateFlagGroups() error {
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusiveAnnotation, mutuallyExclusiveGroupStatus)
 	})
 
-	if err := validateRequiredFlagGroups(groupStatus); err != nil {
+	// Extract custom error messages for each group type
+	requiredAsGroupMessages := extractGroupMessages(flags, requiredAsGroupMessageAnnotation)
+	oneRequiredMessages := extractGroupMessages(flags, oneRequiredMessageAnnotation)
+	mutuallyExclusiveMessages := extractGroupMessages(flags, mutuallyExclusiveMessageAnnotation)
+
+	if err := validateRequiredFlagGroups(groupStatus, requiredAsGroupMessages); err != nil {
 		return err
 	}
-	if err := validateOneRequiredFlagGroups(oneRequiredGroupStatus); err != nil {
+	if err := validateOneRequiredFlagGroups(oneRequiredGroupStatus, oneRequiredMessages); err != nil {
 		return err
 	}
-	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus); err != nil {
+	if err := validateExclusiveFlagGroups(mutuallyExclusiveGroupStatus, mutuallyExclusiveMessages); err != nil {
 		return err
 	}
 	return nil
@@ -116,6 +227,25 @@ func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
 		}
 	}
 	return true
+}
+
+// extractGroupMessages extracts custom error messages for flag groups from annotations.
+// Returns a map where key is the flag group (space-separated flags) and value is the custom message.
+func extractGroupMessages(flags *flag.FlagSet, messageAnnotation string) map[string]string {
+	messages := make(map[string]string)
+	flags.VisitAll(func(pflag *flag.Flag) {
+		messageInfo, found := pflag.Annotations[messageAnnotation]
+		if found {
+			for _, entry := range messageInfo {
+				// Messages are stored as "groupKey=customMessage"
+				parts := strings.SplitN(entry, "=", 2)
+				if len(parts) == 2 {
+					messages[parts[0]] = parts[1]
+				}
+			}
+		}
+	})
+	return messages
 }
 
 func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annotation string, groupStatus map[string]map[string]bool) {
@@ -141,7 +271,7 @@ func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annota
 	}
 }
 
-func validateRequiredFlagGroups(data map[string]map[string]bool) error {
+func validateRequiredFlagGroups(data map[string]map[string]bool, customMessages map[string]string) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -158,13 +288,19 @@ func validateRequiredFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(unset)
+
+		// Check if a custom message is defined for this group
+		if msg, found := customMessages[flagList]; found {
+			return fmt.Errorf(msg)
+		}
+
 		return fmt.Errorf("if any flags in the group [%v] are set they must all be set; missing %v", flagList, unset)
 	}
 
 	return nil
 }
 
-func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
+func validateOneRequiredFlagGroups(data map[string]map[string]bool, customMessages map[string]string) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -180,12 +316,18 @@ func validateOneRequiredFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
+
+		// Check if a custom message is defined for this group
+		if msg, found := customMessages[flagList]; found {
+			return fmt.Errorf(msg)
+		}
+
 		return fmt.Errorf("at least one of the flags in the group [%v] is required", flagList)
 	}
 	return nil
 }
 
-func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
+func validateExclusiveFlagGroups(data map[string]map[string]bool, customMessages map[string]string) error {
 	keys := sortedKeys(data)
 	for _, flagList := range keys {
 		flagnameAndStatus := data[flagList]
@@ -201,6 +343,12 @@ func validateExclusiveFlagGroups(data map[string]map[string]bool) error {
 
 		// Sort values, so they can be tested/scripted against consistently.
 		sort.Strings(set)
+
+		// Check if a custom message is defined for this group
+		if msg, found := customMessages[flagList]; found {
+			return fmt.Errorf(msg)
+		}
+
 		return fmt.Errorf("if any flags in the group [%v] are set none of the others can be; %v were all set", flagList, set)
 	}
 	return nil
