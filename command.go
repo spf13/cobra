@@ -1231,11 +1231,32 @@ func (c *Command) InitDefaultHelpFlag() {
 	}
 }
 
+// inferVersion attempts to determine the version of an unversioned
+// subcommand by querying the version of the parent. If the parent's
+// version is not set, then the process continues until the root command
+// is reached. If the root command is also unversioned, then the subcommand
+// remains unversioned.
+func (c *Command) inferVersion() string {
+	if c.Version != "" {
+		return c.Version
+	}
+	current := c
+	for current.HasParent() {
+		current = current.Parent()
+		if current.Version != "" {
+			return current.Version
+		}
+	}
+	return ""
+}
+
 // InitDefaultVersionFlag adds default version flag to c.
 // It is called automatically by executing the c.
 // If c already has a version flag, it will do nothing.
 // If c.Version is empty, it will do nothing.
 func (c *Command) InitDefaultVersionFlag() {
+	c.Version = c.inferVersion()
+
 	if c.Version == "" {
 		return
 	}
