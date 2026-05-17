@@ -31,3 +31,14 @@ func TestBashCompletionV2WithActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	checkOmit(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+func TestBashCompletionV2ColonWordbreakFixup(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletionV2(buf, true))
+	output := buf.String()
+
+	check(t, output, "__c_fixup_colon_wordbreak")
+	check(t, output, "Rejoined colon-split word")
+}

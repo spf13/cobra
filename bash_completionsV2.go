@@ -233,6 +233,40 @@ __%[1]s_handle_activeHelp() {
     fi
 }
 
+__%[1]s_fixup_colon_wordbreak()
+{
+    # Bash may split URI-like arguments (e.g. local:/path) at ':' on some setups,
+    # even when _init_completion is called with -n =:. Rejoin the prefix, colon,
+    # and cur so ValidArgsFunction receives the full logical argument.
+    if [[ -z ${cur} || ${cur} == *:* ]]; then
+        return
+    fi
+    local i
+    for ((i=${#words[@]}-1; i>0; i--)); do
+        if [[ ${words[i]} == ":" ]]; then
+            words[i-1]="${words[i-1]}:${cur}"
+            unset "words[i]"
+            words=("${words[@]}")
+            cur="${words[i-1]}"
+            if (( cword >= i )); then
+                cword=$((i-1))
+            fi
+            __%[1]s_debug "Rejoined colon-split word: ${cur}"
+            return
+        elif [[ ${words[i]} == *: ]]; then
+            words[i]="${words[i]}${cur}"
+            cur="${words[i]}"
+            if (( cword > i )); then
+                cword=$i
+            elif (( cword == i )); then
+                :
+            fi
+            __%[1]s_debug "Appended cur to colon-suffixed word: ${cur}"
+            return
+        fi
+    done
+}
+
 __%[1]s_reprint_commandLine() {
     # The prompt format is only available from bash 4.4.
     # We test if it is available before using it.
@@ -447,6 +481,8 @@ __start_%[1]s()
     # to truncate the command-line ($words) up to the $cword location.
     words=("${words[@]:0:$cword+1}")
     __%[1]s_debug "Truncated words[*]: ${words[*]},"
+
+    __%[1]s_fixup_colon_wordbreak
 
     local out directive
     __%[1]s_get_completion_results
