@@ -246,6 +246,25 @@ var tryCmd = &cobra.Command{
 
 The error can then be caught at the execute function call.
 
+By default, Cobra prints usage help when `RunE` returns an error. Set
+`SilenceUsage` on the command (often on the root command) to suppress usage output
+on errors:
+
+```go
+rootCmd.SilenceUsage = true
+```
+
+Use `SilenceErrors` to prevent Cobra from printing the error returned by `RunE`;
+your application can handle or format errors in `Execute()` instead.
+
+### Hidden commands
+
+Set `Hidden: true` on a command to exclude it from help output while keeping it
+executable. This is useful for internal maintenance commands such as
+`generate-docs` that should not appear in user-facing help but remain available
+for doc generation tools. Hidden commands are also omitted from generated
+markdown and man page docs by default.
+
 ## Working with Flags
 
 Flags provide modifiers to control how the action command operates.
