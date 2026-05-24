@@ -416,6 +416,38 @@ func TestRangeArgs_WithInvalidCount_WithValidOnly_WithInvalidArgs(t *testing.T) 
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestRangeArgs_MinEqualsMax(t *testing.T) {
+	c := getCommand(RangeArgs(2, 2), false)
+	output, err := executeCommand(c, "a", "b")
+	expectSuccess(output, err, t)
+}
+
+func TestRangeArgs_MinEqualsMax_WithInvalidCount(t *testing.T) {
+	c := getCommand(RangeArgs(2, 2), false)
+	_, err := executeCommand(c, "a")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts between 2 and 2 arg(s), received 1"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
+func TestRangeArgs_MinGreaterThanMax(t *testing.T) {
+	c := getCommand(RangeArgs(4, 2), false)
+	_, err := executeCommand(c, "a", "b")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts between 4 and 2 arg(s), received 2"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
+	}
+}
+
 // Takes(No)Args
 
 func TestRootTakesNoArgs(t *testing.T) {
@@ -519,6 +551,25 @@ func TestMatchAll(t *testing.T) {
 				t.Errorf("expected error")
 			}
 		})
+	}
+}
+
+func TestMatchAll_WithNoopValidator(t *testing.T) {
+	c := getCommand(MatchAll(ExactArgs(2), ArbitraryArgs), false)
+	output, err := executeCommand(c, "a", "b")
+	expectSuccess(output, err, t)
+}
+
+func TestMatchAll_WithNoopValidator_WithInvalidCount(t *testing.T) {
+	c := getCommand(MatchAll(ExactArgs(2), ArbitraryArgs), false)
+	_, err := executeCommand(c, "a", "b", "c")
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	got := err.Error()
+	expected := "accepts 2 arg(s), received 3"
+	if got != expected {
+		t.Fatalf("Expected %q, got %q", expected, got)
 	}
 }
 
