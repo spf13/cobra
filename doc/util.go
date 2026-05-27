@@ -36,6 +36,39 @@ func hasSeeAlso(cmd *cobra.Command) bool {
 	return false
 }
 
+// wordWrap wraps s at word boundaries so no line exceeds width characters.
+// Existing newlines are preserved and not re-joined. width <= 0 is a no-op.
+func wordWrap(s string, width int) string {
+	if width <= 0 {
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	var out []string
+	for _, line := range lines {
+		out = append(out, wrapLine(line, width)...)
+	}
+	return strings.Join(out, "\n")
+}
+
+func wrapLine(line string, width int) []string {
+	if len(line) <= width {
+		return []string{line}
+	}
+	var lines []string
+	for len(line) > width {
+		cutAt := width
+		if idx := strings.LastIndex(line[:width], " "); idx > 0 {
+			cutAt = idx
+		}
+		lines = append(lines, line[:cutAt])
+		line = strings.TrimLeft(line[cutAt:], " ")
+	}
+	if len(line) > 0 {
+		lines = append(lines, line)
+	}
+	return lines
+}
+
 // Temporary workaround for yaml lib generating incorrect yaml with long strings
 // that do not contain \n.
 func forceMultiLine(s string) string {

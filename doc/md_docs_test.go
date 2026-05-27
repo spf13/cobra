@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -103,6 +104,101 @@ func TestGenMdTree(t *testing.T) {
 		t.Fatalf("GenMarkdownTree failed: %v", err)
 	}
 
+	if _, err := os.Stat(filepath.Join(tmpdir, "do.md")); err != nil {
+		t.Fatalf("Expected file 'do.md' to exist")
+	}
+}
+
+const wrapTestCmdUse = "wraptest"
+
+func TestGenMdDocWithOptions_NoWrap(t *testing.T) {
+	long := "This is a very long description that exceeds a typical wrap width and should not be wrapped when WrapWidth is zero"
+	cmd := &cobra.Command{
+		Use:   wrapTestCmdUse,
+		Short: long,
+		Long:  long,
+		Run:   emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	if err := GenMarkdownCustomWithOptions(cmd, buf, func(s string) string { return s }, MarkdownOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+	checkStringContains(t, output, long)
+}
+
+func TestGenMdDocWithOptions_WrapWidth(t *testing.T) {
+	long := "This is a very long description that exceeds the wrap width and should be wrapped across multiple lines"
+	cmd := &cobra.Command{
+		Use:   wrapTestCmdUse,
+		Short: long,
+		Long:  long,
+		Run:   emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	if err := GenMarkdownCustomWithOptions(cmd, buf, func(s string) string { return s }, MarkdownOptions{WrapWidth: 40}); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	for _, line := range strings.Split(output, "\n") {
+		if len(line) > 40 {
+			// Lines from flags and other sections may exceed width; only check prose lines.
+			if !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "*") && !strings.HasPrefix(line, "  ") {
+				t.Errorf("line exceeds wrap width of 40: %q", line)
+			}
+		}
+	}
+}
+
+func TestGenMdDocWithOptions_PreservesExistingNewlines(t *testing.T) {
+	long := "First sentence.\nSecond sentence on its own line."
+	cmd := &cobra.Command{
+		Use:  "test",
+		Long: long,
+		Run:  emptyRun,
+	}
+
+	buf := new(bytes.Buffer)
+	if err := GenMarkdownCustomWithOptions(cmd, buf, func(s string) string { return s }, MarkdownOptions{WrapWidth: 80}); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+	checkStringContains(t, output, "First sentence.")
+	checkStringContains(t, output, "Second sentence on its own line.")
+}
+
+func TestGenMdDocWithOptions_MatchesGenMarkdownCustom(t *testing.T) {
+	buf1 := new(bytes.Buffer)
+	buf2 := new(bytes.Buffer)
+	linkHandler := func(s string) string { return s }
+
+	if err := GenMarkdownCustom(echoCmd, buf1, linkHandler); err != nil {
+		t.Fatal(err)
+	}
+	if err := GenMarkdownCustomWithOptions(echoCmd, buf2, linkHandler, MarkdownOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if buf1.String() != buf2.String() {
+		t.Error("GenMarkdownCustomWithOptions with zero options should produce identical output to GenMarkdownCustom")
+	}
+}
+
+func TestGenMdTreeCustomWithOptions(t *testing.T) {
+	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
+	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree-opts")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	identity := func(s string) string { return s }
+	emptyStr := func(s string) string { return "" }
+	if err := GenMarkdownTreeCustomWithOptions(c, tmpdir, emptyStr, identity, MarkdownOptions{WrapWidth: 80}); err != nil {
+		t.Fatalf("GenMarkdownTreeCustomWithOptions failed: %v", err)
+	}
 	if _, err := os.Stat(filepath.Join(tmpdir, "do.md")); err != nil {
 		t.Fatalf("Expected file 'do.md' to exist")
 	}

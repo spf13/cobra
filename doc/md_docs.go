@@ -48,6 +48,14 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 	return nil
 }
 
+// MarkdownOptions controls optional behaviors of GenMarkdownCustomWithOptions.
+type MarkdownOptions struct {
+	// WrapWidth sets the maximum line length for the Short and Long fields.
+	// Lines already shorter than WrapWidth and existing newlines are preserved.
+	// A value of 0 disables wrapping entirely.
+	WrapWidth int
+}
+
 // GenMarkdown creates markdown output.
 func GenMarkdown(cmd *cobra.Command, w io.Writer) error {
 	return GenMarkdownCustom(cmd, w, func(s string) string { return s })
@@ -55,6 +63,11 @@ func GenMarkdown(cmd *cobra.Command, w io.Writer) error {
 
 // GenMarkdownCustom creates custom markdown output.
 func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
+	return GenMarkdownCustomWithOptions(cmd, w, linkHandler, MarkdownOptions{})
+}
+
+// GenMarkdownCustomWithOptions creates custom markdown output with additional options.
+func GenMarkdownCustomWithOptions(cmd *cobra.Command, w io.Writer, linkHandler func(string) string, opts MarkdownOptions) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
@@ -62,10 +75,10 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	name := cmd.CommandPath()
 
 	buf.WriteString("## " + name + "\n\n")
-	buf.WriteString(cmd.Short + "\n\n")
+	buf.WriteString(wordWrap(cmd.Short, opts.WrapWidth) + "\n\n")
 	if len(cmd.Long) > 0 {
 		buf.WriteString("### Synopsis\n\n")
-		buf.WriteString(cmd.Long + "\n\n")
+		buf.WriteString(wordWrap(cmd.Long, opts.WrapWidth) + "\n\n")
 	}
 
 	if cmd.Runnable() {
@@ -131,11 +144,17 @@ func GenMarkdownTree(cmd *cobra.Command, dir string) error {
 // GenMarkdownTreeCustom is the same as GenMarkdownTree, but
 // with custom filePrepender and linkHandler.
 func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
+	return GenMarkdownTreeCustomWithOptions(cmd, dir, filePrepender, linkHandler, MarkdownOptions{})
+}
+
+// GenMarkdownTreeCustomWithOptions is the same as GenMarkdownTreeCustom, but
+// with additional options.
+func GenMarkdownTreeCustomWithOptions(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string, opts MarkdownOptions) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
-		if err := GenMarkdownTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := GenMarkdownTreeCustomWithOptions(c, dir, filePrepender, linkHandler, opts); err != nil {
 			return err
 		}
 	}
@@ -151,7 +170,7 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {
+	if err := GenMarkdownCustomWithOptions(cmd, f, linkHandler, opts); err != nil {
 		return err
 	}
 	return nil
