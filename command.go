@@ -587,8 +587,9 @@ func (c *Command) NamePadding() int {
 	return c.parent.commandsMaxNameLen
 }
 
-// UsageTemplate returns usage template for the command.
+// UsageTemplate returns the usage template for the command.
 // This function is kept for backwards-compatibility reasons.
+// Use [Command.SetUsageTemplate] to set a custom usage template.
 func (c *Command) UsageTemplate() string {
 	if c.usageTemplate != nil {
 		return c.usageTemplate.tmpl
@@ -600,8 +601,9 @@ func (c *Command) UsageTemplate() string {
 	return defaultUsageTemplate
 }
 
-// HelpTemplate return help template for the command.
+// HelpTemplate returns the help template for the command.
 // This function is kept for backwards-compatibility reasons.
+// Use [Command.SetHelpTemplate] to set a custom help template.
 func (c *Command) HelpTemplate() string {
 	if c.helpTemplate != nil {
 		return c.helpTemplate.tmpl
@@ -613,8 +615,9 @@ func (c *Command) HelpTemplate() string {
 	return defaultHelpTemplate
 }
 
-// VersionTemplate return version template for the command.
+// VersionTemplate returns the version template for the command.
 // This function is kept for backwards-compatibility reasons.
+// Use [Command.SetVersionTemplate] to set a custom version template.
 func (c *Command) VersionTemplate() string {
 	if c.versionTemplate != nil {
 		return c.versionTemplate.tmpl
