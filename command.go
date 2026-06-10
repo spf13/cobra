@@ -1139,11 +1139,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		cmd.commandCalledAs.name = cmd.Name()
 	}
 
-	// We have to pass global context to children command
-	// if context is present on the parent command.
-	if cmd.ctx == nil {
-		cmd.ctx = c.ctx
-	}
+	// Propagate the context from the root command (c) to the found subcommand (cmd).
+	// This ensures that the subcommand always receives the most up-to-date context
+	// from the root, overwriting any potentially stale context from a previous execution.
+	cmd.ctx = c.ctx
 
 	err = cmd.execute(flags)
 	if err != nil {
