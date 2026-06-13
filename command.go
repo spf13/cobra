@@ -1723,7 +1723,7 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 		}
 		c.lflags.SetOutput(c.flagErrorBuf)
 	}
-	c.lflags.SortFlags = c.Flags().SortFlags
+	c.lflags.SortFlags = c.Flags().SortFlags && c.PersistentFlags().SortFlags
 	if c.globNormFunc != nil {
 		c.lflags.SetNormalizeFunc(c.globNormFunc)
 	}
@@ -1734,8 +1734,13 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 			c.lflags.AddFlag(f)
 		}
 	}
-	c.Flags().VisitAll(addToLocal)
-	c.PersistentFlags().VisitAll(addToLocal)
+	persistentFlags := c.PersistentFlags()
+	c.Flags().VisitAll(func(f *flag.Flag) {
+		if persistentFlags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
+			addToLocal(f)
+		}
+	})
+	persistentFlags.VisitAll(addToLocal)
 	return c.lflags
 }
 
