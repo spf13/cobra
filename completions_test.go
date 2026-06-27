@@ -3727,7 +3727,7 @@ func TestGetFlagCompletion(t *testing.T) {
 					t.Errorf("Unexpected completions %q", comps)
 				}
 				if tc.directive != directive {
-					t.Errorf("Unexpected directive %s", directive.string())
+					t.Errorf("Unexpected directive %q", directive.string())
 				}
 			}
 		})
