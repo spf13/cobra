@@ -1475,6 +1475,25 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestSuggestionsForDoesNotDuplicateExplicitMatches(t *testing.T) {
+	rootCmd := &Command{
+		Use:                        "root",
+		Run:                        emptyRun,
+		SuggestionsMinimumDistance: 2,
+	}
+	timesCmd := &Command{
+		Use:        "times",
+		SuggestFor: []string{"time"},
+		Run:        emptyRun,
+	}
+	rootCmd.AddCommand(timesCmd)
+
+	expected := []string{"times"}
+	if suggestions := rootCmd.SuggestionsFor("time"); !reflect.DeepEqual(suggestions, expected) {
+		t.Errorf("Expected suggestions %v, got %v", expected, suggestions)
+	}
+}
+
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
