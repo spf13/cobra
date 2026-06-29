@@ -257,6 +257,17 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// SuggestAvailableCommands, when set to true, appends the list of available
+	// subcommands to the unknown-command error message. Hidden and deprecated
+	// commands are excluded. At most SuggestAvailableCommandsMaxCount commands
+	// are listed; set that field to override the default cap of 10.
+	SuggestAvailableCommands bool
+
+	// SuggestAvailableCommandsMaxCount caps the number of available commands
+	// listed in the error message when SuggestAvailableCommands is true.
+	// If zero or negative, defaults to 10.
+	SuggestAvailableCommandsMaxCount int
 }
 
 // Context returns underlying command context. If command was executed
@@ -790,6 +801,27 @@ func (c *Command) findSuggestions(arg string) string {
 		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
 			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
+		}
+	}
+	if c.SuggestAvailableCommands {
+		var avail []string
+		for _, sub := range c.Commands() {
+			if sub.IsAvailableCommand() {
+				avail = append(avail, sub.Name())
+			}
+		}
+		if len(avail) > 0 {
+			max := c.SuggestAvailableCommandsMaxCount
+			if max <= 0 {
+				max = 10
+			}
+			if len(avail) > max {
+				avail = avail[:max]
+			}
+			sb.WriteString("\n\nAvailable Commands:\n")
+			for _, name := range avail {
+				_, _ = fmt.Fprintf(&sb, "\t%v\n", name)
+			}
 		}
 	}
 	return sb.String()
