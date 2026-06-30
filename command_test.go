@@ -2952,3 +2952,33 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestHiddenCommandExcludedFromNamePadding(t *testing.T) {
+	root := &Command{Use: "root"}
+
+	// Visible short command
+	short := &Command{Use: "short", Run: emptyRun}
+	root.AddCommand(short)
+
+	// Hidden command with a much longer name
+	longHidden := &Command{Use: "very-long-hidden-command", Hidden: true, Run: emptyRun}
+	root.AddCommand(longHidden)
+
+	padding := short.NamePadding()
+
+	// NamePadding should be based only on visible commands.
+	// With only "short" (5 chars) visible, it should be minNamePadding (11),
+	// not inflated by the 24-char hidden command name.
+	if padding >= len(longHidden.Name()) {
+		t.Errorf("Expected padding to ignore hidden command, but padding %d >= hidden name length %d", padding, len(longHidden.Name()))
+	}
+
+	expected := minNamePadding
+	if len(short.Name()) > expected {
+		expected = len(short.Name())
+	}
+
+	if padding != expected {
+		t.Errorf("Expected NamePadding %d, got %d", expected, padding)
+	}
+}
