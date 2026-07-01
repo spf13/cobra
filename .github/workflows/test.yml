@@ -71,6 +71,8 @@ jobs:
         - 24
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
+    env:
+      GO_TEST_FLAGS: ${{ matrix.platform == 'macOS' && '-ldflags=-linkmode=external' || '' }}
     steps:
 
     - uses: actions/checkout@v4

@@ -57,7 +57,17 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    warn-unused: true
+    rules:
+      - path: '_test\.go'
+        linters:
+          - goconst
+      - linters:
+          - goconst
+        text: 'string `(true|bash|zsh|fish|powershell)`'
   settings:
+    nolintlint:
+      allow-unused: true
     govet:
       # Disable buildtag check to allow dual build tag syntax (both //go:build and // +build).
       # This is necessary for Go 1.15 compatibility since //go:build was introduced in Go 1.17.
