@@ -21,11 +21,11 @@ lint:
 
 test: install_deps
 	$(info ******************** running tests ********************)
-	go test -v ./...
+	go test -v $(GO_TEST_FLAGS) ./...
 
 richtest: install_deps
 	$(info ******************** running tests with kyoh86/richgo ********************)
-	richgo test -v ./...
+	richgo test -v $(GO_TEST_FLAGS) ./...
 
 install_deps:
 	$(info ******************** downloading dependencies ********************)
