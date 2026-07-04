@@ -71,6 +71,8 @@ jobs:
         - 24
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
+    # macOS runner environments require compiled binaries to contain an LC_UUID load command.
+    # We dynamically pass -ldflags=-linkmode=external on macOS to force external linking via the system linker.
     env:
       GO_TEST_FLAGS: ${{ matrix.platform == 'macOS' && '-ldflags=-linkmode=external' || '' }}
     steps:

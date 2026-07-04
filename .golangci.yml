@@ -65,9 +65,14 @@ linters:
       - linters:
           - goconst
         text: 'string `(true|bash|zsh|fish|powershell)`'
+      # Some Go/staticcheck versions in the test matrix don't trigger staticcheck warnings
+      # on type assertions/LHS variables in test files, while others do.
+      # To avoid build failures on both sides, we allow unused staticcheck nolints in test files.
+      - path: '_test\.go'
+        linters:
+          - nolintlint
+        text: 'directive `//nolint:staticcheck` is unused'
   settings:
-    nolintlint:
-      allow-unused: true
     govet:
       # Disable buildtag check to allow dual build tag syntax (both //go:build and // +build).
       # This is necessary for Go 1.15 compatibility since //go:build was introduced in Go 1.17.
