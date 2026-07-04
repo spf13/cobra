@@ -175,7 +175,9 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) 
 	flagCompletionMutex.Lock()
 	defer flagCompletionMutex.Unlock()
 
-	if _, exists := flagCompletionFunctions[flag]; exists {
+	localFlag := c.Flags().Lookup(flagName)
+	isPersistent := localFlag == nil
+	if _, exists := flagCompletionFunctions[flag]; exists && !isPersistent {
 		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
 	}
 	flagCompletionFunctions[flag] = f
