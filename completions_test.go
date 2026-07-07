@@ -671,6 +671,54 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 }
 
+func TestFlagNameCompletionAppendEqual(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	rootCmd.Flags().String("dryRun", "none", "dry run flag")
+	rootCmd.Flags().String("normal", "", "normal flag")
+	if err := rootCmd.MarkFlagAppendEqual("dryRun"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// A flag marked with MarkFlagAppendEqual is suggested with a trailing "="
+	// and the NoSpace directive so the shell does not add a trailing space.
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--dryRun")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"--dryRun=\tdry run flag",
+		":6",
+		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// A flag that did not opt in is completed as usual: no "=", no NoSpace.
+	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--normal")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"--normal\tnormal flag",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// MarkFlagAppendEqual on an unknown flag returns an error.
+	if err := rootCmd.MarkFlagAppendEqual("doesNotExist"); err == nil {
+		t.Error("Expected error for non-existent flag, got nil")
+	}
+}
+
 // customMultiString is a custom Value type that accepts multiple values,
 // but does not include "Slice" or "Array" in its "Type" string.
 type customMultiString []string
