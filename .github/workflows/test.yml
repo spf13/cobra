@@ -72,9 +72,10 @@ jobs:
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     # macOS runner environments require compiled binaries to contain an LC_UUID load command.
-    # We dynamically pass -ldflags=-linkmode=external on macOS to force external linking via the system linker.
+    # Go 1.24+ natively resolves this by writing LC_UUID in Go's internal linker.
+    # For Go < 1.24, we pass -ldflags=-linkmode=external on macOS to force external linking via the system linker.
     env:
-      GO_TEST_FLAGS: ${{ matrix.platform == 'macOS' && '-ldflags=-linkmode=external' || '' }}
+      GO_TEST_FLAGS: ${{ matrix.platform == 'macOS' && matrix.go < 24 && '-ldflags=-linkmode=external' || '' }}
     steps:
 
     - uses: actions/checkout@v4
