@@ -23,10 +23,10 @@ name a few. [This list](site/content/projects_using_cobra.md) contains a more ex
    <br>
    <br>
    <a href="https://www.warp.dev/cobra">
-      <img alt="Warp sponsorship" width="400" src="https://github.com/user-attachments/assets/ab8dd143-b0fd-4904-bdc5-dd7ecac94eae">
+      <img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-02.png">
    </a>
 
-### [Warp, the AI terminal for devs](https://www.warp.dev/cobra)
+### [Warp, built for coding with multiple AI agents](https://www.warp.dev/cobra)
 [Try Cobra in Warp today](https://www.warp.dev/cobra)<br>
 
 </div>
