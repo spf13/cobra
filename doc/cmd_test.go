@@ -15,6 +15,7 @@
 package doc
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -101,5 +102,11 @@ func checkStringContains(t *testing.T, got, expected string) {
 func checkStringOmits(t *testing.T, got, expected string) {
 	if strings.Contains(got, expected) {
 		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
+	}
+}
+
+func checkStringMatch(t *testing.T, got, pattern string) {
+	if ok, _ := regexp.MatchString(pattern, got); !ok {
+		t.Errorf("Expected to match: \n%v\nGot:\n %v\n", pattern, got)
 	}
 }

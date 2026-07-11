@@ -156,6 +156,31 @@ func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command, 
 	cobra.WriteStringAndCheck(buf, description+"\n\n")
 }
 
+func manPrintCommands(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command) {
+	// Find sub-commands that need to be documented
+	subCommands := []*cobra.Command{}
+	for _, c := range cmd.Commands() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+			continue
+		}
+		subCommands = append(subCommands, c)
+	}
+
+	// No need to go further if there is no sub-commands to document
+	if len(subCommands) <= 0 {
+		return
+	}
+
+	// Add a 'COMMANDS' section in the generated documentation
+	cobra.WriteStringAndCheck(buf, "# COMMANDS\n")
+	// For each sub-commands, and an entry with the command name and it's Short description and reference to dedicated
+	// man page
+	for _, c := range subCommands {
+		dashedPath := strings.Replace(c.CommandPath(), " ", "-", -1)
+		cobra.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n    %s \n    See **%s(%s)**.\n\n", c.Name(), c.Short, dashedPath, header.Section))
+	}
+}
+
 func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
 		if len(flag.Deprecated) > 0 || flag.Hidden {
@@ -209,6 +234,7 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 	buf := new(bytes.Buffer)
 
 	manPreamble(buf, header, cmd, dashCommandName)
+	manPrintCommands(buf, header, cmd)
 	manPrintOptions(buf, cmd)
 	if len(cmd.Example) > 0 {
 		buf.WriteString("# EXAMPLE\n")
