@@ -21,6 +21,17 @@ import (
 
 type PositionalArgs func(cmd *Command, args []string) error
 
+// UnknownCommandError is returned for unknown command
+type UnknownCommandError struct {
+	unknownCmd  string
+	cmdPath     string
+	suggestions string
+}
+
+func (e UnknownCommandError) Error() string {
+	return fmt.Sprintf("unknown command %q for %q%s", e.unknownCmd, e.cmdPath, e.suggestions)
+}
+
 // legacyArgs validation has the following behaviour:
 // - root commands with no subcommands can take arbitrary arguments
 // - root commands with subcommands will do subcommand validity checking
@@ -33,7 +44,7 @@ func legacyArgs(cmd *Command, args []string) error {
 
 	// root command with subcommands, do subcommand checking.
 	if !cmd.HasParent() && len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
+		return UnknownCommandError{args[0], cmd.CommandPath(), cmd.findSuggestions(args[0])}
 	}
 	return nil
 }
@@ -41,7 +52,7 @@ func legacyArgs(cmd *Command, args []string) error {
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		return UnknownCommandError{args[0], cmd.CommandPath(), ""}
 	}
 	return nil
 }
