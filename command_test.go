@@ -1326,11 +1326,9 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
 	_, err := executeCommand(rootCmd, "sub", "--version")
-	if err == nil {
-		t.Errorf("Expected error")
+	if err != nil {
+		t.Errorf("Unexpected error")
 	}
-
-	checkStringContains(t, err.Error(), "unknown flag: --version")
 }
 
 func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
@@ -1338,11 +1336,47 @@ func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
 	_, err := executeCommand(rootCmd, "sub", "-v")
-	if err == nil {
-		t.Errorf("Expected error")
+	if err != nil {
+		t.Errorf("Unexpected error")
 	}
+}
 
-	checkStringContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+func TestDirectVersionInference(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	sub1 := &Command{Use: "sub1", Version: "2.0.0", Run: emptyRun}
+	sub2 := &Command{Use: "sub2", Version: "1.0.1", Run: emptyRun}
+	sub1a := &Command{Use: "sub1a", Run: emptyRun}
+	sub2a := &Command{Use: "sub2a", Run: emptyRun}
+	rootCmd.AddCommand(sub1, sub2)
+	sub1.AddCommand(sub1a)
+	sub2.AddCommand(sub2a)
+	testCases := []*Command{sub1a, sub2a}
+	for _, cmd := range testCases {
+		output, err := executeCommand(rootCmd, cmd.Parent().Name(), cmd.Name(), "-v")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		checkStringContains(t, output, fmt.Sprintf("%s version %s", cmd.Name(), cmd.Parent().Version))
+	}
+}
+
+func TestDistantVersionInference(t *testing.T) {
+	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
+	sub1 := &Command{Use: "sub1", Run: emptyRun}
+	sub2 := &Command{Use: "sub2", Run: emptyRun}
+	sub1a := &Command{Use: "sub1a", Run: emptyRun}
+	sub2a := &Command{Use: "sub2a", Run: emptyRun}
+	rootCmd.AddCommand(sub1, sub2)
+	sub1.AddCommand(sub1a)
+	sub2.AddCommand(sub2a)
+	testCases := []*Command{sub1a, sub2a}
+	for _, cmd := range testCases {
+		output, err := executeCommand(rootCmd, cmd.Parent().Name(), cmd.Name(), "-v")
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+		checkStringContains(t, output, fmt.Sprintf("%s version %s", cmd.Name(), cmd.Parent().Parent().Version))
+	}
 }
 
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
