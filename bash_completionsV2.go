@@ -233,6 +233,41 @@ __%[1]s_handle_activeHelp() {
     fi
 }
 
+__%[1]s_rejoin_colon_wordbreak()
+{
+    if [[ "$COMP_WORDBREAKS" != *:* || "$cur" == *:* ]]; then
+        return
+    fi
+
+    local rawWord
+    rawWord=${COMP_LINE:0:COMP_POINT}
+    rawWord=${rawWord##*[[:space:]]}
+    if [[ "$rawWord" != *:* ]]; then
+        return
+    fi
+
+    local i
+    for ((i=cword; i>0; i--)); do
+        if [[ "${words[i]}" == ":" ]]; then
+            words[i-1]="${words[i-1]}:${cur}"
+            words=("${words[@]:0:i}")
+            cur="${words[i-1]}"
+            cword=$((i - 1))
+            __%[1]s_debug "Rejoined colon wordbreak: ${cur}"
+            return
+        fi
+
+        if [[ "${words[i]}" == *: ]]; then
+            words[i]="${words[i]}${cur}"
+            words=("${words[@]:0:$((i + 1))}")
+            cur="${words[i]}"
+            cword=$i
+            __%[1]s_debug "Rejoined colon-suffixed word: ${cur}"
+            return
+        fi
+    done
+}
+
 __%[1]s_reprint_commandLine() {
     # The prompt format is only available from bash 4.4.
     # We test if it is available before using it.
@@ -447,6 +482,8 @@ __start_%[1]s()
     # to truncate the command-line ($words) up to the $cword location.
     words=("${words[@]:0:$cword+1}")
     __%[1]s_debug "Truncated words[*]: ${words[*]},"
+
+    __%[1]s_rejoin_colon_wordbreak
 
     local out directive
     __%[1]s_get_completion_results
