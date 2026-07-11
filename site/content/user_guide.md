@@ -489,6 +489,43 @@ var cmd = &cobra.Command{
 }
 ```
 
+### Documenting positional arguments
+
+`Args` validates positional arguments but does not describe them. Use the `Arguments`
+field to document each one. Cobra renders the descriptions in an `Arguments:` block in
+the help output, and exposes them for tooling such as agents that read a command's
+contract before calling it.
+
+`Arguments` is descriptive only — it never validates input. Set `Args` for validation.
+
+```go
+var cmd = &cobra.Command{
+  Use:   "download <id> <path>",
+  Short: "download an item",
+  Args:  cobra.ExactArgs(2),
+  Arguments: []cobra.ArgSpec{
+    {Name: "id", Description: "item id", Example: "10239"},
+    {Name: "path", Description: "destination file, or a directory to keep the original name"},
+  },
+  Run: func(cmd *cobra.Command, args []string) {},
+}
+```
+
+The help output then includes:
+
+```
+Usage:
+  download <id> <path> [flags]
+
+Arguments:
+  <id>     item id (e.g. 10239)
+  <path>   destination file, or a directory to keep the original name
+```
+
+A name that already carries its own notation — `[note]` for an optional argument or
+`files...` for a variadic one — is shown as written; a bare name is wrapped in
+`<angle brackets>`.
+
 ## Example
 
 In the example below, we have defined three commands. Two are at the top level

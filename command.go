@@ -92,6 +92,12 @@ type Command struct {
 	// Expected arguments
 	Args PositionalArgs
 
+	// Arguments documents the positional arguments the command accepts. It is
+	// descriptive only: it feeds the help output and machine-readable
+	// introspection, and does not validate input — set Args for that. An empty
+	// slice means the command documents no positional arguments.
+	Arguments []ArgSpec
+
 	// ArgAliases is List of aliases for ValidArgs.
 	// These are not suggested to the user in the shell completion,
 	// but accepted if entered manually.
@@ -1956,7 +1962,10 @@ Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help")
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
 Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableArguments}}
+
+Arguments:
+{{.ArgumentUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -2015,6 +2024,10 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 				}
 			}
 		}
+	}
+	if c.HasAvailableArguments() {
+		fmt.Fprintf(w, "\n\nArguments:\n")
+		fmt.Fprint(w, trimRightSpace(c.ArgumentUsages()))
 	}
 	if c.HasAvailableLocalFlags() {
 		fmt.Fprintf(w, "\n\nFlags:\n")
