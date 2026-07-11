@@ -2264,6 +2264,43 @@ Flags:
 	}
 }
 
+// TestSortedPersistentFlags checks that PersistentFlags().SortFlags = false
+// preserves definition order in LocalFlags() and help output.
+// https://github.com/spf13/cobra/issues/1033
+func TestSortedPersistentFlags(t *testing.T) {
+	c := &Command{Use: "root", Run: emptyRun}
+	pFlags := c.PersistentFlags()
+	pFlags.SortFlags = false
+	names := []string{"z", "a"}
+	for _, name := range names {
+		pFlags.String(name, strings.ToUpper(name), "")
+	}
+
+	i := 0
+	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if i == len(names) {
+			return
+		}
+		if names[i] != f.Name {
+			t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
+		}
+		i++
+	})
+
+	out, err := executeCommand(c, "-h")
+	if err != nil {
+		t.Fatalf("-h should not fail: %v", err)
+	}
+	zIdx := strings.Index(out, "--z")
+	aIdx := strings.Index(out, "--a")
+	if zIdx == -1 || aIdx == -1 {
+		t.Fatalf("help missing flags:\n%s", out)
+	}
+	if zIdx > aIdx {
+		t.Errorf("help shows flags sorted; --z at %d, --a at %d\n%s", zIdx, aIdx, out)
+	}
+}
+
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.
