@@ -31,3 +31,15 @@ func TestZshCompletionWithActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	checkOmit(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+func TestZshCompletionWithInfluencedPermission(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun, InfluencedByPermissions: true}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenZshCompletion(buf))
+	output := buf.String()
+
+	// check that related commands are being generated
+	check(t, output, fmt.Sprintf(ZstyleGainPrivileges, c.Name()))
+	check(t, output, fmt.Sprintf("_call_program -p %s-tag", c.Name()))
+}
