@@ -549,10 +549,7 @@ search  show  status
   * `BashCompSubdirsInDir` (filtering by directory)
 * The functions corresponding to the above annotations are consequently not supported and will be ignored for `fish`:
   * `MarkFlagFilename()` and `MarkPersistentFlagFilename()` (filtering by file extension)
-  * `MarkFlagDirname()` and `MarkPersistentFlagDirname()` (filtering by directory)
-* Similarly, the following completion directives are not supported and will be ignored for `fish`:
-  * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
-  * `ShellCompDirectiveFilterDirs` (filtering by directory)
+* Similarly, the `ShellCompDirectiveFilterFileExt` (filtering by file extension) completion directive is not supported and will be ignored for `fish`.
 
 ## PowerShell completions
 
