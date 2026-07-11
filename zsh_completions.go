@@ -176,6 +176,7 @@ _%[1]s()
 
     if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
         __%[1]s_debug "Completion received error. Ignoring completions."
+        _message "${out}"
         return
     fi
 
