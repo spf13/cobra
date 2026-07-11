@@ -57,6 +57,9 @@ var echoCmd = &cobra.Command{
 	Short:   "Echo anything to the screen",
 	Long:    "an utterly useless command for testing",
 	Example: "Just run cobra-test echo",
+	Annotations: map[string]string{
+		"skills:tip:output": "Supports JSON output via -o json.",
+	},
 }
 
 var echoSubCmd = &cobra.Command{
