@@ -1475,6 +1475,82 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestSuggestAvailableCommands(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, SuggestAvailableCommands: true}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.AddCommand(&Command{Use: "list", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "get", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "add", Run: emptyRun})
+
+	output, _ := executeCommand(rootCmd, "frobnicate")
+	if !strings.Contains(output, "Available Commands:") {
+		t.Errorf("Expected 'Available Commands:' in output, got:\n%q", output)
+	}
+	for _, name := range []string{"list", "get", "add"} {
+		if !strings.Contains(output, name) {
+			t.Errorf("Expected command %q in suggestions, got:\n%q", name, output)
+		}
+	}
+}
+
+func TestSuggestAvailableCommandsDefaultOff(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "list", Run: emptyRun})
+
+	output, _ := executeCommand(rootCmd, "frobnicate")
+	if strings.Contains(output, "Available Commands") {
+		t.Errorf("Expected no available commands listing, got:\n%q", output)
+	}
+}
+
+func TestSuggestAvailableCommandsExcludesHiddenAndDeprecated(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, SuggestAvailableCommands: true}
+	rootCmd.AddCommand(&Command{Use: "list", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "hidden", Run: emptyRun, Hidden: true})
+	rootCmd.AddCommand(&Command{Use: "old", Run: emptyRun, Deprecated: "use list instead"})
+
+	output, _ := executeCommand(rootCmd, "frobnicate")
+	if strings.Contains(output, "hidden") {
+		t.Errorf("Hidden command should not appear in suggestions, got:\n%q", output)
+	}
+	if strings.Contains(output, "old") {
+		t.Errorf("Deprecated command should not appear in suggestions, got:\n%q", output)
+	}
+	if !strings.Contains(output, "list") {
+		t.Errorf("Available command 'list' should appear in suggestions, got:\n%q", output)
+	}
+}
+
+func TestSuggestAvailableCommandsMaxCount(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, SuggestAvailableCommands: true, SuggestAvailableCommandsMaxCount: 2}
+	rootCmd.AddCommand(&Command{Use: "alpha", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "beta", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "gamma", Run: emptyRun})
+
+	output, _ := executeCommand(rootCmd, "frobnicate")
+	if strings.Contains(output, "gamma") {
+		t.Errorf("Expected at most 2 commands, but 'gamma' appeared in:\n%q", output)
+	}
+	if !strings.Contains(output, "alpha") || !strings.Contains(output, "beta") {
+		t.Errorf("Expected 'alpha' and 'beta' in suggestions, got:\n%q", output)
+	}
+}
+
+func TestSuggestAvailableCommandsComposesWithDidYouMean(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun, SuggestAvailableCommands: true}
+	rootCmd.AddCommand(&Command{Use: "list", Run: emptyRun})
+	rootCmd.AddCommand(&Command{Use: "get", Run: emptyRun})
+
+	// "liist" is close enough to "list" for a "Did you mean" suggestion
+	output, _ := executeCommand(rootCmd, "liist")
+	if !strings.Contains(output, "Did you mean this?") {
+		t.Errorf("Expected 'Did you mean this?' in output, got:\n%q", output)
+	}
+	if !strings.Contains(output, "Available Commands:") {
+		t.Errorf("Expected 'Available Commands:' in output, got:\n%q", output)
+	}
+}
+
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
