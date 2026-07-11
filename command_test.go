@@ -938,6 +938,29 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 	}
 }
 
+// related to https://github.com/spf13/cobra/issues/2359
+func TestInitDefaultHelpFlagPanicsWhenHShorthandAlreadyUsed(t *testing.T) {
+	cmd := &Command{Use: "root"}
+
+	cmd.PersistentFlags().BoolP("ayuda", "h", false, "help")
+
+	func() {
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Fatalf("expected InitDefaultHelpFlag to panic")
+			}
+			// Without Cobra's explicit guard, pflag will also panic on duplicate shorthands.
+			// Assert on the message to ensure we hit Cobra's clearer, intentional panic.
+			msg := fmt.Sprint(r)
+			if !strings.Contains(msg, "reserved for the help flag") {
+				t.Fatalf("expected reserved -h panic message, got: %v", r)
+			}
+		}()
+		cmd.InitDefaultHelpFlag()
+	}()
+}
+
 func TestHelpCommandExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
