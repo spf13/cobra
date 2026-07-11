@@ -2952,3 +2952,109 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestHelpFuncArgs(t *testing.T) {
+	tests := []struct {
+		name               string
+		disableFlagParsing bool
+		addChildFlag       bool
+		rootRunnable       bool
+		argv               []string
+		wantCmd            string
+		wantArgs           []string
+	}{
+		{
+			name:         "help flag passes only positional args",
+			addChildFlag: true,
+			argv:         []string{"child", "arg1", "--myflag", "val", "arg2", "--help"},
+			wantCmd:      "child",
+			wantArgs:     []string{"arg1", "arg2"},
+		},
+		{
+			name:     "short -h passes only positional args",
+			argv:     []string{"child", "arg1", "arg2", "-h"},
+			wantCmd:  "child",
+			wantArgs: []string{"arg1", "arg2"},
+		},
+		{
+			name:     "help command passes args after subcommand path",
+			argv:     []string{"help", "child", "arg1", "arg2"},
+			wantCmd:  "child",
+			wantArgs: []string{"arg1", "arg2"},
+		},
+		{
+			name:     "no positional args with --help",
+			argv:     []string{"child", "--help"},
+			wantCmd:  "child",
+			wantArgs: []string{},
+		},
+		{
+			name:     "no positional args with help command",
+			argv:     []string{"help", "child"},
+			wantCmd:  "child",
+			wantArgs: []string{},
+		},
+		{
+			name:               "DisableFlagParsing keeps all args including flag-like tokens",
+			disableFlagParsing: true,
+			argv:               []string{"child", "arg1", "--flag-as-arg", "arg2"},
+			wantCmd:            "child",
+			wantArgs:           []string{"arg1", "--flag-as-arg", "arg2"},
+		},
+		{
+			name:         "root command --help",
+			rootRunnable: true,
+			argv:         []string{"--help"},
+			wantCmd:      "prog",
+			wantArgs:     []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rootCmd := &Command{Use: "prog"}
+			if tt.rootRunnable {
+				rootCmd.Run = emptyRun
+			}
+
+			childCmd := &Command{Use: "child"}
+			if !tt.disableFlagParsing {
+				childCmd.Run = emptyRun
+			}
+			childCmd.DisableFlagParsing = tt.disableFlagParsing
+
+			if tt.addChildFlag {
+				childCmd.Flags().String("myflag", "", "a flag")
+			}
+
+			rootCmd.AddCommand(childCmd)
+
+			helpCalled := false
+			rootCmd.SetHelpFunc(func(c *Command, gotArgs []string) {
+				helpCalled = true
+				if c.Name() != tt.wantCmd {
+					t.Errorf("expected cmd %q, got %q", tt.wantCmd, c.Name())
+				}
+				if !reflect.DeepEqual(gotArgs, tt.wantArgs) {
+					t.Errorf("expected args %v, got %v", tt.wantArgs, gotArgs)
+				}
+			})
+
+			_, err := executeCommand(rootCmd, tt.argv...)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			if !helpCalled {
+				t.Error("help function was not called")
+			}
+		})
+	}
+}
+
+// TestDirectHelpCallNoPanic verifies that cmd.Help() does not panic.
+func TestDirectHelpCallNoPanic(t *testing.T) {
+	rootCmd := &Command{Use: "prog", Run: emptyRun}
+	if err := rootCmd.Help(); err != nil {
+		t.Errorf("unexpected error calling Help(): %v", err)
+	}
+}

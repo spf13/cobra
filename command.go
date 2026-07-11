@@ -330,6 +330,9 @@ func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
 }
 
 // SetHelpFunc sets help function. Can be defined by Application.
+// The help function receives the command and the remaining positional arguments
+// after flag parsing, consistent with Run and RunE.
+// If flag parsing is disabled (DisableFlagParsing), all arguments are passed.
 func (c *Command) SetHelpFunc(f func(*Command, []string)) {
 	c.helpFunc = f
 }
@@ -1150,7 +1153,17 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
 		if errors.Is(err, flag.ErrHelp) {
-			cmd.HelpFunc()(cmd, args)
+			// execute() has already parsed the flags; pass only the remaining
+			// positional arguments to HelpFunc, consistent with Run/RunE.
+			// When DisableFlagParsing is set, flag parsing was not done so we
+			// fall back to the full flags slice which includes flags.
+			remainingArgs := cmd.Flags().Args()
+			if cmd.DisableFlagParsing {
+				remainingArgs = flags
+			}
+			// HelpFunc signature is func(*Command, []string) — it does not
+			// return an error. cmd.Help() also always returns nil.
+			cmd.HelpFunc()(cmd, remainingArgs)
 			return cmd, nil
 		}
 
@@ -1291,7 +1304,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 				return completions, ShellCompDirectiveNoFileComp
 			},
 			Run: func(c *Command, args []string) {
-				cmd, _, e := c.Root().Find(args)
+				cmd, remainingArgs, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
@@ -1303,7 +1316,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 
 					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
 					cmd.InitDefaultVersionFlag() // make possible 'version' flag to be shown
-					CheckErr(cmd.Help())
+					cmd.HelpFunc()(cmd, remainingArgs)
 				}
 			},
 			GroupID: c.helpCommandGroupID,
