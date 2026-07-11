@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -228,9 +227,7 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 				}
 			})
 		}
-		children := cmd.Commands()
-		sort.Sort(byName(children))
-		for _, c := range children {
+		for _, c := range cmd.Commands() {
 			if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 				continue
 			}
