@@ -587,7 +587,7 @@ func (c *Command) NamePadding() int {
 	return c.parent.commandsMaxNameLen
 }
 
-// UsageTemplate returns usage template for the command.
+// UsageTemplate returns the usage template for the command.
 // This function is kept for backwards-compatibility reasons.
 func (c *Command) UsageTemplate() string {
 	if c.usageTemplate != nil {
@@ -600,8 +600,9 @@ func (c *Command) UsageTemplate() string {
 	return defaultUsageTemplate
 }
 
-// HelpTemplate return help template for the command.
-// This function is kept for backwards-compatibility reasons.
+// HelpTemplate returns the help template for the command.
+// This function is kept for backwards-compatibility reasons. Use
+// SetHelpTemplate to customize the template, or HelpFunc/Help to render help.
 func (c *Command) HelpTemplate() string {
 	if c.helpTemplate != nil {
 		return c.helpTemplate.tmpl
@@ -613,7 +614,7 @@ func (c *Command) HelpTemplate() string {
 	return defaultHelpTemplate
 }
 
-// VersionTemplate return version template for the command.
+// VersionTemplate returns the version template for the command.
 // This function is kept for backwards-compatibility reasons.
 func (c *Command) VersionTemplate() string {
 	if c.versionTemplate != nil {
@@ -1080,7 +1081,10 @@ func (c *Command) ExecuteContextC(ctx context.Context) (*Command, error) {
 	return c.ExecuteC()
 }
 
-// ExecuteC executes the command.
+// ExecuteC executes the command and returns the command that was executed.
+// It uses os.Args[1:] by default and returns any error from command parsing or
+// execution. Use Execute when the executed command does not need to be
+// inspected.
 func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if c.ctx == nil {
 		c.ctx = context.Background()
