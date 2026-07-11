@@ -959,6 +959,8 @@ func (c *Command) execute(a []string) (err error) {
 	c.preRun()
 
 	defer c.postRun()
+	var cmdErr error
+	defer c.postRunCmd(&c, &cmdErr)
 
 	argWoFlags := c.Flags().Args()
 	if c.DisableFlagParsing {
@@ -966,6 +968,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
+		cmdErr = err
 		return err
 	}
 
@@ -984,6 +987,7 @@ func (c *Command) execute(a []string) (err error) {
 	for _, p := range parents {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
+				cmdErr = err
 				return err
 			}
 			if !EnableTraverseRunHooks {
@@ -998,6 +1002,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 	if c.PreRunE != nil {
 		if err := c.PreRunE(c, argWoFlags); err != nil {
+			cmdErr = err
 			return err
 		}
 	} else if c.PreRun != nil {
@@ -1005,14 +1010,17 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.ValidateRequiredFlags(); err != nil {
+		cmdErr = err
 		return err
 	}
 	if err := c.ValidateFlagGroups(); err != nil {
+		cmdErr = err
 		return err
 	}
 
 	if c.RunE != nil {
 		if err := c.RunE(c, argWoFlags); err != nil {
+			cmdErr = err
 			return err
 		}
 	} else {
@@ -1020,6 +1028,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 	if c.PostRunE != nil {
 		if err := c.PostRunE(c, argWoFlags); err != nil {
+			cmdErr = err
 			return err
 		}
 	} else if c.PostRun != nil {
@@ -1028,6 +1037,7 @@ func (c *Command) execute(a []string) (err error) {
 	for p := c; p != nil; p = p.Parent() {
 		if p.PersistentPostRunE != nil {
 			if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
+				cmdErr = err
 				return err
 			}
 			if !EnableTraverseRunHooks {
@@ -1053,6 +1063,12 @@ func (c *Command) preRun() {
 func (c *Command) postRun() {
 	for _, x := range finalizers {
 		x()
+	}
+}
+
+func (c *Command) postRunCmd(cmdRef **Command, errRef *error) {
+	for _, x := range cmdFinalizers {
+		x(*cmdRef, *errRef)
 	}
 }
 
