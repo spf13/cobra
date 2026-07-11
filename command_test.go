@@ -2952,3 +2952,46 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+// TestPadding checks that hidden and deprecated commands are excluded
+// from the padding calculation of the help text.
+// Related to https://github.com/spf13/cobra/issues/1272.
+func TestPadding(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	longChildCmd := &Command{Use: "long-name-child-abcdefghijklmnopqrstuvwxyz", Run: emptyRun}
+	// For this test to be useful the hidden and deprecated commands need to
+	// have a longer Use field than the longest visible command.
+	hiddenChildCmd := &Command{Use: longChildCmd.Use + "-hidden", Hidden: true, Run: emptyRun}
+	deprecatedChildCmd := &Command{Use: longChildCmd.Use + "-deprecated", Deprecated: "deprecated", Run: emptyRun}
+
+	rootCmd.AddCommand(childCmd, longChildCmd, hiddenChildCmd, deprecatedChildCmd)
+
+	expectedUsePad := len(longChildCmd.Use)
+	expectedPathPad := len(longChildCmd.CommandPath())
+	expectedNamePad := len(longChildCmd.Name())
+
+	if got := childCmd.UsagePadding(); got != expectedUsePad {
+		t.Errorf("Expected usage padding %d, got %d", expectedUsePad, got)
+	}
+	if got := childCmd.CommandPathPadding(); got != expectedPathPad {
+		t.Errorf("Expected command path padding %d, got %d", expectedPathPad, got)
+	}
+	if got := childCmd.NamePadding(); got != expectedNamePad {
+		t.Errorf("Expected name padding %d, got %d", expectedNamePad, got)
+	}
+
+	// Removing the longest visible command must recompute the padding,
+	// still ignoring hidden and deprecated commands.
+	rootCmd.RemoveCommand(longChildCmd)
+
+	if got := childCmd.UsagePadding(); got != minUsagePadding {
+		t.Errorf("Expected usage padding %d, got %d", minUsagePadding, got)
+	}
+	if got := childCmd.CommandPathPadding(); got != minCommandPathPadding {
+		t.Errorf("Expected command path padding %d, got %d", minCommandPathPadding, got)
+	}
+	if got := childCmd.NamePadding(); got != minNamePadding {
+		t.Errorf("Expected name padding %d, got %d", minNamePadding, got)
+	}
+}
