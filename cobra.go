@@ -43,10 +43,11 @@ var initializers []func()
 var finalizers []func()
 
 const (
-	defaultPrefixMatching   = false
-	defaultCommandSorting   = true
-	defaultCaseInsensitive  = false
-	defaultTraverseRunHooks = false
+	defaultPrefixMatching           = false
+	defaultCommandSorting           = true
+	defaultCaseInsensitive          = false
+	defaultTraverseRunHooks         = false
+	defaultErrorOnUnknownSubcommand = false
 )
 
 // EnablePrefixMatching allows setting automatic prefix matching. Automatic prefix matching can be a dangerous thing
@@ -64,6 +65,17 @@ var EnableCaseInsensitive = defaultCaseInsensitive
 // EnableTraverseRunHooks executes persistent pre-run and post-run hooks from all parents.
 // By default this is disabled, which means only the first run hook to be found is executed.
 var EnableTraverseRunHooks = defaultTraverseRunHooks
+
+// EnableErrorOnUnknownSubcommand controls the behavior of subcommand handling.
+// When the flag is set true the behavior of Command.Execute() will change:
+// If a sub-subcommand is not found an error will be returned on calling
+// Command.Exec() instead of the old behavior where a nil error was sent.
+// If the flag is false (default) the old behavior is performed.
+// For this behavior the child subcommand must be nil.
+// Example: in root/service/run - there would be an existing subcommand `run`
+// in root/service/unknown - there would be an unknown subcommand `unknown` therefore returning an error
+// `service` must have a nil Command.Run() function for this.
+var EnableErrorOnUnknownSubcommand = defaultErrorOnUnknownSubcommand
 
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.

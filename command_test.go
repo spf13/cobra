@@ -174,6 +174,121 @@ func TestSubcommandExecuteC(t *testing.T) {
 	}
 }
 
+func TestSubcommandExecuteMissingSubcommand(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	const childName = "child"
+	const grandchildName = "grandchild"
+	EnableErrorOnUnknownSubcommand = false
+	defer func() { EnableErrorOnUnknownSubcommand = defaultErrorOnUnknownSubcommand }()
+	childCmd := &Command{Use: childName, Run: nil}
+	child2Cmd := &Command{Use: grandchildName, Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.AddCommand(child2Cmd)
+
+	// test existing command
+	c, output, err := executeCommandC(rootCmd, childName)
+	if !strings.HasPrefix(output, "Usage:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != childName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test existing sub command
+	c, output, err = executeCommandC(rootCmd, childName, grandchildName)
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != grandchildName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "grandchild"', got: %q`, c.Name())
+	}
+
+	// now test a command which does not exist, we will get no error, just "Usage:" is printed
+	c, output, err = executeCommandC(rootCmd, childName, "unknownChild")
+	if !strings.HasPrefix(output, "Usage:") {
+		t.Errorf("Expected: 'Usage: ...'\nGot:\n %q\n", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != childName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+}
+
+func TestSubcommandExecuteMissingSubcommandWithErrorOnUnknownSubcommand(t *testing.T) {
+	const rootName = "root"
+	rootCmd := &Command{Use: rootName, Run: emptyRun}
+	const childName = "child"
+	const grandchildName = "grandchild"
+	EnableErrorOnUnknownSubcommand = true
+	defer func() { EnableErrorOnUnknownSubcommand = defaultErrorOnUnknownSubcommand }()
+	childCmd := &Command{Use: childName, Run: nil}
+	child2Cmd := &Command{Use: grandchildName, Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+	childCmd.AddCommand(child2Cmd)
+
+	// test existing command
+	c, output, err := executeCommandC(rootCmd, childName)
+	if strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != childName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test existing sub command
+	c, output, err = executeCommandC(rootCmd, childName, grandchildName)
+	if output != "" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != grandchildName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test a child command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
+	c, output, err = executeCommandC(rootCmd, "unknownChild")
+	if !strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err == nil {
+		t.Error("Expected error")
+	}
+	if err != nil && !strings.HasPrefix(err.Error(), "unknown command") {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != rootName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+
+	// test a grandchild command which does not exist, we expect an error because of the ErrorOnUnknownSubcommand flag
+	c, output, err = executeCommandC(rootCmd, childName, "unknownGrandChild")
+	if !strings.HasPrefix(output, "Error:") {
+		t.Errorf("Unexpected output: %v", output)
+	}
+	if err == nil {
+		t.Error("Expected error")
+	}
+	if err != nil && !strings.HasPrefix(err.Error(), "unknown command") {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if c.Name() != childName {
+		t.Errorf(`invalid command returned from ExecuteC: expected "child"', got: %q`, c.Name())
+	}
+}
+
 func TestExecuteContext(t *testing.T) {
 	ctx := context.TODO()
 

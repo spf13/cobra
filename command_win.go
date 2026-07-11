@@ -34,7 +34,7 @@ func preExecHook(c *Command) {
 			time.Sleep(MousetrapDisplayDuration)
 		} else {
 			c.Println("Press return to continue...")
-			fmt.Scanln()
+			_, _ = fmt.Scanln()
 		}
 		os.Exit(1)
 	}
