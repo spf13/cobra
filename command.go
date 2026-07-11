@@ -1066,7 +1066,8 @@ func (c *Command) ExecuteContext(ctx context.Context) error {
 
 // Execute uses the args (os.Args[1:] by default)
 // and run through the command tree finding appropriate matches
-// for commands and then corresponding flags.
+// for commands and then corresponding flags. See ExecuteC for a version
+// that also returns the matched command.
 func (c *Command) Execute() error {
 	_, err := c.ExecuteC()
 	return err
@@ -1080,7 +1081,14 @@ func (c *Command) ExecuteContextC(ctx context.Context) (*Command, error) {
 	return c.ExecuteC()
 }
 
-// ExecuteC executes the command.
+// ExecuteC executes the command and returns the *Command that was executed,
+// along with any error encountered. This is useful when you need to determine
+// which specific subcommand was invoked (e.g., for logging, metrics, or
+// post-execution behavior). ExecuteC always delegates to the root command,
+// regardless of which command it is called on. If the command has a parent,
+// ExecuteC is called on the root, so the returned cmd is always the
+// matched leaf command (or the root itself). See also Execute, which is a
+// convenience wrapper that discards the returned command.
 func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if c.ctx == nil {
 		c.ctx = context.Background()
