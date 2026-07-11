@@ -138,6 +138,8 @@ type Command struct {
 	RunE func(cmd *Command, args []string) error
 	// PostRun: run after the Run command.
 	PostRun func(cmd *Command, args []string)
+	// Finalize: run at the end of the Run command, even if it panics.
+	Finalize func(cmd *Command, args []string)
 	// PostRunE: PostRun but returns an error.
 	PostRunE func(cmd *Command, args []string) error
 	// PersistentPostRun: children of this command will inherit and execute after PostRun.
@@ -961,6 +963,7 @@ func (c *Command) execute(a []string) (err error) {
 	defer c.postRun()
 
 	argWoFlags := c.Flags().Args()
+
 	if c.DisableFlagParsing {
 		argWoFlags = a
 	}
@@ -981,6 +984,13 @@ func (c *Command) execute(a []string) (err error) {
 			parents = append(parents, p)
 		}
 	}
+	defer func() {
+		for _, p := range parents {
+			if p.Finalize != nil {
+				p.Finalize(c, argWoFlags)
+			}
+		}
+	}()
 	for _, p := range parents {
 		if p.PersistentPreRunE != nil {
 			if err := p.PersistentPreRunE(c, argWoFlags); err != nil {

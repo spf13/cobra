@@ -2952,3 +2952,37 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestFinalizeOfChildAndParentCalledOnPanic(t *testing.T) {
+	parentFinalizeCalls := 0
+	childFinalizeCalls := 0
+	defer func() {
+		if recover() == nil {
+			t.Error("The code should have panicked due to panicking run")
+		}
+		if parentFinalizeCalls != 1 {
+			t.Errorf("finalize() of parent command called %d times, want 1", parentFinalizeCalls)
+		}
+		if childFinalizeCalls != 1 {
+			t.Errorf("finalize() of child command called %d times, want 1", childFinalizeCalls)
+		}
+	}()
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+		Finalize: func(cmd *Command, args []string) {
+			parentFinalizeCalls++
+		},
+	}
+	subCmd := &Command{
+		Use: "sub",
+		Run: func(cmd *Command, args []string) {
+			panic("should panic")
+		},
+		Finalize: func(cmd *Command, args []string) {
+			childFinalizeCalls++
+		},
+	}
+	rootCmd.AddCommand(subCmd)
+	executeCommand(rootCmd, "sub")
+}
