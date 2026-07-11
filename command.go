@@ -1345,18 +1345,21 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// update max lengths
-		usageLen := len(x.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(x.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(x.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
+		// update max lengths, skipping hidden and deprecated commands
+		// since they are not shown in usage output
+		if !x.Hidden && len(x.Deprecated) == 0 {
+			usageLen := len(x.Use)
+			if usageLen > c.commandsMaxUseLen {
+				c.commandsMaxUseLen = usageLen
+			}
+			commandPathLen := len(x.CommandPath())
+			if commandPathLen > c.commandsMaxCommandPathLen {
+				c.commandsMaxCommandPathLen = commandPathLen
+			}
+			nameLen := len(x.Name())
+			if nameLen > c.commandsMaxNameLen {
+				c.commandsMaxNameLen = nameLen
+			}
 		}
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
@@ -1416,6 +1419,9 @@ main:
 	c.commandsMaxCommandPathLen = 0
 	c.commandsMaxNameLen = 0
 	for _, command := range c.commands {
+		if command.Hidden || len(command.Deprecated) != 0 {
+			continue
+		}
 		usageLen := len(command.Use)
 		if usageLen > c.commandsMaxUseLen {
 			c.commandsMaxUseLen = usageLen
