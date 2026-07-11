@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -2951,4 +2952,36 @@ func TestHelpFuncExecuted(t *testing.T) {
 	}
 
 	checkStringContains(t, output, helpText)
+}
+
+// command_test.go
+
+func TestHelpExitCode(t *testing.T) {
+	// 1. Create a dummy command
+	cmd := &Command{Use: "test", Run: func(*Command, []string) {}}
+
+	// 2. Set the custom exit code
+	expectedCode := 42
+	cmd.SetHelpExitCode(expectedCode)
+
+	// 3. Force help flag
+	cmd.SetArgs([]string{"--help"})
+
+	// 4. Run it
+	_, err := cmd.ExecuteC()
+
+	// 5. Verify we got an error
+	if err == nil {
+		t.Fatal("Expected an error because SetHelpExitCode(42) was called, but got nil")
+	}
+
+	// 6. Verify the error is the correct TYPE and contains the correct CODE
+	var exitErr *ExitError
+	if errors.As(err, &exitErr) {
+		if exitErr.Code != expectedCode {
+			t.Errorf("Expected exit code %d, got %d", expectedCode, exitErr.Code)
+		}
+	} else {
+		t.Errorf("Expected error to be of type *ExitError, got %T: %v", err, err)
+	}
 }
