@@ -640,6 +640,34 @@ func TestFlagBeforeCommand(t *testing.T) {
 	}
 }
 
+func TestBooleanFlagBeforeCommand(t *testing.T) {
+	rootCommand := &Command{SilenceUsage: true, Args: MaximumNArgs(0)}
+	var flagValue bool
+	rootCommand.PersistentFlags().BoolVar(&flagValue, "rootflag", false, "root boolean flag")
+
+	cmd := &Command{Use: "command", SilenceUsage: true, Args: MaximumNArgs(0)}
+	cmd.PersistentFlags().BoolVar(&flagValue, "cmdflag", false, "command boolean flag")
+	rootCommand.AddCommand(cmd)
+
+	for name, args := range map[string][]string{
+		"root flag before command":                {"--rootflag", "command"},
+		"command flag before command":             {"--cmdflag", "command"},
+		"command flag with =value before command": {"--cmdflag=true", "command"},
+		// Not supported:
+		// "command flag with value before command": {"--cmdflag", "true", "command"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			flagValue = false
+			rootCommand.SetArgs(args)
+			if err := rootCommand.Execute(); err != nil {
+				t.Error(err)
+			} else if !flagValue {
+				t.Errorf("flag is false")
+			}
+		})
+	}
+}
+
 func TestStripFlags(t *testing.T) {
 	tests := []struct {
 		input  []string
