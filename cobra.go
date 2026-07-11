@@ -100,10 +100,20 @@ func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
 }
 
+// ClearInitializers clears all set initializers of OnInitialize
+func ClearInitializers() {
+	initializers = initializers[:0]
+}
+
 // OnFinalize sets the passed functions to be run when each command's
 // Execute method is terminated.
 func OnFinalize(y ...func()) {
 	finalizers = append(finalizers, y...)
+}
+
+// ClearFinalizers clears all set finalizers of OnFinalize
+func ClearFinalizers() {
+	finalizers = finalizers[:0]
 }
 
 // FIXME Gt is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
