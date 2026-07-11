@@ -1176,6 +1176,30 @@ func (c *Command) ValidateArgs(args []string) error {
 	return c.Args(c, args)
 }
 
+// RequiredFlagError represents a failure to validate required flags.
+type RequiredFlagError struct {
+	Err error
+}
+
+// Error satisfies the error interface.
+func (r *RequiredFlagError) Error() string {
+	return r.Err.Error()
+}
+
+// Is satisfies the Is error interface.
+func (r *RequiredFlagError) Is(target error) bool {
+	err, ok := target.(*RequiredFlagError)
+	if !ok {
+		return false
+	}
+	return r.Err == err
+}
+
+// Unwrap satisfies Unwrap error interface.
+func (r *RequiredFlagError) Unwrap() error {
+	return r.Err
+}
+
 // ValidateRequiredFlags validates all required flags are present and returns an error otherwise
 func (c *Command) ValidateRequiredFlags() error {
 	if c.DisableFlagParsing {
@@ -1195,7 +1219,9 @@ func (c *Command) ValidateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
+		return &RequiredFlagError{
+			Err: fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`)),
+		}
 	}
 	return nil
 }
