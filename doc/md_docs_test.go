@@ -123,3 +123,42 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 		}
 	}
 }
+
+func TestGenMdTreeCustomWithFooter(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	prepender := func(s string) string { return "Prepended" }
+	appender := func(s string) string { return "Appended" }
+	identity := func(s string) string { return s }
+
+	if err := GenMarkdownTreeCustomWithFooter(rootCmd, tmpdir, prepender, appender, identity); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	gotRoot := fileContents(t, tmpdir, "root.md")
+	checkStringContains(t, gotRoot, "Prepended")
+	checkStringContains(t, gotRoot, rootCmd.Long)
+	checkStringContains(t, gotRoot, "Appended")
+
+	gotEcho := fileContents(t, tmpdir, "root_echo.md")
+	checkStringContains(t, gotEcho, "Prepended")
+	checkStringContains(t, gotEcho, echoCmd.Long)
+	checkStringContains(t, gotEcho, "Appended")
+
+	gotEchoSub := fileContents(t, tmpdir, "root_echo_echosub.md")
+	checkStringContains(t, gotEchoSub, "Prepended")
+	checkStringContains(t, gotEchoSub, echoSubCmd.Long)
+	checkStringContains(t, gotEchoSub, "Appended")
+}
+
+func fileContents(t *testing.T, dir, filename string) string {
+	contents, err := ioutil.ReadFile(filepath.Join(dir, filename))
+	if err != nil {
+		t.Fatalf("Error loading file %q: %v ", filename, err)
+	}
+	return string(contents)
+}
