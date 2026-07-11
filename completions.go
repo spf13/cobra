@@ -182,6 +182,25 @@ func (c *Command) RegisterFlagCompletionFunc(flagName string, f CompletionFunc) 
 	return nil
 }
 
+// FlagAppendEqualAnnotation is the annotation key used to mark a flag so that
+// shell completion suggests its long form with a trailing "=" (e.g. "--flag=")
+// and without a trailing space. This is opt-in per flag, so it does not
+// reintroduce the duplicate "--flag"/"--flag=" suggestions that led to the
+// "=" form being removed for all flags.
+const FlagAppendEqualAnnotation = "cobra_annotation_flag_append_equal"
+
+// MarkFlagAppendEqual instructs shell completion to suggest the given flag's
+// long name with a trailing "=" and no trailing space. This is convenient for
+// flags whose value is most commonly provided with the "--flag=value" form,
+// such as flags that carry an optional value (NoOptDefVal).
+func (c *Command) MarkFlagAppendEqual(flagName string) error {
+	flag := c.Flag(flagName)
+	if flag == nil {
+		return fmt.Errorf("MarkFlagAppendEqual: flag '%s' does not exist", flagName)
+	}
+	return c.Flags().SetAnnotation(flagName, FlagAppendEqualAnnotation, []string{"true"})
+}
+
 // GetFlagCompletionFunc returns the completion function for the given flag of the command, if available.
 func (c *Command) GetFlagCompletionFunc(flagName string) (CompletionFunc, bool) {
 	flag := c.Flag(flagName)
@@ -475,10 +494,19 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 		}
 
 		directive = ShellCompDirectiveNoFileComp
-		if len(completions) == 1 && strings.HasSuffix(completions[0], "=") {
-			// If there is a single completion, the shell usually adds a space
-			// after the completion.  We don't want that if the flag ends with an =
-			directive = ShellCompDirectiveNoSpace
+		if len(completions) == 1 {
+			// A completion entry may carry a description after a tab
+			// (see CompletionWithDesc); only the text before the tab is what
+			// the shell inserts, so we inspect that part.
+			choice := strings.SplitN(completions[0], "\t", 2)[0]
+
+			// When the single choice ends with "=" (e.g. a flag suggested as
+			// "--flag=" via MarkFlagAppendEqual), tell the shell not to add a
+			// trailing space, so the user can type the value right after "=".
+			// This is OR'd in to keep the NoFileComp directive set above.
+			if strings.HasSuffix(choice, "=") {
+				directive |= ShellCompDirectiveNoSpace
+			}
 		}
 
 		if !finalCmd.DisableFlagParsing {
@@ -604,6 +632,12 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []Completion {
 	var completions []Completion
 	flagName := "--" + flag.Name
 	if strings.HasPrefix(flagName, toComplete) {
+		// If the flag opted in via MarkFlagAppendEqual, suggest the "--flag="
+		// form. A single completion ending in "=" also triggers
+		// ShellCompDirectiveNoSpace below, so no trailing space is added.
+		if _, ok := flag.Annotations[FlagAppendEqualAnnotation]; ok {
+			flagName += "="
+		}
 		// Flag without the =
 		completions = append(completions, CompletionWithDesc(flagName, flag.Usage))
 
