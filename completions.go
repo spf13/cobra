@@ -240,7 +240,7 @@ func (c *Command) initCompleteCmd(args []string) {
 		Long: fmt.Sprintf("%[2]s is a special command that is used by the shell completion logic\n%[1]s",
 			"to request completion choices for the specified command-line.", ShellCompRequestCmd),
 		Run: func(cmd *Command, args []string) {
-			finalCmd, completions, directive, err := cmd.getCompletions(args)
+			finalCmd, completions, directive, err := cmd.GetCompletions(args)
 			if err != nil {
 				CompErrorln(err.Error())
 				// Keep going for multiple reasons:
@@ -313,7 +313,20 @@ type SliceValue interface {
 	GetSlice() []string
 }
 
-func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCompDirective, error) {
+// GetCompletions returns the command and potential completions for a given proposed entry.
+// (Args are taken from os.Argv for example, or by splitting a command line on whitespace, etc.)
+// The last entry in args is meant to be the word that is not yet fully typed.  If a new word
+// is being started then the last member of args should be an empty string.  Note that this will
+// panic if args is empty.
+//
+// Following the format of Completion, the completions will either be the word to complete, or
+// the completed word separated from a description by a single TAB character.
+//
+// One consequence of calling this function is that any flags will be parsed, so callers should reset
+// flag states (for example if using this in an interactive program) if necessary, and should be
+// sure that the act of parsing flags does not have any undesirable side effects, particularly if
+// performed multiple times.
+func (c *Command) GetCompletions(args []string) (*Command, []Completion, ShellCompDirective, error) {
 	// The last argument, which is not completely typed by the user,
 	// should not be part of the list of arguments
 	toComplete := args[len(args)-1]
