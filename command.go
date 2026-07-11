@@ -1282,7 +1282,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 					cmd = c.Root()
 				}
 				for _, subCmd := range cmd.Commands() {
-					if subCmd.IsAvailableCommand() || subCmd == cmd.helpCommand {
+					if subCmd.IsAvailableCommand() || (subCmd == cmd.helpCommand && !subCmd.Hidden) {
 						if strings.HasPrefix(subCmd.Name(), toComplete) {
 							completions = append(completions, CompletionWithDesc(subCmd.Name(), subCmd.Short))
 						}
@@ -1375,7 +1375,7 @@ func (c *Command) Groups() []*Group {
 // AllChildCommandsHaveGroup returns if all subcommands are assigned to a group
 func (c *Command) AllChildCommandsHaveGroup() bool {
 	for _, sub := range c.commands {
-		if (sub.IsAvailableCommand() || sub == c.helpCommand) && sub.GroupID == "" {
+		if (sub.IsAvailableCommand() || (sub == c.helpCommand && !sub.Hidden)) && sub.GroupID == "" {
 			return false
 		}
 	}
@@ -1949,13 +1949,13 @@ Aliases:
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (and (eq .Name "help") (not .Hidden)))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
 
-{{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
+{{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (and (eq .Name "help") (not .Hidden))))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
 
-Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (and (eq .Name "help") (not .Hidden))))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
@@ -1993,7 +1993,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 		if len(c.Groups()) == 0 {
 			fmt.Fprintf(w, "\n\nAvailable Commands:")
 			for _, subcmd := range cmds {
-				if subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName {
+				if subcmd.IsAvailableCommand() || (subcmd == c.helpCommand && !subcmd.Hidden) {
 					fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 				}
 			}
@@ -2001,7 +2001,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			for _, group := range c.Groups() {
 				fmt.Fprintf(w, "\n\n%s", group.Title)
 				for _, subcmd := range cmds {
-					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
+					if subcmd.GroupID == group.ID && (subcmd.IsAvailableCommand() || (subcmd == c.helpCommand && !subcmd.Hidden)) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
@@ -2009,7 +2009,7 @@ func defaultUsageFunc(w io.Writer, in interface{}) error {
 			if !c.AllChildCommandsHaveGroup() {
 				fmt.Fprintf(w, "\n\nAdditional Commands:")
 				for _, subcmd := range cmds {
-					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || subcmd.Name() == helpCommandName) {
+					if subcmd.GroupID == "" && (subcmd.IsAvailableCommand() || (subcmd == c.helpCommand && !subcmd.Hidden)) {
 						fmt.Fprintf(w, "\n  %s %s", rpad(subcmd.Name(), subcmd.NamePadding()), subcmd.Short)
 					}
 				}
