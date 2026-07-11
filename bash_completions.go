@@ -534,9 +534,10 @@ func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
 
 // prepareCustomAnnotationsForFlags setup annotations for go completions for registered flags
 func prepareCustomAnnotationsForFlags(cmd *Command) {
-	flagCompletionMutex.RLock()
-	defer flagCompletionMutex.RUnlock()
-	for flag := range flagCompletionFunctions {
+	cmd.initializeCompletionStorage()
+	cmd.flagCompletionMutex.RLock()
+	defer cmd.flagCompletionMutex.RUnlock()
+	for flag := range cmd.flagCompletionFunctions {
 		// Make sure the completion script calls the __*_go_custom_completion function for
 		// every registered flag.  We need to do this here (and not when the flag was registered
 		// for completion) so that we can know the root command name for the prefix
@@ -641,6 +642,7 @@ func writeCmdAliases(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, `    fi`)
 	WriteStringAndCheck(buf, "\n")
 }
+
 func writeArgAliases(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    noun_aliases=()\n")
 	sort.Strings(cmd.ArgAliases)
