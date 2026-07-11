@@ -62,10 +62,10 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	name := cmd.CommandPath()
 
 	buf.WriteString("## " + name + "\n\n")
-	buf.WriteString(cmd.Short + "\n\n")
+	buf.WriteString(escapeAngleBrackets(cmd.Short) + "\n\n")
 	if len(cmd.Long) > 0 {
 		buf.WriteString("### Synopsis\n\n")
-		buf.WriteString(cmd.Long + "\n\n")
+		buf.WriteString(escapeAngleBrackets(cmd.Long) + "\n\n")
 	}
 
 	if cmd.Runnable() {
@@ -87,7 +87,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			pname := parent.CommandPath()
 			link := pname + markdownExtension
 			link = strings.ReplaceAll(link, " ", "_")
-			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short)
+			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", pname, linkHandler(link), escapeAngleBrackets(parent.Short))
 			cmd.VisitParents(func(c *cobra.Command) {
 				if c.DisableAutoGenTag {
 					cmd.DisableAutoGenTag = c.DisableAutoGenTag
@@ -105,7 +105,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			cname := name + " " + child.Name()
 			link := cname + markdownExtension
 			link = strings.ReplaceAll(link, " ", "_")
-			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", cname, linkHandler(link), child.Short)
+			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", cname, linkHandler(link), escapeAngleBrackets(child.Short))
 		}
 		buf.WriteString("\n")
 	}
@@ -114,6 +114,10 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	}
 	_, err := buf.WriteTo(w)
 	return err
+}
+
+func escapeAngleBrackets(s string) string {
+	return strings.NewReplacer("<", "\\<", ">", "\\>").Replace(s)
 }
 
 // GenMarkdownTree will generate a markdown page for this command and all

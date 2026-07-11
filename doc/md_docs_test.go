@@ -91,6 +91,32 @@ func TestGenMdNoTag(t *testing.T) {
 	checkStringOmits(t, output, "Auto generated")
 }
 
+func TestGenMdEscapesAngleBrackets(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "export <output_path>",
+		Short: "Export to <output_path>",
+		Long:  "Export the database to <output_path>.",
+		Run:   emptyRun,
+	}
+	child := &cobra.Command{
+		Use:   "status",
+		Short: "Inspect <target>",
+		Run:   emptyRun,
+	}
+	cmd.AddCommand(child)
+
+	buf := new(bytes.Buffer)
+	if err := GenMarkdown(cmd, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, "Export to \\<output_path\\>")
+	checkStringContains(t, output, "Export the database to \\<output_path\\>.")
+	checkStringContains(t, output, "Inspect \\<target\\>")
+	checkStringContains(t, output, "```\nexport <output_path> [flags]\n```")
+}
+
 func TestGenMdTree(t *testing.T) {
 	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
 	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree")
