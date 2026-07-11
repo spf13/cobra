@@ -65,6 +65,12 @@ var EnableCaseInsensitive = defaultCaseInsensitive
 // By default this is disabled, which means only the first run hook to be found is executed.
 var EnableTraverseRunHooks = defaultTraverseRunHooks
 
+// EnablePostRunOnError executes PostRun and PersistentPostRun hooks even when
+// RunE or PostRunE returns an error. This is useful for cleanup operations
+// (logging, resource release, etc.) that must run regardless of command outcome.
+// By default this is disabled to maintain backward compatibility.
+var EnablePostRunOnError = false
+
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.
 // To disable the mousetrap, just set this variable to blank string ("").

@@ -1785,6 +1785,58 @@ func testPersistentHooks(t *testing.T, expectedHookRunOrder []string) {
 	}
 }
 
+// Related to https://github.com/spf13/cobra/issues/1893.
+func TestPostRunOnError(t *testing.T) {
+	var hookRunOrder []string
+
+	parentCmd := &Command{
+		Use: "parent",
+		PersistentPostRun: func(_ *Command, args []string) {
+			hookRunOrder = append(hookRunOrder, "parent PersistentPostRun")
+		},
+	}
+
+	childCmd := &Command{
+		Use: "child",
+		RunE: func(_ *Command, args []string) error {
+			hookRunOrder = append(hookRunOrder, "child RunE")
+			return fmt.Errorf("run failed")
+		},
+		PostRun: func(_ *Command, args []string) {
+			hookRunOrder = append(hookRunOrder, "child PostRun")
+		},
+	}
+	parentCmd.AddCommand(childCmd)
+
+	// Without EnablePostRunOnError: PostRun and PersistentPostRun should NOT execute
+	hookRunOrder = nil
+	_, err := executeCommand(parentCmd, "child")
+	if err == nil {
+		t.Fatal("Expected error from RunE")
+	}
+	expected := []string{"child RunE"}
+	if !reflect.DeepEqual(hookRunOrder, expected) {
+		t.Errorf("Without EnablePostRunOnError: expected %v, got %v", expected, hookRunOrder)
+	}
+
+	// With EnablePostRunOnError: PostRun and PersistentPostRun SHOULD execute
+	EnablePostRunOnError = true
+	defer func() { EnablePostRunOnError = false }()
+
+	hookRunOrder = nil
+	_, err = executeCommand(parentCmd, "child")
+	if err == nil {
+		t.Fatal("Expected error from RunE")
+	}
+	if err.Error() != "run failed" {
+		t.Errorf("Expected 'run failed' error, got %q", err.Error())
+	}
+	expected = []string{"child RunE", "child PostRun", "parent PersistentPostRun"}
+	if !reflect.DeepEqual(hookRunOrder, expected) {
+		t.Errorf("With EnablePostRunOnError: expected %v, got %v", expected, hookRunOrder)
+	}
+}
+
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestGlobalNormFuncPropagation(t *testing.T) {
 	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
