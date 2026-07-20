@@ -37,22 +37,22 @@ func genPowerShellComp(buf io.StringWriter, name string, includeDesc bool) {
 	}
 	WriteStringAndCheck(buf, fmt.Sprintf(`# powershell completion for %-36[1]s -*- shell-script -*-
 
-function __%[1]s_debug {
-    if ($env:BASH_COMP_DEBUG_FILE) {
-        "$args" | Out-File -Append -FilePath "$env:BASH_COMP_DEBUG_FILE"
-    }
-}
-
-filter __%[1]s_escapeStringWithSpecialChars {
-`+"    $_ -replace '\\s|#|@|\\$|;|,|''|\\{|\\}|\\(|\\)|\"|`|\\||<|>|&','`$&'"+`
-}
-
 [scriptblock]${__%[2]sCompleterBlock} = {
     param(
             $WordToComplete,
             $CommandAst,
             $CursorPosition
         )
+
+    function __%[1]s_debug {
+        if ($env:BASH_COMP_DEBUG_FILE) {
+            "$args" | Out-File -Append -FilePath "$env:BASH_COMP_DEBUG_FILE"
+        }
+    }
+
+    filter __%[1]s_escapeStringWithSpecialChars {
+`+"        $_ -replace '\\s|#|@|\\$|;|,|''|\\{|\\}|\\(|\\)|\"|`|\\||<|>|&','`$&'"+`
+    }
 
     # Get the current command line and convert into a string
     $Command = $CommandAst.CommandElements
