@@ -145,6 +145,11 @@ type Command struct {
 	// PersistentPostRunE: PersistentPostRun but returns an error.
 	PersistentPostRunE func(cmd *Command, args []string) error
 
+	// PostParseFlagsE is invoked in execute, after flags are parsed but before
+	// any help/usage handling or the command's Run. It allows additional
+	// post-parse processing. See issue #849.
+	PostParseFlagsE func(cmd *Command, args []string) error
+
 	// groups for subcommands
 	commandgroups []*Group
 
@@ -919,6 +924,14 @@ func (c *Command) execute(a []string) (err error) {
 	err = c.ParseFlags(a)
 	if err != nil {
 		return c.FlagErrorFunc()(c, err)
+	}
+
+	// If a PostParseFlags hook is set, invoke it now (after flags are parsed,
+	// before any help/usage handling). See issue #849.
+	if c.PostParseFlagsE != nil {
+		if err := c.PostParseFlagsE(c, a); err != nil {
+			return err
+		}
 	}
 
 	// If help is called, regardless of other flags, return we want help.
