@@ -104,6 +104,13 @@ type Command struct {
 	// Deprecated defines, if this command is deprecated and should print this string when used.
 	Deprecated string
 
+	// DeprecationMessage, when set, customises the entire message printed when a
+	// deprecated command is run. It receives the command and returns the full
+	// message (replacing the default `Command %q is deprecated, %s\n` format),
+	// giving full control over the wording. When nil, the default message is
+	// used. See issue #1343.
+	DeprecationMessage func(cmd *Command) string
+
 	// Annotations are key/value pairs that can be used by applications to identify or
 	// group commands or set special options.
 	Annotations map[string]string
@@ -908,7 +915,11 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		if c.DeprecationMessage != nil {
+			c.Print(c.DeprecationMessage(c))
+		} else {
+			c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+		}
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
