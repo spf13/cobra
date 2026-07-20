@@ -488,6 +488,14 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	if c.HasParent() {
 		return c.Parent().HelpFunc()
 	}
+	return c.DefaultHelpFunc()
+}
+
+// DefaultHelpFunc returns the default help function for c (the function that
+// prints the rendered help template to stdout). It is the implementation
+// returned by HelpFunc when no custom helpFunc is set, exposed so custom help
+// functions can delegate to it. See issue #1887.
+func (c *Command) DefaultHelpFunc() func(*Command, []string) {
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
 		fn := c.getHelpTemplateFunc()
