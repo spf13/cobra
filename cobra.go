@@ -45,6 +45,7 @@ var finalizers []func()
 const (
 	defaultPrefixMatching   = false
 	defaultCommandSorting   = true
+	defaultFlagSorting       = true
 	defaultCaseInsensitive  = false
 	defaultTraverseRunHooks = false
 )
@@ -57,6 +58,12 @@ var EnablePrefixMatching = defaultPrefixMatching
 // EnableCommandSorting controls sorting of the slice of commands, which is turned on by default.
 // To disable sorting, set it to false.
 var EnableCommandSorting = defaultCommandSorting
+
+// EnableFlagSorting controls sorting of the flags when generating usage/help output, which is turned on by default.
+// To disable sorting, set it to false. This avoids having to call
+// `Flags().SortFlags = false`, `PersistentFlags().SortFlags = false`, and
+// `InheritedFlags().SortFlags = false` individually for each command.
+var EnableFlagSorting = defaultFlagSorting
 
 // EnableCaseInsensitive allows case-insensitive commands names. (case sensitive by default)
 var EnableCaseInsensitive = defaultCaseInsensitive

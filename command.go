@@ -1688,6 +1688,7 @@ func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) f
 func (c *Command) Flags() *flag.FlagSet {
 	if c.flags == nil {
 		c.flags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
+		c.flags.SortFlags = EnableFlagSorting
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1775,6 +1776,7 @@ func (c *Command) NonInheritedFlags() *flag.FlagSet {
 func (c *Command) PersistentFlags() *flag.FlagSet {
 	if c.pflags == nil {
 		c.pflags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
+		c.pflags.SortFlags = EnableFlagSorting
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1788,8 +1790,10 @@ func (c *Command) ResetFlags() {
 	c.flagErrorBuf = new(bytes.Buffer)
 	c.flagErrorBuf.Reset()
 	c.flags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
+	c.flags.SortFlags = EnableFlagSorting
 	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
+	c.pflags.SortFlags = EnableFlagSorting
 	c.pflags.SetOutput(c.flagErrorBuf)
 
 	c.lflags = nil
