@@ -257,6 +257,12 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// SuggestFunc, when set, customises the suggestion text appended to the
+	// "unknown command" error. It receives the suggested child commands and
+	// returns the text to append (which replaces the default "Did you mean
+	// this?" message). When nil, the default message is used. See issue #1394.
+	SuggestFunc func(suggestions []*Command) string
 }
 
 // Context returns underlying command context. If command was executed
@@ -785,12 +791,17 @@ func (c *Command) findSuggestions(arg string) string {
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
+	suggestions := c.SuggestionsFor(arg)
+	if len(suggestions) == 0 {
+		return ""
+	}
+	if c.SuggestFunc != nil {
+		return c.SuggestFunc(c.SuggestionCommands(arg))
+	}
 	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		sb.WriteString("\n\nDid you mean this?\n")
-		for _, s := range suggestions {
-			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
-		}
+	sb.WriteString("\n\nDid you mean this?\n")
+	for _, s := range suggestions {
+		_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
 	}
 	return sb.String()
 }
@@ -880,6 +891,40 @@ func (c *Command) SuggestionsFor(typedName string) []string {
 	return suggestions
 }
 
+// SuggestionCommands returns the child commands suggested for the typed
+// (misspelled) name, using the same matching rules as SuggestionsFor. It is
+// intended for use by a custom SuggestFunc which needs access to the suggested
+// commands (e.g. to render command names from cmd.Use). See issue #1394.
+func (c *Command) SuggestionCommands(typedName string) []*Command {
+	var suggestions []*Command
+	for _, cmd := range c.commands {
+		if !cmd.IsAvailableCommand() {
+			continue
+		}
+		levenshteinDistance := ld(typedName, cmd.Name(), true)
+		suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
+		suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
+		if suggestByLevenshtein || suggestByPrefix {
+			suggestions = append(suggestions, cmd)
+			continue
+		}
+		for _, explicitSuggestion := range cmd.SuggestFor {
+			if strings.EqualFold(typedName, explicitSuggestion) {
+				suggestions = append(suggestions, cmd)
+				break
+			}
+		}
+	}
+	return suggestions
+}
+
+// SetSuggestFunc sets a function that customises the suggestion text appended
+// to the "unknown command" error. The function receives the suggested child
+// commands and returns the text to append (replacing the default "Did you mean
+// this?" message). Pass nil to restore the default behaviour. See issue #1394.
+func (c *Command) SetSuggestFunc(f func(suggestions []*Command) string) {
+	c.SuggestFunc = f
+}
 // VisitParents visits all parents of the command and invokes fn on each parent.
 func (c *Command) VisitParents(fn func(*Command)) {
 	if c.HasParent() {
