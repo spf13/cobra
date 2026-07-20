@@ -956,7 +956,9 @@ func (c *Command) execute(a []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	c.preRun()
+	if err := c.preRun(); err != nil {
+		return err
+	}
 
 	defer c.postRun()
 
@@ -1044,10 +1046,16 @@ func (c *Command) execute(a []string) (err error) {
 	return nil
 }
 
-func (c *Command) preRun() {
+func (c *Command) preRun() error {
 	for _, x := range initializers {
 		x()
 	}
+	for _, x := range initializersE {
+		if err := x(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Command) postRun() {

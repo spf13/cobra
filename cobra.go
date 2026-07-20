@@ -40,6 +40,7 @@ var templateFuncs = template.FuncMap{
 }
 
 var initializers []func()
+var initializersE []func() error
 var finalizers []func()
 
 const (
@@ -98,6 +99,14 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 // Execute method is called.
 func OnInitialize(y ...func()) {
 	initializers = append(initializers, y...)
+}
+
+// OnInitializeE registers the passed functions to be run when each command's
+// Execute method is called, after all OnInitialize functions. Each function may
+// return an error; the first non-nil error aborts execution and is returned
+// from Execute (before Run is called). See issue #798.
+func OnInitializeE(y ...func() error) {
+	initializersE = append(initializersE, y...)
 }
 
 // OnFinalize sets the passed functions to be run when each command's
