@@ -37,6 +37,7 @@ var templateFuncs = template.FuncMap{
 	"rpad":                    rpad,
 	"gt":                      Gt,
 	"eq":                      Eq,
+	"example":                renderExample,
 }
 
 var initializers []func()
@@ -174,6 +175,14 @@ func appendIfNotPresent(s, stringToAppend string) string {
 func rpad(s string, padding int) string {
 	formattedString := fmt.Sprintf("%%-%ds", padding)
 	return fmt.Sprintf(formattedString, s)
+}
+
+// renderExample is the "example" template helper, for use in custom usage
+// templates (e.g. {{example .}}). It renders the receiver command's Example,
+// executing it as a text/template against the command when it looks like a
+// template, and returning it literally otherwise.
+func renderExample(c *Command) string {
+	return c.ExampleString()
 }
 
 func tmpl(text string) *tmplFunc {
