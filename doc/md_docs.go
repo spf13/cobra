@@ -156,3 +156,42 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	}
 	return nil
 }
+
+// GenMarkdownTreeCustomE is the same as GenMarkdownTreeCustom, but additionally
+// accepts a cmdHandler that, when non-nil, generates each command's markdown body
+// (replacing the default GenMarkdownCustom(filePrepender, linkHandler)). When
+// cmdHandler is nil, behavior is identical to GenMarkdownTreeCustom. See issue #1250.
+func GenMarkdownTreeCustomE(
+	cmd *cobra.Command,
+	dir string,
+	filePrepender, linkHandler func(string) string,
+	cmdHandler func(*cobra.Command, string, io.Writer) error,
+) error {
+	for _, c := range cmd.Commands() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+			continue
+		}
+		if err := GenMarkdownTreeCustomE(c, dir, filePrepender, linkHandler, cmdHandler); err != nil {
+			return err
+		}
+	}
+
+	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + markdownExtension
+	filename := filepath.Join(dir, basename)
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
+		return err
+	}
+	if cmdHandler != nil {
+		return cmdHandler(cmd, filename, f)
+	}
+	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {
+		return err
+	}
+	return nil
+}
