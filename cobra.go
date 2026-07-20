@@ -244,3 +244,10 @@ func WriteStringAndCheck(b io.StringWriter, s string) {
 	_, err := b.WriteString(s)
 	CheckErr(err)
 }
+
+// ResetInitializers clears the registered initializer functions (those added
+// via OnInitialize). This is useful for testing, where initializer state would
+// otherwise leak between test cases. See issue #1180.
+func ResetInitializers() {
+	initializers = nil
+}
