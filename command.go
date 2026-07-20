@@ -1397,6 +1397,23 @@ func (c *Command) AddGroup(groups ...*Group) {
 	c.commandgroups = append(c.commandgroups, groups...)
 }
 
+// RemoveGroup removes one or more command groups from a parent command by ID.
+// Groups whose ID matches one of the given ids are removed; an ID with no
+// matching group is a no-op. See issue #1911.
+func (c *Command) RemoveGroup(ids ...string) {
+	groups := []*Group{}
+main:
+	for _, group := range c.commandgroups {
+		for _, id := range ids {
+			if group.ID == id {
+				continue main
+			}
+		}
+		groups = append(groups, group)
+	}
+	c.commandgroups = groups
+}
+
 // RemoveCommand removes one or more commands from a parent command.
 func (c *Command) RemoveCommand(cmds ...*Command) {
 	commands := []*Command{}
