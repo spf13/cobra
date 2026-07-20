@@ -304,7 +304,7 @@ func genPowerShellComp(buf io.StringWriter, name string, includeDesc bool) {
     }
 }
 
-Register-ArgumentCompleter -CommandName '%[1]s' -ScriptBlock ${__%[2]sCompleterBlock}
+Register-ArgumentCompleter -Native -CommandName '%[1]s' -ScriptBlock ${__%[2]sCompleterBlock}
 `, name, nameForVar, compCmd,
 		ShellCompDirectiveError, ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp,
 		ShellCompDirectiveFilterFileExt, ShellCompDirectiveFilterDirs, ShellCompDirectiveKeepOrder, activeHelpEnvVar(name)))
