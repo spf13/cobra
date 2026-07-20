@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -1592,6 +1593,39 @@ func (c *Command) HasExample() bool {
 	return len(c.Example) > 0
 }
 
+// FlagUsagesTrimRequired returns the usage string for the given flag set (as
+// produced by pflag's FlagUsages) but with the trailing "(default ...)" suffix
+// removed for flags marked required on this command via MarkFlagRequired. A
+// required flag must always be passed on the command line, so showing its
+// default is misleading; this lets a custom usage/help template omit it via
+// {{.FlagUsagesTrimRequired .LocalFlags}} while leaving non-required flags'
+// defaults intact. See issue #1544.
+func (c *Command) FlagUsagesTrimRequired(fs *flag.FlagSet) string {
+	out := fs.FlagUsages()
+	if out == "" {
+		return out
+	}
+	required := make(map[string]bool)
+	fs.VisitAll(func(f *flag.Flag) {
+		ann, ok := f.Annotations[BashCompOneRequiredFlag]
+		if ok && len(ann) > 0 && ann[0] == "true" {
+			required[f.Name] = true
+		}
+	})
+	if len(required) == 0 {
+		return out
+	}
+	lines := strings.Split(out, "\n")
+	for i, line := range lines {
+		name := flagLineName(line)
+		if name == "" || !required[name] {
+			continue
+		}
+		lines[i] = stripTrailingDefault(line)
+	}
+	return strings.Join(lines, "\n")
+}
+
 // Runnable determines if the command is itself runnable.
 func (c *Command) Runnable() bool {
 	return c.Run != nil || c.RunE != nil
@@ -1676,6 +1710,34 @@ func (c *Command) HasAvailableSubCommands() bool {
 // HasParent determines if the command is a child command.
 func (c *Command) HasParent() bool {
 	return c.parent != nil
+}
+
+// flagLineName extracts the long flag name from a single pflag FlagUsages line
+// (e.g. "  -x, --name type   usage" -> "name", "      --name type" -> "name").
+// It returns "" if the line does not declare a long flag. Used by
+// FlagUsagesTrimRequired to match lines to required flags.
+func flagLineName(line string) string {
+	idx := strings.Index(line, "--")
+	if idx < 0 {
+		return ""
+	}
+	rest := line[idx+2:]
+	end := strings.IndexAny(rest, " \t=")
+	if end < 0 {
+		return rest
+	}
+	return rest[:end]
+}
+
+// defaultSuffix matches the trailing " (default ...)" suffix pflag appends to a
+// flag usage line. pflag uses " (default %q)" for strings or " (default %s)"
+// otherwise, so the suffix is always the last " (default ...)" on the line.
+var defaultSuffix = regexp.MustCompile(`\s\(default [^)]*\)$`)
+
+// stripTrailingDefault removes the trailing " (default ...)" suffix from a
+// pflag FlagUsages line.
+func stripTrailingDefault(line string) string {
+	return defaultSuffix.ReplaceAllString(line, "")
 }
 
 // GlobalNormalizationFunc returns the global normalization function or nil if it doesn't exist.
