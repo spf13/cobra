@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"text/template"
 
 	flag "github.com/spf13/pflag"
 )
@@ -1590,6 +1591,30 @@ func (c *Command) NameAndAliases() string {
 // HasExample determines if the command has example.
 func (c *Command) HasExample() bool {
 	return len(c.Example) > 0
+}
+
+// ExampleString returns the example text for the command. When Example looks
+// like a text/template (it contains "{{") it is executed as a template
+// against the command, giving access to the command's fields and methods
+// such as {{.CommandPath}} and {{.UseLine}}. Otherwise, or if the template
+// fails to parse or execute, it is returned as-is.
+//
+// ExampleString is exposed for use in custom usage templates via the "example"
+// template helper (e.g. {{example .}}); the default usage rendering keeps
+// rendering Example literally.
+func (c *Command) ExampleString() string {
+	if c.Example == "" || !strings.Contains(c.Example, "{{") {
+		return c.Example
+	}
+	t, err := template.New("example").Parse(c.Example)
+	if err != nil {
+		return c.Example
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, c); err != nil {
+		return c.Example
+	}
+	return buf.String()
 }
 
 // Runnable determines if the command is itself runnable.
