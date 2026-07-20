@@ -175,6 +175,9 @@ type Command struct {
 	// flagErrorFunc is func defined by user and it's called when the parsing of
 	// flags returns an error.
 	flagErrorFunc func(*Command, error) error
+	// argErrorFunc is a function to generate an error when argument validation
+	// (c.Args / ValidateArgs) fails. Set via SetArgErrorFunc. See issue #1988.
+	argErrorFunc func(*Command, error) error
 	// helpTemplate is help template defined by user.
 	helpTemplate *tmplFunc
 	// helpFunc is help func defined by user.
@@ -327,6 +330,12 @@ func (c *Command) SetUsageTemplate(s string) {
 // fails.
 func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
 	c.flagErrorFunc = f
+}
+
+// SetArgErrorFunc sets a function to generate an error when argument validation
+// (c.Args) fails. See issue #1988.
+func (c *Command) SetArgErrorFunc(f func(*Command, error) error) {
+	c.argErrorFunc = f
 }
 
 // SetHelpFunc sets help function. Can be defined by Application.
@@ -551,6 +560,22 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 
 	if c.HasParent() {
 		return c.parent.FlagErrorFunc()
+	}
+	return func(c *Command, err error) error {
+		return err
+	}
+}
+
+// ArgErrorFunc returns either the function set by SetArgErrorFunc for this
+// command or a parent, or it returns a function which returns the original
+// error. See issue #1988.
+func (c *Command) ArgErrorFunc() (f func(*Command, error) error) {
+	if c.argErrorFunc != nil {
+		return c.argErrorFunc
+	}
+
+	if c.HasParent() {
+		return c.parent.ArgErrorFunc()
 	}
 	return func(c *Command, err error) error {
 		return err
@@ -966,7 +991,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if err := c.ValidateArgs(argWoFlags); err != nil {
-		return err
+		return c.ArgErrorFunc()(c, err)
 	}
 
 	parents := make([]*Command, 0, 5)
