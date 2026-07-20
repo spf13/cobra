@@ -37,6 +37,7 @@ var templateFuncs = template.FuncMap{
 	"rpad":                    rpad,
 	"gt":                      Gt,
 	"eq":                      Eq,
+	"wrap":                    wrap,
 }
 
 var initializers []func()
@@ -186,6 +187,36 @@ func tmpl(text string) *tmplFunc {
 			return t.Execute(w, data)
 		},
 	}
+}
+
+// wrap is the "wrap" template helper. It word-wraps s to at most width
+// characters per line, preserving existing newlines. width <= 0 returns s
+// unchanged. Words longer than width are placed on their own line. It is
+// intended for custom usage/help templates (e.g. {{wrap .Long 80}}) so that
+// long descriptions can be wrapped to a terminal width. See issue #810.
+func wrap(s string, width int) string {
+	if width <= 0 || s == "" {
+		return s
+	}
+	var lines []string
+	for _, para := range strings.Split(s, "\n") {
+		words := strings.Fields(para)
+		if len(words) == 0 {
+			lines = append(lines, "")
+			continue
+		}
+		cur := words[0]
+		for _, w := range words[1:] {
+			if len(cur)+1+len(w) <= width {
+				cur += " " + w
+			} else {
+				lines = append(lines, cur)
+				cur = w
+			}
+		}
+		lines = append(lines, cur)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // ld compares two strings and returns the levenshtein distance between them.
