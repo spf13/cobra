@@ -2070,3 +2070,25 @@ func defaultVersionFunc(w io.Writer, in interface{}) error {
 	_, err := fmt.Fprintf(w, "%s version %s\n", c.DisplayName(), c.Version)
 	return err
 }
+
+// ReparseFlags resets the command's local and persistent flags to their
+// default values and then re-parses the given args. This is useful when you
+// need to re-parse flags after the application has already started and the
+// initial flag parsing has already been done (e.g. to apply a new set of
+// args without leaving previously-parsed flags in place). See issue #1832.
+func (c *Command) ReparseFlags(args []string) error {
+	if c.DisableFlagParsing {
+		return nil
+	}
+
+	reset := func(fs *flag.FlagSet) {
+		fs.VisitAll(func(f *flag.Flag) {
+			_ = f.Value.Set(f.DefValue)
+			f.Changed = false
+		})
+	}
+	reset(c.Flags())
+	reset(c.PersistentFlags())
+
+	return c.ParseFlags(args)
+}
