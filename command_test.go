@@ -2952,3 +2952,22 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestVersionFlagUsesDisplayName(t *testing.T) {
+	c := &Command{
+		Use:     "",
+		Version: "1.0.0",
+		Annotations: map[string]string{
+			CommandDisplayNameAnnotation: "mytool",
+		},
+		Run: emptyRun,
+	}
+	c.InitDefaultVersionFlag()
+	f := c.Flags().Lookup("version")
+	if f == nil {
+		t.Fatal("missing version flag")
+	}
+	if !strings.Contains(f.Usage, "mytool") {
+		t.Fatalf("version flag usage = %q, want display name mytool", f.Usage)
+	}
+}

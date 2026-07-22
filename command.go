@@ -1200,7 +1200,7 @@ func (c *Command) ValidateRequiredFlags() error {
 	return nil
 }
 
-// checkCommandGroups checks if a command has been added to a group that does not exists.
+// checkCommandGroups checks if a command has been added to a group that does not exist.
 // If so, we panic because it indicates a coding error that should be corrected.
 func (c *Command) checkCommandGroups() {
 	for _, sub := range c.commands {
@@ -1243,10 +1243,12 @@ func (c *Command) InitDefaultVersionFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("version") == nil {
 		usage := "version for "
-		if c.Name() == "" {
+		// Match InitDefaultHelpFlag: prefer DisplayName (annotation) over Name().
+		name := c.DisplayName()
+		if name == "" {
 			usage += "this command"
 		} else {
-			usage += c.DisplayName()
+			usage += name
 		}
 		if c.Flags().ShorthandLookup("v") == nil {
 			c.Flags().BoolP("version", "v", false, usage)
@@ -1296,7 +1298,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
-					// FLow the context down to be used in help text
+					// Flow the context down to be used in help text
 					if cmd.ctx == nil {
 						cmd.ctx = c.ctx
 					}
@@ -1470,7 +1472,7 @@ func (c *Command) CommandPath() string {
 }
 
 // DisplayName returns the name to display in help text. Returns command Name()
-// If CommandDisplayNameAnnoation is not set
+// If CommandDisplayNameAnnotation is not set
 func (c *Command) DisplayName() string {
 	if displayName, ok := c.Annotations[CommandDisplayNameAnnotation]; ok {
 		return displayName
