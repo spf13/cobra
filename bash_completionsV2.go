@@ -216,10 +216,16 @@ __%[1]s_handle_activeHelp() {
                 # by the shell when it prints the completion choices.
                 printf -- "--"
             else
-                # When there are no completion choices at all, we need
-                # to re-print the command-line since the shell will
-                # not be doing it itself.
-                __%[1]s_reprint_commandLine
+                # When there are no completion choices at all the shell will not
+                # re-print the command-line, and we cannot correctly do it
+                # ourselves: COMP_LINE does not contain prefixes such as
+                # "VAR=val prog" or "time prog", so re-printing it would drop
+                # them and desynchronize the display from readline's buffer.
+                # Instead, insert two different completions which contribute
+                # nothing to the command-line (their common prefix is empty);
+                # the shell shows them as a blank choice line and then re-draws
+                # the complete command-line itself, prefixes included.
+                COMPREPLY=('' ' ')
             fi
         elif [ $COMP_TYPE -eq 37 ] || [ $COMP_TYPE -eq 42 ]; then
             # For completion type: menu-complete/menu-complete-backward and insert-completions
