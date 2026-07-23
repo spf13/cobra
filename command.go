@@ -204,6 +204,16 @@ type Command struct {
 	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrWhitelist
 
+	// PassUnknownFlags, when true, keeps unknown flags in the command's args
+	// after known flags are parsed. This is useful when a command must forward
+	// plugin-specific flags that Cobra cannot know at registration time
+	// (see https://github.com/spf13/cobra/issues/739).
+	//
+	// Unlike FParseErrWhitelist.UnknownFlags (which silently discards unknown
+	// flags), PassUnknownFlags preserves them in Args() in their original order
+	// relative to positional arguments.
+	PassUnknownFlags bool
+
 	// CompletionOptions is a set of options to control the handling of shell completion
 	CompletionOptions CompletionOptions
 
@@ -1879,13 +1889,125 @@ func (c *Command) ParseFlags(args []string) error {
 	// do it here after merging all flags and just before parse
 	c.Flags().ParseErrorsAllowlist = flag.ParseErrorsAllowlist(c.FParseErrWhitelist)
 
-	err := c.Flags().Parse(args)
+	parseArgs := args
+	if c.PassUnknownFlags {
+		// Parse only known flags; keep unknown flags and positionals after "--"
+		// so they appear in Flags().Args() for the command Run handlers.
+		known, rest := splitKnownFlags(c.Flags(), args)
+		parseArgs = append(known, "--")
+		parseArgs = append(parseArgs, rest...)
+	}
+
+	err := c.Flags().Parse(parseArgs)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
 		c.Print(c.flagErrorBuf.String())
 	}
 
 	return err
+}
+
+// splitKnownFlags partitions args into known flag tokens (for FlagSet.Parse)
+// and the remaining tokens (unknown flags + positionals), preserving order of
+// the remainder relative to each other.
+func splitKnownFlags(fs *flag.FlagSet, args []string) (known, rest []string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--" {
+			rest = append(rest, args[i:]...)
+			break
+		}
+		if len(a) < 2 || a[0] != '-' || a == "-" {
+			rest = append(rest, a)
+			continue
+		}
+
+		if strings.HasPrefix(a, "--") {
+			body := a[2:]
+			name := body
+			hasInline := false
+			if eq := strings.IndexByte(body, '='); eq >= 0 {
+				name = body[:eq]
+				hasInline = true
+			}
+			f := fs.Lookup(name)
+			if f == nil {
+				rest = append(rest, a)
+				if !hasInline && i+1 < len(args) && !isDashFlag(args[i+1]) {
+					rest = append(rest, args[i+1])
+					i++
+				}
+				continue
+			}
+			known = append(known, a)
+			if !hasInline && flagNeedsValue(f) && i+1 < len(args) {
+				known = append(known, args[i+1])
+				i++
+			}
+			continue
+		}
+
+		// Short flag(s): -x, -abc, -o=val, -oval
+		shorthands := a[1:]
+		if strings.Contains(shorthands, "=") {
+			// -o=val form: known only if the letter before = is registered.
+			letter := shorthands[0]
+			if fs.ShorthandLookup(string(letter)) == nil {
+				rest = append(rest, a)
+				continue
+			}
+			known = append(known, a)
+			continue
+		}
+
+		// Single short or cluster without '='.
+		if len(shorthands) == 1 {
+			f := fs.ShorthandLookup(shorthands)
+			if f == nil {
+				rest = append(rest, a)
+				continue
+			}
+			known = append(known, a)
+			if flagNeedsValue(f) && i+1 < len(args) {
+				known = append(known, args[i+1])
+				i++
+			}
+			continue
+		}
+
+		// Cluster -abc: only pass to pflag if every letter is a known shorthand.
+		// Otherwise keep the whole token in rest so plugins can parse it.
+		allKnown := true
+		for _, r := range shorthands {
+			if fs.ShorthandLookup(string(r)) == nil {
+				allKnown = false
+				break
+			}
+		}
+		if allKnown {
+			known = append(known, a)
+		} else {
+			rest = append(rest, a)
+		}
+	}
+	return known, rest
+}
+
+func isDashFlag(s string) bool {
+	return len(s) > 1 && s[0] == '-' && s != "-"
+}
+
+func flagNeedsValue(f *flag.Flag) bool {
+	if f == nil {
+		return false
+	}
+	if f.NoOptDefVal != "" {
+		return false
+	}
+	if bv, ok := f.Value.(interface{ IsBoolFlag() bool }); ok && bv.IsBoolFlag() {
+		return false
+	}
+	return true
 }
 
 // Parent returns a commands parent command.
