@@ -576,3 +576,25 @@ func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 }
+
+func TestUnknownCommandListsAvailable(t *testing.T) {
+	root := &Command{Use: "app"}
+	root.AddCommand(&Command{Use: "list", Run: func(cmd *Command, args []string) {}})
+	root.AddCommand(&Command{Use: "get", Run: func(cmd *Command, args []string) {}})
+	root.ListAvailableCommandsOnUnknownCommand = true
+	root.SetArgs([]string{"frobnicate"})
+	err := root.Execute()
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, `unknown command "frobnicate" for "app"`) {
+		t.Fatalf("base message missing: %q", msg)
+	}
+	if !strings.Contains(msg, "available commands:") {
+		t.Fatalf("available list missing: %q", msg)
+	}
+	if !strings.Contains(msg, "list") || !strings.Contains(msg, "get") {
+		t.Fatalf("command names missing: %q", msg)
+	}
+}

@@ -257,6 +257,15 @@ type Command struct {
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
 	// Must be > 0.
 	SuggestionsMinimumDistance int
+
+	// ListAvailableCommandsOnUnknownCommand, when true, appends a short list of
+	// available subcommand names to "unknown command" errors so callers can
+	// recover without a second --help round-trip. See #2414.
+	ListAvailableCommandsOnUnknownCommand bool
+
+	// ListAvailableCommandsLimit caps how many names are listed when
+	// ListAvailableCommandsOnUnknownCommand is set. Zero means default (10).
+	ListAvailableCommandsLimit int
 }
 
 // Context returns underlying command context. If command was executed
@@ -794,6 +803,33 @@ func (c *Command) findSuggestions(arg string) string {
 	}
 	return sb.String()
 }
+
+// findAvailableCommandsHint returns "; available commands: a, b, ..." when
+// ListAvailableCommandsOnUnknownCommand is enabled.
+func (c *Command) findAvailableCommandsHint() string {
+	if !c.ListAvailableCommandsOnUnknownCommand {
+		return ""
+	}
+	limit := c.ListAvailableCommandsLimit
+	if limit <= 0 {
+		limit = 10
+	}
+	names := make([]string, 0, limit)
+	for _, sub := range c.Commands() {
+		if !sub.IsAvailableCommand() {
+			continue
+		}
+		names = append(names, sub.Name())
+		if len(names) >= limit {
+			break
+		}
+	}
+	if len(names) == 0 {
+		return ""
+	}
+	return "; available commands: " + strings.Join(names, ", ")
+}
+
 
 func (c *Command) findNext(next string) *Command {
 	matches := make([]*Command, 0)
