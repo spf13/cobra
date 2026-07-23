@@ -2952,3 +2952,47 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestPassUnknownFlags(t *testing.T) {
+	var gotArgs []string
+	c := &Command{
+		Use:              "c",
+		PassUnknownFlags: true,
+		Run: func(cmd *Command, args []string) {
+			gotArgs = append([]string{}, args...)
+		},
+	}
+	c.Flags().BoolP("verbose", "v", false, "verbose")
+	c.Flags().String("config", "", "config file")
+
+	_, err := executeCommand(c, "--verbose", "--plugin-flag", "pval", "pos1", "--config", "cfg.yaml", "--other=1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Known flags consumed; unknowns + positionals remain in order among themselves.
+	// Expected rest order from original: --plugin-flag pval pos1 --other=1
+	want := []string{"--plugin-flag", "pval", "pos1", "--other=1"}
+	if len(gotArgs) != len(want) {
+		t.Fatalf("args=%v want %v", gotArgs, want)
+	}
+	for i := range want {
+		if gotArgs[i] != want[i] {
+			t.Fatalf("args[%d]=%q want %q (full %v)", i, gotArgs[i], want[i], gotArgs)
+		}
+	}
+	if v, err := c.Flags().GetBool("verbose"); err != nil || !v {
+		t.Fatalf("verbose flag not set: %v %v", v, err)
+	}
+	if cfg, err := c.Flags().GetString("config"); err != nil || cfg != "cfg.yaml" {
+		t.Fatalf("config flag: %q %v", cfg, err)
+	}
+}
+
+func TestPassUnknownFlagsDisabledDropsUnknown(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.Flags().Bool("verbose", false, "")
+	_, err := executeCommand(c, "--verbose", "--unknown")
+	if err == nil {
+		t.Fatal("expected unknown flag error when PassUnknownFlags is false")
+	}
+}
