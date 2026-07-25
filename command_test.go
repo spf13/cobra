@@ -1103,6 +1103,25 @@ func TestHelpFlagInHelp(t *testing.T) {
 	checkStringContains(t, output, "[flags]")
 }
 
+// TestShorthandHelpFlagOnlyAddedIfShorthandNotDefined checks that the default
+// help flag does not claim the 'h' shorthand if it is already used by another
+// flag, which used to panic.
+// Related to https://github.com/spf13/cobra/issues/2359.
+func TestShorthandHelpFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.Flags().StringP("nothelp", "h", "", "not a help flag")
+
+	_, err := executeCommand(rootCmd, "-h", "value")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	check(t, rootCmd.Flags().ShorthandLookup("h").Name, "nothelp")
+	if rootCmd.Flags().Lookup("help") == nil {
+		t.Error("Expected the default help flag to still be defined")
+	}
+}
+
 func TestFlagsInUsage(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: func(*Command, []string) {}}
 	output, err := executeCommand(rootCmd, "--help")
