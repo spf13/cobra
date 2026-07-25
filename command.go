@@ -1226,7 +1226,11 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += name
 		}
-		c.Flags().BoolP(helpFlagName, "h", false, usage)
+		if c.Flags().ShorthandLookup("h") == nil {
+			c.Flags().BoolP(helpFlagName, "h", false, usage)
+		} else {
+			c.Flags().Bool(helpFlagName, false, usage)
+		}
 		_ = c.Flags().SetAnnotation(helpFlagName, FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
