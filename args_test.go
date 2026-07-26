@@ -164,6 +164,29 @@ func TestOnlyValidArgs_WithInvalidArgs(t *testing.T) {
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestOnlyValidArgs_WithInvalidArgs_SuggestionBasedOnInvalidArg(t *testing.T) {
+	// When the first arg is valid but a later arg is invalid, the suggestion
+	// should be computed from the invalid arg, not args[0].
+	c := getCommand(OnlyValidArgs, true)
+	// Add subcommands so findSuggestions has something to match against.
+	sub := &Command{
+		Use: "twox",
+		Run: emptyRun,
+	}
+	c.AddCommand(sub)
+	_, err := executeCommand(c, "one", "tw")
+	if err == nil {
+		t.Fatal("Expected an error for invalid argument")
+	}
+	got := err.Error()
+	if !strings.Contains(got, "Did you mean this?") {
+		t.Fatalf("Expected suggestion for invalid arg 'tw', got: %s", got)
+	}
+	if !strings.Contains(got, "twox") {
+		t.Fatalf("Expected suggestion to include 'twox', got: %s", got)
+	}
+}
+
 // NoDuplicateArgs
 
 func TestNoDuplicateArgs(t *testing.T) {
