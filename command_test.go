@@ -2952,3 +2952,52 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+// TestCommandPathPaddingConsistentRegardlessOfAddOrder verifies that building
+// a command tree bottom-up (attach subcommands before attaching the parent to
+// its own parent) produces the same CommandPathPadding as building it top-down.
+// Regression test for https://github.com/spf13/cobra/issues/2463 where
+// commandsMaxCommandPathLen was snapshotted from a stale CommandPath() value.
+func TestCommandPathPaddingConsistentRegardlessOfAddOrder(t *testing.T) {
+	build := func(topFirst bool) (*Command, *Command) {
+		root := &Command{Use: "app", Run: func(*Command, []string) {}}
+		sub := &Command{Use: "remote", Short: "remote ops", Run: func(*Command, []string) {}}
+		// help topics (no Run) render under "Additional help topics", padded with CommandPathPadding
+		auth := &Command{Use: "authentication", Short: "how auth works"}
+
+		if topFirst {
+			root.AddCommand(sub)
+			sub.AddCommand(auth)
+		} else {
+			sub.AddCommand(auth)
+			root.AddCommand(sub)
+		}
+		return sub, auth
+	}
+
+	topDownSub, topDownAuth := build(true)
+	bottomUpSub, bottomUpAuth := build(false)
+
+	// The topic leaf's path is "app remote authentication" (25 chars) in both
+	// trees; its padding must reflect the live path length, not a value cached
+	// before the parent chain existed.
+	want := len("app remote authentication")
+	if got := topDownAuth.CommandPathPadding(); got != want {
+		t.Errorf("top-down CommandPathPadding = %d, want %d", got, want)
+	}
+	if got := bottomUpAuth.CommandPathPadding(); got != want {
+		t.Errorf("bottom-up CommandPathPadding = %d, want %d", got, want)
+	}
+
+	// The rendered "Additional help topics" output must be identical for both
+	// construction orders.
+	var topOut, bottomOut bytes.Buffer
+	topDownSub.SetOut(&topOut)
+	topDownSub.UsageFunc()(topDownSub)
+	bottomUpSub.SetOut(&bottomOut)
+	bottomUpSub.UsageFunc()(bottomUpSub)
+	if topOut.String() != bottomOut.String() {
+		t.Errorf("help output differs by AddCommand order:\n--- top-down ---\n%s\n--- bottom-up ---\n%s",
+			topOut.String(), bottomOut.String())
+	}
+}
