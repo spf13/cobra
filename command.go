@@ -863,16 +863,24 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 func (c *Command) SuggestionsFor(typedName string) []string {
 	suggestions := []string{}
 	for _, cmd := range c.commands {
-		if cmd.IsAvailableCommand() {
-			levenshteinDistance := ld(typedName, cmd.Name(), true)
-			suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
-			suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
-			if suggestByLevenshtein || suggestByPrefix {
-				suggestions = append(suggestions, cmd.Name())
-			}
+		if !cmd.IsAvailableCommand() {
+			continue
+		}
+		matches := false
+		levenshteinDistance := ld(typedName, cmd.Name(), true)
+		suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
+		suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
+		if suggestByLevenshtein || suggestByPrefix {
+			matches = true
+			suggestions = append(suggestions, cmd.Name())
+		}
+		if !matches {
+			// Only check explicit suggestions if the command was not already
+			// matched by edit distance or prefix, to avoid duplicate entries.
 			for _, explicitSuggestion := range cmd.SuggestFor {
 				if strings.EqualFold(typedName, explicitSuggestion) {
 					suggestions = append(suggestions, cmd.Name())
+					break
 				}
 			}
 		}

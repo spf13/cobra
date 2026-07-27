@@ -1475,6 +1475,23 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestSuggestionsAreDeduplicated(t *testing.T) {
+	// When a command name matches both the Levenshtein/prefix heuristic and
+	// the explicit SuggestFor list, it should appear only once in the output.
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	timesCmd := &Command{
+		Use:        "time",
+		SuggestFor: []string{"tim"},
+		Run:        emptyRun,
+	}
+	rootCmd.AddCommand(timesCmd)
+
+	suggestions := rootCmd.SuggestionsFor("tim")
+	if len(suggestions) != 1 || suggestions[0] != "time" {
+		t.Errorf("expected exactly one suggestion [time], got %v", suggestions)
+	}
+}
+
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
