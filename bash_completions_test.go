@@ -226,6 +226,95 @@ func TestBashCompletions(t *testing.T) {
 	}
 }
 
+func TestBashCompletionRequiredFlagHandling(t *testing.T) {
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("bash is not available")
+	}
+
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
+	completionScript := buf.String()
+
+	quoteArray := func(values []string) string {
+		quoted := make([]string, len(values))
+		for i, value := range values {
+			quoted[i] = fmt.Sprintf("%q", value)
+		}
+		return strings.Join(quoted, " ")
+	}
+
+	tests := []struct {
+		name              string
+		words             []string
+		twoWordFlags      []string
+		requiredFlags     []string
+		wantRequiredCount string
+	}{
+		{
+			name:              "equals form",
+			words:             []string{"root", "--required=value"},
+			twoWordFlags:      []string{"--required"},
+			requiredFlags:     []string{"--required="},
+			wantRequiredCount: "0",
+		},
+		{
+			name:              "two-word form",
+			words:             []string{"root", "--required", "value"},
+			twoWordFlags:      []string{"--required"},
+			requiredFlags:     []string{"--required="},
+			wantRequiredCount: "0",
+		},
+		{
+			name:              "unrelated optional flag",
+			words:             []string{"root", "--optional", "value"},
+			twoWordFlags:      []string{"--optional", "--required"},
+			requiredFlags:     []string{"--required="},
+			wantRequiredCount: "1",
+		},
+		{
+			name:              "required boolean flag",
+			words:             []string{"root", "--required-bool"},
+			requiredFlags:     []string{"--required-bool"},
+			wantRequiredCount: "0",
+		},
+		{
+			name:              "required shorthand value flag",
+			words:             []string{"root", "-r", "value"},
+			twoWordFlags:      []string{"-r"},
+			requiredFlags:     []string{"-r"},
+			wantRequiredCount: "0",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			script := completionScript + fmt.Sprintf(`
+words=(%s)
+c=1
+cword=%d
+two_word_flags=(%s)
+must_have_one_flag=(%s)
+local_nonpersistent_flags=()
+commands=()
+declare -A flaghash 2>/dev/null || :
+__root_handle_flag
+printf '%%d\n' "${#must_have_one_flag[@]}"
+`, quoteArray(test.words), len(test.words), quoteArray(test.twoWordFlags), quoteArray(test.requiredFlags))
+
+			cmd := exec.Command("bash")
+			cmd.Stdin = strings.NewReader(script)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("generated completion script failed: %v\n%s", err, output)
+			}
+			if got := strings.TrimSpace(string(output)); got != test.wantRequiredCount {
+				t.Fatalf("remaining required flags = %s, want %s", got, test.wantRequiredCount)
+			}
+		})
+	}
+}
+
 func TestBashCompletionHiddenFlag(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
