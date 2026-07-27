@@ -301,7 +301,13 @@ __%[1]s_handle_flag()
         flagname="${flagname}=" # but put the = back
     fi
     __%[1]s_debug "${FUNCNAME[0]}: looking for ${flagname}"
-    if __%[1]s_contains_word "${flagname}" "${must_have_one_flag[@]}"; then
+    local required_flagname=${flagname}
+    if [[ ${words[c]} != *"="* ]] &&
+        __%[1]s_contains_word "${flagname}" "${two_word_flags[@]}" &&
+        __%[1]s_contains_word "${flagname}=" "${must_have_one_flag[@]}"; then
+        required_flagname="${flagname}="
+    fi
+    if __%[1]s_contains_word "${required_flagname}" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
     fi
 
