@@ -176,6 +176,9 @@ func TestBashCompletions(t *testing.T) {
 	// check for required flags
 	check(t, output, `must_have_one_flag+=("--introot=")`)
 	check(t, output, `must_have_one_flag+=("--persistent-filename=")`)
+	// check that the generated script clears must_have_one_flag when a required
+	// flag is provided in two-word form (--flag value) as well as --flag=value
+	check(t, output, `    if __`+rootCmd.Name()+`_contains_word "${flagname}=" "${must_have_one_flag[@]}"; then`)
 	// check for custom completion function with both qualified and unqualified name
 	checkNumOccurrences(t, output, `__custom_func`, 2)      // 1. check existence, 2. invoke
 	checkNumOccurrences(t, output, `__root_custom_func`, 3) // 1. check existence, 2. invoke, 3. actual definition
