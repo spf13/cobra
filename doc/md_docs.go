@@ -140,7 +140,7 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + markdownExtension
+	basename := filenameForCommand(cmd, "_") + markdownExtension
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {

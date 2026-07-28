@@ -108,6 +108,32 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
+func TestGenMdTreeWithSlashInCommandName(t *testing.T) {
+	root := &cobra.Command{Use: "root"}
+	runCmd := &cobra.Command{
+		Use:   "job/first [args]",
+		Short: "A command whose name contains a path separator",
+		Run:   func(*cobra.Command, []string) {},
+	}
+	root.AddCommand(runCmd)
+
+	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree-slash")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenMarkdownTree(root, tmpdir); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	// The slash must be collapsed into the separator, not treated as a
+	// directory boundary by filepath.Join.
+	if _, err := os.Stat(filepath.Join(tmpdir, "root_job_first.md")); err != nil {
+		t.Fatalf("Expected file 'root_job_first.md' to exist: %v", err)
+	}
+}
+
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {

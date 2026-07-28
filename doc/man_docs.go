@@ -67,7 +67,7 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	if opts.CommandSeparator != "" {
 		separator = opts.CommandSeparator
 	}
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", separator)
+	basename := filenameForCommand(cmd, separator)
 	filename := filepath.Join(opts.Path, basename+"."+section)
 	f, err := os.Create(filename)
 	if err != nil {
