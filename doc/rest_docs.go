@@ -152,7 +152,7 @@ func GenReSTTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".rst"
+	basename := filenameForCommand(cmd, "_") + ".rst"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
