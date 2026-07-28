@@ -304,6 +304,13 @@ __%[1]s_handle_flag()
     if __%[1]s_contains_word "${flagname}" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
     fi
+    # When a required flag is passed in two-word form (--flag value instead of
+    # --flag=value), must_have_one_flag stores the flag with a trailing "="
+    # (e.g. "--flag="), so the exact match above misses it.  Check with the
+    # trailing "=" as well so that the constraint is cleared in both forms.
+    if __%[1]s_contains_word "${flagname}=" "${must_have_one_flag[@]}"; then
+        must_have_one_flag=()
+    fi
 
     # if you set a flag which only applies to this command, don't show subcommands
     if __%[1]s_contains_word "${flagname}" "${local_nonpersistent_flags[@]}"; then
