@@ -108,6 +108,47 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
+func TestGenMdTreeWithPathSeparator(t *testing.T) {
+	// A command whose name contains a path separator should produce a flat
+	// file, not try to write into a subdirectory. See issue #1616.
+	root := &cobra.Command{Use: "root"}
+	child := &cobra.Command{Use: "run/first", Run: func(*cobra.Command, []string) {}}
+	root.AddCommand(child)
+
+	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree-sep")
+	if err != nil {
+		t.Fatalf("Failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := GenMarkdownTree(root, tmpdir); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpdir, "root_run_first.md")); err != nil {
+		t.Fatalf("Expected file 'root_run_first.md' to exist: %v", err)
+	}
+}
+
+func TestSanitizeFilename(t *testing.T) {
+	tests := []struct {
+		name      string
+		separator string
+		want      string
+	}{
+		{"root echo sub", "_", "root_echo_sub"},
+		{"root run/first", "_", "root_run_first"},
+		{`root run\first`, "_", "root_run_first"},
+		{"root run/first", "-", "root-run-first"},
+		{"plain", "_", "plain"},
+	}
+	for _, tt := range tests {
+		if got := sanitizeFilename(tt.name, tt.separator); got != tt.want {
+			t.Errorf("sanitizeFilename(%q, %q) = %q, want %q", tt.name, tt.separator, got, tt.want)
+		}
+	}
+}
+
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	file, err := os.CreateTemp("", "")
 	if err != nil {

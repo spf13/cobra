@@ -45,6 +45,15 @@ func forceMultiLine(s string) string {
 	return s
 }
 
+// sanitizeFilename replaces spaces with the given separator and replaces all
+// OS path separators (/ and \) with the separator so that a command path like
+// "root run job/first" produces a safe flat filename instead of trying to
+// write into a non-existent subdirectory.
+func sanitizeFilename(name, separator string) string {
+	r := strings.NewReplacer(" ", separator, "/", separator, "\\", separator)
+	return r.Replace(name)
+}
+
 type byName []*cobra.Command
 
 func (s byName) Len() int           { return len(s) }

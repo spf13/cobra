@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -86,7 +85,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			parent := cmd.Parent()
 			pname := parent.CommandPath()
 			link := pname + markdownExtension
-			link = strings.ReplaceAll(link, " ", "_")
+			link = sanitizeFilename(link, "_")
 			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short)
 			cmd.VisitParents(func(c *cobra.Command) {
 				if c.DisableAutoGenTag {
@@ -104,7 +103,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 			}
 			cname := name + " " + child.Name()
 			link := cname + markdownExtension
-			link = strings.ReplaceAll(link, " ", "_")
+			link = sanitizeFilename(link, "_")
 			fmt.Fprintf(buf, "* [%s](%s)\t - %s\n", cname, linkHandler(link), child.Short)
 		}
 		buf.WriteString("\n")
@@ -140,7 +139,7 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + markdownExtension
+	basename := sanitizeFilename(cmd.CommandPath(), "_") + markdownExtension
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
