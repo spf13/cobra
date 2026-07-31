@@ -52,6 +52,7 @@ Zsh:
 
   # To load completions for each session, execute once:
   $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+  # If "${fpath[1]}" does not exist, pick another directory in "$fpath" that does.
 
   # You will need to start a new shell for this setup to take effect.
 
