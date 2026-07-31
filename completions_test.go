@@ -2604,6 +2604,22 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	removeCompCmd(rootCmd)
 }
 
+func TestDefaultZshCompletionHelp(t *testing.T) {
+	rootCmd := &Command{
+		Use:  "root",
+		Args: NoArgs,
+		Run:  emptyRun,
+	}
+
+	output, err := executeCommand(rootCmd, compCmdName, "zsh", "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	check(t, output, `root completion zsh > "${fpath[1]}/_root"`)
+	check(t, output, `If "${fpath[1]}" does not exist, pick another directory in "$fpath" that does.`)
+}
+
 func TestCompleteCompletion(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 

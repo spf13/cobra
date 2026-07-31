@@ -856,6 +856,8 @@ To load completions for every new session, execute once:
 
 	%[1]s completion zsh > "${fpath[1]}/_%[1]s"
 
+If "${fpath[1]}" does not exist, pick another directory in "$fpath" that does.
+
 #### macOS:
 
 	%[1]s completion zsh > $(brew --prefix)/share/zsh/site-functions/_%[1]s
