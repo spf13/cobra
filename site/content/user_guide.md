@@ -557,7 +557,7 @@ a count and a string.`,
 }
 ```
 
-For a more complete example of a larger application, please checkout [Hugo](https://gohugo.io/).
+For a more complete example of a larger application, please check out [Hugo](https://gohugo.io/).
 
 ## Help Command
 
