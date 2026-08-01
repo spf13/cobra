@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestGenYamlDoc(t *testing.T) {
@@ -39,6 +40,25 @@ func TestGenYamlDoc(t *testing.T) {
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
 	checkStringContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
+}
+
+func TestGenYamlDocDescriptionAndSynopsis(t *testing.T) {
+	cmd := &cobra.Command{Use: "test", Short: "short description", Long: "long synopsis"}
+	buf := new(bytes.Buffer)
+	if err := GenYaml(cmd, buf); err != nil {
+		t.Fatal(err)
+	}
+
+	var got cmdDoc
+	if err := yaml.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Description != cmd.Short {
+		t.Errorf("description = %q, want %q", got.Description, cmd.Short)
+	}
+	if got.Synopsis != cmd.Long {
+		t.Errorf("synopsis = %q, want %q", got.Synopsis, cmd.Long)
+	}
 }
 
 func TestGenYamlNoTag(t *testing.T) {
