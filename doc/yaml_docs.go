@@ -97,8 +97,8 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 	yamlDoc := cmdDoc{}
 	yamlDoc.Name = cmd.CommandPath()
 
-	yamlDoc.Synopsis = forceMultiLine(cmd.Short)
-	yamlDoc.Description = forceMultiLine(cmd.Long)
+	yamlDoc.Synopsis = forceMultiLine(cmd.Long)
+	yamlDoc.Description = forceMultiLine(cmd.Short)
 
 	if cmd.Runnable() {
 		yamlDoc.Usage = cmd.UseLine()
