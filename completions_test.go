@@ -4127,3 +4127,60 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
+
+func TestFilterDirectivesWithRequiredFlag(t *testing.T) {
+	getCmd := func(directive ShellCompDirective, comps ...string) *Command {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+		childCmd := &Command{
+			Use:  "child",
+			Args: MaximumNArgs(1),
+			ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+				return comps, directive
+			},
+			Run: emptyRun,
+		}
+		childCmd.Flags().StringP("hello", "H", "", "hello flag")
+		assertNoErr(t, childCmd.MarkFlagRequired("hello"))
+		rootCmd.AddCommand(childCmd)
+		return rootCmd
+	}
+
+	// The completions of a filter directive are filter arguments, not
+	// completions, so the required flag must not be mixed in with them.
+	output, err := executeCommand(getCmd(ShellCompDirectiveFilterFileExt, "foo", "bar"), ShellCompNoDescRequestCmd, "child", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	expected := strings.Join([]string{
+		"foo", "bar",
+		":8",
+		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(getCmd(ShellCompDirectiveFilterDirs, "themes"), ShellCompNoDescRequestCmd, "child", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Without a filter directive the required flag is still offered.
+	output, err = executeCommand(getCmd(ShellCompDirectiveNoFileComp, "foo"), ShellCompNoDescRequestCmd, "child", "")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	expected = strings.Join([]string{
+		"--hello", "-H", "foo",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
