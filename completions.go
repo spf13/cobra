@@ -578,7 +578,17 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 		// Call the registered completion function to get the completions.
 		var comps []Completion
 		comps, directive = completionFn(finalCmd, finalArgs, toComplete)
-		completions = append(completions, comps...)
+		if directive&(ShellCompDirectiveFilterFileExt|ShellCompDirectiveFilterDirs) != 0 {
+			// With a filter directive the returned values are not completions
+			// but arguments for the shell's file filtering: the list of file
+			// extensions to accept, or the directory to search within.
+			// Whatever was gathered before the call, such as sub-command names
+			// or required flags, would be handed to the shell as a filter, so
+			// it must be dropped.
+			completions = comps
+		} else {
+			completions = append(completions, comps...)
+		}
 	}
 
 	return finalCmd, completions, directive, nil
