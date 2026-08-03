@@ -1425,6 +1425,10 @@ main:
 		for _, cmd := range cmds {
 			if command == cmd {
 				command.parent = nil
+				// Detaching command shortens CommandPath() for it and for
+				// everything beneath it, just as attaching it lengthened them,
+				// so the subtree's own cached path lengths are now stale too.
+				command.recomputeCommandPathLengths()
 				continue main
 			}
 		}

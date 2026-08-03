@@ -3017,3 +3017,64 @@ func TestCommandPathPaddingRecomputedForDeepSubtree(t *testing.T) {
 		t.Errorf("nested max command path length = %d, want %d", got, want)
 	}
 }
+
+func TestCommandPathPaddingRecomputedOnRemoveCommand(t *testing.T) {
+	// Detaching a subtree shortens CommandPath() for everything beneath it,
+	// exactly as attaching it lengthened them, so the caches must be refreshed
+	// on both paths. RemoveCommand recomputes the lengths the parent keeps for
+	// its remaining children, but the detached subtree carries its own caches.
+	build := func(topFirst bool) (*Command, *Command) {
+		root := &Command{Use: "app", Run: emptyRun}
+		remote := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		authentication := &Command{Use: "authentication", Short: "how auth works"}
+		tls := &Command{Use: "tls", Short: "certificate setup"}
+
+		if topFirst {
+			root.AddCommand(remote)
+			remote.AddCommand(authentication, tls)
+		} else {
+			remote.AddCommand(authentication, tls)
+			root.AddCommand(remote)
+		}
+		root.RemoveCommand(remote)
+		return remote, authentication
+	}
+
+	for _, tc := range []struct {
+		name     string
+		topFirst bool
+	}{
+		{"top-down", true},
+		{"bottom-up", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			remote, authentication := build(tc.topFirst)
+
+			// remote no longer hangs off root, so the longest path beneath it
+			// is "remote authentication", not "app remote authentication".
+			if got, want := remote.commandsMaxCommandPathLen, len("remote authentication"); got != want {
+				t.Errorf("max command path length after detach = %d, want %d", got, want)
+			}
+			if got, want := authentication.CommandPathPadding(), len(authentication.CommandPath()); got != want {
+				t.Errorf("padding = %d, want %d", got, want)
+			}
+		})
+	}
+}
+
+func TestCommandPathPaddingRecomputedOnRemoveCommandForDeepSubtree(t *testing.T) {
+	// As with attaching, detaching must refresh caches at every depth.
+	leaf := &Command{Use: "leaf", Short: "leaf topic"}
+	mid := &Command{Use: "middle", Short: "middle", Run: emptyRun}
+	top := &Command{Use: "top", Short: "top", Run: emptyRun}
+	root := &Command{Use: "app", Run: emptyRun}
+
+	mid.AddCommand(leaf)
+	top.AddCommand(mid)
+	root.AddCommand(top)
+	root.RemoveCommand(top)
+
+	if got, want := mid.commandsMaxCommandPathLen, len("top middle leaf"); got != want {
+		t.Errorf("nested max command path length after detach = %d, want %d", got, want)
+	}
+}
