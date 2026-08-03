@@ -1338,6 +1338,21 @@ func (c *Command) Commands() []*Command {
 	return c.commands
 }
 
+// recomputeCommandPathLengths refreshes the cached maximum command path length
+// for c and every command beneath it. CommandPath() is derived from the parent
+// chain, so it changes for a whole subtree the moment that subtree is attached
+// somewhere new — the values cached by AddCommand at the time each subcommand
+// was added no longer hold.
+func (c *Command) recomputeCommandPathLengths() {
+	c.commandsMaxCommandPathLen = 0
+	for _, command := range c.commands {
+		if commandPathLen := len(command.CommandPath()); commandPathLen > c.commandsMaxCommandPathLen {
+			c.commandsMaxCommandPathLen = commandPathLen
+		}
+		command.recomputeCommandPathLengths()
+	}
+}
+
 // AddCommand adds one or more commands to this parent command.
 func (c *Command) AddCommand(cmds ...*Command) {
 	for i, x := range cmds {
@@ -1358,6 +1373,11 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		if nameLen > c.commandsMaxNameLen {
 			c.commandsMaxNameLen = nameLen
 		}
+		// Attaching x to a new parent lengthens CommandPath() for x and for
+		// everything beneath it, so any max path length cached while those
+		// subcommands were added is now stale. Use and Name are unaffected by
+		// reparenting, so only the path lengths need recomputing.
+		x.recomputeCommandPathLengths()
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
@@ -1405,6 +1425,10 @@ main:
 		for _, cmd := range cmds {
 			if command == cmd {
 				command.parent = nil
+				// Detaching command shortens CommandPath() for it and for
+				// everything beneath it, just as attaching it lengthened them,
+				// so the subtree's own cached path lengths are now stale too.
+				command.recomputeCommandPathLengths()
 				continue main
 			}
 		}

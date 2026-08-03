@@ -2952,3 +2952,129 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestCommandPathPaddingIndependentOfAddCommandOrder(t *testing.T) {
+	// A subtree's CommandPath() changes when it is attached to a new parent,
+	// so padding cached while building bottom-up used to differ from the same
+	// tree built top-down. https://github.com/spf13/cobra/issues/2463
+	build := func(topFirst bool) *Command {
+		root := &Command{Use: "app", Run: emptyRun}
+		sub := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		// Help topics have no Run, so they render under "Additional help
+		// topics" padded with CommandPathPadding.
+		t1 := &Command{Use: "authentication", Short: "how auth works"}
+		t2 := &Command{Use: "tls", Short: "certificate setup"}
+
+		if topFirst {
+			root.AddCommand(sub)
+			sub.AddCommand(t1)
+			sub.AddCommand(t2)
+		} else {
+			sub.AddCommand(t1)
+			sub.AddCommand(t2)
+			root.AddCommand(sub)
+		}
+		return sub
+	}
+
+	topDown := build(true)
+	bottomUp := build(false)
+
+	if got, want := bottomUp.commandsMaxCommandPathLen, topDown.commandsMaxCommandPathLen; got != want {
+		t.Errorf("max command path length = %d, want %d (must not depend on AddCommand order)", got, want)
+	}
+
+	// "app remote authentication" is the longest path under sub.
+	if want := len("app remote authentication"); topDown.commandsMaxCommandPathLen != want {
+		t.Errorf("max command path length = %d, want %d", topDown.commandsMaxCommandPathLen, want)
+	}
+
+	topDownHelp, err := executeCommand(topDown)
+	if err != nil {
+		t.Fatalf("top-down help: %v", err)
+	}
+	bottomUpHelp, err := executeCommand(bottomUp)
+	if err != nil {
+		t.Fatalf("bottom-up help: %v", err)
+	}
+	if topDownHelp != bottomUpHelp {
+		t.Errorf("help output differs by construction order:\ntop-down:\n%s\nbottom-up:\n%s", topDownHelp, bottomUpHelp)
+	}
+}
+
+func TestCommandPathPaddingRecomputedForDeepSubtree(t *testing.T) {
+	// Reparenting must refresh caches at every depth, not just one level down.
+	leaf := &Command{Use: "leaf", Short: "leaf topic"}
+	mid := &Command{Use: "middle", Short: "middle", Run: emptyRun}
+	top := &Command{Use: "top", Short: "top", Run: emptyRun}
+	mid.AddCommand(leaf)
+	top.AddCommand(mid)
+
+	root := &Command{Use: "app", Run: emptyRun}
+	root.AddCommand(top)
+
+	if got, want := mid.commandsMaxCommandPathLen, len("app top middle leaf"); got != want {
+		t.Errorf("nested max command path length = %d, want %d", got, want)
+	}
+}
+
+func TestCommandPathPaddingRecomputedOnRemoveCommand(t *testing.T) {
+	// Detaching a subtree shortens CommandPath() for everything beneath it,
+	// exactly as attaching it lengthened them, so the caches must be refreshed
+	// on both paths. RemoveCommand recomputes the lengths the parent keeps for
+	// its remaining children, but the detached subtree carries its own caches.
+	build := func(topFirst bool) (*Command, *Command) {
+		root := &Command{Use: "app", Run: emptyRun}
+		remote := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		authentication := &Command{Use: "authentication", Short: "how auth works"}
+		tls := &Command{Use: "tls", Short: "certificate setup"}
+
+		if topFirst {
+			root.AddCommand(remote)
+			remote.AddCommand(authentication, tls)
+		} else {
+			remote.AddCommand(authentication, tls)
+			root.AddCommand(remote)
+		}
+		root.RemoveCommand(remote)
+		return remote, authentication
+	}
+
+	for _, tc := range []struct {
+		name     string
+		topFirst bool
+	}{
+		{"top-down", true},
+		{"bottom-up", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			remote, authentication := build(tc.topFirst)
+
+			// remote no longer hangs off root, so the longest path beneath it
+			// is "remote authentication", not "app remote authentication".
+			if got, want := remote.commandsMaxCommandPathLen, len("remote authentication"); got != want {
+				t.Errorf("max command path length after detach = %d, want %d", got, want)
+			}
+			if got, want := authentication.CommandPathPadding(), len(authentication.CommandPath()); got != want {
+				t.Errorf("padding = %d, want %d", got, want)
+			}
+		})
+	}
+}
+
+func TestCommandPathPaddingRecomputedOnRemoveCommandForDeepSubtree(t *testing.T) {
+	// As with attaching, detaching must refresh caches at every depth.
+	leaf := &Command{Use: "leaf", Short: "leaf topic"}
+	mid := &Command{Use: "middle", Short: "middle", Run: emptyRun}
+	top := &Command{Use: "top", Short: "top", Run: emptyRun}
+	root := &Command{Use: "app", Run: emptyRun}
+
+	mid.AddCommand(leaf)
+	top.AddCommand(mid)
+	root.AddCommand(top)
+	root.RemoveCommand(top)
+
+	if got, want := mid.commandsMaxCommandPathLen, len("top middle leaf"); got != want {
+		t.Errorf("nested max command path length after detach = %d, want %d", got, want)
+	}
+}
