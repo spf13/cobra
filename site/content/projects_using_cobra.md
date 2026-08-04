@@ -42,6 +42,7 @@
 - [Moby (former Docker)](https://github.com/moby/moby)
 - [Moldy](https://github.com/Moldy-Community/moldy)
 - [Multi-gitter](https://github.com/lindell/multi-gitter)
+- [Nabat](https://github.com/nabat-dev/nabat)
 - [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 - [nFPM](https://nfpm.goreleaser.com)
 - [Okteto](https://github.com/okteto/okteto)
