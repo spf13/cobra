@@ -786,10 +786,18 @@ func (c *Command) findSuggestions(arg string) string {
 		c.SuggestionsMinimumDistance = 2
 	}
 	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
+	suggestions := c.SuggestionsFor(arg)
+	for _, validArg := range c.ValidArgs {
+		// Strip description after tab if present.
+		validArg = strings.SplitN(validArg, "	", 2)[0]
+		if ld(arg, validArg, true) <= c.SuggestionsMinimumDistance {
+			suggestions = append(suggestions, validArg)
+		}
+	}
+	if len(suggestions) > 0 {
 		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
-			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
+			_, _ = fmt.Fprintf(&sb, "	%v\n", s)
 		}
 	}
 	return sb.String()
