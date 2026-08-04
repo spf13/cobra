@@ -189,37 +189,50 @@ func tmpl(text string) *tmplFunc {
 }
 
 // ld compares two strings and returns the levenshtein distance between them.
+//
+// Only a single row of the distance matrix is kept: computing row i needs
+// nothing but row i-1, so the full matrix never has to be materialized. This
+// keeps the allocation at O(min(len(s), len(t))) instead of O(len(s)*len(t)).
 func ld(s, t string, ignoreCase bool) int {
 	if ignoreCase {
 		s = strings.ToLower(s)
 		t = strings.ToLower(t)
 	}
-	d := make([][]int, len(s)+1)
-	for i := range d {
-		d[i] = make([]int, len(t)+1)
-		d[i][0] = i
+	// The distance is symmetric, so iterate with the shorter string along the
+	// row to keep the allocation as small as possible.
+	if len(t) > len(s) {
+		s, t = t, s
 	}
-	for j := range d[0] {
-		d[0][j] = j
+	// row[j] holds d[i][j] once column j of the current row has been written,
+	// and d[i-1][j] until then.
+	row := make([]int, len(t)+1)
+	for j := range row {
+		row[j] = j
 	}
-	for j := 1; j <= len(t); j++ {
-		for i := 1; i <= len(s); i++ {
+	var diag, above int
+	for i := 1; i <= len(s); i++ {
+		// diag carries d[i-1][j-1], which row[j-1] is about to overwrite.
+		diag = row[0]
+		row[0] = i
+		for j := 1; j <= len(t); j++ {
+			// d[i-1][j], the next iteration's diagonal
+			above = row[j]
 			if s[i-1] == t[j-1] {
-				d[i][j] = d[i-1][j-1]
+				row[j] = diag
 			} else {
-				min := d[i-1][j]
-				if d[i][j-1] < min {
-					min = d[i][j-1]
+				min := above
+				if row[j-1] < min {
+					min = row[j-1]
 				}
-				if d[i-1][j-1] < min {
-					min = d[i-1][j-1]
+				if diag < min {
+					min = diag
 				}
-				d[i][j] = min + 1
+				row[j] = min + 1
 			}
+			diag = above
 		}
-
 	}
-	return d[len(s)][len(t)]
+	return row[len(t)]
 }
 
 func stringInSlice(a string, list []string) bool {
