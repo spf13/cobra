@@ -598,15 +598,22 @@ func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 			return
 		}
 		if _, ok := flag.Annotations[BashCompOneRequiredFlag]; ok {
-			format := "    must_have_one_flag+=(\"--%s"
+			// __handle_flag looks up the word as typed: "--name" for
+			// `--name value` and "--name=" for `--name=value`. Writing only
+			// one of them leaves the other form unable to clear the entry, so
+			// both go in, the way writeLocalNonPersistentFlag already does it.
+			format := "    must_have_one_flag+=(\"--%[1]s" + cbn
 			if flag.Value.Type() != "bool" {
-				format += "="
+				format += "    must_have_one_flag+=(\"--%[1]s=" + cbn
 			}
-			format += cbn
 			WriteStringAndCheck(buf, fmt.Sprintf(format, flag.Name))
 
 			if len(flag.Shorthand) > 0 {
-				WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_flag+=(\"-%s"+cbn, flag.Shorthand))
+				format = "    must_have_one_flag+=(\"-%[1]s" + cbn
+				if flag.Value.Type() != "bool" {
+					format += "    must_have_one_flag+=(\"-%[1]s=" + cbn
+				}
+				WriteStringAndCheck(buf, fmt.Sprintf(format, flag.Shorthand))
 			}
 		}
 	})

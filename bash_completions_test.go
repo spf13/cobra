@@ -173,8 +173,11 @@ func TestBashCompletions(t *testing.T) {
 	check(t, output, "_root_print")
 	check(t, output, "_root_cmd__colon")
 
-	// check for required flags
+	// check for required flags: both the "--flag" and the "--flag=" spelling,
+	// since __handle_flag looks up the word as the user typed it
+	check(t, output, `must_have_one_flag+=("--introot")`)
 	check(t, output, `must_have_one_flag+=("--introot=")`)
+	check(t, output, `must_have_one_flag+=("--persistent-filename")`)
 	check(t, output, `must_have_one_flag+=("--persistent-filename=")`)
 	// check for custom completion function with both qualified and unqualified name
 	checkNumOccurrences(t, output, `__custom_func`, 2)      // 1. check existence, 2. invoke
