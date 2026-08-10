@@ -31,3 +31,32 @@ func TestPwshCompletionNoActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("${env:%s}=0", activeHelpVar))
 }
+
+// Regression for https://github.com/spf13/cobra/issues/2481: empty/single-line
+// completion output must not call methods on null or System.Char, and stripping
+// the directive must not filter by value.
+func TestPwshCompletionDirectiveHandling(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenPowerShellCompletion(buf))
+
+	for _, want := range []string{
+		"$Out = @($Out)",
+		"Select-Object -First ($Out.Count - 1)",
+		"([string]$Out[-1]).TrimStart(':')",
+	} {
+		if !bytes.Contains(buf.Bytes(), []byte(want)) {
+			t.Errorf("generated PowerShell completion missing %q", want)
+		}
+	}
+	// Old buggy patterns must not reappear
+	for _, bad := range []string{
+		"$Out = $Out | Where-Object { $_ -ne $Out[-1] }",
+		"[int]$Directive = $Out[-1].TrimStart(':')",
+	} {
+		if bytes.Contains(buf.Bytes(), []byte(bad)) {
+			t.Errorf("generated PowerShell completion still contains buggy pattern %q", bad)
+		}
+	}
+}
