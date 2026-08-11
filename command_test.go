@@ -17,6 +17,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -1473,6 +1474,160 @@ func TestSuggestions(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestFlagSuggestions(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.Flags().BoolP("version", "v", false, "show version")
+
+	output, err := executeCommand(rootCmd, "--verion")
+	if err == nil {
+		t.Fatal("expected an unknown flag error")
+	}
+
+	want := "unknown flag: --verion\n\nDid you mean this?\n\t--version\n"
+	if err.Error() != want {
+		t.Errorf("expected error %q, got %q", want, err)
+	}
+	checkStringContains(t, output, want)
+
+	var flagErr *pflag.NotExistError
+	if !errors.As(err, &flagErr) {
+		t.Errorf("expected a pflag.NotExistError, got %T", err)
+	}
+}
+
+func TestFlagSuggestionsIncludePersistentFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root"}
+	rootCmd.PersistentFlags().Bool("verbose", false, "show verbose output")
+	childCmd := &Command{Use: "child", Run: emptyRun}
+	rootCmd.AddCommand(childCmd)
+
+	_, err := executeCommand(rootCmd, "child", "--verbse")
+	if err == nil {
+		t.Fatal("expected an unknown flag error")
+	}
+
+	want := "unknown flag: --verbse\n\nDid you mean this?\n\t--verbose\n"
+	if err.Error() != want {
+		t.Errorf("expected error %q, got %q", want, err)
+	}
+}
+
+func TestFlagSuggestionsWithTraverseChildren(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd.Flags().Bool("version", false, "show version")
+	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
+
+	cmd, output, err := executeCommandC(rootCmd, "--verion=true", "child")
+	if err == nil {
+		t.Fatal("expected an unknown flag error")
+	}
+	if cmd != rootCmd {
+		t.Errorf("expected root command, got %v", cmd)
+	}
+
+	want := "unknown flag: --verion\n\nDid you mean this?\n\t--version\n"
+	if err.Error() != want {
+		t.Errorf("expected error %q, got %q", want, err)
+	}
+	checkStringContains(t, output, want)
+}
+
+func TestInheritedFlagErrorFuncWithTraverseChildren(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Bool("version", false, "show version")
+	childCmd.AddCommand(&Command{Use: "grandchild", Run: emptyRun})
+	rootCmd.AddCommand(childCmd)
+
+	customErr := errors.New("custom flag error")
+	var handlerCalled bool
+	rootCmd.SetFlagErrorFunc(func(cmd *Command, err error) error {
+		handlerCalled = true
+		if cmd != childCmd {
+			t.Errorf("expected child command, got %v", cmd)
+		}
+		if _, ok := err.(*pflag.NotExistError); !ok {
+			t.Errorf("expected original pflag.NotExistError, got %T", err)
+		}
+		return customErr
+	})
+
+	_, output, err := executeCommandC(rootCmd, "child", "--verion=true", "grandchild")
+	if !handlerCalled {
+		t.Error("expected inherited flag error function to be called")
+	}
+	if err != customErr {
+		t.Errorf("expected custom error %v, got %v", customErr, err)
+	}
+	checkStringContains(t, output, "Error: custom flag error")
+	checkStringOmits(t, output, "Did you mean this?")
+}
+
+func TestFlagSuggestionsRespectCommandSettings(t *testing.T) {
+	t.Run("disabled suggestions", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun, DisableSuggestions: true}
+		rootCmd.Flags().Bool("version", false, "show version")
+
+		_, err := executeCommand(rootCmd, "--verion")
+		if err == nil {
+			t.Fatal("expected an unknown flag error")
+		}
+		if want := "unknown flag: --verion"; err.Error() != want {
+			t.Errorf("expected error %q, got %q", want, err)
+		}
+	})
+
+	t.Run("custom flag error function", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+		rootCmd.Flags().Bool("version", false, "show version")
+		rootCmd.SetFlagErrorFunc(func(_ *Command, err error) error {
+			if want := "unknown flag: --verion"; err.Error() != want {
+				t.Errorf("expected callback error %q, got %q", want, err)
+			}
+			return fmt.Errorf("custom: %w", err)
+		})
+
+		_, err := executeCommand(rootCmd, "--verion")
+		if err == nil {
+			t.Fatal("expected an unknown flag error")
+		}
+		if want := "custom: unknown flag: --verion"; err.Error() != want {
+			t.Errorf("expected error %q, got %q", want, err)
+		}
+	})
+}
+
+func TestFlagSuggestionsExcludeUnavailableFlags(t *testing.T) {
+	t.Run("unknown shorthand", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+		rootCmd.Flags().BoolP("version", "v", false, "show version")
+
+		_, err := executeCommand(rootCmd, "-x")
+		if err == nil {
+			t.Fatal("expected an unknown shorthand flag error")
+		}
+		if want := "unknown shorthand flag: 'x' in -x"; err.Error() != want {
+			t.Errorf("expected error %q, got %q", want, err)
+		}
+	})
+
+	t.Run("hidden flag", func(t *testing.T) {
+		rootCmd := &Command{Use: "root", Run: emptyRun}
+		rootCmd.Flags().Bool("secret", false, "hidden flag")
+		if err := rootCmd.Flags().MarkHidden("secret"); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := executeCommand(rootCmd, "--secrt")
+		if err == nil {
+			t.Fatal("expected an unknown flag error")
+		}
+		if want := "unknown flag: --secrt"; err.Error() != want {
+			t.Errorf("expected error %q, got %q", want, err)
+		}
+	})
 }
 
 func TestCaseInsensitive(t *testing.T) {

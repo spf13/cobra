@@ -557,6 +557,26 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 	}
 }
 
+func (c *Command) hasCustomFlagErrorFunc() bool {
+	if c.flagErrorFunc != nil {
+		return true
+	}
+	return c.HasParent() && c.parent.hasCustomFlagErrorFunc()
+}
+
+func (c *Command) flagError(err error) error {
+	err = c.FlagErrorFunc()(c, err)
+	if c.hasCustomFlagErrorFunc() {
+		return err
+	}
+
+	suggestions := c.findFlagSuggestions(err)
+	if suggestions == "" {
+		return err
+	}
+	return fmt.Errorf("%w%s", err, suggestions)
+}
+
 const minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
@@ -785,8 +805,41 @@ func (c *Command) findSuggestions(arg string) string {
 	if c.SuggestionsMinimumDistance <= 0 {
 		c.SuggestionsMinimumDistance = 2
 	}
+	return formatSuggestions(c.SuggestionsFor(arg))
+}
+
+func (c *Command) findFlagSuggestions(err error) string {
+	if c.DisableSuggestions {
+		return ""
+	}
+
+	var flagErr *flag.NotExistError
+	if !errors.As(err, &flagErr) || flagErr.GetSpecifiedShortnames() != "" {
+		return ""
+	}
+
+	if c.SuggestionsMinimumDistance <= 0 {
+		c.SuggestionsMinimumDistance = 2
+	}
+	typedName := flagErr.GetSpecifiedName()
+	suggestions := []string{}
+	c.Flags().VisitAll(func(f *flag.Flag) {
+		if f.Hidden {
+			return
+		}
+		levenshteinDistance := ld(typedName, f.Name, true)
+		suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
+		suggestByPrefix := strings.HasPrefix(strings.ToLower(f.Name), strings.ToLower(typedName))
+		if suggestByLevenshtein || suggestByPrefix {
+			suggestions = append(suggestions, "--"+f.Name)
+		}
+	})
+	return formatSuggestions(suggestions)
+}
+
+func formatSuggestions(suggestions []string) string {
 	var sb strings.Builder
-	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
+	if len(suggestions) > 0 {
 		sb.WriteString("\n\nDid you mean this?\n")
 		for _, s := range suggestions {
 			_, _ = fmt.Fprintf(&sb, "\t%v\n", s)
@@ -852,7 +905,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		}
 
 		if err := c.ParseFlags(flags); err != nil {
-			return nil, args, err
+			return nil, args, c.flagError(err)
 		}
 		return cmd.Traverse(args[i+1:])
 	}
@@ -918,7 +971,7 @@ func (c *Command) execute(a []string) (err error) {
 
 	err = c.ParseFlags(a)
 	if err != nil {
-		return c.FlagErrorFunc()(c, err)
+		return c.flagError(err)
 	}
 
 	// If help is called, regardless of other flags, return we want help.
