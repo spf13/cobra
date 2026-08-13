@@ -319,6 +319,8 @@ __%[1]s_handle_standard_completion_case() {
         # and we don't want to show escape characters in that list.
         if (( ${#COMPREPLY[@]} == 1 )); then
             COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]}")
+        else
+            __%[1]s_quote_common_prefix
         fi
         return 0
     fi
@@ -360,8 +362,32 @@ __%[1]s_handle_standard_completion_case() {
         COMPREPLY[0]=$(printf "%%q" "${COMPREPLY[0]%%%%$tab*}")
         __%[1]s_debug "Removed description from single completion, which is now: ${COMPREPLY[0]}"
     else
+        __%[1]s_quote_common_prefix
         # Format the descriptions
         __%[1]s_format_comp_descriptions $longest
+    fi
+}
+
+__%[1]s_quote_common_prefix() {
+    # Readline only quotes completion prefixes when they are marked as filenames.
+    # Restrict that behavior to an actual TAB insertion of a prefix which needs
+    # quoting, so completion lists and ordinary values keep their normal display.
+    [[ ${COMP_TYPE-} == 9 && ${#COMPREPLY[@]} -gt 1 && $(type -t compopt) == builtin ]] || return 0
+
+    local tab=$'\t'
+    local commonPrefix=${COMPREPLY[0]%%%%"$tab"*}
+    local comp quotedPrefix
+    for comp in "${COMPREPLY[@]:1}"; do
+        comp=${comp%%%%"$tab"*}
+        while [[ $comp != "$commonPrefix"* ]]; do
+            commonPrefix=${commonPrefix%%?}
+        done
+    done
+
+    [[ -n $commonPrefix ]] || return 0
+    printf -v quotedPrefix "%%q" "$commonPrefix"
+    if [[ $quotedPrefix != "$commonPrefix" ]]; then
+        compopt -o filenames
     fi
 }
 
