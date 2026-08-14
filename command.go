@@ -1226,7 +1226,11 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += name
 		}
-		c.Flags().BoolP(helpFlagName, "h", false, usage)
+		if c.Flags().ShorthandLookup("h") == nil {
+			c.Flags().BoolP(helpFlagName, "h", false, usage)
+		} else {
+			c.Flags().Bool(helpFlagName, false, usage)
+		}
 		_ = c.Flags().SetAnnotation(helpFlagName, FlagSetByCobraAnnotation, []string{"true"})
 	}
 }
@@ -1358,6 +1362,13 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		if nameLen > c.commandsMaxNameLen {
 			c.commandsMaxNameLen = nameLen
 		}
+		// If x was attached to this parent after its own children were
+		// added (bottom-up construction), x's CommandPath just changed and
+		// the cached max path length on x and its descendants is stale.
+		// Recompute it so help output does not depend on AddCommand order.
+		if len(x.commands) > 0 {
+			x.recomputeCommandPathLen()
+		}
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
@@ -1467,6 +1478,21 @@ func (c *Command) CommandPath() string {
 		return c.Parent().CommandPath() + " " + c.Name()
 	}
 	return c.DisplayName()
+}
+
+// recomputeCommandPathLen recomputes the cached maximum command path
+// length for c and all of its descendants. It is needed when a command is
+// attached to a parent after its own children were added (bottom-up
+// construction): the cached value was computed when the command had no
+// parent yet, so it may be shorter than the actual paths.
+func (c *Command) recomputeCommandPathLen() {
+	c.commandsMaxCommandPathLen = 0
+	for _, sub := range c.commands {
+		if l := len(sub.CommandPath()); l > c.commandsMaxCommandPathLen {
+			c.commandsMaxCommandPathLen = l
+		}
+		sub.recomputeCommandPathLen()
+	}
 }
 
 // DisplayName returns the name to display in help text. Returns command Name()
