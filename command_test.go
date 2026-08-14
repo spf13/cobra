@@ -938,6 +938,68 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 	}
 }
 
+// TestCommandPathPaddingIndependentOfAddOrder ensures help output does not
+// depend on the order AddCommand was called (issue #2463): building a tree
+// bottom-up (attaching children before attaching the subcommand to the root)
+// must produce the same padding and help text as building it top-down.
+func TestCommandPathPaddingIndependentOfAddOrder(t *testing.T) {
+	build := func(topFirst bool) (*Command, *Command) {
+		root := &Command{Use: "app"}
+		sub := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		t1 := &Command{Use: "authentication", Short: "how auth works"}
+		t2 := &Command{Use: "tls", Short: "certificate setup"}
+		if topFirst {
+			root.AddCommand(sub)
+			sub.AddCommand(t1)
+			sub.AddCommand(t2)
+		} else {
+			sub.AddCommand(t1)
+			sub.AddCommand(t2)
+			root.AddCommand(sub)
+		}
+		return sub, t1
+	}
+
+	subTop, t1Top := build(true)
+	subBottom, t1Bottom := build(false)
+
+	if padTop, padBottom := t1Top.CommandPathPadding(), t1Bottom.CommandPathPadding(); padTop != padBottom {
+		t.Errorf("CommandPathPadding depends on AddCommand order: top-down=%d bottom-up=%d", padTop, padBottom)
+	}
+
+	renderHelp := func(sub *Command) string {
+		sub.SetOut(&bytes.Buffer{})
+		sub.SetErr(&bytes.Buffer{})
+		if err := sub.Help(); err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		return sub.OutOrStderr().(*bytes.Buffer).String()
+	}
+	if outTop, outBottom := renderHelp(subTop), renderHelp(subBottom); outTop != outBottom {
+		t.Errorf("help output depends on AddCommand order:\n--- top-down ---\n%s\n--- bottom-up ---\n%s", outTop, outBottom)
+	}
+
+	// Three-level bottom-up construction (the leaf is attached before the
+	// intermediate command is attached to the root) must also recompute
+	// the cached path length recursively.
+	build3 := func(topFirst bool) int {
+		root := &Command{Use: "app"}
+		mid := &Command{Use: "remote"}
+		leaf := &Command{Use: "certificate"}
+		if topFirst {
+			root.AddCommand(mid)
+			mid.AddCommand(leaf)
+		} else {
+			mid.AddCommand(leaf)
+			root.AddCommand(mid)
+		}
+		return leaf.CommandPathPadding()
+	}
+	if padTop, padBottom := build3(true), build3(false); padTop != padBottom {
+		t.Errorf("CommandPathPadding depends on AddCommand order (3 levels): top-down=%d bottom-up=%d", padTop, padBottom)
+	}
+}
+
 func TestHelpCommandExecuted(t *testing.T) {
 	rootCmd := &Command{Use: "root", Long: "Long description", Run: emptyRun}
 	rootCmd.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -1375,6 +1437,33 @@ func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	}
 	check(t, rootCmd.Flags().ShorthandLookup("v").Name, "notversion")
 	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
+}
+
+func TestShorthandHelpFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.Flags().StringP("host", "h", "", "not a help flag")
+
+	// -h must still resolve to the user flag, not the default help flag
+	_, err := executeCommand(rootCmd, "-h")
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	checkStringContains(t, err.Error(), "flag needs an argument: 'h' in -h")
+	check(t, rootCmd.Flags().ShorthandLookup("h").Name, "host")
+
+	// --help must still work via a long-only help flag
+	output, err := executeCommand(rootCmd, "--help")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	checkStringContains(t, output, "Usage:")
+	if rootCmd.Flags().Lookup("help") == nil {
+		t.Errorf("Expected help flag to be defined")
+	}
+	if rootCmd.Flags().Lookup("help").Shorthand != "" {
+		t.Errorf("Expected help flag to have no shorthand, got %q", rootCmd.Flags().Lookup("help").Shorthand)
+	}
+	check(t, rootCmd.Flags().ShorthandLookup("h").Name, "host")
 }
 
 func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
