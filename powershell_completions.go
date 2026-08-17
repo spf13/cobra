@@ -129,15 +129,16 @@ filter __%[1]s_escapeStringWithSpecialChars {
     Invoke-Expression -OutVariable out "$RequestComp" 2>&1 | Out-Null
 
     # get directive from last line
-    [int]$Directive = $Out[-1].TrimStart(':')
-    if ($Directive -eq "") {
-        # There is no directive specified
-        $Directive = 0
+    $Directive = 0
+    if ($Out.Count -gt 0) {
+        [string]$DirectiveStr = $Out[-1]
+        $DirectiveStr = $DirectiveStr.TrimStart(':')
+        if ($DirectiveStr -ne "") {
+            $Directive = [int]$DirectiveStr
+        }
+        $Out = $Out | Select-Object -First ($Out.Count - 1)
     }
     __%[1]s_debug "The completion directive is: $Directive"
-
-    # remove directive (last element) from out
-    $Out = $Out | Where-Object { $_ -ne $Out[-1] }
     __%[1]s_debug "The completions are: $Out"
 
     if (($Directive -band $ShellCompDirectiveError) -ne 0 ) {
