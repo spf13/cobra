@@ -287,3 +287,23 @@ func TestBashCompletionNoActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+// A required flag that takes a value is recorded as "--flag=" (see writeRequiredFlag),
+// so __handle_flag must also match that spelling when the flag is given in two-word
+// form, where flagname stays "--flag". See #2465.
+func TestBashCompletionRequiredFlagClearedForTwoWordForm(t *testing.T) {
+	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd.Flags().String("host", "", "host to connect to")
+	assertNoErr(t, rootCmd.MarkFlagRequired("host"))
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf))
+	output := buf.String()
+
+	// The required flag is registered with a trailing "=" because it takes a value.
+	check(t, output, `must_have_one_flag+=("--host=")`)
+
+	// Both spellings have to clear must_have_one_flag, otherwise completion stays
+	// restricted to the required set after "--host value" has already been supplied.
+	check(t, output, `__root_contains_word "${flagname}=" "${must_have_one_flag[@]}"`)
+}

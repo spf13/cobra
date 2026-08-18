@@ -301,7 +301,9 @@ __%[1]s_handle_flag()
         flagname="${flagname}=" # but put the = back
     fi
     __%[1]s_debug "${FUNCNAME[0]}: looking for ${flagname}"
-    if __%[1]s_contains_word "${flagname}" "${must_have_one_flag[@]}"; then
+    # Required flags that take a value are recorded as "--flag=", so a flag given in
+    # two-word form ("--flag value") must also be matched against that spelling.
+    if __%[1]s_contains_word "${flagname}" "${must_have_one_flag[@]}" || __%[1]s_contains_word "${flagname}=" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
     fi
 
