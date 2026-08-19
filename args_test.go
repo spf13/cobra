@@ -164,6 +164,13 @@ func TestOnlyValidArgs_WithInvalidArgs(t *testing.T) {
 	validOnlyWithInvalidArgs(err, t)
 }
 
+func TestOnlyValidArgs_WithValidAndInvalidArgs(t *testing.T) {
+	c := getCommand(OnlyValidArgs, true)
+	_, err := executeCommand(c, "one", "a")
+	validOnlyWithInvalidArgs(err, t)
+}
+
+
 // NoDuplicateArgs
 
 func TestNoDuplicateArgs(t *testing.T) {
