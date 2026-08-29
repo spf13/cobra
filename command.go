@@ -518,7 +518,7 @@ func (c *Command) getHelpTemplateFunc() func(w io.Writer, data interface{}) erro
 // Used when a user calls help [command].
 // Can be defined by user by overriding HelpFunc.
 func (c *Command) Help() error {
-	c.HelpFunc()(c, []string{})
+	c.HelpFunc()(c, c.args)
 	return nil
 }
 
@@ -965,6 +965,9 @@ func (c *Command) execute(a []string) (err error) {
 		argWoFlags = a
 	}
 
+	// Store the parsed args so they can be passed to HelpFunc if needed
+	c.args = argWoFlags
+
 	if err := c.ValidateArgs(argWoFlags); err != nil {
 		return err
 	}
@@ -1150,7 +1153,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
 		if errors.Is(err, flag.ErrHelp) {
-			cmd.HelpFunc()(cmd, args)
+			cmd.HelpFunc()(cmd, cmd.args)
 			return cmd, nil
 		}
 
@@ -1291,7 +1294,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 				return completions, ShellCompDirectiveNoFileComp
 			},
 			Run: func(c *Command, args []string) {
-				cmd, _, e := c.Root().Find(args)
+				cmd, remainingArgs, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
@@ -1303,6 +1306,10 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 
 					cmd.InitDefaultHelpFlag()    // make possible 'help' flag to be shown
 					cmd.InitDefaultVersionFlag() // make possible 'version' flag to be shown
+
+					// Store the remaining args so HelpFunc receives them
+					cmd.args = remainingArgs
+
 					CheckErr(cmd.Help())
 				}
 			},
