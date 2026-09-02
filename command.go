@@ -1345,25 +1345,37 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// update max lengths
-		usageLen := len(x.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(x.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(x.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
+		// CommandPath of existing grandchildren now includes this parent.
+		x.recomputeMaxLengths()
+		c.updateMaxLengthsFrom(x)
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
 		}
 		c.commands = append(c.commands, x)
 		c.commandsAreSorted = false
+	}
+}
+
+func (c *Command) updateMaxLengthsFrom(x *Command) {
+	if usageLen := len(x.Use); usageLen > c.commandsMaxUseLen {
+		c.commandsMaxUseLen = usageLen
+	}
+	if commandPathLen := len(x.CommandPath()); commandPathLen > c.commandsMaxCommandPathLen {
+		c.commandsMaxCommandPathLen = commandPathLen
+	}
+	if nameLen := len(x.Name()); nameLen > c.commandsMaxNameLen {
+		c.commandsMaxNameLen = nameLen
+	}
+}
+
+func (c *Command) recomputeMaxLengths() {
+	c.commandsMaxUseLen = 0
+	c.commandsMaxCommandPathLen = 0
+	c.commandsMaxNameLen = 0
+	for _, command := range c.commands {
+		command.recomputeMaxLengths()
+		c.updateMaxLengthsFrom(command)
 	}
 }
 
@@ -1411,24 +1423,7 @@ main:
 		commands = append(commands, command)
 	}
 	c.commands = commands
-	// recompute all lengths
-	c.commandsMaxUseLen = 0
-	c.commandsMaxCommandPathLen = 0
-	c.commandsMaxNameLen = 0
-	for _, command := range c.commands {
-		usageLen := len(command.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(command.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(command.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
-	}
+	c.recomputeMaxLengths()
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.

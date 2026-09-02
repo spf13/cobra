@@ -2158,6 +2158,32 @@ func TestSetIn(t *testing.T) {
 	}
 }
 
+func TestCommandPathPaddingIndependentOfAddOrder(t *testing.T) {
+	build := func(topFirst bool) *Command {
+		root := &Command{Use: "app", Run: emptyRun}
+		sub := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		t1 := &Command{Use: "authentication", Short: "how auth works"}
+		t2 := &Command{Use: "tls", Short: "certificate setup"}
+		if topFirst {
+			root.AddCommand(sub)
+			sub.AddCommand(t1, t2)
+		} else {
+			sub.AddCommand(t1, t2)
+			root.AddCommand(sub)
+		}
+		return sub
+	}
+
+	topFirst := build(true).UsageString()
+	bottomUp := build(false).UsageString()
+	if topFirst != bottomUp {
+		t.Fatalf("help depends on AddCommand order\n--- top-first ---\n%s\n--- bottom-up ---\n%s", topFirst, bottomUp)
+	}
+	if !strings.Contains(topFirst, "app remote authentication") {
+		t.Fatalf("expected full command path in help:\n%s", topFirst)
+	}
+}
+
 func TestUsageStringRedirected(t *testing.T) {
 	c := &Command{}
 
