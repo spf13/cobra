@@ -1594,6 +1594,68 @@ func TestRemoveCommand(t *testing.T) {
 	}
 }
 
+func TestHiddenCommandDoesNotAffectPadding(t *testing.T) {
+	rootCmd := &Command{Use: "root"}
+	visibleCmd := &Command{Use: "visible"}
+	hiddenCmd := &Command{
+		Use:    "hidden-command",
+		Hidden: true,
+	}
+	rootCmd.AddCommand(visibleCmd, hiddenCmd)
+
+	if rootCmd.commandsMaxUseLen != len(visibleCmd.Use) {
+		t.Errorf(
+			"expected max use length to be %d, got %d",
+			len(visibleCmd.Use),
+			rootCmd.commandsMaxUseLen,
+		)
+	}
+	if rootCmd.commandsMaxCommandPathLen != len(visibleCmd.CommandPath()) {
+		t.Errorf(
+			"expected max command path length to be %d, got %d",
+			len(visibleCmd.CommandPath()),
+			rootCmd.commandsMaxCommandPathLen,
+		)
+	}
+	if rootCmd.commandsMaxNameLen != len(visibleCmd.Name()) {
+		t.Errorf(
+			"expected max name length to be %d, got %d",
+			len(visibleCmd.Name()),
+			rootCmd.commandsMaxNameLen,
+		)
+	}
+}
+
+func TestRemoveCommandIgnoresHiddenCommand(t *testing.T) {
+	rootCmd := &Command{Use: "root"}
+	visibleCmd := &Command{Use: "visible"}
+	hiddenCmd := &Command{
+		Use:    "hidden-command",
+		Hidden: true,
+	}
+	rootCmd.AddCommand(visibleCmd, hiddenCmd)
+	rootCmd.RemoveCommand(visibleCmd)
+
+	if rootCmd.commandsMaxUseLen != 0 {
+		t.Errorf(
+			"expected max use length to be 0, got %d",
+			rootCmd.commandsMaxUseLen,
+		)
+	}
+	if rootCmd.commandsMaxCommandPathLen != 0 {
+		t.Errorf(
+			"expected max command path length to be 0, got %d",
+			rootCmd.commandsMaxCommandPathLen,
+		)
+	}
+	if rootCmd.commandsMaxNameLen != 0 {
+		t.Errorf(
+			"expected max name length to be 0, got %d",
+			rootCmd.commandsMaxNameLen,
+		)
+	}
+}
+
 func TestReplaceCommandWithRemove(t *testing.T) {
 	childUsed := 0
 	rootCmd := &Command{Use: "root", Run: emptyRun}
