@@ -128,16 +128,31 @@ filter __%[1]s_escapeStringWithSpecialChars {
     # $Out is an array contains each line per element
     Invoke-Expression -OutVariable out "$RequestComp" 2>&1 | Out-Null
 
+    # Normalize $Out to an array: it can be $null when the command produced no
+    # output, or a single string when the command produced exactly one line,
+    # in which case $Out[-1] would return a [System.Char] instead of a string.
+    [Array]$Directives = $Out
+
     # get directive from last line
-    [int]$Directive = $Out[-1].TrimStart(':')
-    if ($Directive -eq "") {
-        # There is no directive specified
-        $Directive = 0
+    $Directive = 0
+    if ($Directives.Count -gt 0) {
+        $DirectiveStr = $Directives[-1].TrimStart(':')
+        if ($DirectiveStr -ne "") {
+            # There is a directive specified
+            $Directive = [int]$DirectiveStr
+        }
     }
     __%[1]s_debug "The completion directive is: $Directive"
 
+    if ($Directives.Count -le 1) {
+        # The command produced no output, or the directive was the only line of
+        # output, so there are no completions to offer.  Return without emitting
+        # anything to keep PSReadLine from falling back to file completion.
+        return
+    }
+
     # remove directive (last element) from out
-    $Out = $Out | Where-Object { $_ -ne $Out[-1] }
+    $Out = $Directives | Select-Object -First ($Directives.Count - 1)
     __%[1]s_debug "The completions are: $Out"
 
     if (($Directive -band $ShellCompDirectiveError) -ne 0 ) {
