@@ -26,6 +26,46 @@ func main() {
 
 That will get you a Markdown document `/tmp/test.md`
 
+## Generate markdown docs for a command with subcommands
+
+`GenMarkdownTree` walks the whole command tree, not just the command you pass it. Given a command with children:
+
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
+)
+
+func main() {
+	rootCmd := &cobra.Command{
+		Use:   "test",
+		Short: "my test program",
+	}
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "sub",
+		Short: "a subcommand of test",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	})
+	err := doc.GenMarkdownTree(rootCmd, "/tmp")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+running that program produces one file per command in the tree:
+
+```
+/tmp/test.md
+/tmp/test_sub.md
+```
+
+Each file is named after the full command path (parent and child joined with `_`), and contains the command's usage, flags, and a link to its parent/child commands.
+
 ## Generate markdown docs for the entire command tree
 
 This program can actually generate docs for the kubectl command in the kubernetes project
