@@ -2952,3 +2952,32 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestResetCommandsDetachesChildren(t *testing.T) {
+	root := &Command{Use: "root"}
+	child := &Command{Use: "child"}
+	grandchild := &Command{Use: "grandchild"}
+	child.AddCommand(grandchild)
+	root.AddCommand(child)
+	root.InitDefaultHelpCmd()
+	children := append([]*Command(nil), root.Commands()...)
+	root.ResetCommands()
+	if len(root.Commands()) != 0 {
+		t.Fatal("reset command still has children")
+	}
+	for _, command := range children {
+		if command.Parent() != nil {
+			t.Errorf("%s still has a parent", command.Name())
+		}
+		if command.Root() != command {
+			t.Errorf("%s still resolves its old root", command.Name())
+		}
+	}
+	if grandchild.Parent() != child {
+		t.Error("reset changed the detached subtree")
+	}
+	if got := grandchild.CommandPath(); got != "child grandchild" {
+		t.Errorf("command path = %q", got)
+	}
+	root.ResetCommands()
+}

@@ -1315,6 +1315,9 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 
 // ResetCommands delete parent, subcommand and help command from c.
 func (c *Command) ResetCommands() {
+	for _, command := range c.commands {
+		command.parent = nil
+	}
 	c.parent = nil
 	c.commands = nil
 	c.helpCommand = nil
