@@ -15,8 +15,11 @@
 package cobra
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func TestValidateFlagGroups(t *testing.T) {
@@ -191,5 +194,106 @@ func TestValidateFlagGroups(t *testing.T) {
 				t.Errorf("Expected error %q but got %q", tc.expectErr, err)
 			}
 		})
+	}
+}
+
+func TestValidateFlagGroupsWithNormalization(t *testing.T) {
+	normalize := func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(strings.ReplaceAll(name, "_", "-"))
+	}
+	groups := []struct {
+		name      string
+		mark      func(*Command, ...string)
+		expectErr [3]string // Indexed by the number of flags supplied.
+	}{
+		{
+			name: "required together",
+			mark: (*Command).MarkFlagsRequiredTogether,
+			expectErr: [3]string{
+				1: "if any flags in the group [%s] are set they must all be set; missing [baz-qux]",
+			},
+		},
+		{
+			name: "one required",
+			mark: (*Command).MarkFlagsOneRequired,
+			expectErr: [3]string{
+				0: "at least one of the flags in the group [%s] is required",
+			},
+		},
+		{
+			name: "mutually exclusive",
+			mark: (*Command).MarkFlagsMutuallyExclusive,
+			expectErr: [3]string{
+				2: "if any flags in the group [%s] are set none of the others can be; [baz-qux foo-bar] were all set",
+			},
+		},
+	}
+	setups := []struct {
+		name                  string
+		flagNames             []string
+		inherited             bool
+		normalizeAfterMarking bool
+	}{
+		{name: "canonical", flagNames: []string{"foo-bar", "baz-qux"}},
+		{name: "aliases", flagNames: []string{"foo_bar", "baz_qux"}},
+		{name: "mixed", flagNames: []string{"foo_bar", "baz-qux"}},
+		{name: "inherited", flagNames: []string{"foo_bar", "baz_qux"}, inherited: true},
+		{name: "late normalization", flagNames: []string{"foo_bar", "baz_qux"}, normalizeAfterMarking: true},
+		{name: "inherited late normalization", flagNames: []string{"foo_bar", "baz_qux"}, inherited: true, normalizeAfterMarking: true},
+	}
+	inputs := []struct {
+		name string
+		args []string
+	}{
+		{name: "none"},
+		{name: "one canonical", args: []string{"--foo-bar=value"}},
+		{name: "one alias", args: []string{"--foo_bar=value"}},
+		{name: "both canonical", args: []string{"--foo-bar=value", "--baz-qux=value"}},
+		{name: "both aliases", args: []string{"--foo_bar=value", "--baz_qux=value"}},
+		{name: "both mixed", args: []string{"--foo_bar=value", "--baz-qux=value"}},
+	}
+	for _, group := range groups {
+		for _, setup := range setups {
+			for _, input := range inputs {
+				t.Run(group.name+"/"+setup.name+"/"+input.name, func(t *testing.T) {
+					root := &Command{Use: "root", Run: emptyRun}
+					cmd := root
+					if setup.inherited {
+						cmd = &Command{Use: "child", Run: emptyRun}
+						root.AddCommand(cmd)
+					}
+					if !setup.normalizeAfterMarking {
+						root.SetGlobalNormalizationFunc(normalize)
+					}
+					flags := cmd.Flags()
+					if setup.inherited {
+						flags = root.PersistentFlags()
+					}
+					// Underscore names also allow the group to be registered before normalization.
+					flags.String("foo_bar", "", "")
+					flags.String("baz_qux", "", "")
+					group.mark(cmd, setup.flagNames...)
+					if setup.normalizeAfterMarking {
+						root.SetGlobalNormalizationFunc(normalize)
+					}
+
+					args := input.args
+					if setup.inherited {
+						args = append([]string{"child"}, args...)
+					}
+					_, err := executeCommand(root, args...)
+					expectErr := group.expectErr[len(input.args)]
+					if expectErr != "" {
+						expectErr = fmt.Sprintf(expectErr, strings.Join(setup.flagNames, " "))
+					}
+					switch {
+					case err == nil && expectErr != "":
+						t.Errorf("Expected error %q but got nil", expectErr)
+					case err != nil && err.Error() != expectErr:
+						t.Errorf("Expected error %q but got %q", expectErr, err)
+					}
+				})
+			}
+		}
 	}
 }

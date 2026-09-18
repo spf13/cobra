@@ -132,7 +132,8 @@ func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annota
 
 				groupStatus[group] = make(map[string]bool, len(flagnames))
 				for _, name := range flagnames {
-					groupStatus[group][name] = false
+					// Use the normalized name to match the flag's status below.
+					groupStatus[group][flags.Lookup(name).Name] = false
 				}
 			}
 
@@ -279,8 +280,8 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 				// Don't mark the flag that is already set as hidden because it may be an
 				// array or slice flag and therefore must continue being suggested
 				for _, fName := range strings.Split(flagList, " ") {
-					if fName != flagName {
-						flag := c.Flags().Lookup(fName)
+					flag := c.Flags().Lookup(fName)
+					if flag.Name != flagName {
 						flag.Hidden = true
 					}
 				}

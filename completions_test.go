@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -3341,6 +3343,91 @@ func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 				t.Errorf("expected: %q, got: %q", tc.expectedOutput, output)
 			case err != nil:
 				t.Errorf("Unexpected error %q", err)
+			}
+		})
+	}
+}
+
+func TestCompletionForNormalizedFlagGroups(t *testing.T) {
+	testcases := []struct {
+		name       string
+		mark       func(*Command, ...string)
+		repeatable bool
+		args       []string
+		expected   []string
+	}{
+		{
+			name:     "required together canonical input",
+			mark:     (*Command).MarkFlagsRequiredTogether,
+			args:     []string{"--foo-bar=value", ""},
+			expected: []string{"--baz-qux"},
+		},
+		{
+			name:     "required together alias input",
+			mark:     (*Command).MarkFlagsRequiredTogether,
+			args:     []string{"--foo_bar=value", ""},
+			expected: []string{"--baz-qux"},
+		},
+		{
+			name:     "one required no input",
+			mark:     (*Command).MarkFlagsOneRequired,
+			args:     []string{""},
+			expected: []string{"--baz-qux", "--foo-bar"},
+		},
+		{
+			name: "one required canonical input",
+			mark: (*Command).MarkFlagsOneRequired,
+			args: []string{"--foo-bar=value", ""},
+		},
+		{
+			name: "one required alias input",
+			mark: (*Command).MarkFlagsOneRequired,
+			args: []string{"--foo_bar=value", ""},
+		},
+		{
+			name:       "mutually exclusive canonical input",
+			mark:       (*Command).MarkFlagsMutuallyExclusive,
+			repeatable: true,
+			args:       []string{"--foo-bar=value", "--"},
+			expected:   []string{"--foo-bar", "--help"},
+		},
+		{
+			name:       "mutually exclusive alias input",
+			mark:       (*Command).MarkFlagsMutuallyExclusive,
+			repeatable: true,
+			args:       []string{"--foo_bar=value", "--"},
+			expected:   []string{"--foo-bar", "--help"},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := &Command{Use: "root", Run: emptyRun}
+			cmd := &Command{
+				Use:               "child",
+				Run:               emptyRun,
+				ValidArgsFunction: FixedCompletions(nil, ShellCompDirectiveNoFileComp),
+			}
+			root.AddCommand(cmd)
+			root.SetGlobalNormalizationFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+				return pflag.NormalizedName(strings.ReplaceAll(name, "_", "-"))
+			})
+			if tc.repeatable {
+				cmd.Flags().StringSlice("foo-bar", nil, "")
+			} else {
+				cmd.Flags().String("foo-bar", "", "")
+			}
+			cmd.Flags().String("baz-qux", "", "")
+			tc.mark(cmd, "foo_bar", "baz_qux")
+
+			args := append([]string{ShellCompNoDescRequestCmd, "child"}, tc.args...)
+			output, err := executeCommand(root, args...)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			expected := strings.Join(append(tc.expected,
+				":4", "Completion ended with directive: ShellCompDirectiveNoFileComp", ""), "\n")
+			if output != expected {
+				t.Errorf("expected: %q, got: %q", expected, output)
 			}
 		})
 	}
