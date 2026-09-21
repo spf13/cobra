@@ -109,11 +109,11 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 	}
 
 	flags := cmd.NonInheritedFlags()
-	if flags.HasFlags() {
+	if flags.HasAvailableFlags() {
 		yamlDoc.Options = genFlagResult(flags)
 	}
 	flags = cmd.InheritedFlags()
-	if flags.HasFlags() {
+	if flags.HasAvailableFlags() {
 		yamlDoc.InheritedOptions = genFlagResult(flags)
 	}
 
@@ -150,6 +150,9 @@ func genFlagResult(flags *pflag.FlagSet) []cmdOption {
 	var result []cmdOption
 
 	flags.VisitAll(func(flag *pflag.Flag) {
+		if flag.Hidden || len(flag.Deprecated) > 0 {
+			return
+		}
 		// Todo, when we mark a shorthand is deprecated, but specify an empty message.
 		// The flag.ShorthandDeprecated is empty as the shorthand is deprecated.
 		// Using len(flag.ShorthandDeprecated) > 0 can't handle this, others are ok.

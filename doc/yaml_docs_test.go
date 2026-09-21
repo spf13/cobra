@@ -98,3 +98,37 @@ func BenchmarkGenYamlToFile(b *testing.B) {
 		}
 	}
 }
+
+func TestGenYamlDocOmitsHiddenAndDeprecatedFlags(t *testing.T) {
+	c := &cobra.Command{Use: "app", Run: emptyRun}
+	c.Flags().Bool("public", false, "public flag")
+	c.Flags().String("internal-token", "", "secret internal flag")
+	c.Flags().String("old", "", "old flag")
+	assertNoErr(t, c.Flags().MarkHidden("internal-token"))
+	assertNoErr(t, c.Flags().MarkDeprecated("old", "use --new"))
+
+	buf := new(bytes.Buffer)
+	if err := GenYaml(c, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, "public")
+	checkStringOmits(t, output, "internal-token")
+	checkStringOmits(t, output, "old")
+}
+
+func TestGenYamlDocOmitsOptionsWhenAllFlagsHidden(t *testing.T) {
+	c := &cobra.Command{Use: "app", Run: emptyRun}
+	c.Flags().String("internal-token", "", "secret internal flag")
+	assertNoErr(t, c.Flags().MarkHidden("internal-token"))
+	c.InitDefaultHelpFlag()
+	assertNoErr(t, c.Flags().MarkHidden("help"))
+
+	buf := new(bytes.Buffer)
+	if err := GenYaml(c, buf); err != nil {
+		t.Fatal(err)
+	}
+
+	checkStringOmits(t, buf.String(), "options:")
+}
