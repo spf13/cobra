@@ -157,10 +157,10 @@ type Command struct {
 	// pflags contains persistent flags.
 	pflags *flag.FlagSet
 	// lflags contains local flags.
-	// This field does not represent internal state, it's used as a cache to optimise LocalFlags function call
+	// This field does not represent internal state, it's used as a cache to optimize LocalFlags function call
 	lflags *flag.FlagSet
 	// iflags contains inherited flags.
-	// This field does not represent internal state, it's used as a cache to optimise InheritedFlags function call
+	// This field does not represent internal state, it's used as a cache to optimize InheritedFlags function call
 	iflags *flag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
 	parentsPflags *flag.FlagSet

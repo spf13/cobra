@@ -21,7 +21,7 @@ import (
 
 type PositionalArgs func(cmd *Command, args []string) error
 
-// legacyArgs validation has the following behaviour:
+// legacyArgs validation has the following behavior:
 // - root commands with no subcommands can take arbitrary arguments
 // - root commands with subcommands will do subcommand validity checking
 // - subcommands will always accept arbitrary arguments
