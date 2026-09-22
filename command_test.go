@@ -431,7 +431,7 @@ func TestPluginWithSubCommands(t *testing.T) {
 	checkStringContains(t, helpHelp, "kubectl plugin help [command]")
 }
 
-// TestChildSameName checks the correct behaviour of cobra in cases,
+// TestChildSameName checks the correct behavior of cobra in cases,
 // when an application with name "foo" and with subcommand "foo"
 // is executed with args "foo foo".
 func TestChildSameName(t *testing.T) {
@@ -459,7 +459,7 @@ func TestChildSameName(t *testing.T) {
 	}
 }
 
-// TestGrandChildSameName checks the correct behaviour of cobra in cases,
+// TestGrandChildSameName checks the correct behavior of cobra in cases,
 // when user has a root command and a grand child
 // with the same name.
 func TestGrandChildSameName(t *testing.T) {
