@@ -1594,6 +1594,58 @@ func TestRemoveCommand(t *testing.T) {
 	}
 }
 
+// See https://github.com/spf13/cobra/issues/2463.
+func TestCommandPathPaddingIndependentOfAddOrder(t *testing.T) {
+	buildHelp := func(topDown bool) string {
+		root := &Command{Use: "app", Run: emptyRun}
+		sub := &Command{Use: "remote", Short: "remote ops", Run: emptyRun}
+		longTopic := &Command{Use: "authentication", Short: "how auth works"}
+		shortTopic := &Command{Use: "tls", Short: "certificate setup"}
+
+		if topDown {
+			root.AddCommand(sub)
+		}
+		sub.AddCommand(longTopic, shortTopic)
+		if !topDown {
+			root.AddCommand(sub)
+		}
+
+		var output bytes.Buffer
+		root.SetOut(&output)
+		if err := sub.Help(); err != nil {
+			t.Fatal(err)
+		}
+		return output.String()
+	}
+
+	topDown := buildHelp(true)
+	bottomUp := buildHelp(false)
+	if bottomUp != topDown {
+		t.Errorf("help differs by AddCommand order:\ntop-down:\n%s\nbottom-up:\n%s", topDown, bottomUp)
+	}
+	checkStringContains(t, bottomUp, "app remote tls            certificate setup")
+}
+
+func TestCommandPathPaddingAfterSubtreeMove(t *testing.T) {
+	root := &Command{Use: "app"}
+	group := &Command{Use: "config"}
+	sub := &Command{Use: "remote"}
+	longTopic := &Command{Use: "authentication"}
+	shortTopic := &Command{Use: "tls"}
+	sub.AddCommand(longTopic, shortTopic)
+	group.AddCommand(sub)
+	root.AddCommand(group)
+
+	if got, want := shortTopic.CommandPathPadding(), len(longTopic.CommandPath()); got != want {
+		t.Errorf("padding after attach = %d, want %d", got, want)
+	}
+
+	root.RemoveCommand(group)
+	if got, want := shortTopic.CommandPathPadding(), len(longTopic.CommandPath()); got != want {
+		t.Errorf("padding after detach = %d, want %d", got, want)
+	}
+}
+
 func TestReplaceCommandWithRemove(t *testing.T) {
 	childUsed := 0
 	rootCmd := &Command{Use: "root", Run: emptyRun}

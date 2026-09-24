@@ -1345,6 +1345,8 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
+		// Attaching a populated subtree changes every descendant's command path.
+		x.recomputeCommandPathLengths()
 		// update max lengths
 		usageLen := len(x.Use)
 		if usageLen > c.commandsMaxUseLen {
@@ -1364,6 +1366,18 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		}
 		c.commands = append(c.commands, x)
 		c.commandsAreSorted = false
+	}
+}
+
+// recomputeCommandPathLengths updates the cached widths throughout a subtree
+// after its ancestry changes.
+func (c *Command) recomputeCommandPathLengths() {
+	c.commandsMaxCommandPathLen = 0
+	for _, child := range c.commands {
+		if commandPathLen := len(child.CommandPath()); commandPathLen > c.commandsMaxCommandPathLen {
+			c.commandsMaxCommandPathLen = commandPathLen
+		}
+		child.recomputeCommandPathLengths()
 	}
 }
 
@@ -1405,6 +1419,7 @@ main:
 		for _, cmd := range cmds {
 			if command == cmd {
 				command.parent = nil
+				command.recomputeCommandPathLengths()
 				continue main
 			}
 		}
