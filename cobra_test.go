@@ -242,6 +242,29 @@ func TestRpad(t *testing.T) {
 // the linker.
 //
 // See also: https://github.com/spf13/cobra/pull/1956
+
+func TestEq(t *testing.T) {
+	if !Eq(1, 1) {
+		t.Fatal("expected Eq(1, 1)")
+	}
+	if Eq(1, 2) {
+		t.Fatal("expected !Eq(1, 2)")
+	}
+	if !Eq("a", "a") {
+		t.Fatal(`expected Eq("a", "a")`)
+	}
+	if Eq("a", "b") {
+		t.Fatal(`expected !Eq("a", "b")`)
+	}
+	// Mixed supported kinds used to panic via reflect; they should return false.
+	if Eq(1, "1") {
+		t.Fatal(`expected !Eq(1, "1")`)
+	}
+	if Eq("1", 1) {
+		t.Fatal(`expected !Eq("1", 1)`)
+	}
+}
+
 func TestDeadcodeElimination(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("go tool nm fails on windows")

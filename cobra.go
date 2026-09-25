@@ -140,7 +140,9 @@ func Gt(a interface{}, b interface{}) bool {
 
 // FIXME Eq is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
 
-// Eq takes two types and checks whether they are equal. Supported types are int and string. Unsupported types will panic.
+// Eq takes two types and checks whether they are equal. Supported types are int and string.
+// Both operands must be the same kind; mixed supported kinds (for example int and string) return false.
+// Unsupported types (arrays, channels, maps, and slices) panic.
 func Eq(a interface{}, b interface{}) bool {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
@@ -149,8 +151,16 @@ func Eq(a interface{}, b interface{}) bool {
 	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
 		panic("Eq called on unsupported type")
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return av.Int() == bv.Int()
+		switch bv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return av.Int() == bv.Int()
+		default:
+			return false
+		}
 	case reflect.String:
+		if bv.Kind() != reflect.String {
+			return false
+		}
 		return av.String() == bv.String()
 	}
 	return false
