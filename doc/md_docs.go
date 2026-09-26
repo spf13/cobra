@@ -29,6 +29,12 @@ import (
 
 const markdownExtension = ".md"
 
+// escapeMDXProse escapes angle brackets so GenMarkdown output is safe for
+// Markdown and MDX (e.g. placeholders like <output_path> in Long/Short).
+func escapeMDXProse(s string) string {
+	return strings.NewReplacer("<", "&lt;", ">", "&gt;").Replace(s)
+}
+
 func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
@@ -62,10 +68,10 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	name := cmd.CommandPath()
 
 	buf.WriteString("## " + name + "\n\n")
-	buf.WriteString(cmd.Short + "\n\n")
+	buf.WriteString(escapeMDXProse(cmd.Short) + "\n\n")
 	if len(cmd.Long) > 0 {
 		buf.WriteString("### Synopsis\n\n")
-		buf.WriteString(cmd.Long + "\n\n")
+		buf.WriteString(escapeMDXProse(cmd.Long) + "\n\n")
 	}
 
 	if cmd.Runnable() {

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -121,5 +122,26 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 		if err := GenMarkdown(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestGenMarkdownEscapesAngleBrackets(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:   "export <output_path>",
+		Short: "Export to <output_path>",
+		Long:  "If a file exists at the <output_path> location, it will be overwritten.",
+		Run:   func(*cobra.Command, []string) {},
+	}
+	buf := new(bytes.Buffer)
+	if err := GenMarkdown(cmd, buf); err != nil {
+		t.Fatalf("GenMarkdown failed: %v", err)
+	}
+	out := buf.String()
+	// Prose fields must be escaped for MDX; fenced usage lines may keep < >.
+	if !strings.Contains(out, "Export to &lt;output_path&gt;") {
+		t.Fatalf("expected escaped Short, got:\n%s", out)
+	}
+	if !strings.Contains(out, "at the &lt;output_path&gt; location") {
+		t.Fatalf("expected escaped Long, got:\n%s", out)
 	}
 }
