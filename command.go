@@ -872,6 +872,17 @@ func (c *Command) findNext(next string) *Command {
 // Traverse the command tree to find the command, and parse args for
 // each parent.
 func (c *Command) Traverse(args []string) (*Command, []string, error) {
+	cmd, flags, err := c.traverse(args)
+	if err != nil {
+		err = cmd.flagError(err)
+		if err != nil {
+			return nil, flags, err
+		}
+	}
+	return cmd, flags, nil
+}
+
+func (c *Command) traverse(args []string) (*Command, []string, error) {
 	flags := []string{}
 	inFlag := false
 
@@ -905,9 +916,9 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		}
 
 		if err := c.ParseFlags(flags); err != nil {
-			return nil, args, c.flagError(err)
+			return c, args, err
 		}
-		return cmd.Traverse(args[i+1:])
+		return cmd.traverse(args[i+1:])
 	}
 	return c, args, nil
 }
@@ -1171,7 +1182,14 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	var flags []string
 	if c.TraverseChildren {
-		cmd, flags, err = c.Traverse(args)
+		cmd, flags, err = c.traverse(args)
+		if err != nil {
+			err = cmd.flagError(err)
+			if err == nil {
+				return c, nil
+			}
+			cmd = nil
+		}
 	} else {
 		cmd, flags, err = c.Find(args)
 	}

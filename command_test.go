@@ -1565,6 +1565,128 @@ func TestInheritedFlagErrorFuncWithTraverseChildren(t *testing.T) {
 	checkStringOmits(t, output, "Did you mean this?")
 }
 
+func TestFlagErrorFuncSuppressesTraverseParseError(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd.Flags().Bool("version", false, "show version")
+	childCmd := &Command{Use: "child"}
+	runCalls := 0
+	childCmd.Run = func(*Command, []string) { runCalls++ }
+	rootCmd.PersistentPreRun = func(*Command, []string) { runCalls++ }
+	rootCmd.AddCommand(childCmd)
+
+	handlerCalls := 0
+	rootCmd.SetFlagErrorFunc(func(cmd *Command, err error) error {
+		handlerCalls++
+		if cmd != rootCmd {
+			t.Errorf("expected root command, got %v", cmd)
+		}
+		var flagErr *pflag.NotExistError
+		if !errors.As(err, &flagErr) {
+			t.Errorf("expected pflag.NotExistError, got %T", err)
+		}
+		return nil
+	})
+
+	cmd, output, err := executeCommandC(rootCmd, "--verion=true", "child")
+	if err != nil {
+		t.Errorf("expected suppressed parse error, got %v", err)
+	}
+	if cmd != rootCmd {
+		t.Errorf("expected root command, got %v", cmd)
+	}
+	if handlerCalls != 1 {
+		t.Errorf("expected one handler call, got %d", handlerCalls)
+	}
+	if runCalls != 0 {
+		t.Errorf("expected no run hooks or commands, got %d calls", runCalls)
+	}
+	if output != "" {
+		t.Errorf("expected no output, got %q", output)
+	}
+
+	cmd, _, err = executeCommandC(rootCmd, "child")
+	if err != nil {
+		t.Errorf("expected subsequent execution to succeed, got %v", err)
+	}
+	if cmd != childCmd {
+		t.Errorf("expected child command, got %v", cmd)
+	}
+	if handlerCalls != 1 {
+		t.Errorf("expected no additional handler call, got %d", handlerCalls)
+	}
+	if runCalls != 2 {
+		t.Errorf("expected pre-run hook and child run, got %d calls", runCalls)
+	}
+}
+
+func TestInheritedFlagErrorFuncSuppressesTraverseParseError(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	childCmd := &Command{Use: "child"}
+	childCmd.Flags().Bool("version", false, "show version")
+	grandchildCmd := &Command{Use: "grandchild"}
+	runCalls := 0
+	grandchildCmd.Run = func(*Command, []string) { runCalls++ }
+	rootCmd.PersistentPreRun = func(*Command, []string) { runCalls++ }
+	childCmd.AddCommand(grandchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	handlerCalls := 0
+	rootCmd.SetFlagErrorFunc(func(cmd *Command, err error) error {
+		handlerCalls++
+		if cmd != childCmd {
+			t.Errorf("expected child command, got %v", cmd)
+		}
+		var flagErr *pflag.NotExistError
+		if !errors.As(err, &flagErr) {
+			t.Errorf("expected pflag.NotExistError, got %T", err)
+		}
+		return nil
+	})
+
+	cmd, output, err := executeCommandC(rootCmd, "child", "--verion=true", "grandchild")
+	if err != nil {
+		t.Errorf("expected suppressed parse error, got %v", err)
+	}
+	if cmd != rootCmd {
+		t.Errorf("expected root command, got %v", cmd)
+	}
+	if handlerCalls != 1 {
+		t.Errorf("expected one handler call, got %d", handlerCalls)
+	}
+	if runCalls != 0 {
+		t.Errorf("expected no run hooks or commands, got %d calls", runCalls)
+	}
+	if output != "" {
+		t.Errorf("expected no output, got %q", output)
+	}
+}
+
+func TestTraverseWithSuppressedFlagError(t *testing.T) {
+	rootCmd := &Command{Use: "root"}
+	rootCmd.Flags().Bool("version", false, "show version")
+	rootCmd.AddCommand(&Command{Use: "child"})
+	handlerCalls := 0
+	rootCmd.SetFlagErrorFunc(func(*Command, error) error {
+		handlerCalls++
+		return nil
+	})
+
+	args := []string{"--verion=true", "child"}
+	cmd, remaining, err := rootCmd.Traverse(args)
+	if err != nil {
+		t.Errorf("expected suppressed parse error, got %v", err)
+	}
+	if cmd != rootCmd {
+		t.Errorf("expected root command, got %v", cmd)
+	}
+	if !reflect.DeepEqual(remaining, args) {
+		t.Errorf("expected remaining args %v, got %v", args, remaining)
+	}
+	if handlerCalls != 1 {
+		t.Errorf("expected one handler call, got %d", handlerCalls)
+	}
+}
+
 func TestFlagSuggestionsRespectCommandSettings(t *testing.T) {
 	t.Run("disabled suggestions", func(t *testing.T) {
 		rootCmd := &Command{Use: "root", Run: emptyRun, DisableSuggestions: true}
