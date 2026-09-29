@@ -697,6 +697,16 @@ func TestStripFlags(t *testing.T) {
 			[]string{"-p", "bar"},
 			[]string{"bar"},
 		},
+		{
+			// Unknown flags must not consume the next token; otherwise a following
+			// defined flag and its value are stripped and a later value looks like a command.
+			[]string{"--unknown", "--str", "bar", "cmd"},
+			[]string{"cmd"},
+		},
+		{
+			[]string{"-z", "-s", "bar", "cmd"},
+			[]string{"cmd"},
+		},
 	}
 
 	c := &Command{Use: "c", Run: emptyRun}
@@ -2881,7 +2891,7 @@ func TestFind(t *testing.T) {
 
 func TestUnknownFlagShouldReturnSameErrorRegardlessOfArgPosition(t *testing.T) {
 	testCases := [][]string{
-		// {"--unknown", "--namespace", "foo", "child", "--bar"}, // FIXME: This test case fails, returning the error `unknown command "foo" for "root"` instead of the expected error `unknown flag: --unknown`
+		{"--unknown", "--namespace", "foo", "child", "--bar"},
 		{"--namespace", "foo", "--unknown", "child", "--bar"},
 		{"--namespace", "foo", "child", "--unknown", "--bar"},
 		{"--namespace", "foo", "child", "--bar", "--unknown"},

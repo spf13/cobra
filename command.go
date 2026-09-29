@@ -671,6 +671,33 @@ func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
+// consumesFollowingArg reports whether s, a flag token, should skip the next
+// argument as its value when locating commands among mixed flags and args.
+//
+// Defined flags that require a value still consume the next token. Unknown
+// flags only consume the next token when it does not itself look like a flag;
+// otherwise `--unknown --known value cmd` swallows `--known` and later values
+// are mistaken for commands.
+func consumesFollowingArg(s string, rest []string, fs *flag.FlagSet) bool {
+	switch {
+	case strings.HasPrefix(s, "--") && !strings.Contains(s, "="):
+		if flag := fs.Lookup(s[2:]); flag != nil {
+			return flag.NoOptDefVal == ""
+		}
+	case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2:
+		if flag := fs.ShorthandLookup(s[1:]); flag != nil {
+			return flag.NoOptDefVal == ""
+		}
+	default:
+		return false
+	}
+	if len(rest) == 0 {
+		return false
+	}
+	next := rest[0]
+	return next != "--" && !isFlagArg(next)
+}
+
 func stripFlags(args []string, c *Command) []string {
 	if len(args) == 0 {
 		return args
@@ -688,19 +715,14 @@ Loop:
 		case s == "--":
 			// "--" terminates the flags
 			break Loop
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
-			// If '--flag arg' then
-			// delete arg from args.
-			fallthrough // (do the same as below)
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
-			// If '-f arg' then
-			// delete 'arg' from args or break the loop if len(args) <= 1.
+		case consumesFollowingArg(s, args, flags):
+			// If '--flag arg' or '-f arg' then delete arg from args, or stop if
+			// this is the last remaining token (it cannot be a command name).
 			if len(args) <= 1 {
 				break Loop
-			} else {
-				args = args[1:]
-				continue
 			}
+			args = args[1:]
+			continue
 		case s != "" && !strings.HasPrefix(s, "-"):
 			commands = append(commands, s)
 		}
@@ -726,11 +748,9 @@ Loop:
 		case s == "--":
 			// -- means we have reached the end of the parseable args. Break out of the loop now.
 			break Loop
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
-			fallthrough
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
-			// This is a flag without a default value, and an equal sign is not used. Increment pos in order to skip
-			// over the next arg, because that is the value of this flag.
+		case consumesFollowingArg(s, args[pos+1:], flags):
+			// This is a flag that takes the following token as its value. Increment
+			// pos in order to skip over that value.
 			pos++
 			continue
 		case !strings.HasPrefix(s, "-"):
