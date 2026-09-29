@@ -15,3 +15,8 @@ from any documentation source.
 ### `InitDefaultCompletionCmd`
 
 You may call `cmd.InitDefaultCompletionCmd()` to document the default autocompletion command.
+
+### `Hidden` commands and flags
+
+Commands with `cmd.Hidden = true` and flags with `flag.Hidden = true` are automatically excluded from generated documentation. This makes it convenient to define internal or developer-only commands (such as a hidden `gendocs` subcommand) that generate documentation without including themselves in the generated output.
+

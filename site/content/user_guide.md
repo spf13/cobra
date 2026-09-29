@@ -625,6 +625,23 @@ The latter two will also apply to any children commands.
 Note that templates specified with `SetHelpTemplate` are evaluated using
 `text/template` which can increase the size of the compiled executable.
 
+### Hidden commands
+
+A command can be hidden from the available commands list, help output, and documentation generation by setting the `Hidden` field to `true`:
+
+```go
+var debugCmd = &cobra.Command{
+  Use:    "debug",
+  Short:  "Internal debug command",
+  Hidden: true,
+  Run: func(cmd *cobra.Command, args []string) {
+    // Debugging logic
+  },
+}
+```
+
+Hidden commands are still fully functional and executable when called directly, but will not appear when listing available commands in `help` or `usage`, in shell completions, or in generated documentation. This is useful for internal diagnostics, developer-only tools, or administrative commands such as a hidden `gendocs` subcommand.
+
 ## Usage Message
 
 When the user provides an invalid flag or invalid command, Cobra responds by
@@ -684,6 +701,62 @@ Note that templates specified with `SetVersionTemplate` are evaluated using
 Cobra prints an error message when receiving a non-nil error value.
 The default error message is `Error: <error contents>`.
 The Prefix, `Error:` can be customized using the `cmd.SetErrPrefix(s string)` function.
+
+## Handling Errors and Silencing Output
+
+Cobra provides functions whose return signature includes an `error` (such as `RunE`, `PreRunE`, `PostRunE`, `PersistentPreRunE`, and `PersistentPostRunE`). When these return a non-nil error, Cobra by default prints the error message followed immediately by the command's full usage message.
+
+You can customize this behavior using `SilenceUsage` and `SilenceErrors`.
+
+### Silencing Usage on Error (`SilenceUsage`)
+
+By default, whenever a command returns an error, Cobra prints both the error and the command usage message. For many applications, runtime errors (e.g. database unreachable, network timeout, failed business logic) do not represent syntax mistakes, and displaying the entire usage string can clutter terminal output.
+
+If you would like to silence the default usage output when an error occurs, set `SilenceUsage: true` on the command:
+
+```go
+var rootCmd = &cobra.Command{
+  Use:          "app",
+  SilenceUsage: true,
+  RunE: func(cmd *cobra.Command, args []string) error {
+    return errors.New("something went wrong")
+  },
+}
+```
+
+With `SilenceUsage: true`, Cobra will print only the error:
+```console
+$ app
+Error: something went wrong
+```
+
+Note that usage information will still be displayed if the user explicitly requests help (e.g. `--help` or `help`) or if invalid flags are passed.
+
+### Silencing Errors (`SilenceErrors`)
+
+If you prefer to handle error output, formatting, and exit codes entirely in your own application code rather than having Cobra print `Error: <message>` to `os.Stderr`, set `SilenceErrors: true`:
+
+```go
+var rootCmd = &cobra.Command{
+  Use:           "app",
+  SilenceErrors: true,
+  RunE: func(cmd *cobra.Command, args []string) error {
+    return errors.New("custom error")
+  },
+}
+
+func main() {
+  if err := rootCmd.Execute(); err != nil {
+    // Custom error handling, logging, or exit code
+    log.Printf("Fatal error: %v", err)
+    os.Exit(1)
+  }
+}
+```
+
+### Inheritance by Child Commands
+
+Both `SilenceUsage` and `SilenceErrors` are inherited by child commands: if set on the parent or root command, all child commands will respect these settings unless explicitly overridden.
 
 ## PreRun and PostRun Hooks
 
