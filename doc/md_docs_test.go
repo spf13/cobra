@@ -89,6 +89,21 @@ func TestGenMdNoTag(t *testing.T) {
 	output := buf.String()
 
 	checkStringOmits(t, output, "Auto generated")
+	checkStringOmitsSuffix(t, output, "\n\n")
+}
+
+func TestGenMdNoTagNoSeeAlso(t *testing.T) {
+	c := &cobra.Command{Use: "leaf", Short: "leaf command"}
+	c.DisableAutoGenTag = true
+
+	buf := new(bytes.Buffer)
+	if err := GenMarkdown(c, buf); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringOmits(t, output, "Auto generated")
+	checkStringOmitsSuffix(t, output, "\n\n")
 }
 
 func TestGenMdTree(t *testing.T) {
