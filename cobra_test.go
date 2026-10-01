@@ -103,6 +103,13 @@ func TestLevenshteinDistance(t *testing.T) {
 			ignoreCase: true,
 			expected:   0,
 		},
+		{
+			name:       "Non-ASCII characters",
+			s:          "café",
+			t:          "cafe",
+			ignoreCase: false,
+			expected:   1,
+		},
 	}
 
 	for _, tt := range tests {
