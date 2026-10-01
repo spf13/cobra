@@ -4127,3 +4127,47 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
+
+func TestCompletionInfoNotPrintedWhenStderrIsStdout(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"one", "two"}, ShellCompDirectiveDefault
+		},
+		Run: emptyRun,
+	}
+
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	defer reader.Close()
+	defer writer.Close()
+	realStdout := os.Stdout
+	os.Stdout = writer
+	defer func() { os.Stdout = realStdout }()
+
+	// Send stderr to the same stdout the shell script reads, as in issue #1287.
+	rootCmd.SetOut(os.Stdout)
+	rootCmd.SetErr(os.Stdout)
+	rootCmd.SetArgs([]string{ShellCompNoDescRequestCmd, ""})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	writer.Close()
+
+	output := new(bytes.Buffer)
+	if _, err := output.ReadFrom(reader); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expected := strings.Join([]string{
+		"one",
+		"two",
+		":0",
+	}, "\n") + "\n"
+
+	if output.String() != expected {
+		t.Errorf("expected: %q, got: %q", expected, output.String())
+	}
+}

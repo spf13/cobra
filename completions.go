@@ -289,8 +289,11 @@ func (c *Command) initCompleteCmd(args []string) {
 			fmt.Fprintf(out, ":%d\n", directive)
 
 			// Print some helpful info to stderr for the user to understand.
-			// Output from stderr must be ignored by the completion script.
-			fmt.Fprintf(finalCmd.ErrOrStderr(), "Completion ended with directive: %s\n", directive.string())
+			// Output from stderr must be ignored by the completion script,
+			// so skip it when stderr was redirected to the stdout the script reads.
+			if errOut := finalCmd.ErrOrStderr(); errOut != os.Stdout {
+				fmt.Fprintf(errOut, "Completion ended with directive: %s\n", directive.string())
+			}
 		},
 	}
 	c.AddCommand(completeCmd)
