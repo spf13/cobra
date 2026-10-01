@@ -189,11 +189,13 @@ func tmpl(text string) *tmplFunc {
 }
 
 // ld compares two strings and returns the levenshtein distance between them.
-func ld(s, t string, ignoreCase bool) int {
+func ld(sStr, tStr string, ignoreCase bool) int {
 	if ignoreCase {
-		s = strings.ToLower(s)
-		t = strings.ToLower(t)
+		sStr = strings.ToLower(sStr)
+		tStr = strings.ToLower(tStr)
 	}
+	// Levenshtein distance counts character edits: compare runes, not UTF-8 bytes.
+	s, t := []rune(sStr), []rune(tStr)
 	d := make([][]int, len(s)+1)
 	for i := range d {
 		d[i] = make([]int, len(t)+1)
