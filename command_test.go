@@ -1297,7 +1297,11 @@ func TestRootAndSubErrPrefix(t *testing.T) {
 	}
 }
 
-func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
+// TestVersionFlagWithTrailingArgsIgnored tests that trailing positional arguments
+// after --version on the root command do not trigger execution errors and that
+// root version printing takes precedence. The --version flag is strictly local to the
+// root command and not inherited by subcommands (see #1860).
+func TestVersionFlagWithTrailingArgsIgnored(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
@@ -1309,7 +1313,11 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	checkStringContains(t, output, "root version 1.0.0")
 }
 
-func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
+// TestShorthandVersionFlagWithTrailingArgsIgnored tests that trailing positional arguments
+// after -v on the root command do not trigger execution errors and that
+// root version printing takes precedence. The -v flag is strictly local to the
+// root command and not inherited by subcommands (see #1860).
+func TestShorthandVersionFlagWithTrailingArgsIgnored(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
 
