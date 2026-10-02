@@ -1789,8 +1789,10 @@ func (c *Command) ResetFlags() {
 	c.flagErrorBuf.Reset()
 	c.flags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
 	c.flags.SetOutput(c.flagErrorBuf)
+	c.flags.SetNormalizeFunc(c.globNormFunc)
 	c.pflags = flag.NewFlagSet(c.DisplayName(), flag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
+	c.pflags.SetNormalizeFunc(c.globNormFunc)
 
 	c.lflags = nil
 	c.iflags = nil

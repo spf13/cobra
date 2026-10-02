@@ -1819,6 +1819,39 @@ func TestNormPassedOnLocal(t *testing.T) {
 	}
 }
 
+func TestResetFlagsPreservesGlobalNormalization(t *testing.T) {
+	for _, persistent := range []bool{false, true} {
+		t.Run(fmt.Sprintf("persistent=%v", persistent), func(t *testing.T) {
+			c := &Command{Use: "root", Run: emptyRun}
+			c.SetGlobalNormalizationFunc(func(f *pflag.FlagSet, name string) pflag.NormalizedName {
+				return pflag.NormalizedName(strings.ReplaceAll(name, "_", "-"))
+			})
+			c.Flags().Bool("old-local", false, "")
+			c.PersistentFlags().Bool("old-persistent", false, "")
+			c.ResetFlags()
+
+			if c.Flags().HasFlags() || c.PersistentFlags().HasFlags() {
+				t.Fatal("ResetFlags should remove existing flags")
+			}
+
+			flags := c.Flags()
+			if persistent {
+				flags = c.PersistentFlags()
+			}
+			value := flags.Bool("new_flag", false, "")
+			if flags.Lookup("new-flag") == nil {
+				t.Error("ResetFlags should preserve normalization when registering flags")
+			}
+			if _, err := executeCommand(c, "--new-flag"); err != nil {
+				t.Fatalf("Expected normalized flag to be accepted: %v", err)
+			}
+			if !*value {
+				t.Error("Expected the normalized flag value to be set")
+			}
+		})
+	}
+}
+
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestNormPassedOnInherited(t *testing.T) {
 	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
