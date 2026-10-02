@@ -650,6 +650,10 @@ func TestStripFlags(t *testing.T) {
 			[]string{"foo", "bar"},
 		},
 		{
+			[]string{"-", "echo"},
+			[]string{"-", "echo"},
+		},
+		{
 			[]string{"foo", "--str", "-s"},
 			[]string{"foo"},
 		},
@@ -2876,6 +2880,65 @@ func TestFind(t *testing.T) {
 				t.Fatalf("Wrong args\nExpected: %v\nGot: %v", tc.expectedFoundArgs, foundArgs)
 			}
 		})
+	}
+}
+
+func TestFindDashCommandToken(t *testing.T) {
+	for _, child := range []*Command{{Use: "-"}, {Use: "child", Aliases: []string{"-"}}} {
+		t.Run(child.Use, func(t *testing.T) {
+			root := &Command{Use: "root"}
+			root.AddCommand(child)
+
+			cmd, args, err := root.Find([]string{"-", "input"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cmd != child {
+				t.Errorf("Expected child command, got %q", cmd.Name())
+			}
+			if !reflect.DeepEqual(args, []string{"input"}) {
+				t.Errorf("Expected args [input], got %q", args)
+			}
+		})
+	}
+}
+
+func TestLoneDashIsPositionalArgument(t *testing.T) {
+	testCases := []struct {
+		name            string
+		args            []string
+		expectedCommand string
+		expectedArgs    []string
+	}{
+		{"before subcommand", []string{"-", "child"}, "root", []string{"-", "child"}},
+		{"after subcommand", []string{"child", "-"}, "child", []string{"-"}},
+		{"after boolean flag", []string{"--verbose", "-", "child"}, "root", []string{"-", "child"}},
+		{"as flag value", []string{"--input", "-", "child"}, "child", []string{}},
+		{"after flag terminator", []string{"child", "--", "-"}, "child", []string{"-"}},
+		{"before flag terminator", []string{"-", "--", "child"}, "root", []string{"-", "child"}},
+	}
+	for _, tc := range testCases {
+		for _, traverse := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/traverse=%v", tc.name, traverse), func(t *testing.T) {
+				var gotArgs []string
+				run := func(_ *Command, args []string) { gotArgs = args }
+				root := &Command{Use: "root", Args: ArbitraryArgs, Run: run, TraverseChildren: traverse}
+				root.PersistentFlags().Bool("verbose", false, "")
+				root.PersistentFlags().String("input", "", "")
+				root.AddCommand(&Command{Use: "child", Args: ArbitraryArgs, Run: run})
+
+				cmd, _, err := executeCommandC(root, tc.args...)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if cmd.Name() != tc.expectedCommand {
+					t.Errorf("Expected command %q, got %q", tc.expectedCommand, cmd.Name())
+				}
+				if !reflect.DeepEqual(gotArgs, tc.expectedArgs) {
+					t.Errorf("Expected args %q, got %q", tc.expectedArgs, gotArgs)
+				}
+			})
+		}
 	}
 }
 

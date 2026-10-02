@@ -701,7 +701,7 @@ Loop:
 				args = args[1:]
 				continue
 			}
-		case s != "" && !strings.HasPrefix(s, "-"):
+		case s != "" && !isFlagArg(s):
 			commands = append(commands, s)
 		}
 	}
@@ -733,7 +733,7 @@ Loop:
 			// over the next arg, because that is the value of this flag.
 			pos++
 			continue
-		case !strings.HasPrefix(s, "-"):
+		case !isFlagArg(s):
 			// This is not a flag or a flag value. Check to see if it matches what we're looking for, and if so,
 			// return the args, excluding the one at this position.
 			if s == x {
