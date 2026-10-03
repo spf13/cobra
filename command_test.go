@@ -2420,6 +2420,139 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+// TestTraverseCombinedShorthandWithValue checks that Traverse does not mistake
+// the value of the last shorthand of a combined shorthand cluster for a
+// subcommand name.
+func TestTraverseCombinedShorthandWithValue(t *testing.T) {
+	// "child" has the shorthand flags -a (bool), -b (string) and -L (bool, local)
+	// plus the inherited shorthands -V (bool) and -C (string) and the subcommands
+	// "grandchild" and "grandchild2".
+	newRoot := func() *Command {
+		rootCmd := &Command{Use: "root", TraverseChildren: true, Run: emptyRun}
+		rootCmd.PersistentFlags().BoolP("verbose", "V", false, "")
+		rootCmd.PersistentFlags().StringP("config", "C", "", "")
+
+		childCmd := &Command{Use: "child", Run: emptyRun}
+		childCmd.Flags().BoolP("all", "a", false, "")
+		childCmd.Flags().StringP("bind", "b", "", "")
+		childCmd.Flags().BoolP("loud", "L", false, "")
+		childCmd.AddCommand(
+			&Command{Use: "grandchild", Run: emptyRun},
+			&Command{Use: "grandchild2", Run: emptyRun},
+		)
+		rootCmd.AddCommand(childCmd)
+		return rootCmd
+	}
+
+	tests := []struct {
+		name         string
+		args         []string
+		wantCmd      string
+		wantRestArgs []string
+	}{
+		{
+			// -a is a bool and -b takes its value from the next argument, so
+			// "grandchild" is the value of -b and not a subcommand.
+			name:         "cluster ending in a value flag",
+			args:         []string{"child", "-ab", "grandchild"},
+			wantCmd:      "child",
+			wantRestArgs: []string{"-ab", "grandchild"},
+		},
+		{
+			// Same, with a value flag of the parent command at the end of the
+			// cluster, so "grandchild" is the value of -C.
+			name:         "cluster ending in an inherited value flag",
+			args:         []string{"child", "-aC", "grandchild"},
+			wantCmd:      "child",
+			wantRestArgs: []string{"-aC", "grandchild"},
+		},
+		{
+			// The value of -b is embedded in the cluster, so it does not consume
+			// the next argument and "grandchild" really is a subcommand.
+			name:         "value inside the cluster",
+			args:         []string{"child", "-bgrandchild", "grandchild"},
+			wantCmd:      "grandchild",
+			wantRestArgs: []string{},
+		},
+		{
+			name:         "all-boolean cluster",
+			args:         []string{"child", "-aL", "grandchild"},
+			wantCmd:      "grandchild",
+			wantRestArgs: []string{},
+		},
+		{
+			name:         "single value flag",
+			args:         []string{"child", "-b", "grandchild"},
+			wantCmd:      "child",
+			wantRestArgs: []string{"-b", "grandchild"},
+		},
+		{
+			name:         "single bool flag",
+			args:         []string{"child", "-a", "grandchild"},
+			wantCmd:      "grandchild",
+			wantRestArgs: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, args, err := newRoot().Traverse(tt.args)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if c.Name() != tt.wantCmd {
+				t.Fatalf("Expected command: %q, got %q", tt.wantCmd, c.Name())
+			}
+			if len(args) != len(tt.wantRestArgs) {
+				t.Fatalf("Expected args: %v, got %v", tt.wantRestArgs, args)
+			}
+			for i := range args {
+				if args[i] != tt.wantRestArgs[i] {
+					t.Fatalf("Expected args: %v, got %v", tt.wantRestArgs, args)
+				}
+			}
+		})
+	}
+}
+
+// TestExecuteCombinedShorthandWithValue is the end-to-end counterpart of
+// TestTraverseCombinedShorthandWithValue: "child -ab grandchild" must run
+// "child" with bind="grandchild", exactly like "child -a -b grandchild".
+func TestExecuteCombinedShorthandWithValue(t *testing.T) {
+	var (
+		all          bool
+		bindValue    string
+		ranWhichChild string
+	)
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	childCmd := &Command{
+		Use: "child",
+		Run: func(c *Command, args []string) {
+			ranWhichChild = "child"
+			all, _ = c.Flags().GetBool("all")
+			bindValue, _ = c.Flags().GetString("bind")
+		},
+	}
+	childCmd.Flags().BoolVarP(&all, "all", "a", false, "")
+	childCmd.Flags().StringVarP(&bindValue, "bind", "b", "", "")
+	childCmd.AddCommand(&Command{Use: "grandchild", Run: func(*Command, []string) { ranWhichChild = "grandchild" }})
+	rootCmd.AddCommand(childCmd)
+
+	_, err := executeCommand(rootCmd, "child", "-ab", "grandchild")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if ranWhichChild != "child" {
+		t.Fatalf("Expected command %q to run, got %q", "child", ranWhichChild)
+	}
+	if !all {
+		t.Errorf("Expected flag -a to be set")
+	}
+	if bindValue != "grandchild" {
+		t.Errorf("Expected flag -b to be %q, got %q", "grandchild", bindValue)
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {

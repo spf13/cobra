@@ -816,6 +816,27 @@ func (c *Command) findNext(next string) *Command {
 	return nil
 }
 
+// shortCombinationTakesNextArg reports whether the value of a single dash
+// shorthand argument (such as "-a" or "-ab") is taken from the following
+// argument, rather than being embedded in the argument itself.
+//
+// This mirrors how pflag parses shorthand arguments: the first shorthand of the
+// combination that does not have a NoOptDefVal consumes the remainder of the
+// combination as its value, and it only reaches out to the next argument when
+// that shorthand is the last one of the combination. So "-ab value" consumes
+// "value" for -b (when -a is a boolean), while "-bvalue" does not.
+func shortCombinationTakesNextArg(combination string, fs *flag.FlagSet) bool {
+	last := len(combination) - 1
+	for i := 0; i <= last; i++ {
+		if !shortHasNoOptDefVal(combination[i:i+1], fs) {
+			// This shorthand needs a value. It only comes from the next argument
+			// if the combination ends here.
+			return i == last
+		}
+	}
+	return false
+}
+
 // Traverse the command tree to find the command, and parse args for
 // each parent.
 func (c *Command) Traverse(args []string) (*Command, []string, error) {
@@ -830,8 +851,10 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			inFlag = !hasNoOptDefVal(arg[2:], c.Flags())
 			flags = append(flags, arg)
 			continue
-		// A short flag with a space separated value
-		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
+		// A short flag (or a combination of short flags) with a space separated
+		// value
+		case len(arg) > 1 && strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") &&
+			shortCombinationTakesNextArg(arg[1:], c.Flags()):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
