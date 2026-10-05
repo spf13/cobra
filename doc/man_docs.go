@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -156,6 +157,11 @@ func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *cobra.Command, 
 	cobra.WriteStringAndCheck(buf, description+"\n\n")
 }
 
+var (
+	manBlockMarkerRegexp = regexp.MustCompile(`(?m)^([ \t]*)([-*+#])`)
+	manOrderedListRegexp = regexp.MustCompile(`(?m)^([ \t]*)([0-9]+)\.`)
+)
+
 func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
 		if len(flag.Deprecated) > 0 || flag.Hidden {
@@ -179,8 +185,12 @@ func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
 		if len(flag.NoOptDefVal) > 0 {
 			format += "]"
 		}
-		format += "\n\t%s\n\n"
-		cobra.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, flag.Usage))
+		format += "\n: %s\n\n"
+		// escape list and heading markers, indent following lines to stay in the definition list
+		usage := manBlockMarkerRegexp.ReplaceAllString(flag.Usage, `${1}\${2}`)
+		usage = manOrderedListRegexp.ReplaceAllString(usage, `${1}${2}\.`)
+		usage = strings.ReplaceAll(usage, "\n", "\n    ")
+		cobra.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, usage))
 	})
 }
 

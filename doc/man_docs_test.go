@@ -155,10 +155,42 @@ func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 	manPrintFlags(buf, c.Flags())
 
 	got := buf.String()
-	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
+	expected := "**--foo**=\"default\"\n: Foo flag\n\n"
 	if got != expected {
 		t.Errorf("Expected %v, got %v", expected, got)
 	}
+}
+
+func TestGenManFlagsAsTaggedParagraphs(t *testing.T) {
+	c := &cobra.Command{Use: "test", Run: emptyRun}
+	c.Flags().String("list", "", `text
+- dash
+* star
++ plus
+  - indented
+1. numbered
+# hash`)
+	c.Flags().String("paragraphs", "", "text\n\nsecond paragraph")
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, GenMan(c, nil, buf))
+	output := buf.String()
+	checkStringContains(t, output, `.TP
+\fB--list\fP=""
+text
+- dash
+* star
++ plus
+  - indented
+1\&. numbered
+# hash
+`)
+	checkStringContains(t, output, `.TP
+\fB--paragraphs\fP=""
+text
+
+second paragraph
+`)
 }
 
 func TestGenManTree(t *testing.T) {
