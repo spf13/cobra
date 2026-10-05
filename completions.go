@@ -458,7 +458,7 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 				}
 			}
 
-			// We cannot use finalCmd.Flags() because we may not have called ParsedFlags() for commands
+			// We cannot use finalCmd.Flags() because we may not have called ParseFlags() for commands
 			// that have set DisableFlagParsing; it is ParseFlags() that merges the inherited and
 			// non-inherited flags.
 			finalCmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
@@ -641,7 +641,7 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []Completion {
 		}
 	}
 
-	// We cannot use finalCmd.Flags() because we may not have called ParsedFlags() for commands
+	// We cannot use finalCmd.Flags() because we may not have called ParseFlags() for commands
 	// that have set DisableFlagParsing; it is ParseFlags() that merges the inherited and
 	// non-inherited flags.
 	finalCmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
