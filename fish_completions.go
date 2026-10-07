@@ -75,8 +75,9 @@ function __%[1]s_perform_completion
     set -l directiveLine $results[-1]
 
     # For Fish, when completing a flag with an = (e.g., <program> -n=<TAB>)
-    # completions must be prefixed with the flag
-    set -l flagPrefix (string match -r -- '-.*=' "$lastArg")
+    # completions must be prefixed with the flag. Match the unescaped token so
+    # quotes do not hide the flag, and stop before any = signs in its value.
+    set -l flagPrefix (string match -r -- '^--?[^=]*=' (string unescape -- (commandline -ct)))
 
     __%[1]s_debug "Comps: $comps"
     __%[1]s_debug "DirectiveLine: $directiveLine"
