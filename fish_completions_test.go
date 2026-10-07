@@ -16,11 +16,15 @@ package cobra
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestCompleteNoDesCmdInFishScript(t *testing.T) {
@@ -96,6 +100,83 @@ func TestFishCompletionNoActiveHelp(t *testing.T) {
 	// check that active help is being disabled
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
+}
+
+func TestFishCompletionFlagPrefix(t *testing.T) {
+	fish, err := exec.LookPath("fish")
+	if err != nil {
+		t.Skip("fish is required to execute the generated completion script")
+	}
+
+	rootCmd := &Command{Use: "cobra-fish-test", Run: emptyRun}
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
+
+	// Keep the completion backend fixed so these tests exercise the generated
+	// shell adapter, including Fish's handling of flag and value boundaries.
+	script := `
+function cobra-fish-test
+    if test "$argv[1]" = "__completeNoDesc"
+        printf '%s\n' "$COBRA_FISH_TEST_CANDIDATE" ':4'
+    end
+end
+` + buf.String() + `
+complete --do-complete "$COBRA_FISH_TEST_LINE"
+`
+	tests := []struct {
+		name, arguments, candidate, expected string
+	}{
+		{"long flag", "--selector=w", "web", "--selector=web"},
+		{"short flag", "-s=w", "web", "-s=web"},
+		{"long flag empty value", "--selector=", "web", "--selector=web"},
+		{"short flag empty value", "-s=", "web", "-s=web"},
+		{"long flag equals in value", "--selector=app=w", "app=web", "--selector=app=web"},
+		{"short flag equals in value", "-s=app=w", "app=web", "-s=app=web"},
+		{"multiple equals in value", "--selector=app=x=w", "app=x=web", "--selector=app=x=web"},
+		{"not equals in value", "--selector=app!=w", "app!=web", "--selector=app!=web"},
+		{"double equals in value", "--selector=app==w", "app==web", "--selector=app==web"},
+		{"comma separated value", "--selector=env=prod,app=w", "env=prod,app=web", "--selector=env=prod,app=web"},
+		{"hyphen in flag", "--label-selector=app=w", "app=web", "--label-selector=app=web"},
+		{"hyphen and equals in value", "--selector=app-name=w", "app-name=web", "--selector=app-name=web"},
+		{"leading hyphen in value", "--selector=-app=w", "-app=web", "--selector=-app=web"},
+		{"separate long flag value", "--selector app=w", "app=web", "app=web"},
+		{"separate short flag value", "-s app=w", "app=web", "app=web"},
+		{"separate long flag hyphenated value", "--selector app-name=w", "app-name=web", "app-name=web"},
+		{"separate short flag hyphenated value", "-s app-name=w", "app-name=web", "app-name=web"},
+		{"positional hyphenated value", "app-name=w", "app-name=web", "app-name=web"},
+		{"positional equals value", "app=w", "app=web", "app=web"},
+		{"positional plain value", "w", "web", "web"},
+		{"open double quoted value", `--selector="w`, "web", "--selector=web"},
+		{"closed double quoted value", `--selector="w"`, "web", "--selector=web"},
+		{"open double quoted token", `"--selector=w`, "web", "--selector=web"},
+		{"closed double quoted token", `"--selector=w"`, "web", "--selector=web"},
+		{"open single quoted value", "--selector='w", "web", "--selector=web"},
+		{"quoted value containing equals", `--selector="app=w`, "app=web", "--selector=app=web"},
+		{"quoted token containing equals", `"--selector=app=w`, "app=web", "--selector=app=web"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, fish, "--no-config")
+			cmd.Stdin = strings.NewReader(script)
+			configDir := t.TempDir()
+			cmd.Env = append(os.Environ(),
+				"HOME="+configDir,
+				"XDG_CONFIG_HOME="+configDir,
+				"BASH_COMP_DEBUG_FILE=",
+				"COBRA_FISH_TEST_LINE=cobra-fish-test "+tc.arguments,
+				"COBRA_FISH_TEST_CANDIDATE="+tc.candidate,
+			)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("fish completion failed: %v\n%s", err, output)
+			}
+			if got := strings.TrimSuffix(string(output), "\n"); got != tc.expected {
+				t.Errorf("completion for %q = %q, want %q", tc.arguments, got, tc.expected)
+			}
+		})
+	}
 }
 
 func TestGenFishCompletionFile(t *testing.T) {
