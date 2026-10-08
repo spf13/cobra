@@ -2420,6 +2420,107 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+func TestTraverseStopsAtDash(t *testing.T) {
+	tests := []struct {
+		name               string
+		args               []string
+		wantArgs           []string
+		disableFlagParsing bool
+		allowUnknownFlags  bool
+	}{
+		{name: "operands", args: []string{"--", "operand", "child", "--force"}, wantArgs: []string{"operand", "child", "--force"}},
+		{name: "single operand", args: []string{"--", "child"}, wantArgs: []string{"child"}},
+		{name: "local boolean", args: []string{"--local", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "persistent boolean", args: []string{"--persistent", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "inherited boolean", args: []string{"--inherited", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "string value", args: []string{"--str", "value", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "dash value before separator", args: []string{"--str", "--", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "flag-like string value", args: []string{"--str", "--value", "--", "operand", "child"}, wantArgs: []string{"operand", "child"}},
+		{name: "disabled parsing", args: []string{"--", "operand", "child", "--force"}, wantArgs: []string{"--", "operand", "child", "--force"}, disableFlagParsing: true},
+		{name: "unknown long flag", args: []string{"--unknown", "--", "child"}, wantArgs: []string{"child"}, allowUnknownFlags: true},
+		{name: "unknown short flag", args: []string{"-x", "--", "child"}, wantArgs: []string{"child"}, allowUnknownFlags: true},
+		{name: "unknown then known flag", args: []string{"--unknown", "--str", "value", "--", "child"}, wantArgs: []string{"child"}, allowUnknownFlags: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rootCmd := &Command{Use: "root", TraverseChildren: true}
+			rootCmd.PersistentFlags().Bool("inherited", false, "")
+			var gotArgs []string
+			parentCmd := &Command{
+				Use:                "parent",
+				DisableFlagParsing: tt.disableFlagParsing,
+				FParseErrWhitelist: FParseErrWhitelist{UnknownFlags: tt.allowUnknownFlags},
+				Run:                func(_ *Command, args []string) { gotArgs = args },
+			}
+			parentCmd.Flags().Bool("local", false, "")
+			parentCmd.Flags().String("str", "", "")
+			parentCmd.PersistentFlags().Bool("persistent", false, "")
+			childCmd := &Command{Use: "child", Run: emptyRun}
+			force := childCmd.Flags().Bool("force", false, "")
+			parentCmd.AddCommand(childCmd)
+			rootCmd.AddCommand(parentCmd)
+			args := append([]string{"parent"}, tt.args...)
+
+			cmd, remaining, err := rootCmd.Traverse(args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cmd != parentCmd || !reflect.DeepEqual(remaining, tt.args) {
+				t.Errorf("Traverse() = (%s, %q), want (parent, %q)", cmd.Name(), remaining, tt.args)
+			}
+			cmd, _, err = executeCommandC(rootCmd, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cmd != parentCmd {
+				t.Fatalf("ExecuteC() selected %s, want parent", cmd.Name())
+			}
+			if !reflect.DeepEqual(gotArgs, tt.wantArgs) {
+				t.Errorf("Run args = %q, want %q", gotArgs, tt.wantArgs)
+			}
+			if *force {
+				t.Error("Child flag after -- was parsed")
+			}
+		})
+	}
+}
+
+func TestTraverseDashAsFlagValue(t *testing.T) {
+	for _, args := range [][]string{{"--str", "--", "child"}, {"-s", "--", "child"}, {"--unknown", "--str", "--", "child"}} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			rootCmd := &Command{
+				Use:                "root",
+				TraverseChildren:   true,
+				FParseErrWhitelist: FParseErrWhitelist{UnknownFlags: args[0] == "--unknown"},
+			}
+			value := rootCmd.Flags().StringP("str", "s", "", "")
+			childCmd := &Command{Use: "child", Run: emptyRun}
+			rootCmd.AddCommand(childCmd)
+			cmd, remaining, err := rootCmd.Traverse(args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cmd != childCmd || len(remaining) != 0 {
+				t.Errorf("Traverse() = (%s, %q), want (child, [])", cmd.Name(), remaining)
+			}
+			if *value != "--" {
+				t.Errorf("Flag value after Traverse() = %q, want --", *value)
+			}
+			*value = ""
+			cmd, _, err = executeCommandC(rootCmd, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cmd != childCmd {
+				t.Fatalf("ExecuteC() selected %s, want child", cmd.Name())
+			}
+			if *value != "--" {
+				t.Errorf("Flag value = %q, want --", *value)
+			}
+		})
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
