@@ -2952,3 +2952,63 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+// TestTraverseBareDoubleDashStopsCommandDiscovery verifies that with
+// TraverseChildren, a bare "--" stops subcommand matching so later tokens
+// remain positionals for the current command (#2528).
+func TestTraverseBareDoubleDashStopsCommandDiscovery(t *testing.T) {
+	var gotArgs []string
+	var childRan bool
+
+	rootCmd := &Command{
+		Use:              "root",
+		TraverseChildren: true,
+		Args:             ArbitraryArgs,
+		Run: func(_ *Command, args []string) {
+			gotArgs = append([]string{}, args...)
+		},
+	}
+	rootCmd.AddCommand(&Command{
+		Use: "child",
+		Run: func(*Command, []string) {
+			childRan = true
+		},
+	})
+
+	output, err := executeCommand(rootCmd, "--", "literal", "child")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v\nOutput: %s", err, output)
+	}
+	if childRan {
+		t.Fatal("child command ran; bare \"--\" should have stopped command discovery")
+	}
+	want := []string{"literal", "child"}
+	if len(gotArgs) != len(want) || gotArgs[0] != want[0] || gotArgs[1] != want[1] {
+		t.Fatalf("root args = %#v, want %#v", gotArgs, want)
+	}
+
+	// Control: without a leading token after "--", "child" is still positional.
+	gotArgs = nil
+	childRan = false
+	output, err = executeCommand(rootCmd, "--", "child")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v\nOutput: %s", err, output)
+	}
+	if childRan {
+		t.Fatal("child command ran for \"-- child\"")
+	}
+	if len(gotArgs) != 1 || gotArgs[0] != "child" {
+		t.Fatalf("root args = %#v, want [\"child\"]", gotArgs)
+	}
+
+	// Control: without "--", child still runs.
+	gotArgs = nil
+	childRan = false
+	output, err = executeCommand(rootCmd, "child")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v\nOutput: %s", err, output)
+	}
+	if !childRan {
+		t.Fatal("expected child command to run without \"--\"")
+	}
+}

@@ -824,6 +824,17 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 	for i, arg := range args {
 		switch {
+		// The value for a flag (checked before "--" so a bare "--" can still be a value)
+		case inFlag:
+			inFlag = false
+			flags = append(flags, arg)
+			continue
+		// "--" terminates flag and command discovery (same as stripFlags / Find).
+		// Without this, a bare "--" is treated as a long flag with an empty name,
+		// the next token is consumed as its value, and later tokens can still be
+		// matched as subcommands (#2528).
+		case arg == "--":
+			return c, args, nil
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
@@ -833,11 +844,6 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		// A short flag with a space separated value
 		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
 			inFlag = true
-			flags = append(flags, arg)
-			continue
-		// The value for a flag
-		case inFlag:
-			inFlag = false
 			flags = append(flags, arg)
 			continue
 		// A flag without a value, or with an `=` separated value
