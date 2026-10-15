@@ -823,6 +823,11 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 	inFlag := false
 
 	for i, arg := range args {
+		if arg == "--" {
+			// A double dash ends command discovery; the selected command parses the remaining args.
+			return c, args, nil
+		}
+
 		switch {
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):

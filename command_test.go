@@ -2420,6 +2420,62 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+func TestTraverseStopsAtDoubleDash(t *testing.T) {
+	testCases := []struct {
+		name string
+		args []string
+		want []string
+	}{
+		{
+			name: "arguments continue after a literal",
+			args: []string{"--", "literal", "child"},
+			want: []string{"literal", "child"},
+		},
+		{
+			name: "subcommand name remains positional",
+			args: []string{"--", "child"},
+			want: []string{"child"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var gotCommand string
+			var gotArgs []string
+			rootCmd := &Command{
+				Use:              "app",
+				TraverseChildren: true,
+				Args:             ArbitraryArgs,
+				Run: func(cmd *Command, args []string) {
+					gotCommand = cmd.Name()
+					gotArgs = append([]string(nil), args...)
+				},
+			}
+			rootCmd.AddCommand(&Command{
+				Use: "child",
+				Run: func(cmd *Command, args []string) {
+					gotCommand = cmd.Name()
+					gotArgs = append([]string(nil), args...)
+				},
+			})
+
+			cmd, _, err := executeCommandC(rootCmd, tc.args...)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if cmd != rootCmd {
+				t.Errorf("Expected root command, got %q", cmd.Name())
+			}
+			if gotCommand != rootCmd.Name() {
+				t.Errorf("Expected root handler, got %q", gotCommand)
+			}
+			if !reflect.DeepEqual(gotArgs, tc.want) {
+				t.Errorf("Wrong args: got %v, want %v", gotArgs, tc.want)
+			}
+		})
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
