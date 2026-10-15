@@ -129,9 +129,11 @@ _%[1]s()
     __%[1]s_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
 
     # For zsh, when completing a flag with an = (e.g., %[1]s -n=<TAB>)
-    # completions must be prefixed with the flag
+    # completions must be prefixed with the flag up to the first =.
+    # The value may contain additional = characters. Remove shell quoting so
+    # quoted or escaped flags are also recognized.
     setopt local_options BASH_REMATCH
-    if [[ "${lastParam}" =~ '-.*=' ]]; then
+    if [[ "${(Q)lastParam}" =~ '^-[^=]*=' ]]; then
         # We are dealing with a flag with an =
         flagPrefix="-P ${BASH_REMATCH}"
     fi
