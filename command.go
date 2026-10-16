@@ -824,6 +824,17 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 	for i, arg := range args {
 		switch {
+		// The `--` end-of-flags terminator stops command discovery, so that
+		// positional arguments cannot accidentally be interpreted as
+		// subcommand names (which would run the wrong handler and may
+		// discard positionals that came before the collision). This matches
+		// the behaviour of the non-traverse path, which also stops command
+		// discovery on `--`.
+		case arg == "--":
+			if err := c.ParseFlags(flags); err != nil {
+				return nil, args, err
+			}
+			return c, args[i:], nil
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
