@@ -368,9 +368,25 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// This works by counting the arguments. Normally -- is not counted as arg but
 	// if -- was already set or interspersed is false and there is already one arg then
 	// the extra added -- is counted as arg.
+	//
+	// Probe with ParseAll and a no-op setter so flag values are not applied. A
+	// previous approach called ParseFlags twice, which applied StringArray,
+	// StringSlice, and Count flags twice (#2527). Copy finalArgs before appending
+	// "--" so we do not mutate a shared backing array (see #2257).
+	//
+	// The probe runs on a shallow copy of the FlagSet so that the parse state it
+	// records (the args after the flags and the position of the synthetic "--")
+	// does not leak into the real parse below; otherwise ArgsLenAtDash() would
+	// report a "--" the user never typed.
 	flagCompletion := true
-	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
-	newArgCount := finalCmd.Flags().NArg()
+	finalCmd.mergePersistentFlags()
+	finalCmd.Flags().ParseErrorsAllowlist = pflag.ParseErrorsAllowlist(finalCmd.FParseErrWhitelist)
+	probeArgs := make([]string, len(finalArgs)+1)
+	copy(probeArgs, finalArgs)
+	probeArgs[len(finalArgs)] = "--"
+	probeFlags := *finalCmd.Flags()
+	_ = probeFlags.ParseAll(probeArgs, func(*pflag.Flag, string) error { return nil })
+	newArgCount := probeFlags.NArg()
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {

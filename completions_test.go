@@ -4127,3 +4127,83 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
+
+// TestCompletionDoesNotDoubleApplyStatefulFlags verifies that array/slice/count
+// flags are applied once during __complete, matching normal Execute (#2527).
+func TestCompletionDoesNotDoubleApplyStatefulFlags(t *testing.T) {
+	var tags []string
+	var slice []string
+	var verbose int
+	var seen string
+
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+			seen = fmt.Sprintf("tags=%q slice=%q verbose=%d", tags, slice, verbose)
+			return []Completion{seen}, ShellCompDirectiveNoFileComp
+		},
+	}
+	rootCmd.Flags().StringArrayVar(&tags, "tag", nil, "tag")
+	rootCmd.Flags().StringSliceVar(&slice, "slice", nil, "slice")
+	rootCmd.Flags().CountVarP(&verbose, "verbose", "v", "verbosity")
+
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--tag", "one", "--slice", "a,b", "-v", "")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedState := `tags=["one"] slice=["a" "b"] verbose=1`
+	if !strings.Contains(output, expectedState) {
+		t.Fatalf("completion callback saw wrong flag state.\nwant substring: %s\nfull output:\n%s", expectedState, output)
+	}
+	if strings.Contains(output, `tags=["one" "one"]`) || strings.Contains(output, "verbose=2") {
+		t.Fatalf("flags appear to have been applied twice:\n%s", output)
+	}
+}
+
+// TestCompletionArgsLenAtDashWithoutDash verifies that the "--" appended while
+// probing the argument count is not reported by ArgsLenAtDash in completion
+// callbacks.
+func TestCompletionArgsLenAtDashWithoutDash(t *testing.T) {
+	var argsLenAtDash, flagArgsLenAtDash int
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+			argsLenAtDash = cmd.Flags().ArgsLenAtDash()
+			return nil, ShellCompDirectiveNoFileComp
+		},
+	}
+	rootCmd.Flags().String("name", "", "name")
+	_ = rootCmd.RegisterFlagCompletionFunc("name", func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+		flagArgsLenAtDash = cmd.Flags().ArgsLenAtDash()
+		return nil, ShellCompDirectiveNoFileComp
+	})
+
+	for _, args := range [][]string{
+		{ShellCompRequestCmd, ""},
+		{ShellCompRequestCmd, "arg", ""},
+		{ShellCompRequestCmd, "--name", ""},
+	} {
+		argsLenAtDash, flagArgsLenAtDash = -2, -2
+		if _, err := executeCommand(rootCmd, args...); err != nil {
+			t.Fatalf("Unexpected error for %q: %v", args, err)
+		}
+		got := argsLenAtDash
+		if args[1] == "--name" {
+			got = flagArgsLenAtDash
+		}
+		if got != -1 {
+			t.Errorf("ArgsLenAtDash() for %q = %d, want -1", args, got)
+		}
+	}
+
+	argsLenAtDash = -2
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, "arg", "--", ""); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if argsLenAtDash != 1 {
+		t.Errorf("ArgsLenAtDash() with a literal -- = %d, want 1", argsLenAtDash)
+	}
+}
