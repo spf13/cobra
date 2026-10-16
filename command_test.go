@@ -2420,6 +2420,44 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+// Regression test: https://github.com/spf13/cobra/issues/2528
+// With TraverseChildren, a bare -- must stop command discovery so that
+// positional arguments after it are not interpreted as subcommand names.
+// Previously the long-flag branch matched -- as a flag that "takes a
+// value", consuming the next positional as its value and letting a later
+// positional that happened to match a subcommand name run the wrong
+// handler (and silently drop the intermediate positionals).
+func TestTraverseStopsAtEndOfFlags(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd.AddCommand(&Command{Use: "child"})
+
+	// "-- literal child" -> traversal should remain on root and keep both
+	// positionals, not descend into "child".
+	c, remaining, err := rootCmd.Traverse([]string{"--", "literal", "child"})
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if c.Name() != rootCmd.Name() {
+		t.Fatalf("Expected traversal to stay on %q, got %q", rootCmd.Name(), c.Name())
+	}
+	if got, want := remaining, []string{"--", "literal", "child"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Expected remaining %v, got %v", want, got)
+	}
+
+	// Also verify the simpler case of "-- child": "child" must stay a
+	// positional, not a subcommand to descend into.
+	c, remaining, err = rootCmd.Traverse([]string{"--", "child"})
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if c.Name() != rootCmd.Name() {
+		t.Fatalf("Expected traversal to stay on %q, got %q", rootCmd.Name(), c.Name())
+	}
+	if got, want := remaining, []string{"--", "child"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Expected remaining %v, got %v", want, got)
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
