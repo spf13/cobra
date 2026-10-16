@@ -4161,3 +4161,49 @@ func TestCompletionDoesNotDoubleApplyStatefulFlags(t *testing.T) {
 		t.Fatalf("flags appear to have been applied twice:\n%s", output)
 	}
 }
+
+// TestCompletionArgsLenAtDashWithoutDash verifies that the "--" appended while
+// probing the argument count is not reported by ArgsLenAtDash in completion
+// callbacks.
+func TestCompletionArgsLenAtDashWithoutDash(t *testing.T) {
+	var argsLenAtDash, flagArgsLenAtDash int
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+			argsLenAtDash = cmd.Flags().ArgsLenAtDash()
+			return nil, ShellCompDirectiveNoFileComp
+		},
+	}
+	rootCmd.Flags().String("name", "", "name")
+	_ = rootCmd.RegisterFlagCompletionFunc("name", func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+		flagArgsLenAtDash = cmd.Flags().ArgsLenAtDash()
+		return nil, ShellCompDirectiveNoFileComp
+	})
+
+	for _, args := range [][]string{
+		{ShellCompRequestCmd, ""},
+		{ShellCompRequestCmd, "arg", ""},
+		{ShellCompRequestCmd, "--name", ""},
+	} {
+		argsLenAtDash, flagArgsLenAtDash = -2, -2
+		if _, err := executeCommand(rootCmd, args...); err != nil {
+			t.Fatalf("Unexpected error for %q: %v", args, err)
+		}
+		got := argsLenAtDash
+		if args[1] == "--name" {
+			got = flagArgsLenAtDash
+		}
+		if got != -1 {
+			t.Errorf("ArgsLenAtDash() for %q = %d, want -1", args, got)
+		}
+	}
+
+	argsLenAtDash = -2
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, "arg", "--", ""); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if argsLenAtDash != 1 {
+		t.Errorf("ArgsLenAtDash() with a literal -- = %d, want 1", argsLenAtDash)
+	}
+}

@@ -373,14 +373,20 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// previous approach called ParseFlags twice, which applied StringArray,
 	// StringSlice, and Count flags twice (#2527). Copy finalArgs before appending
 	// "--" so we do not mutate a shared backing array (see #2257).
+	//
+	// The probe runs on a shallow copy of the FlagSet so that the parse state it
+	// records (the args after the flags and the position of the synthetic "--")
+	// does not leak into the real parse below; otherwise ArgsLenAtDash() would
+	// report a "--" the user never typed.
 	flagCompletion := true
 	finalCmd.mergePersistentFlags()
 	finalCmd.Flags().ParseErrorsAllowlist = pflag.ParseErrorsAllowlist(finalCmd.FParseErrWhitelist)
 	probeArgs := make([]string, len(finalArgs)+1)
 	copy(probeArgs, finalArgs)
 	probeArgs[len(finalArgs)] = "--"
-	_ = finalCmd.Flags().ParseAll(probeArgs, func(*pflag.Flag, string) error { return nil })
-	newArgCount := finalCmd.Flags().NArg()
+	probeFlags := *finalCmd.Flags()
+	_ = probeFlags.ParseAll(probeArgs, func(*pflag.Flag, string) error { return nil })
+	newArgCount := probeFlags.NArg()
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
