@@ -49,7 +49,7 @@ type cmdDoc struct {
 // in the directory given. This function may not work
 // correctly if your command names have `-` in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
-// it is undefined which help output will be in the file `cmd-sub-third.1`.
+// it is undefined which help output will be in the file `cmd-sub-third.yaml`.
 func GenYamlTree(cmd *cobra.Command, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
