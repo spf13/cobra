@@ -449,7 +449,7 @@ The following validators are built in:
   - `OnlyValidArgs` - report an error if there are any positional args not specified in the `ValidArgs` field of `Command`, which can optionally be set to a list of valid values for positional args.
   - `NoDuplicateArgs` - report an error if any positional argument value is provided more than once.
 
-If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
+If `Args` is undefined or `nil`, the default behavior depends on the command: a root command with subcommands reports an error for positional arguments that are not known subcommands, while other commands accept arbitrary arguments.
 
 Moreover, `MatchAll(pargs ...PositionalArgs)` enables combining existing checks with arbitrary other checks.
 For instance, if you want to report an error if there are not exactly N positional args OR if there are any positional
