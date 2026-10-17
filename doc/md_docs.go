@@ -121,7 +121,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 // This function may not work correctly if your command names have `-` in them.
 // If you have `cmd` with two subcmds, `sub` and `sub-third`,
 // and `sub` has a subcommand called `third`, it is undefined which
-// help output will be in the file `cmd-sub-third.1`.
+// help output will be in the file `cmd-sub-third.md`.
 func GenMarkdownTree(cmd *cobra.Command, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }

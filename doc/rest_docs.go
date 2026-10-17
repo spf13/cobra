@@ -134,7 +134,7 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 // This function may not work correctly if your command names have `-` in them.
 // If you have `cmd` with two subcmds, `sub` and `sub-third`,
 // and `sub` has a subcommand called `third`, it is undefined which
-// help output will be in the file `cmd-sub-third.1`.
+// help output will be in the file `cmd-sub-third.rst`.
 func GenReSTTree(cmd *cobra.Command, dir string) error {
 	emptyStr := func(s string) string { return "" }
 	return GenReSTTreeCustom(cmd, dir, emptyStr, defaultLinkHandler)
