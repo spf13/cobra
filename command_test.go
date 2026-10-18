@@ -580,6 +580,34 @@ func TestChildFlag(t *testing.T) {
 	}
 }
 
+// https://github.com/spf13/cobra/issues/2311
+// When a group command (a command with subcommands but no Run) defines a
+// LOCAL (non-persistent) flag, and that flag is passed before the subcommand,
+// the resolved subcommand does not inherit the parent's local flag, so
+// `create -o yaml svc` failed with "unknown shorthand flag: 'o' in -o".
+// This mirrors kubectl's `create -o` where `-o` is a local flag of the
+// `create` group. The fix makes the resolved subcommand accept the parent's
+// local flags so the subcommand runs instead of erroring.
+func TestParentLocalFlagWithSubcommand(t *testing.T) {
+	var output string
+	// create is a group command (no Run) with subcommands, like `kubectl create`.
+	create := &Command{Use: "create"}
+	svc := &Command{Use: "svc", Run: emptyRun}
+	create.AddCommand(svc)
+	// `-o` is a LOCAL flag of create, not persistent, like kubectl create -o.
+	create.Flags().StringVarP(&output, "output", "o", "", "output format")
+
+	// Invoking `create -o yaml svc` should parse `-o` and run the svc
+	// subcommand rather than failing with "unknown shorthand flag".
+	_, err := executeCommand(create, "-o", "yaml", "svc")
+	if err != nil {
+		t.Fatalf("expected no error for valid parent local flag, got: %v", err)
+	}
+	if output != "yaml" {
+		t.Errorf("expected flag value %q, got %q", "yaml", output)
+	}
+}
+
 func TestChildFlagWithParentLocalFlag(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun}

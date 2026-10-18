@@ -918,7 +918,19 @@ func (c *Command) execute(a []string) (err error) {
 
 	err = c.ParseFlags(a)
 	if err != nil {
-		return c.FlagErrorFunc()(c, err)
+		// A flag that is valid on a parent command (e.g. `kubectl create -o`)
+		// is not inherited by the resolved subcommand because only persistent
+		// flags are merged into it. When such a flag is passed before the
+		// subcommand name (the kubectl `create -o yaml svc` form), merge the
+		// parent's local flags into the resolved command and retry parsing.
+		// This is order-sensitive, so a flag passed after the subcommand still
+		// errors. See issue #2311.
+		if c.inheritParentLocalFlagsIfPreceding() {
+			err = c.ParseFlags(a)
+		}
+		if err != nil {
+			return c.FlagErrorFunc()(c, err)
+		}
 	}
 
 	// If help is called, regardless of other flags, return we want help.
@@ -1899,6 +1911,82 @@ func (c *Command) mergePersistentFlags() {
 	c.updateParentsPflags()
 	c.Flags().AddFlagSet(c.PersistentFlags())
 	c.Flags().AddFlagSet(c.parentsPflags)
+}
+
+// inheritParentLocalFlagsIfPreceding merges the local (non-persistent) flags
+// of c's parents into c when a flag that is valid on a parent is passed
+// before c's subcommand name in the original invocation (the kubectl
+// `create -o yaml svc` form, where `-o` is a local flag of the `create`
+// group). It returns true if at least one parent local flag was merged, so the
+// caller can retry parsing. See issue #2311.
+func (c *Command) inheritParentLocalFlagsIfPreceding() bool {
+	if !c.HasParent() {
+		return false
+	}
+
+	// The resolved command's own args (a) have the subcommand name stripped by
+	// Find, so the original full invocation is recovered from the root command.
+	originalArgs := c.Root().args
+	if len(originalArgs) == 0 {
+		return false
+	}
+
+	// Position of the resolved subcommand in the original invocation.
+	pos := -1
+	for i, arg := range originalArgs {
+		if arg == c.Name() || arg == c.commandCalledAs.name {
+			pos = i
+			break
+		}
+	}
+	if pos <= 0 {
+		return false
+	}
+
+	// Flag tokens that precede the subcommand.
+	var preFlags []string
+	for _, arg := range originalArgs[:pos] {
+		if isFlagArg(arg) {
+			preFlags = append(preFlags, arg)
+		}
+	}
+	if len(preFlags) == 0 {
+		return false
+	}
+
+	// If any preceding flag is a local (non-persistent) flag of a parent,
+	// merge all of that parent's local flags into c so the parse succeeds.
+	merged := false
+	c.VisitParents(func(parent *Command) {
+		if merged {
+			return
+		}
+		for _, pf := range preFlags {
+			var f *flag.Flag
+			if strings.HasPrefix(pf, "--") {
+				name := pf[2:]
+				if idx := strings.Index(name, "="); idx >= 0 {
+					name = name[:idx]
+				}
+				f = parent.Flags().Lookup(name)
+			} else if len(pf) == 2 && pf[0] == '-' {
+				f = parent.Flags().ShorthandLookup(pf[1:])
+			} else {
+				continue
+			}
+			if f != nil && parent.PersistentFlags().Lookup(f.Name) == nil {
+				// Local flag of the parent; merge all parent local flags in.
+				parent.Flags().VisitAll(func(pf2 *flag.Flag) {
+					if c.Flags().Lookup(pf2.Name) == nil {
+						c.Flags().AddFlag(pf2)
+						merged = true
+					}
+				})
+				break
+			}
+		}
+	})
+	return merged
 }
 
 // updateParentsPflags updates c.parentsPflags by adding
