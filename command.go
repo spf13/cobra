@@ -1470,7 +1470,7 @@ func (c *Command) CommandPath() string {
 }
 
 // DisplayName returns the name to display in help text. Returns command Name()
-// If CommandDisplayNameAnnoation is not set
+// If CommandDisplayNameAnnotation is not set
 func (c *Command) DisplayName() string {
 	if displayName, ok := c.Annotations[CommandDisplayNameAnnotation]; ok {
 		return displayName
