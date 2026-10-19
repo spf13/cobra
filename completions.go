@@ -29,7 +29,7 @@ const (
 	// ShellCompRequestCmd is the name of the hidden command that is used to request
 	// completion results from the program.  It is used by the shell completion scripts.
 	ShellCompRequestCmd = "__complete"
-	// ShellCompNoDescRequestCmd is the name of the hidden command that is used to request
+	// ShellCompNoDescRequestCmd is an alias of the hidden __complete command, used to request
 	// completion results without their description.  It is used by the shell completion scripts.
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
