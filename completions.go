@@ -743,7 +743,8 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 // InitDefaultCompletionCmd adds a default 'completion' command to c.
 // This function will do nothing if any of the following is true:
 // 1- the feature has been explicitly disabled by the program,
-// 2- c has no subcommands (to avoid creating one),
+// 2- c has no other subcommands, unless the completion command itself is
+// being executed or completed,
 // 3- c already has a 'completion' command provided by the program.
 func (c *Command) InitDefaultCompletionCmd(args ...string) {
 	if c.CompletionOptions.DisableDefaultCmd {
