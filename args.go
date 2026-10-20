@@ -58,7 +58,19 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 		}
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {
-				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
+				suggestions := []string{}
+				if !cmd.DisableSuggestions {
+					distance := cmd.SuggestionsMinimumDistance
+					if distance <= 0 {
+						distance = 2
+					}
+					for _, validArg := range validArgs {
+						if ld(v, validArg, true) <= distance {
+							suggestions = append(suggestions, validArg)
+						}
+					}
+				}
+				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), formatSuggestions(suggestions))
 			}
 		}
 	}
