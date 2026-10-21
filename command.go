@@ -250,8 +250,9 @@ type Command struct {
 	// line of a command when printing help or generating docs
 	DisableFlagsInUseLine bool
 
-	// DisableSuggestions disables the suggestions based on Levenshtein distance
-	// that go along with 'unknown command' messages.
+	// DisableSuggestions disables all "Did you mean this?" suggestions that
+	// go along with 'unknown command' messages — Levenshtein matches, prefix
+	// matches, and SuggestFor entries alike.
 	DisableSuggestions bool
 
 	// SuggestionsMinimumDistance defines minimum levenshtein distance to display suggestions.
