@@ -43,6 +43,7 @@ linters:
     #- lll
     - misspell
     #- mnd
+    - modernize
     #- nakedret
     #- noctx
     - nolintlint
