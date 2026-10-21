@@ -47,6 +47,7 @@ linters:
     #- nakedret
     #- noctx
     - nolintlint
+    - revive
     #- rowserrcheck
     - staticcheck
     - unconvert
@@ -80,3 +81,12 @@ linters:
       # This can be removed once Cobra requires Go 1.17 or higher.
       disable:
         - buildtag
+    revive:
+      enable-default-rules: true
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: unused-parameter
+          disabled: true
