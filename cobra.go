@@ -66,7 +66,7 @@ var EnableCaseInsensitive = defaultCaseInsensitive
 var EnableTraverseRunHooks = defaultTraverseRunHooks
 
 // MousetrapHelpText enables an information splash screen on Windows
-// if the CLI is started from explorer.exe.
+// if the CLI is started from explorer.exe with no arguments.
 // To disable the mousetrap, just set this variable to blank string ("").
 // Works only on Microsoft Windows.
 var MousetrapHelpText = `This is a command line tool.
@@ -75,7 +75,7 @@ You need to open cmd.exe and run it from there.
 `
 
 // MousetrapDisplayDuration controls how long the MousetrapHelpText message is displayed on Windows
-// if the CLI is started from explorer.exe. Set to 0 to wait for the return key to be pressed.
+// if the CLI is started from explorer.exe with no arguments. Set to 0 to wait for the return key to be pressed.
 // To disable the mousetrap, just set MousetrapHelpText to blank string ("").
 // Works only on Microsoft Windows.
 var MousetrapDisplayDuration = 5 * time.Second

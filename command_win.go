@@ -27,8 +27,10 @@ import (
 
 var preExecHookFn = preExecHook
 
+var startedByExplorer = mousetrap.StartedByExplorer
+
 func preExecHook(c *Command) {
-	if MousetrapHelpText != "" && mousetrap.StartedByExplorer() {
+	if mousetrapApplies() {
 		c.Print(MousetrapHelpText)
 		if MousetrapDisplayDuration > 0 {
 			time.Sleep(MousetrapDisplayDuration)
@@ -38,4 +40,8 @@ func preExecHook(c *Command) {
 		}
 		os.Exit(1)
 	}
+}
+
+func mousetrapApplies() bool {
+	return MousetrapHelpText != "" && len(os.Args) == 1 && startedByExplorer()
 }
