@@ -29,7 +29,9 @@ const (
 )
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
-// if the command is invoked with a subset (but not all) of the given flags.
+// if the command is invoked with at least one, but not all, of the given flags. Invoking
+// the command with none of them is allowed; use MarkFlagsOneRequired to require that at
+// least one of the flags is set.
 func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
 	c.mergePersistentFlags()
 	for _, v := range flagNames {
