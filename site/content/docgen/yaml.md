@@ -7,6 +7,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -17,14 +18,20 @@ func main() {
 		Use:   "test",
 		Short: "my test program",
 	}
-	err := doc.GenYamlTree(cmd, "/tmp")
+	dir, err := os.MkdirTemp("", "my-program-docs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	err = doc.GenYamlTree(cmd, dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 ```
 
-That will get you a Yaml document `/tmp/test.yaml`
+That will get you a Yaml document `test.yaml` inside that directory
 
 ## Generate yaml docs for the entire command tree
 

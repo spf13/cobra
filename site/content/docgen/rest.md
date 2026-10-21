@@ -7,6 +7,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -17,14 +18,20 @@ func main() {
 		Use:   "test",
 		Short: "my test program",
 	}
-	err := doc.GenReSTTree(cmd, "/tmp")
+	dir, err := os.MkdirTemp("", "my-program-docs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	err = doc.GenReSTTree(cmd, dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 ```
 
-That will get you a ReST document `/tmp/test.rst`
+That will get you a ReST document `test.rst` inside that directory
 
 ## Generate ReST docs for the entire command tree
 
