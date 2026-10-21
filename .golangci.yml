@@ -55,6 +55,7 @@ linters:
     - unconvert
     #- unparam
     - unused
+    - wastedassign
     #- whitespace
   exclusions:
     presets:

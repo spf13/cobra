@@ -161,7 +161,7 @@ func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
 		if len(flag.Deprecated) > 0 || flag.Hidden {
 			return
 		}
-		format := ""
+		var format string
 		if len(flag.Shorthand) > 0 && len(flag.ShorthandDeprecated) == 0 {
 			format = fmt.Sprintf("**-%s**, **--%s**", flag.Shorthand, flag.Name)
 		} else {
