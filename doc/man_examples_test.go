@@ -17,6 +17,7 @@ package doc_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -31,7 +32,11 @@ func ExampleGenManTree() {
 		Title:   "MINE",
 		Section: "3",
 	}
-	cobra.CheckErr(doc.GenManTree(cmd, header, "/tmp"))
+	dir, err := os.MkdirTemp("", "cobra-man-example")
+	cobra.CheckErr(err)
+	defer os.RemoveAll(dir)
+
+	cobra.CheckErr(doc.GenManTree(cmd, header, dir))
 }
 
 func ExampleGenMan() {
