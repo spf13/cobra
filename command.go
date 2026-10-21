@@ -1698,7 +1698,8 @@ func (c *Command) Flags() *flag.FlagSet {
 }
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
-// This function does not modify the flags of the current command, it's purpose is to return the current state.
+// Note that, like LocalFlags, this function merges the command's and its parents'
+// persistent flags into the command's full FlagSet as a side effect.
 func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 	persistentFlags := c.PersistentFlags()
 
@@ -1712,7 +1713,8 @@ func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
-// This function does not modify the flags of the current command, it's purpose is to return the current state.
+// As a side effect, mergePersistentFlags adds the command's and its parents'
+// persistent flags to the command's full FlagSet.
 func (c *Command) LocalFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
@@ -1740,7 +1742,8 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 }
 
 // InheritedFlags returns all flags which were inherited from parent commands.
-// This function does not modify the flags of the current command, it's purpose is to return the current state.
+// As a side effect, this merges the command's and its parents' persistent
+// flags into the command's full FlagSet (see mergePersistentFlags).
 func (c *Command) InheritedFlags() *flag.FlagSet {
 	c.mergePersistentFlags()
 
@@ -1765,8 +1768,9 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 	return c.iflags
 }
 
-// NonInheritedFlags returns all flags which were not inherited from parent commands.
-// This function does not modify the flags of the current command, it's purpose is to return the current state.
+// NonInheritedFlags returns all flags which were not inherited from parent
+// commands. Like LocalFlags, it merges persistent flags into the command's
+// full FlagSet as a side effect.
 func (c *Command) NonInheritedFlags() *flag.FlagSet {
 	return c.LocalFlags()
 }
