@@ -1475,6 +1475,20 @@ func TestSuggestions(t *testing.T) {
 	}
 }
 
+func TestSuggestionsExcludeUnavailableCommands(t *testing.T) {
+	rootCmd := &Command{Use: "root"}
+	rootCmd.AddCommand(
+		&Command{Use: "secret", Hidden: true, Run: emptyRun},
+		&Command{Use: "legacy", Deprecated: "use another command", Run: emptyRun},
+	)
+
+	for _, typedName := range []string{"secre", "legac"} {
+		if suggestions := rootCmd.SuggestionsFor(typedName); len(suggestions) != 0 {
+			t.Errorf("unexpected suggestions for %q: %v", typedName, suggestions)
+		}
+	}
+}
+
 func TestCaseInsensitive(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
 	childCmd := &Command{Use: "child", Run: emptyRun, Aliases: []string{"alternative"}}
