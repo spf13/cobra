@@ -812,7 +812,7 @@ Error: unknown command "remove" for "kubectl"
 Did you mean this?
         delete
 
-Run 'kubectl help' for usage.
+Run 'kubectl --help' for usage.
 ```
 
 ## Generating documentation for your command
