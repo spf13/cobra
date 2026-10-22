@@ -653,7 +653,7 @@ Flags:
   -l, --license string   name of license for the project
       --viper            use Viper for configuration
 
-Use "cobra [command] --help" for more information about a command.
+Use "cobra-cli [command] --help" for more information about a command.
 ```
 
 ### Defining your own usage
