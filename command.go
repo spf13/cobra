@@ -1296,7 +1296,7 @@ Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 					c.Printf("Unknown help topic %#q\n", args)
 					CheckErr(c.Root().Usage())
 				} else {
-					// FLow the context down to be used in help text
+					// Flow the context down to be used in help text
 					if cmd.ctx == nil {
 						cmd.ctx = c.ctx
 					}
