@@ -824,6 +824,10 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 	for i, arg := range args {
 		switch {
+		// "--" terminates flag parsing: everything after it is positional
+		// and must never be treated as a subcommand.
+		case arg == "--":
+			return c, args, nil
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
