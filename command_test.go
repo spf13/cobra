@@ -2420,6 +2420,71 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 }
 
+func TestTraverseWithDashDashDelimiter(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true, Args: ArbitraryArgs}
+
+	childCmd := &Command{Use: "child"}
+	rootCmd.AddCommand(childCmd)
+
+	// Tokens after "--", including one that matches a subcommand name,
+	// must be returned as positional args of the root command.
+	c, args, err := rootCmd.Traverse([]string{"--", "literal", "child"})
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if c != rootCmd {
+		t.Errorf("Expected command: %q, got %q", rootCmd.Name(), c.Name())
+	}
+	if len(args) != 3 || args[0] != "--" || args[1] != "literal" || args[2] != "child" {
+		t.Errorf("Wrong args: %v", args)
+	}
+}
+
+func TestTraverseWithDashDashDelimiterExecutesRoot(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true, Args: ArbitraryArgs}
+
+	var rootArgs []string
+	childRan := false
+	rootCmd.Run = func(cmd *Command, args []string) {
+		rootArgs = args
+	}
+	childCmd := &Command{Use: "child", Run: func(cmd *Command, args []string) {
+		childRan = true
+	}}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.SetArgs([]string{"--", "literal", "child"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if childRan {
+		t.Error("Child command should not have been executed")
+	}
+	if len(rootArgs) != 2 || rootArgs[0] != "literal" || rootArgs[1] != "child" {
+		t.Errorf("Wrong root args: %v", rootArgs)
+	}
+}
+
+func TestTraverseWithFlagsBeforeDashDashDelimiter(t *testing.T) {
+	rootCmd := &Command{Use: "root", TraverseChildren: true, Args: ArbitraryArgs}
+	rootCmd.Flags().String("str", "", "")
+
+	childCmd := &Command{Use: "child"}
+	rootCmd.AddCommand(childCmd)
+
+	// Flags before "--" keep their normal traversal behavior.
+	c, args, err := rootCmd.Traverse([]string{"--str", "ok", "--", "child"})
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if c != rootCmd {
+		t.Errorf("Expected command: %q, got %q", rootCmd.Name(), c.Name())
+	}
+	if len(args) != 4 || args[0] != "--str" || args[1] != "ok" || args[2] != "--" || args[3] != "child" {
+		t.Errorf("Wrong args: %v", args)
+	}
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
