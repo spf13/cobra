@@ -145,6 +145,10 @@ func Eq(a interface{}, b interface{}) bool {
 	av := reflect.ValueOf(a)
 	bv := reflect.ValueOf(b)
 
+	if av.Kind() != bv.Kind() {
+		return false
+	}
+
 	switch av.Kind() {
 	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
 		panic("Eq called on unsupported type")
