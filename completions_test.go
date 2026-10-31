@@ -841,6 +841,68 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 }
 
+func TestFlagNameCompletionRepeatMap(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+
+	rootCmd.Flags().StringP("first", "f", "", "first flag")
+	firstFlag := rootCmd.Flags().Lookup("first")
+	rootCmd.Flags().StringToStringP("labels", "l", nil, "map flag")
+	labelsFlag := rootCmd.Flags().Lookup("labels")
+	rootCmd.Flags().StringToInt("limits", nil, "map flag")
+	limitsFlag := rootCmd.Flags().Lookup("limits")
+	rootCmd.Flags().StringToInt64("sizes", nil, "map flag")
+	sizesFlag := rootCmd.Flags().Lookup("sizes")
+
+	// Test that map flag names are still completed after they were used, like array or slice flags
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "a", "--labels", "k=v", "--limits", "k=1", "--sizes", "k=2", "--")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	// Reset the flags for the next command
+	firstFlag.Changed = false
+	labelsFlag.Changed = false
+	limitsFlag.Changed = false
+	sizesFlag.Changed = false
+
+	expected := strings.Join([]string{
+		"--help",
+		"--labels",
+		"--limits",
+		"--sizes",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Same with the shorthand
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "k=v", "-")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	labelsFlag.Changed = false
+
+	expected = strings.Join([]string{
+		"--first",
+		"-f",
+		"--help",
+		"-h",
+		"--labels",
+		"-l",
+		"--limits",
+		"--sizes",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
