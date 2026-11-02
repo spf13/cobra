@@ -4127,3 +4127,69 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
+
+// TestCompletionAfterDashDash verifies that once the "--" terminator has been
+// seen, Cobra does not suggest sub-commands or flags: everything after "--" is
+// a positional argument, so none of those suggestions could be executed.
+func TestCompletionAfterDashDash(t *testing.T) {
+	rootCmd := &Command{
+		Use: "root",
+		Run: emptyRun,
+	}
+	childCmd := &Command{
+		Use:   "child",
+		Short: "child command",
+		Run:   emptyRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.Flags().String("token", "", "token flag")
+	if err := rootCmd.MarkFlagRequired("token"); err != nil {
+		t.Fatal(err)
+	}
+
+	// After "--" everything is a positional argument, so sub-command names,
+	// auto-generated commands and required flags must not be suggested.
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--", "")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := strings.Join([]string{
+		":0",
+		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// A sub-command prefix must not resurrect sub-command completion after "--".
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--", "c")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Required flags must not be suggested once an argument follows "--" either.
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--", "x", "")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	// Positional completions (ValidArgs) must still work after "--".
+	rootCmd.ValidArgs = []string{"alpha"}
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--", "")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected = strings.Join([]string{
+		"alpha",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+}
