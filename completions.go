@@ -512,8 +512,11 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 				})
 			}
 
-			// Complete subcommand names, including the help command
-			if len(finalArgs) == 0 && !foundLocalNonPersistentFlag {
+			// Complete subcommand names, including the help command.
+			// Once flags are no longer being parsed (after "--" or when
+			// interspersed parsing stopped), the remaining words are positional
+			// arguments and cannot select a subcommand.
+			if len(finalArgs) == 0 && !foundLocalNonPersistentFlag && flagCompletion {
 				// We only complete sub-commands if:
 				// - there are no arguments on the command-line and
 				// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
@@ -527,8 +530,12 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 				}
 			}
 
-			// Complete required flags even without the '-' prefix
-			completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
+			// Complete required flags even without the '-' prefix, but only
+			// while flags can still be parsed: a flag suggested after "--"
+			// would be inserted as a positional argument instead.
+			if flagCompletion {
+				completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
+			}
 
 			// Always complete ValidArgs, even if we are completing a subcommand name.
 			// This is for commands that have both subcommands and ValidArgs.
