@@ -6,6 +6,7 @@ The currently supported shells are:
 - Zsh
 - fish
 - PowerShell
+- [Clink (Windows cmd.exe)](clink.md)
 
 Cobra will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command. If there are no other subcommands, the
@@ -29,7 +30,7 @@ and then modifying the generated `cmd/completion.go` file to look something like
 
 ```go
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
+	Use:   "completion [bash|zsh|fish|powershell|clink]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
 
@@ -69,9 +70,16 @@ PowerShell:
   # To load completions for every new session, run:
   PS> %[1]s completion powershell > %[1]s.ps1
   # and source this file from your PowerShell profile.
+
+Clink (cmd.exe):
+
+  > %[1]s completion clink > %[1]s.lua
+  > clink installscripts <absolute-directory-containing-the-lua-file>
+
+  # Start a new Clink session to load the script.
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell", "clink"},
 	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
@@ -83,6 +91,8 @@ PowerShell:
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
 			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		case "clink":
+			cmd.Root().GenClinkCompletion(os.Stdout, true)
 		}
 	},
 }

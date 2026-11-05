@@ -822,7 +822,7 @@ Read more about it in the [docs generation documentation](docgen/_index.md).
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
+Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell, and Clink (Windows cmd.exe).
 If you add more information to your commands, these completions can be amazingly powerful and flexible.
 Read more about it in [Shell Completions](completions/_index.md).
 

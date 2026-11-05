@@ -13,6 +13,25 @@ permissions:
 
 jobs:
 
+  test-clink:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.x'
+      - name: Test generated Clink completions
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'clink.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'clink'
+          Invoke-WebRequest 'https://github.com/chrisant996/clink/releases/download/v1.9.35/clink.1.9.35.fa48d0.zip' -OutFile $archive
+          $expected = '5AE6862A703D43FF9250716277FD0811B7B6C344771D17911723E7078D9509F8'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $expected) { throw 'Clink checksum mismatch' }
+          Expand-Archive $archive $destination
+          $env:COBRA_CLINK = Join-Path $destination 'clink_x64.exe'
+          go test -run Clink -v .
+
 
   lic-headers:
     runs-on: ubuntu-latest

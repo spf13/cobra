@@ -926,7 +926,30 @@ to your powershell profile.
 		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
-	completionCmd.AddCommand(bash, zsh, fish, powershell)
+	clink := &Command{
+		Use:   "clink",
+		Short: fmt.Sprintf(shortDesc, "clink"),
+		Long: fmt.Sprintf(`Generate a Lua completion script for Clink (cmd.exe on Windows).
+
+Install Clink 1.3.3 or newer from https://github.com/chrisant996/clink.
+From cmd.exe, save the script in a directory of your choice:
+
+	%[1]s completion clink > "%[1]s.lua"
+
+Register that directory using 'clink installscripts <absolute-directory>'.
+Start a new Clink session to load the script. Keep the executable on PATH.
+Do not place the script in the lazy-loaded 'completions' subdirectory.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenClinkCompletion(out, !noDesc)
+		},
+	}
+	if haveNoDescFlag {
+		clink.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+	completionCmd.AddCommand(bash, zsh, fish, powershell, clink)
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {
