@@ -1569,12 +1569,18 @@ func (c *Command) CalledAs() string {
 // hasNameOrAliasPrefix returns true if the Name or any of aliases start
 // with prefix
 func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
-	if strings.HasPrefix(c.Name(), prefix) {
+	hasPrefix := func(s, prefix string) bool {
+		if EnableCaseInsensitive {
+			return strings.HasPrefix(strings.ToLower(s), strings.ToLower(prefix))
+		}
+		return strings.HasPrefix(s, prefix)
+	}
+	if hasPrefix(c.Name(), prefix) {
 		c.commandCalledAs.name = c.Name()
 		return true
 	}
 	for _, alias := range c.Aliases {
-		if strings.HasPrefix(alias, prefix) {
+		if hasPrefix(alias, prefix) {
 			c.commandCalledAs.name = alias
 			return true
 		}

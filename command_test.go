@@ -366,6 +366,58 @@ func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = defaultPrefixMatching
 }
 
+func TestCaseInsensitivePrefixMatching(t *testing.T) {
+	tests := []struct {
+		name            string
+		caseInsensitive bool
+		prefixMatching  bool
+		arg             string
+		expectedCalled  bool
+		expectedAs      string
+	}{
+		{"uppercase prefix of name", true, true, "CHI", true, "child"},
+		{"uppercase prefix of alias", true, true, "THI", true, "this"},
+		{"lowercase prefix of name", true, true, "chi", true, "child"},
+		{"uppercase prefix without case insensitivity", false, true, "CHI", false, ""},
+		{"uppercase prefix without prefix matching", true, false, "CHI", false, ""},
+		{"uppercase exact name without prefix matching", true, false, "CHILD", true, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			EnableCaseInsensitive = tt.caseInsensitive
+			EnablePrefixMatching = tt.prefixMatching
+
+			var called *Command
+			rootCmd := &Command{Use: "root", Run: emptyRun}
+			childCmd := &Command{
+				Use:     "child",
+				Aliases: []string{"this"},
+				Run:     func(c *Command, _ []string) { called = c },
+			}
+			rootCmd.AddCommand(childCmd)
+
+			_, _ = executeCommand(rootCmd, tt.arg)
+
+			if tt.expectedCalled {
+				if called != childCmd {
+					t.Errorf("expected child command to be called for arg %q", tt.arg)
+				}
+				if tt.expectedAs != "" {
+					if got := childCmd.CalledAs(); got != tt.expectedAs {
+						t.Errorf("expected CalledAs %q for arg %q, got %q", tt.expectedAs, tt.arg, got)
+					}
+				}
+			} else if called == childCmd {
+				t.Errorf("expected child command not to be called for arg %q", tt.arg)
+			}
+		})
+	}
+
+	EnableCaseInsensitive = defaultCaseInsensitive
+	EnablePrefixMatching = defaultPrefixMatching
+}
+
 // TestPlugin checks usage as plugin for another command such as kubectl.  The
 // executable is `kubectl-plugin`, but we run it as `kubectl plugin`. The help
 // text should reflect the way we run the command.
