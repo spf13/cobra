@@ -2319,6 +2319,45 @@ func TestUseDeprecatedFlags(t *testing.T) {
 	checkStringContains(t, output, "This flag is deprecated")
 }
 
+func TestParseFlagsDoesNotRepeatPreviousWarnings(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		first    []string
+		second   []string
+		firstErr bool
+		want     string
+	}{
+		{name: "different deprecated flags", first: []string{"--old"}, second: []string{"--older"}, want: "Flag --older has been deprecated, use --new instead\n"},
+		{name: "same deprecated flag", first: []string{"--old"}, second: []string{"--old"}, want: "Flag --old has been deprecated, use --new instead\n"},
+		{name: "previous parse failed", first: []string{"--old", "--unknown"}, second: []string{"--older"}, firstErr: true, want: "Flag --older has been deprecated, use --new instead\n"},
+		{name: "no new warning", first: []string{"--old"}, second: []string{"--new"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := &Command{Use: "test"}
+			for _, name := range []string{"old", "older", "new"} {
+				cmd.Flags().Bool(name, false, "")
+			}
+			for _, name := range []string{"old", "older"} {
+				if err := cmd.Flags().MarkDeprecated(name, "use --new instead"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var out bytes.Buffer
+			cmd.SetOut(&out)
+			if err := cmd.ParseFlags(tc.first); (err != nil) != tc.firstErr {
+				t.Fatalf("first ParseFlags() error = %v, want error: %v", err, tc.firstErr)
+			}
+			out.Reset()
+			if err := cmd.ParseFlags(tc.second); err != nil {
+				t.Fatal(err)
+			}
+			if got := out.String(); got != tc.want {
+				t.Errorf("second ParseFlags() output = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
