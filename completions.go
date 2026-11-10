@@ -449,10 +449,11 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 				acceptsMultiple = acceptsMultiple ||
 					strings.Contains(flag.Value.Type(), "Slice") ||
 					strings.Contains(flag.Value.Type(), "Array") ||
-					strings.HasPrefix(flag.Value.Type(), "stringTo")
+					strings.HasPrefix(flag.Value.Type(), "stringTo") ||
+					flag.Value.Type() == "count"
 
 				if !flag.Changed || acceptsMultiple {
-					// If the flag is not already present, or if it can be specified multiple times (Array, Slice, or stringTo)
+					// If the flag is not already present, or if it can be specified multiple times (Array, Slice, stringTo, or count)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
 				}
