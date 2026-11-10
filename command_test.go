@@ -367,6 +367,11 @@ func TestAliasPrefixMatching(t *testing.T) {
 }
 
 func TestCaseInsensitivePrefixMatching(t *testing.T) {
+	t.Cleanup(func() {
+		EnableCaseInsensitive = defaultCaseInsensitive
+		EnablePrefixMatching = defaultPrefixMatching
+	})
+
 	tests := []struct {
 		name            string
 		caseInsensitive bool
@@ -381,6 +386,7 @@ func TestCaseInsensitivePrefixMatching(t *testing.T) {
 		{"uppercase prefix without case insensitivity", false, true, "CHI", false, ""},
 		{"uppercase prefix without prefix matching", true, false, "CHI", false, ""},
 		{"uppercase exact name without prefix matching", true, false, "CHILD", true, ""},
+		{"S prefix of long s alias", true, true, "S", true, "ſhip"},
 	}
 
 	for _, tt := range tests {
@@ -392,7 +398,7 @@ func TestCaseInsensitivePrefixMatching(t *testing.T) {
 			rootCmd := &Command{Use: "root", Run: emptyRun}
 			childCmd := &Command{
 				Use:     "child",
-				Aliases: []string{"this"},
+				Aliases: []string{"this", "ſhip"},
 				Run:     func(c *Command, _ []string) { called = c },
 			}
 			rootCmd.AddCommand(childCmd)
@@ -413,9 +419,6 @@ func TestCaseInsensitivePrefixMatching(t *testing.T) {
 			}
 		})
 	}
-
-	EnableCaseInsensitive = defaultCaseInsensitive
-	EnablePrefixMatching = defaultPrefixMatching
 }
 
 // TestPlugin checks usage as plugin for another command such as kubectl.  The

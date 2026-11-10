@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	flag "github.com/spf13/pflag"
 )
@@ -1571,7 +1572,16 @@ func (c *Command) CalledAs() string {
 func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
 	hasPrefix := func(s, prefix string) bool {
 		if EnableCaseInsensitive {
-			return strings.HasPrefix(strings.ToLower(s), strings.ToLower(prefix))
+			prefixRunes := utf8.RuneCountInString(prefix)
+			end := 0
+			for i := 0; i < prefixRunes; i++ {
+				if end >= len(s) {
+					return false
+				}
+				_, size := utf8.DecodeRuneInString(s[end:])
+				end += size
+			}
+			return strings.EqualFold(s[:end], prefix)
 		}
 		return strings.HasPrefix(s, prefix)
 	}
