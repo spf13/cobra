@@ -1882,7 +1882,7 @@ func (c *Command) ParseFlags(args []string) error {
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
 	if c.flagErrorBuf.Len()-beforeErrorBufLen > 0 && err == nil {
-		c.Print(c.flagErrorBuf.String())
+		c.Print(c.flagErrorBuf.String()[beforeErrorBufLen:])
 	}
 
 	return err
