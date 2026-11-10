@@ -2691,6 +2691,53 @@ func TestCompleteCompletion(t *testing.T) {
 	}
 }
 
+func TestSingleCharacterLongFlagCompletion(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      []string
+		shorthand bool
+		want      string
+	}{
+		{"long separate", []string{"--x", "value"}, false, "long-value"},
+		{"long equals", []string{"--x=value"}, false, "long-value"},
+		{"long separate with shorthand", []string{"--x", "value"}, true, "long-value"},
+		{"long equals with shorthand", []string{"--x=value"}, true, "long-value"},
+		{"short separate", []string{"-x", "value"}, true, "short-value"},
+		{"short equals", []string{"-x=value"}, true, "short-value"},
+	}
+	for _, inherited := range []bool{false, true} {
+		for _, tc := range tests {
+			t.Run(fmt.Sprintf("%s/inherited=%t", tc.name, inherited), func(t *testing.T) {
+				root := &Command{Use: "root", Run: emptyRun}
+				flags := root.Flags()
+				args := []string{ShellCompNoDescRequestCmd}
+				if inherited {
+					root.AddCommand(&Command{Use: "child", Run: emptyRun})
+					flags = root.PersistentFlags()
+					args = append(args, "child")
+				}
+				flags.String("x", "", "single-character long flag")
+				assertNoErr(t, root.RegisterFlagCompletionFunc("x", func(_ *Command, _ []string, toComplete string) ([]string, ShellCompDirective) {
+					return []string{"long-" + toComplete}, ShellCompDirectiveNoFileComp
+				}))
+				if tc.shorthand {
+					flags.StringP("expanded", "x", "", "flag with the same shorthand")
+					assertNoErr(t, root.RegisterFlagCompletionFunc("expanded", func(_ *Command, _ []string, toComplete string) ([]string, ShellCompDirective) {
+						return []string{"short-" + toComplete}, ShellCompDirectiveNoFileComp
+					}))
+				}
+
+				output, err := executeCommand(root, append(args, tc.args...)...)
+				assertNoErr(t, err)
+				want := tc.want + "\n:4\nCompletion ended with directive: ShellCompDirectiveNoFileComp\n"
+				if output != want {
+					t.Errorf("expected: %q, got: %q", want, output)
+				}
+			})
+		}
+	}
+}
+
 func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",

@@ -664,6 +664,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 	var flagName string
 	trimmedArgs := args
 	flagWithEqual := false
+	flagIsShorthand := false
 	orgLastArg := lastArg
 
 	// When doing completion of a flag name, as soon as an argument starts with
@@ -681,6 +682,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 				// e.g. `-asd` => d to provide the correct completion
 				// https://github.com/spf13/cobra/issues/1257
 				flagName = lastArg[index-1 : index]
+				flagIsShorthand = true
 			}
 			lastArg = lastArg[index+1:]
 			flagWithEqual = true
@@ -707,6 +709,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 						// e.g. `-asd` => d to provide the correct completion
 						// https://github.com/spf13/cobra/issues/1257
 						flagName = prevArg[len(prevArg)-1:]
+						flagIsShorthand = true
 					}
 					// Remove the uncompleted flag or else there could be an error created
 					// for an invalid value for that flag
@@ -721,7 +724,7 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*p
 		return nil, trimmedArgs, lastArg, nil
 	}
 
-	flag := findFlag(finalCmd, flagName)
+	flag := findFlag(finalCmd, flagName, flagIsShorthand)
 	if flag == nil {
 		// Flag not supported by this command, the interspersed option might be set so return the original args
 		return nil, args, orgLastArg, &flagCompError{subCommand: finalCmd.Name(), flagName: flagName}
@@ -929,9 +932,9 @@ to your powershell profile.
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
 }
 
-func findFlag(cmd *Command, name string) *pflag.Flag {
+func findFlag(cmd *Command, name string, shorthand bool) *pflag.Flag {
 	flagSet := cmd.Flags()
-	if len(name) == 1 {
+	if shorthand {
 		// First convert the short flag into a long flag
 		// as the cmd.Flag() search only accepts long flags
 		if short := flagSet.ShorthandLookup(name); short != nil {
