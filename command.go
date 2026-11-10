@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	flag "github.com/spf13/pflag"
 )
@@ -1569,12 +1570,27 @@ func (c *Command) CalledAs() string {
 // hasNameOrAliasPrefix returns true if the Name or any of aliases start
 // with prefix
 func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
-	if strings.HasPrefix(c.Name(), prefix) {
+	hasPrefix := func(s, prefix string) bool {
+		if EnableCaseInsensitive {
+			prefixRunes := utf8.RuneCountInString(prefix)
+			end := 0
+			for i := 0; i < prefixRunes; i++ {
+				if end >= len(s) {
+					return false
+				}
+				_, size := utf8.DecodeRuneInString(s[end:])
+				end += size
+			}
+			return strings.EqualFold(s[:end], prefix)
+		}
+		return strings.HasPrefix(s, prefix)
+	}
+	if hasPrefix(c.Name(), prefix) {
 		c.commandCalledAs.name = c.Name()
 		return true
 	}
 	for _, alias := range c.Aliases {
-		if strings.HasPrefix(alias, prefix) {
+		if hasPrefix(alias, prefix) {
 			c.commandCalledAs.name = alias
 			return true
 		}
