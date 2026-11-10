@@ -841,6 +841,43 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 }
 
+func TestCountFlagNameCompletionRepeat(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"long", []string{"--verbose", "--v"}, "--verbose"},
+		{"short", []string{"-v", "-v"}, "-v"},
+		{"combined short", []string{"-vv", "--v"}, "--verbose"},
+		{"explicit count", []string{"--verbose=2", "--v"}, "--verbose"},
+	}
+	for _, inherited := range []bool{false, true} {
+		for _, tc := range tests {
+			t.Run(fmt.Sprintf("%s/inherited=%t", tc.name, inherited), func(t *testing.T) {
+				root := &Command{Use: "root", Run: emptyRun}
+				flags := root.Flags()
+				args := []string{ShellCompNoDescRequestCmd}
+				if inherited {
+					root.AddCommand(&Command{Use: "child", Run: emptyRun})
+					flags = root.PersistentFlags()
+					args = append(args, "child")
+				}
+				flags.CountP("verbose", "v", "increase verbosity")
+				flags.Bool("visible", false, "show output")
+				args = append(args, "--visible")
+
+				output, err := executeCommand(root, append(args, tc.args...)...)
+				assertNoErr(t, err)
+				want := tc.want + "\n:4\nCompletion ended with directive: ShellCompDirectiveNoFileComp\n"
+				if output != want {
+					t.Errorf("expected: %q, got: %q", want, output)
+				}
+			})
+		}
+	}
+}
+
 func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
