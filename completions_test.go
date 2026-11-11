@@ -2847,6 +2847,73 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	}
 }
 
+func TestCompleteWithDisableFlagParsingAfterDashDash(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd.PersistentFlags().StringP("persistent", "p", "", "persistent flag")
+	rootCmd.PersistentFlags().StringP("required", "r", "", "required persistent flag")
+	if err := rootCmd.MarkPersistentFlagRequired("required"); err != nil {
+		t.Fatal(err)
+	}
+
+	childCmd := &Command{
+		Use:                "child",
+		Run:                emptyRun,
+		DisableFlagParsing: true,
+	}
+	childCmd.Flags().StringP("nonPersistent", "n", "", "non-persistent flag")
+	rootCmd.AddCommand(childCmd)
+
+	// Before "--", Cobra completes known persistent/required/local flags when DisableFlagParsing is true.
+	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "--r")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected := strings.Join([]string{
+		"--required",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	if output != expected {
+		t.Errorf("before -- expected: %q, got: %q", expected, output)
+	}
+
+	// After "--", Cobra must not complete flag names even when DisableFlagParsing is true.
+	for _, tc := range [][]string{
+		{ShellCompNoDescRequestCmd, "child", "--", "-"},
+		{ShellCompNoDescRequestCmd, "child", "--", "--p"},
+		{ShellCompNoDescRequestCmd, "child", "--", "--r"},
+		{ShellCompNoDescRequestCmd, "child", "arg1", "--", "--n"},
+		{ShellCompNoDescRequestCmd, "child", "--", ""},
+	} {
+		output, err = executeCommand(rootCmd, tc...)
+		if err != nil {
+			t.Fatalf("Unexpected error for %v: %v", tc, err)
+		}
+		expected = strings.Join([]string{
+			":0",
+			"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+		if output != expected {
+			t.Errorf("after -- (%v) expected: %q, got: %q", tc, expected, output)
+		}
+	}
+
+	// ValidArgsFunction should still be called after "--" without Cobra flag suggestions mixed in.
+	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return []string{"--custom", strings.Join(args, ",")}, ShellCompDirectiveNoFileComp
+	}
+	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "arg1", "--", "--")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	expected = strings.Join([]string{
+		"--custom",
+		"arg1,--",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	if output != expected {
+		t.Errorf("with ValidArgsFunction after -- expected: %q, got: %q", expected, output)
+	}
+}
+
 func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	// Test a lonely root command which uses legacyArgs().  In such a case, the root
 	// command should accept any number of arguments and completion should behave accordingly.
