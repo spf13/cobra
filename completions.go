@@ -369,18 +369,26 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// if -- was already set or interspersed is false and there is already one arg then
 	// the extra added -- is counted as arg.
 	flagCompletion := true
-	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
-	newArgCount := finalCmd.Flags().NArg()
+	if finalCmd.DisableFlagParsing {
+		// ParseFlags is a no-op when DisableFlagParsing is true, so detect the
+		// "--" delimiter directly from finalArgs.
+		if stringInSlice("--", finalArgs) {
+			flagCompletion = false
+		}
+	} else {
+		_ = finalCmd.ParseFlags(append(finalArgs, "--"))
+		newArgCount := finalCmd.Flags().NArg()
 
-	// Parse the flags early so we can check if required flags are set
-	if err = finalCmd.ParseFlags(finalArgs); err != nil {
-		return finalCmd, []Completion{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
-	}
+		// Parse the flags early so we can check if required flags are set
+		if err = finalCmd.ParseFlags(finalArgs); err != nil {
+			return finalCmd, []Completion{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
+		}
 
-	realArgCount := finalCmd.Flags().NArg()
-	if newArgCount > realArgCount {
-		// don't do flag completion (see above)
-		flagCompletion = false
+		realArgCount := finalCmd.Flags().NArg()
+		if newArgCount > realArgCount {
+			// don't do flag completion (see above)
+			flagCompletion = false
+		}
 	}
 	// Error while attempting to parse flags
 	if flagErr != nil {
@@ -528,7 +536,9 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 			}
 
 			// Complete required flags even without the '-' prefix
-			completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
+			if flagCompletion {
+				completions = append(completions, completeRequireFlags(finalCmd, toComplete)...)
+			}
 
 			// Always complete ValidArgs, even if we are completing a subcommand name.
 			// This is for commands that have both subcommands and ValidArgs.
