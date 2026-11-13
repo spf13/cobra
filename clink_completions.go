@@ -78,16 +78,24 @@ local cobra = {}
 local request_command = @REQUEST@
 local active_help_env = @ACTIVE_HELP@
 
--- io.popen uses cmd.exe. Quote each argument independently, and decline input
--- which cmd would expand even inside quotes. Never execute the edited line.
 function cobra.quote(word)
-    if word:find('["%%!\r\n%z]') then return nil end
+    -- Clink strips quotes from getword() during generation. Reject any literal
+    -- quote or control character defensively, and skip % and !, which cmd.exe
+    -- may expand even inside quotes. Double trailing backslashes for native argv.
+    if word:find('["%%!%c]') then return nil end
     return '"' .. word:gsub('(\\+)$', '%1%1') .. '"'
 end
 
 function cobra.command(executable, words)
+    -- The quoting below is for an EXE. Bypass PATHEXT so a BAT or CMD script
+    -- cannot be selected for a bare name and parse the arguments differently.
+    if not executable:lower():match('%.exe$') then
+        executable = executable .. '.exe'
+    end
     local quoted = cobra.quote(executable)
     if not quoted then return nil end
+    -- Keep the redirection before the quoted executable. Starting cmd.exe /C
+    -- with a quote can strip outer quotes and expose shell metacharacters.
     local redirect = '2>nul'
     if not clink.hinter then
         redirect = 'set "' .. active_help_env .. '=0" & ' .. redirect
@@ -100,6 +108,16 @@ function cobra.command(executable, words)
     end
     return table.concat(args, ' ')
 end
+
+-- ShellCompDirective bits from completions.go.
+local directive_bits = {
+    error = 1,
+    no_space = 2,
+    no_file_completion = 4,
+    filter_file_extensions = 8,
+    filter_directories = 16,
+    keep_order = 32,
+}
 
 function cobra.parse(lines)
     local directive = tonumber((lines[#lines] or ''):match('^:(%d+)$'))
@@ -114,20 +132,20 @@ function cobra.parse(lines)
             matches[#matches + 1] = { match=value or line, description=description }
         end
     end
-    return { matches=matches, directive=directive, help=table.concat(help, ' | ') }
-end
-
-local function has(value, flag)
-    return value % (flag * 2) >= flag
+    local directives = {}
+    for name, bit in pairs(directive_bits) do
+        directives[name] = directive % (bit * 2) >= bit
+    end
+    return { matches=matches, directives=directives, help=table.concat(help, ' | ') }
 end
 
 function cobra.apply(result, word, builder)
     if not result then return false end
-    local directive = result.directive
-    if has(directive, 1) then return true end
-    if has(directive, 2) then builder:setsuppressappend() end
-    if has(directive, 32) then builder:setnosort() end
-    if has(directive, 16) then
+    local directives = result.directives
+    if directives.error then return true end
+    if directives.no_space then builder:setsuppressappend() end
+    if directives.keep_order then builder:setnosort() end
+    if directives.filter_directories then
         -- Cobra can optionally name a directory whose children to complete.
         local root = result.matches[1] and result.matches[1].match
         local prefix = root and (root:gsub('[/\\]+$', '') .. '\\') or ''
@@ -143,7 +161,7 @@ function cobra.apply(result, word, builder)
         end
         return true
     end
-    if has(directive, 8) then
+    if directives.filter_file_extensions then
         for _, match in ipairs(clink.filematches(word)) do
             local name = type(match) == 'table' and match.match or match
             local isdir = name:find('[/\\]$') or
@@ -158,7 +176,7 @@ function cobra.apply(result, word, builder)
         return true
     end
     builder:addmatches(result.matches)
-    return #result.matches > 0 or has(directive, 4)
+    return #result.matches > 0 or directives.no_file_completion
 end
 
 function cobra.register(name)
@@ -179,6 +197,8 @@ function cobra.register(name)
         local index = line_state:getcommandwordindex()
         if line_state:getwordcount() <= index then return false end
         local word = line_state:getword(index)
+        -- Clink leaves surrounding quotes intact during getwordbreakinfo().
+        word = word:gsub('^"', ''):gsub('"$', '')
         return (word:match('[^/\\]+$') or word):lower():gsub('%.exe$', '') == name
     end
     function generator:getwordbreakinfo(line_state) -- luacheck: no unused
@@ -227,7 +247,7 @@ function cobra.register(name)
             result = ok and cobra.parse(lines) or false
             cache[command] = result
         end
-        if result and not has(result.directive, 1) and result.help ~= '' then
+        if result and not result.directives.error and result.help ~= '' then
             hint_line = line_state:getline():sub(1, line_state:getcursor() - 1)
             hint = result.help
         end

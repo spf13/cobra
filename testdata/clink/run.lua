@@ -64,6 +64,7 @@ local b,h=complete(s,{'alpha\tFirst','beta\tSecond',':4'})
 assert(h and #b.matches==2 and b.matches[1].description=='First')
 local expected_request=arg[3]=='no-descriptions' and '__completeNoDesc' or '__complete'
 assert(last_command:find(' '..expected_request..' ',1,true),'wrong description protocol')
+assert(last_command:find('2>nul "cobrafixture.exe" ',1,true)==1,'request must pin the native executable')
 local before=requests
 complete(s)
 assert(requests==before,'cache miss')
@@ -96,6 +97,7 @@ complete(state({'cobrafixture','run','a & b\\'}),{':4'})
 assert(last_command:find('"a & b\\\\"',1,true),'lost trailing backslash or shell quoting')
 before=requests
 complete(state({'different','run',''})); assert(requests==before)
+complete(state({'cobrafixture.cmd','run',''})); assert(requests==before)
 complete(state({'cobrafixture'})); assert(requests==before)
 complete(state({'cobrafixture','run','out'},3)); assert(requests==before)
 print('PASS generated Lua protocol, directives, Active Help, quoting, cache and command isolation')
