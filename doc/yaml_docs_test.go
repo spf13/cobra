@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -38,7 +39,22 @@ func TestGenYamlDoc(t *testing.T) {
 	checkStringContains(t, output, "rootflag")
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
+	link := strings.ReplaceAll(echoSubCmd.CommandPath(), " ", "_") + ".yaml"
+	checkStringContains(t, output, fmt.Sprintf("- %s - %s", link, echoSubCmd.Short))
+}
+
+func TestGenYamlCustomLinkHandler(t *testing.T) {
+	buf := new(bytes.Buffer)
+	linkHandler := func(name string) string {
+		return "/reference/" + name
+	}
+	if err := GenYamlCustom(echoCmd, buf, linkHandler); err != nil {
+		t.Fatal(err)
+	}
+	output := buf.String()
+
+	checkStringContains(t, output, fmt.Sprintf("- /reference/%s.yaml - %s", strings.ReplaceAll(echoSubCmd.CommandPath(), " ", "_"), echoSubCmd.Short))
+	checkStringContains(t, output, fmt.Sprintf("- /reference/%s.yaml - %s", strings.ReplaceAll(rootCmd.CommandPath(), " ", "_"), rootCmd.Short))
 }
 
 func TestGenYamlNoTag(t *testing.T) {

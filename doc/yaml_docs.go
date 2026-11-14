@@ -27,6 +27,8 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+const yamlExtension = ".yaml"
+
 type cmdOption struct {
 	Name         string
 	Shorthand    string `yaml:",omitempty"`
@@ -67,7 +69,7 @@ func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandle
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".yaml"
+	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + yamlExtension
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -121,7 +123,9 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		result := []string{}
 		if cmd.HasParent() {
 			parent := cmd.Parent()
-			result = append(result, parent.CommandPath()+" - "+parent.Short)
+			pname := parent.CommandPath()
+			link := strings.ReplaceAll(pname, " ", "_") + yamlExtension
+			result = append(result, linkHandler(link)+" - "+parent.Short)
 		}
 		children := cmd.Commands()
 		sort.Sort(byName(children))
@@ -129,7 +133,9 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			result = append(result, child.CommandPath()+" - "+child.Short)
+			cname := child.CommandPath()
+			link := strings.ReplaceAll(cname, " ", "_") + yamlExtension
+			result = append(result, linkHandler(link)+" - "+child.Short)
 		}
 		yamlDoc.SeeAlso = result
 	}
