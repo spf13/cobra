@@ -69,6 +69,9 @@ jobs:
         - 22
         - 23
         - 24
+        - 25
+        - 26
+        - 27
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
     # macOS runner environments require compiled binaries to contain an LC_UUID load command.
