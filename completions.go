@@ -373,9 +373,12 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// Probe whether the extra -- would be a positional argument. ParseAll uses
 	// the same argument parsing as Parse but calls the callback instead of the
 	// flag's Set method, so it does not change values, Changed, or Visit order.
-	finalCmd.Flags().ParseErrorsAllowlist = pflag.ParseErrorsAllowlist(finalCmd.FParseErrWhitelist)
-	_ = finalCmd.Flags().ParseAll(append(finalArgs, "--"), func(*pflag.Flag, string) error { return nil })
-	newArgCount := finalCmd.Flags().NArg()
+	newArgCount := 0
+	if !finalCmd.DisableFlagParsing {
+		finalCmd.Flags().ParseErrorsAllowlist = pflag.ParseErrorsAllowlist(finalCmd.FParseErrWhitelist)
+		_ = finalCmd.Flags().ParseAll(append(finalArgs, "--"), func(*pflag.Flag, string) error { return nil })
+		newArgCount = finalCmd.Flags().NArg()
+	}
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
