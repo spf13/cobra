@@ -4171,3 +4171,26 @@ func TestCompletionProbeDoesNotDuplicateVisit(t *testing.T) {
 		t.Fatalf("Visit saw %d set flags, want 1", visited)
 	}
 }
+
+func TestCompletionAfterDelimiterWithUnknownFlagsAllowed(t *testing.T) {
+	rootCmd := &Command{
+		Use:                "app",
+		Run:                emptyRun,
+		FParseErrWhitelist: FParseErrWhitelist{UnknownFlags: true},
+	}
+	rootCmd.Flags().String("tag", "", "tag")
+	rootCmd.ValidArgsFunction = func(*Command, []string, string) ([]Completion, ShellCompDirective) {
+		return []Completion{"positional"}, ShellCompDirectiveNoFileComp
+	}
+
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--unknown=x", "--", "--ta")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output, "positional") {
+		t.Fatalf("expected positional completion, got %q", output)
+	}
+	if strings.Contains(output, "--tag") {
+		t.Fatalf("unexpected flag completion after --: %q", output)
+	}
+}
