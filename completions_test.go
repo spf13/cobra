@@ -4127,3 +4127,23 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
 	}
 }
+
+func TestCompletionDoesNotApplyFlagsTwice(t *testing.T) {
+	var tags []string
+	var verbose int
+
+	rootCmd := &Command{Use: "app", Run: emptyRun}
+	rootCmd.Flags().StringArrayVar(&tags, "tag", nil, "tag")
+	rootCmd.Flags().CountVarP(&verbose, "verbose", "v", "verbosity")
+	rootCmd.ValidArgsFunction = func(*Command, []string, string) ([]Completion, ShellCompDirective) {
+		return []Completion{Completion(fmt.Sprintf("tags=%v verbose=%d", tags, verbose))}, ShellCompDirectiveNoFileComp
+	}
+
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--tag", "one", "-v", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output, "tags=[one] verbose=1") {
+		t.Fatalf("completion saw duplicated flag state: %q", output)
+	}
+}
