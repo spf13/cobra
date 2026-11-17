@@ -369,8 +369,16 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// if -- was already set or interspersed is false and there is already one arg then
 	// the extra added -- is counted as arg.
 	flagCompletion := true
-	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
-	newArgCount := finalCmd.Flags().NArg()
+
+	// Probe whether the extra -- would be a positional argument. ParseAll uses
+	// the same argument parsing as Parse but calls the callback instead of the
+	// flag's Set method, so it does not change values, Changed, or Visit order.
+	newArgCount := 0
+	if !finalCmd.DisableFlagParsing {
+		finalCmd.Flags().ParseErrorsAllowlist = pflag.ParseErrorsAllowlist(finalCmd.FParseErrWhitelist)
+		_ = finalCmd.Flags().ParseAll(append(finalArgs, "--"), func(*pflag.Flag, string) error { return nil })
+		newArgCount = finalCmd.Flags().NArg()
+	}
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {

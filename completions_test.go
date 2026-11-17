@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -4125,5 +4127,87 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 	}
 	if os.Args[2] != "x" {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
+	}
+}
+
+func TestCompletionDoesNotApplyFlagsTwice(t *testing.T) {
+	var tags []string
+	var verbose int
+
+	rootCmd := &Command{Use: "app", Run: emptyRun}
+	rootCmd.Flags().StringArrayVar(&tags, "tag", nil, "tag")
+	rootCmd.Flags().CountVarP(&verbose, "verbose", "v", "verbosity")
+	rootCmd.ValidArgsFunction = func(*Command, []string, string) ([]Completion, ShellCompDirective) {
+		return []Completion{Completion(fmt.Sprintf("tags=%v verbose=%d", tags, verbose))}, ShellCompDirectiveNoFileComp
+	}
+
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--tag", "one", "-v", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output, "tags=[one] verbose=1") {
+		t.Fatalf("completion saw duplicated flag state: %q", output)
+	}
+}
+
+func TestCompletionProbeDoesNotDuplicateVisit(t *testing.T) {
+	rootCmd := &Command{Use: "app", Run: emptyRun}
+	rootCmd.Flags().StringArray("tag", nil, "tag")
+	rootCmd.Flags().SortFlags = false
+
+	var visited int
+	rootCmd.ValidArgsFunction = func(cmd *Command, _ []string, _ string) ([]Completion, ShellCompDirective) {
+		visited = 0
+		cmd.Flags().Visit(func(*pflag.Flag) {
+			visited++
+		})
+		return nil, ShellCompDirectiveNoFileComp
+	}
+
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, "--tag", "one", ""); err != nil {
+		t.Fatal(err)
+	}
+	if visited != 1 {
+		t.Fatalf("Visit saw %d set flags, want 1", visited)
+	}
+}
+
+func TestCompletionAfterDelimiterWithUnknownFlagsAllowed(t *testing.T) {
+	rootCmd := &Command{
+		Use:                "app",
+		Run:                emptyRun,
+		FParseErrWhitelist: FParseErrWhitelist{UnknownFlags: true},
+	}
+	rootCmd.Flags().String("tag", "", "tag")
+	rootCmd.ValidArgsFunction = func(*Command, []string, string) ([]Completion, ShellCompDirective) {
+		return []Completion{"positional"}, ShellCompDirectiveNoFileComp
+	}
+
+	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--unknown=x", "--", "--ta")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output, "positional") {
+		t.Fatalf("expected positional completion, got %q", output)
+	}
+	if strings.Contains(output, "--tag") {
+		t.Fatalf("unexpected flag completion after --: %q", output)
+	}
+}
+
+func TestCompletionProbeSkipsDisabledFlagParsing(t *testing.T) {
+	rootCmd := &Command{Use: "app", Run: emptyRun, DisableFlagParsing: true}
+
+	var argsLenAtDash int
+	rootCmd.ValidArgsFunction = func(cmd *Command, _ []string, _ string) ([]Completion, ShellCompDirective) {
+		argsLenAtDash = cmd.Flags().ArgsLenAtDash()
+		return nil, ShellCompDirectiveNoFileComp
+	}
+
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, ""); err != nil {
+		t.Fatal(err)
+	}
+	if argsLenAtDash != -1 {
+		t.Fatalf("ArgsLenAtDash = %d, want -1", argsLenAtDash)
 	}
 }
