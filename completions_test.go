@@ -4194,3 +4194,20 @@ func TestCompletionAfterDelimiterWithUnknownFlagsAllowed(t *testing.T) {
 		t.Fatalf("unexpected flag completion after --: %q", output)
 	}
 }
+
+func TestCompletionProbeSkipsDisabledFlagParsing(t *testing.T) {
+	rootCmd := &Command{Use: "app", Run: emptyRun, DisableFlagParsing: true}
+
+	var argsLenAtDash int
+	rootCmd.ValidArgsFunction = func(cmd *Command, _ []string, _ string) ([]Completion, ShellCompDirective) {
+		argsLenAtDash = cmd.Flags().ArgsLenAtDash()
+		return nil, ShellCompDirectiveNoFileComp
+	}
+
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, ""); err != nil {
+		t.Fatal(err)
+	}
+	if argsLenAtDash != -1 {
+		t.Fatalf("ArgsLenAtDash = %d, want -1", argsLenAtDash)
+	}
+}
