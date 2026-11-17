@@ -571,10 +571,19 @@ const minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
 func (c *Command) CommandPathPadding() int {
-	if c.parent == nil || minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
+	if c.parent == nil {
 		return minCommandPathPadding
 	}
-	return c.parent.commandsMaxCommandPathLen
+	// Compute this from the commands' current paths instead of a cached
+	// value: CommandPath depends on ancestry, which can change after a
+	// child is added to a parent.
+	maxLen := minCommandPathPadding
+	for _, cmd := range c.parent.commands {
+		if commandPathLen := len(cmd.CommandPath()); commandPathLen > maxLen {
+			maxLen = commandPathLen
+		}
+	}
+	return maxLen
 }
 
 const minNamePadding = 11
