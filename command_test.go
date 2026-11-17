@@ -2952,3 +2952,31 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestTraverseChildrenStopsCommandDiscoveryAtDoubleDash(t *testing.T) {
+	var called string
+
+	root := &Command{
+		Use:              "app",
+		TraverseChildren: true,
+		Args:             ArbitraryArgs,
+		Run: func(_ *Command, args []string) {
+			called = "root:" + strings.Join(args, ",")
+		},
+	}
+	root.AddCommand(&Command{
+		Use: "child",
+		Run: func(*Command, []string) {
+			called = "child"
+		},
+	})
+
+	root.SetArgs([]string{"--", "literal", "child"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+
+	if called != "root:literal,child" {
+		t.Fatalf("called = %q, want root with positional args", called)
+	}
+}
