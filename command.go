@@ -824,6 +824,13 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 	for i, arg := range args {
 		switch {
+		// The value for a flag. Check this before flag classification so a
+		// value that starts with a dash, including --, is consumed as the
+		// value, matching pflag.
+		case inFlag:
+			inFlag = false
+			flags = append(flags, arg)
+			continue
 		// The delimiter stops command discovery; everything after it is
 		// a positional argument for this command.
 		case arg == "--":
@@ -837,11 +844,6 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		// A short flag with a space separated value
 		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
 			inFlag = true
-			flags = append(flags, arg)
-			continue
-		// The value for a flag
-		case inFlag:
-			inFlag = false
 			flags = append(flags, arg)
 			continue
 		// A flag without a value, or with an `=` separated value

@@ -2980,3 +2980,33 @@ func TestTraverseChildrenStopsCommandDiscoveryAtDoubleDash(t *testing.T) {
 		t.Fatalf("called = %q, want root with positional args", called)
 	}
 }
+
+func TestTraverseChildrenConsumesDelimiterAsFlagValue(t *testing.T) {
+	var called string
+
+	root := &Command{
+		Use:              "app",
+		TraverseChildren: true,
+		Args:             ArbitraryArgs,
+		Run: func(_ *Command, args []string) {
+			called = "root:" + strings.Join(args, ",")
+		},
+	}
+	root.Flags().String("value", "", "")
+	root.Flags().Bool("verbose", false, "")
+	root.AddCommand(&Command{
+		Use: "child",
+		Run: func(*Command, []string) {
+			called = "child"
+		},
+	})
+
+	root.SetArgs([]string{"--value", "--", "--verbose", "child"})
+	if err := root.Execute(); err != nil {
+		t.Fatal(err)
+	}
+
+	if called != "child" {
+		t.Fatalf("called = %q, want child", called)
+	}
+}
