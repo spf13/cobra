@@ -194,32 +194,41 @@ func ld(s, t string, ignoreCase bool) int {
 		s = strings.ToLower(s)
 		t = strings.ToLower(t)
 	}
-	d := make([][]int, len(s)+1)
-	for i := range d {
-		d[i] = make([]int, len(t)+1)
-		d[i][0] = i
-	}
-	for j := range d[0] {
-		d[0][j] = j
-	}
-	for j := 1; j <= len(t); j++ {
-		for i := 1; i <= len(s); i++ {
-			if s[i-1] == t[j-1] {
-				d[i][j] = d[i-1][j-1]
-			} else {
-				min := d[i-1][j]
-				if d[i][j-1] < min {
-					min = d[i][j-1]
-				}
-				if d[i-1][j-1] < min {
-					min = d[i-1][j-1]
-				}
-				d[i][j] = min + 1
-			}
-		}
 
+	// Keep the rows as short as possible.
+	if len(t) > len(s) {
+		s, t = t, s
 	}
-	return d[len(s)][len(t)]
+	if len(t) == 0 {
+		return len(s)
+	}
+
+	prev := make([]int, len(t)+1)
+	curr := make([]int, len(t)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+
+	for i := 1; i <= len(s); i++ {
+		curr[0] = i
+		for j := 1; j <= len(t); j++ {
+			if s[i-1] == t[j-1] {
+				curr[j] = prev[j-1]
+				continue
+			}
+			m := prev[j]
+			if curr[j-1] < m {
+				m = curr[j-1]
+			}
+			if prev[j-1] < m {
+				m = prev[j-1]
+			}
+			curr[j] = m + 1
+		}
+		prev, curr = curr, prev
+	}
+
+	return prev[len(t)]
 }
 
 func stringInSlice(a string, list []string) bool {
