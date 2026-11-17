@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -4145,5 +4147,27 @@ func TestCompletionDoesNotApplyFlagsTwice(t *testing.T) {
 	}
 	if !strings.Contains(output, "tags=[one] verbose=1") {
 		t.Fatalf("completion saw duplicated flag state: %q", output)
+	}
+}
+
+func TestCompletionProbeDoesNotDuplicateVisit(t *testing.T) {
+	rootCmd := &Command{Use: "app", Run: emptyRun}
+	rootCmd.Flags().StringArray("tag", nil, "tag")
+	rootCmd.Flags().SortFlags = false
+
+	var visited int
+	rootCmd.ValidArgsFunction = func(cmd *Command, _ []string, _ string) ([]Completion, ShellCompDirective) {
+		visited = 0
+		cmd.Flags().Visit(func(*pflag.Flag) {
+			visited++
+		})
+		return nil, ShellCompDirectiveNoFileComp
+	}
+
+	if _, err := executeCommand(rootCmd, ShellCompRequestCmd, "--tag", "one", ""); err != nil {
+		t.Fatal(err)
+	}
+	if visited != 1 {
+		t.Fatalf("Visit saw %d set flags, want 1", visited)
 	}
 }

@@ -313,14 +313,6 @@ type SliceValue interface {
 	GetSlice() []string
 }
 
-// noopFlagValue ignores value updates, allowing a flag set to be parsed
-// only to inspect positional argument counts.
-type noopFlagValue struct {
-	pflag.Value
-}
-
-func (noopFlagValue) Set(string) error { return nil }
-
 func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCompDirective, error) {
 	// The last argument, which is not completely typed by the user,
 	// should not be part of the list of arguments
@@ -378,26 +370,11 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	// the extra added -- is counted as arg.
 	flagCompletion := true
 
-	// Probe whether the extra -- would be a positional argument. Doing this
-	// with the real flag values would apply stateful setters (slices, counts)
-	// twice, so temporarily replace the values with no-ops.
-	probeFlags := finalCmd.Flags()
-	type probeState struct {
-		flag    *pflag.Flag
-		value   pflag.Value
-		changed bool
-	}
-	probeStates := make([]probeState, 0, probeFlags.NFlag())
-	probeFlags.VisitAll(func(f *pflag.Flag) {
-		probeStates = append(probeStates, probeState{flag: f, value: f.Value, changed: f.Changed})
-		f.Value = noopFlagValue{Value: f.Value}
-	})
-	_ = probeFlags.Parse(append(finalArgs, "--"))
-	newArgCount := probeFlags.NArg()
-	for _, state := range probeStates {
-		state.flag.Value = state.value
-		state.flag.Changed = state.changed
-	}
+	// Probe whether the extra -- would be a positional argument. ParseAll uses
+	// the same argument parsing as Parse but calls the callback instead of the
+	// flag's Set method, so it does not change values, Changed, or Visit order.
+	_ = finalCmd.Flags().ParseAll(append(finalArgs, "--"), func(*pflag.Flag, string) error { return nil })
+	newArgCount := finalCmd.Flags().NArg()
 
 	// Parse the flags early so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
