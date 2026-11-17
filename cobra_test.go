@@ -299,3 +299,23 @@ func main() {
 		t.Error("compiled programs contains MethodByName symbol")
 	}
 }
+
+func TestLd(t *testing.T) {
+	for _, tc := range []struct {
+		s, t       string
+		ignoreCase bool
+		want       int
+	}{
+		{"", "", false, 0},
+		{"abc", "", false, 3},
+		{"", "abc", false, 3},
+		{"abc", "abc", false, 0},
+		{"kitten", "sitting", false, 3},
+		{"Kitten", "sitting", true, 3},
+		{"Kitten", "sitting", false, 3},
+	} {
+		if got := ld(tc.s, tc.t, tc.ignoreCase); got != tc.want {
+			t.Errorf("ld(%q, %q, %t) = %d, want %d", tc.s, tc.t, tc.ignoreCase, got, tc.want)
+		}
+	}
+}
