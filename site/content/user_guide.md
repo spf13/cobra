@@ -366,6 +366,73 @@ In these cases:
   - a flag may appear in multiple groups
   - a group may contain any number of flags
 
+### Repeated Flags
+
+Cobra supports two types of repeated flags, useful for implementing SSH-like verbose flags (`-v`, `-vv`, `-vvv`) or collecting multiple values.
+
+#### Count Flags
+
+For implementing verbose-style flags where repeated usage increases a counter (like SSH's `-v`, `-vv`, `-vvv`):
+
+```go
+var verbose int
+
+func init() {
+  // CountVarP allows the flag to be repeated to increment the counter
+  rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (can be repeated: -v, -vv, -vvv)")
+}
+```
+
+Usage examples:
+- `myapp -v` → verbose = 1 (info level)
+- `myapp -vv` or `myapp -v -v` → verbose = 2 (debug level)
+- `myapp -vvv` or `myapp -v -v -v` → verbose = 3 (trace level)
+
+Then in your command logic:
+```go
+Run: func(cmd *cobra.Command, args []string) {
+  switch verbose {
+  case 0:
+    // Default: no verbose output
+  case 1:
+    // Info level logging
+    log.SetLevel(log.InfoLevel)
+  case 2:
+    // Debug level logging
+    log.SetLevel(log.DebugLevel)
+  case 3:
+    // Trace level logging
+    log.SetLevel(log.TraceLevel)
+  default:
+    // Maximum verbosity
+    log.SetLevel(log.TraceLevel)
+  }
+},
+```
+
+#### Array/Slice Flags
+
+For collecting multiple values of the same flag:
+
+```go
+var inputFiles []string
+
+func init() {
+  // StringArrayVarP allows multiple values: --input file1.txt --input file2.txt
+  rootCmd.Flags().StringArrayVarP(&inputFiles, "input", "i", []string{}, "input files (can be repeated)")
+
+  // Alternative: StringSliceVarP for comma-separated values
+  // rootCmd.Flags().StringSliceVarP(&inputFiles, "input", "i", []string{}, "input files (comma-separated or repeated)")
+}
+```
+
+Usage examples:
+- `myapp --input file1.txt --input file2.txt`
+- `myapp -i file1.txt -i file2.txt`
+- With StringSlice: `myapp --input file1.txt,file2.txt,file3.txt`
+
+**Note**: Both `CountVar` and array flags leverage the underlying [pflag](https://github.com/spf13/pflag) library's support for repeated flags.
+
 ## Positional and Custom Arguments
 
 Validation of positional arguments can be specified using the `Args` field of `Command`.
@@ -380,6 +447,7 @@ The following validators are built in:
   - `RangeArgs(min, max)` - report an error if the number of args is not between `min` and `max`.
 - Content of the arguments:
   - `OnlyValidArgs` - report an error if there are any positional args not specified in the `ValidArgs` field of `Command`, which can optionally be set to a list of valid values for positional args.
+  - `NoDuplicateArgs` - report an error if any positional argument value is provided more than once.
 
 If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 
@@ -554,6 +622,9 @@ cmd.SetHelpTemplate(s string)
 
 The latter two will also apply to any children commands.
 
+Note that templates specified with `SetHelpTemplate` are evaluated using
+`text/template` which can increase the size of the compiled executable.
+
 ## Usage Message
 
 When the user provides an invalid flag or invalid command, Cobra responds by
@@ -586,6 +657,7 @@ Use "cobra [command] --help" for more information about a command.
 ```
 
 ### Defining your own usage
+
 You can provide your own usage function or template for Cobra to use.
 Like help, the function and template are overridable through public methods:
 
@@ -594,12 +666,18 @@ cmd.SetUsageFunc(f func(*Command) error)
 cmd.SetUsageTemplate(s string)
 ```
 
+Note that templates specified with `SetUsageTemplate` are evaluated using
+`text/template` which can increase the size of the compiled executable.
+
 ## Version Flag
 
 Cobra adds a top-level '--version' flag if the Version field is set on the root command.
 Running an application with the '--version' flag will print the version to stdout using
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
+
+Note that templates specified with `SetVersionTemplate` are evaluated using
+`text/template` which can increase the size of the compiled executable.
 
 ## Error Message Prefix
 

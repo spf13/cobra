@@ -41,13 +41,13 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '^1.22'
           check-latest: true
           cache: true
 
-      - uses: golangci/golangci-lint-action@v4.0.0
+      - uses: golangci/golangci-lint-action@v8.0.0
         with:
           version: latest
           args: --verbose
@@ -68,13 +68,19 @@ jobs:
         - 21
         - 22
         - 23
+        - 24
     name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
     runs-on: ${{ matrix.platform }}-latest
+    # macOS runner environments require compiled binaries to contain an LC_UUID load command.
+    # Go 1.24+ natively resolves this by writing LC_UUID in Go's internal linker.
+    # For Go < 1.24, we pass -ldflags=-linkmode=external on macOS to force external linking via the system linker.
+    env:
+      GO_TEST_FLAGS: ${{ matrix.platform == 'macOS' && matrix.go < 24 && '-ldflags=-linkmode=external' || '' }}
     steps:
 
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v6
       with:
         go-version: 1.${{ matrix.go }}.x
         cache: true

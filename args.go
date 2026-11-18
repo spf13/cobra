@@ -65,6 +65,19 @@ func OnlyValidArgs(cmd *Command, args []string) error {
 	return nil
 }
 
+// NoDuplicateArgs returns an error if there are any duplicate positional args.
+func NoDuplicateArgs(cmd *Command, args []string) error {
+	seen := make(map[string]struct{}, len(args))
+	for _, arg := range args {
+		if _, ok := seen[arg]; ok {
+			return fmt.Errorf("duplicate argument %q for %q", arg, cmd.CommandPath())
+		}
+		seen[arg] = struct{}{}
+	}
+
+	return nil
+}
+
 // ArbitraryArgs never returns an error.
 func ArbitraryArgs(cmd *Command, args []string) error {
 	return nil
