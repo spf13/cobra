@@ -16,7 +16,9 @@ package cobra
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -101,6 +103,11 @@ const (
 	compCmdNoDescFlagName    = "no-descriptions"
 	compCmdNoDescFlagDesc    = "disable completion descriptions"
 	compCmdNoDescFlagDefault = false
+
+	compCmdInstallFlagName    = "install"
+	compCmdInstallFlagDesc    = "write the script to the user completion directory of the shell instead of standard output"
+	compCmdInstallDirFlagName = "install-dir"
+	compCmdInstallDirFlagDesc = "write the script to this directory instead of standard output (implies --install)"
 )
 
 // CompletionOptions are the options to control shell completion
@@ -110,6 +117,9 @@ type CompletionOptions struct {
 	// DisableNoDescFlag prevents Cobra from creating the '--no-descriptions' flag
 	// for shells that support completion descriptions
 	DisableNoDescFlag bool
+	// DisableInstallFlag prevents Cobra from creating the '--install' and
+	// '--install-dir' flags on the shell sub-commands of the 'completion' command
+	DisableInstallFlag bool
 	// DisableDescriptions turns off all completion descriptions for shells
 	// that support them
 	DisableDescriptions bool
@@ -800,6 +810,30 @@ See each sub-command's help for details on how to use the generated script.
 
 	out := c.OutOrStdout()
 	noDesc := c.CompletionOptions.DisableDescriptions
+	haveInstallFlags := !c.CompletionOptions.DisableInstallFlag
+	var install bool
+	var installDir string
+	// run returns the RunE of a shell sub-command: print the script to the
+	// output or, when asked, write it to a completion directory.
+	run := func(shell string, gen func(io.Writer) error, genFile func(string) error) func(*Command, []string) error {
+		return func(cmd *Command, args []string) error {
+			if !install && installDir == "" {
+				return gen(out)
+			}
+			path, err := installCompletion(shell, cmd.Root().Name(), installDir, genFile)
+			if err != nil {
+				return err
+			}
+			cmd.Printf("Completion script written to %s\n", path)
+			return nil
+		}
+	}
+	addInstallFlags := func(cmd *Command) {
+		if haveInstallFlags {
+			cmd.Flags().BoolVar(&install, compCmdInstallFlagName, false, compCmdInstallFlagDesc)
+			cmd.Flags().StringVar(&installDir, compCmdInstallDirFlagName, "", compCmdInstallDirFlagDesc)
+		}
+	}
 	shortDesc := "Generate the autocompletion script for %s"
 	bash := &Command{
 		Use:   "bash",
@@ -828,10 +862,13 @@ You will need to start a new shell for this setup to take effect.
 		Args:                  NoArgs,
 		DisableFlagsInUseLine: true,
 		ValidArgsFunction:     NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenBashCompletionV2(out, !noDesc)
-		},
+		RunE: run("bash", func(w io.Writer) error {
+			return c.Root().GenBashCompletionV2(w, !noDesc)
+		}, func(path string) error {
+			return c.Root().GenBashCompletionFileV2(path, !noDesc)
+		}),
 	}
+	addInstallFlags(bash)
 	if haveNoDescFlag {
 		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
@@ -864,13 +901,19 @@ You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
+		RunE: run("zsh", func(w io.Writer) error {
 			if noDesc {
-				return cmd.Root().GenZshCompletionNoDesc(out)
+				return c.Root().GenZshCompletionNoDesc(w)
 			}
-			return cmd.Root().GenZshCompletion(out)
-		},
+			return c.Root().GenZshCompletion(w)
+		}, func(path string) error {
+			if noDesc {
+				return c.Root().GenZshCompletionFileNoDesc(path)
+			}
+			return c.Root().GenZshCompletionFile(path)
+		}),
 	}
+	addInstallFlags(zsh)
 	if haveNoDescFlag {
 		zsh.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
@@ -892,10 +935,13 @@ You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenFishCompletion(out, !noDesc)
-		},
+		RunE: run("fish", func(w io.Writer) error {
+			return c.Root().GenFishCompletion(w, !noDesc)
+		}, func(path string) error {
+			return c.Root().GenFishCompletionFile(path, !noDesc)
+		}),
 	}
+	addInstallFlags(fish)
 	if haveNoDescFlag {
 		fish.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
@@ -914,19 +960,82 @@ to your powershell profile.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
+		RunE: run("powershell", func(w io.Writer) error {
 			if noDesc {
-				return cmd.Root().GenPowerShellCompletion(out)
+				return c.Root().GenPowerShellCompletion(w)
 			}
-			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
-		},
+			return c.Root().GenPowerShellCompletionWithDesc(w)
+		}, func(path string) error {
+			if noDesc {
+				return c.Root().GenPowerShellCompletionFile(path)
+			}
+			return c.Root().GenPowerShellCompletionFileWithDesc(path)
+		}),
 	}
+	addInstallFlags(powershell)
 	if haveNoDescFlag {
 		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
+}
+
+// installCompletion writes the completion script of the given shell to a file
+// named after the program and returns the path of that file.  When dir is
+// empty the standard user completion directory of the shell is used.
+func installCompletion(shell, prog, dir string, genFile func(string) error) (string, error) {
+	if strings.ContainsAny(prog, `/\`) {
+		return "", fmt.Errorf("cannot install completions for a program named %q", prog)
+	}
+	if dir == "" {
+		var err error
+		if dir, err = defaultCompletionDir(shell); err != nil {
+			return "", err
+		}
+	}
+
+	name := prog
+	switch shell {
+	case "zsh":
+		name = "_" + prog
+	case "fish":
+		name = prog + ".fish"
+	case "powershell":
+		name = prog + ".ps1"
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(dir, name)
+	return path, genFile(path)
+}
+
+// defaultCompletionDir returns the directory in which the given shell loads
+// the completions of a user without extra setup.  Zsh and PowerShell have no
+// such directory: a script written anywhere else would silently never load.
+func defaultCompletionDir(shell string) (string, error) {
+	switch shell {
+	case "bash":
+		return xdgDir("XDG_DATA_HOME", filepath.Join(".local", "share"), "bash-completion", "completions")
+	case "fish":
+		return xdgDir("XDG_CONFIG_HOME", ".config", "fish", "completions")
+	}
+	return "", fmt.Errorf("%s has no standard user completion directory, use --%s to choose one", shell, compCmdInstallDirFlagName)
+}
+
+// xdgDir returns the directory elem... below the XDG base directory named by
+// env, falling back to fallback below the home directory.
+func xdgDir(env, fallback string, elem ...string) (string, error) {
+	base := os.Getenv(env)
+	if !filepath.IsAbs(base) { // the XDG specification ignores relative paths
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("%w, use --%s to choose a directory", err, compCmdInstallDirFlagName)
+		}
+		base = filepath.Join(home, fallback)
+	}
+	return filepath.Join(append([]string{base}, elem...)...), nil
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {

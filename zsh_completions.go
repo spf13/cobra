@@ -68,6 +68,7 @@ func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...s
 }
 
 func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error {
+	//nolint:gosec // G703:the file name is chosen by the caller, for example from --install-dir.
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err

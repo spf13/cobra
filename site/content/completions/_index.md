@@ -110,10 +110,17 @@ To tell Cobra *not* to provide the user with the `--no-descriptions` flag to the
 rootCmd.CompletionOptions.DisableNoDescFlag = true
 ```
 
+To tell Cobra *not* to provide the user with the `--install` and `--install-dir` flags to the completion sub-commands:
+```
+rootCmd.CompletionOptions.DisableInstallFlag = true
+```
+
 To tell Cobra to completely disable descriptions for completions:
 ```
 rootCmd.CompletionOptions.DisableDescriptions = true
 ```
+
+By default, users can write the script to a file instead of printing it. `prog completion bash --install` writes it to `$XDG_DATA_HOME/bash-completion/completions/prog` (default `~/.local/share/bash-completion/completions/prog`), where the `bash-completion` package loads it on demand, and `prog completion fish --install` writes it to `$XDG_CONFIG_HOME/fish/completions/prog.fish` (default `~/.config/fish/completions/prog.fish`). `--install-dir DIR` chooses the directory and implies `--install`. Zsh and PowerShell have no standard user directory, so they need `--install-dir`: the file is `_prog` for zsh and `prog.ps1` for PowerShell, and the user still has to put the directory on `fpath` or source the file. An existing file of the same name is replaced.
 
 # Customizing completions
 
