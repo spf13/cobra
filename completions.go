@@ -929,29 +929,24 @@ to your powershell profile.
 		Use:   "nushell",
 		Short: fmt.Sprintf(shortDesc, "nushell"),
 		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
+Requires nushell 0.116.0 or later.
 
-To configure the Nushell cobra external completer for the first time:
-  # 1. Edit the nushell config file:
-  > config nu
-  # 2. Copy the output of %[1]s completion nushell to the end of the file.
-  # 3. Add a section like the following below at the end of the file:
-    $env.config.completions.external = {
-        enable: true
-        max_results: 100
-        completer: $cobra_completer
-    }
+To load completions in your current shell session:
 
-This completer will work for all cobra based commands. 
-More information can be found in the External Completions section of the Nushell book: 
-https://www.nushell.sh/book/custom_completions.html#external-completions
+	%[1]s completion nushell | save -f %[1]s.nu
+	source %[1]s.nu
 
-Information on setting up more than one external completer can be found in the Multiple completer section of the Nushell cookbook:
-https://www.nushell.sh/cookbook/external_completers.html#multiple-completer
+To load completions for every new session, execute once:
+
+	mkdir ($nu.user-autoload-dirs | first)
+	%[1]s completion nushell | save -f ($nu.user-autoload-dirs | first | path join "%[1]s.nu")
+
+You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenNushellCompletion(out)
+			return cmd.Root().GenNushellCompletion(out, !noDesc)
 		},
 	}
 	if haveNoDescFlag {
