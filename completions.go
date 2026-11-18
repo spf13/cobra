@@ -919,14 +919,41 @@ to your powershell profile.
 				return cmd.Root().GenPowerShellCompletion(out)
 			}
 			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
 		},
 	}
 	if haveNoDescFlag {
 		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
-	completionCmd.AddCommand(bash, zsh, fish, powershell)
+	nushell := &Command{
+		Use:   "nushell",
+		Short: fmt.Sprintf(shortDesc, "nushell"),
+		Long: fmt.Sprintf(`Generate the autocompletion script for nushell.
+Requires nushell 0.116.0 or later.
+
+To load completions in your current shell session:
+
+	%[1]s completion nushell | save -f %[1]s.nu
+	source %[1]s.nu
+
+To load completions for every new session, execute once:
+
+	mkdir ($nu.user-autoload-dirs | first)
+	%[1]s completion nushell | save -f ($nu.user-autoload-dirs | first | path join "%[1]s.nu")
+
+You will need to start a new shell for this setup to take effect.
+`, c.Root().Name()),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE: func(cmd *Command, args []string) error {
+			return cmd.Root().GenNushellCompletion(out, !noDesc)
+		},
+	}
+	if haveNoDescFlag {
+		nushell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+	}
+
+	completionCmd.AddCommand(bash, zsh, fish, powershell, nushell)
 }
 
 func findFlag(cmd *Command, name string) *pflag.Flag {
@@ -960,7 +987,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
 		//nolint:gosec // G703:BASH_COMP_DEBUG_FILE intentionally user-controlled for completion debug logging.
 		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)

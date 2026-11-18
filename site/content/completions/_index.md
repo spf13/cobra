@@ -6,6 +6,7 @@ The currently supported shells are:
 - Zsh
 - fish
 - PowerShell
+- Nushell
 
 Cobra will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command. If there are no other subcommands, the
@@ -29,7 +30,7 @@ and then modifying the generated `cmd/completion.go` file to look something like
 
 ```go
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
+	Use:   "completion [bash|zsh|fish|powershell|nushell]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
 
@@ -69,9 +70,20 @@ PowerShell:
   # To load completions for every new session, run:
   PS> %[1]s completion powershell > %[1]s.ps1
   # and source this file from your PowerShell profile.
+
+Nushell:
+
+  # Requires nushell 0.116.0 or later.
+  > %[1]s completion nushell | save -f %[1]s.nu
+  > source %[1]s.nu
+
+  # To load completions for each session, execute once:
+  > mkdir ($nu.user-autoload-dirs | first)
+  > %[1]s completion nushell | save -f ($nu.user-autoload-dirs | first | path join "%[1]s.nu")
+
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell", "nushell"},
 	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
@@ -83,6 +95,8 @@ PowerShell:
 			cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":
 			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		case "nushell":
+			cmd.Root().GenNushellCompletion(os.Stdout, true)
 		}
 	},
 }
@@ -614,3 +628,66 @@ The name of the completer block variable is of the form `$__<programName>Complet
 * Similarly, the following completion directives are not supported and will be ignored for `powershell`:
   * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
   * `ShellCompDirectiveFilterDirs` (filtering by directory)
+
+## Nushell completions
+
+Cobra supports native [Nushell](https://www.nushell.sh) completions generated from the root `cobra.Command`. You can use the `command.GenNushellCompletion()` or `command.GenNushellCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
+
+The generated script requires Nushell 0.116.0 or later. It declares the program as an [`extern`](https://www.nushell.sh/book/externs.html) and attaches a completer to it with the `@complete` attribute. The completer only runs for that program, so it does not affect the completion of any other command, and each program can generate its own script.
+
+To set up completions for a program, users save its script in one of Nushell's autoload directories, which are loaded when Nushell starts:
+
+```
+> mkdir ($nu.user-autoload-dirs | first)
+> helm completion nushell | save -f ($nu.user-autoload-dirs | first | path join "helm.nu")
+```
+
+Users can instead save the script anywhere and `source` it from their `config.nu`. Packagers can install the script in one of the directories listed in `$nu.vendor-autoload-dirs`.
+
+```
+# With descriptions
+> helm s[tab]
+search   search for a keyword in charts
+show     show information of a chart
+status   displays the status of the named release
+
+# Without descriptions
+> helm s[tab]
+search  show  status
+```
+
+### Aliases
+
+Nushell aliases of the program get the same completions, with no extra setup.
+
+```
+> alias h = helm
+> h s[tab]
+search  show  status
+```
+
+### External completers
+
+The script replaces the global external completer (`$env.config.completions.external.completer`) for the program, so users do not need one for Cobra programs. Users who route all external commands through their own external completer can call the generated completer from it, for example:
+
+```
+$env.config.completions.external.completer = {|place|
+    match $place.command.0 {
+        helm => (nu-complete helm $place)
+        _ => null
+    }
+}
+```
+
+### Debugging
+
+Set `$env.BASH_COMP_DEBUG_FILE` to a file path and the completer will log to that file.
+
+### Limitations
+
+* Custom completions implemented in bash scripting (legacy) are not supported and will be ignored for `nushell` (including the use of the `BashCompCustom` flag annotation).
+  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`, `nushell`).
+* The function `MarkFlagCustom()` is not supported and will be ignored for `nushell`.
+  * You should instead use `RegisterFlagCompletionFunc()`.
+* Active help is not supported by `nushell`.
+* Nushell cannot interrupt a completion that is running, so a program that waits for input while completing (for example, an interactive login) will block the shell.
