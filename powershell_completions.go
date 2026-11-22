@@ -96,7 +96,7 @@ filter __%[1]s_escapeStringWithSpecialChars {
 
 
     # Check for flag with equal sign
-    $IsEqualFlag = ($WordToComplete -Like "--*=*" )
+    $IsEqualFlag = ($WordToComplete -Like "-*=*" )
     if ( $IsEqualFlag ) {
         __%[1]s_debug "Completing equal sign flag"
         # Remove the flag part

@@ -31,3 +31,14 @@ func TestPwshCompletionNoActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("${env:%s}=0", activeHelpVar))
 }
+
+func TestPwshCompletionEqualFlag(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenPowerShellCompletion(buf))
+	output := buf.String()
+
+	// check that both -f=value and --flag=value are recognized
+	check(t, output, `$IsEqualFlag = ($WordToComplete -Like "-*=*" )`)
+}
