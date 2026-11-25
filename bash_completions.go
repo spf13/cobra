@@ -82,24 +82,30 @@ __%[1]s_handle_go_custom_completion()
     local shellCompDirectiveFilterFileExt=%[6]d
     local shellCompDirectiveFilterDirs=%[7]d
 
-    local out requestComp lastParam lastChar comp directive args
+    local out requestComp lastParam lastChar comp directive arg quotedArg
 
     # Prepare the command to request completions for the program.
     # Calling ${words[0]} instead of directly %[1]s allows handling aliases
-    args=("${words[@]:1}")
+    # Quote each argument so it reaches the program verbatim: the words were
+    # already split by the shell, so joining them unquoted would re-split
+    # arguments containing spaces and expand globs when the request is
+    # evaluated below (the fish script had the same problem, fixed in #2285).
     # Disable ActiveHelp which is not supported for bash completion v1
-    requestComp="%[8]s=0 ${words[0]} %[2]s ${args[*]}"
+    requestComp="%[8]s=0 ${words[0]} %[2]s"
+    for arg in "${words[@]:1}"; do
+        printf -v quotedArg "%%q" "$arg"
+        requestComp+=" ${quotedArg}"
+    done
 
     lastParam=${words[$((${#words[@]}-1))]}
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __%[1]s_debug "${FUNCNAME[0]}: lastParam ${lastParam}, lastChar ${lastChar}"
 
-    if [ -z "${cur}" ] && [ "${lastChar}" != "=" ]; then
-        # If the last parameter is complete (there is a space following it)
-        # We add an extra empty parameter so we can indicate this to the go method.
-        __%[1]s_debug "${FUNCNAME[0]}: Adding extra empty parameter"
-        requestComp="${requestComp} \"\""
-    fi
+    # Note: no extra empty parameter is appended here anymore. The
+    # arguments above are quoted one by one, so an empty word being
+    # completed (there is a space following the last parameter) already
+    # reaches the program as an empty argument; appending another one
+    # would pass a phantom empty argument to the completion function.
 
     __%[1]s_debug "${FUNCNAME[0]}: calling ${requestComp}"
     # Use eval to handle any environment variables and such
