@@ -31,3 +31,24 @@ func TestZshCompletionWithActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	checkOmit(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+func TestZshCompletionQuotesArgs(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenZshCompletion(buf))
+	output := buf.String()
+
+	// The completion request must quote each argument so that arguments
+	// containing spaces or glob characters reach the program verbatim
+	// instead of being re-split or expanded by eval.
+	check(t, output, `requestComp+=" ${(q)word}"`)
+	checkOmit(t, output, `__complete ${words[2,-1]}`)
+	// Truncating $words to $CURRENT must keep each word a separate
+	// element: the = flag would re-split a quoted "a b" argument.
+	check(t, output, `words=("${(@)words[1,CURRENT]}")`)
+	checkOmit(t, output, `words=("${=words[1,CURRENT]}")`)
+	// The empty word being completed is already passed as an argument by
+	// the quoting loop, so no extra empty parameter may be appended.
+	checkOmit(t, output, "Adding extra empty parameter")
+}

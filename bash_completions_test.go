@@ -287,3 +287,20 @@ func TestBashCompletionNoActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+func TestBashCompletionQuotesArgs(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, c.GenBashCompletion(buf))
+	output := buf.String()
+
+	// The completion request must quote each argument so that arguments
+	// containing spaces or glob characters reach the program verbatim
+	// instead of being re-split or expanded by eval.
+	check(t, output, `printf -v quotedArg "%q" "$arg"`)
+	checkOmit(t, output, "${args[*]}")
+	// The empty word being completed is already passed as an argument by
+	// the quoting loop, so no extra empty parameter may be appended.
+	checkOmit(t, output, "Adding extra empty parameter")
+}

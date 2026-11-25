@@ -121,7 +121,10 @@ _%[1]s()
     # We need to trigger completion from the $CURRENT location, so we need
     # to truncate the command-line ($words) up to the $CURRENT location.
     # (We cannot use $CURSOR as its value does not work when a command is an alias.)
-    words=("${=words[1,CURRENT]}")
+    # Use the (@) flag so each word stays a separate element: the default
+    # join would merge them, and the = flag would re-split words that
+    # contain spaces (e.g. a quoted "a b" argument).
+    words=("${(@)words[1,CURRENT]}")
     __%[1]s_debug "Truncated words[*]: ${words[*]},"
 
     lastParam=${words[-1]}
@@ -137,13 +140,20 @@ _%[1]s()
     fi
 
     # Prepare the command to obtain completions
-    requestComp="${words[1]} %[2]s ${words[2,-1]}"
-    if [ "${lastChar}" = "" ]; then
-        # If the last parameter is complete (there is a space following it)
-        # We add an extra empty parameter so we can indicate this to the go completion code.
-        __%[1]s_debug "Adding extra empty parameter"
-        requestComp="${requestComp} \"\""
-    fi
+    # Quote each argument so it reaches the program verbatim: the words were
+    # already split by the shell, so joining them unquoted would re-split
+    # arguments containing spaces and expand globs when the request is
+    # evaluated below (the fish script had the same problem, fixed in #2285).
+    requestComp="${words[1]} %[2]s"
+    local word
+    for word in "${(@)words[2,-1]}"; do
+        requestComp+=" ${(q)word}"
+    done
+    # Note: no extra empty parameter is appended here anymore. The
+    # arguments above are quoted one by one, so an empty word being
+    # completed (there is a space following the last parameter) already
+    # reaches the program as an empty argument; appending another one
+    # would pass a phantom empty argument to the completion function.
 
     __%[1]s_debug "About to call: eval ${requestComp}"
 
