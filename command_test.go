@@ -2952,3 +2952,30 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestCommandPathPaddingIndependentOfAddCommandOrder(t *testing.T) {
+	padding := func(topFirst bool) int {
+		root := &Command{Use: "app"}
+		sub := &Command{Use: "remote"}
+		authentication := &Command{Use: "authentication"}
+		tls := &Command{Use: "tls"}
+
+		if topFirst {
+			root.AddCommand(sub)
+			sub.AddCommand(authentication)
+			sub.AddCommand(tls)
+		} else {
+			sub.AddCommand(authentication)
+			sub.AddCommand(tls)
+			root.AddCommand(sub)
+		}
+
+		return tls.CommandPathPadding()
+	}
+
+	topFirst := padding(true)
+	bottomFirst := padding(false)
+	if topFirst != bottomFirst {
+		t.Fatalf("CommandPathPadding differs by AddCommand order: %d != %d", topFirst, bottomFirst)
+	}
+}
