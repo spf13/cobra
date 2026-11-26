@@ -2952,3 +2952,40 @@ func TestHelpFuncExecuted(t *testing.T) {
 
 	checkStringContains(t, output, helpText)
 }
+
+func TestCommandPathPaddingIndependentOfAddOrder(t *testing.T) {
+	newTree := func(attachFirst bool) *Command {
+		root := &Command{Use: "app"}
+		remote := &Command{Use: "remote"}
+		if attachFirst {
+			root.AddCommand(remote)
+		}
+		remote.AddCommand(
+			&Command{Use: "authentication", Short: "how auth works"},
+			&Command{Use: "tls", Short: "certificate setup"},
+		)
+		if !attachFirst {
+			root.AddCommand(remote)
+		}
+		return remote
+	}
+
+	topDown := newTree(true).UsageString()
+	bottomUp := newTree(false).UsageString()
+	if topDown != bottomUp {
+		t.Errorf("usage differs by command attachment order:\ntop-down:\n%s\nbottom-up:\n%s", topDown, bottomUp)
+	}
+
+	remote := newTree(false)
+	remote.Parent().RemoveCommand(remote)
+	newRoot := &Command{Use: "longer-root"}
+	newRoot.AddCommand(remote)
+	topics := remote.Commands()
+	if got, want := topics[1].CommandPathPadding(), len(topics[0].CommandPath()); got != want {
+		t.Errorf("padding after reattaching the subtree = %d, want %d", got, want)
+	}
+	remote.RemoveCommand(topics[0])
+	if got, want := topics[1].CommandPathPadding(), len(topics[1].CommandPath()); got != want {
+		t.Errorf("padding after removing the longest sibling = %d, want %d", got, want)
+	}
+}
