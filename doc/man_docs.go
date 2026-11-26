@@ -76,14 +76,16 @@ func GenManTreeFromOpts(cmd *cobra.Command, opts GenManTreeOptions) error {
 	defer f.Close()
 
 	headerCopy := *header
-	return GenMan(cmd, &headerCopy, f)
+	return genManToWriter(cmd, &headerCopy, f, separator)
 }
 
 // GenManTreeOptions is the options for generating the man pages.
 // Used only in GenManTreeFromOpts.
 type GenManTreeOptions struct {
-	Header           *GenManHeader
-	Path             string
+	Header *GenManHeader
+	Path   string
+	// CommandSeparator joins command names in filenames and SEE ALSO references.
+	// It defaults to an underscore.
 	CommandSeparator string
 }
 
@@ -103,6 +105,10 @@ type GenManHeader struct {
 // GenMan will generate a man page for the given command and write it to
 // w. The header argument may be nil, however obviously w may not.
 func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
+	return genManToWriter(cmd, header, w, "-")
+}
+
+func genManToWriter(cmd *cobra.Command, header *GenManHeader, w io.Writer, separator string) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
@@ -110,7 +116,7 @@ func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
 		return err
 	}
 
-	b := genMan(cmd, header)
+	b := genMan(cmd, header, separator)
 	_, err := w.Write(md2man.Render(b))
 	return err
 }
@@ -199,7 +205,7 @@ func manPrintOptions(buf io.StringWriter, command *cobra.Command) {
 	}
 }
 
-func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
+func genMan(cmd *cobra.Command, header *GenManHeader, separator string) []byte {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
@@ -219,8 +225,8 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 		seealsos := make([]string, 0)
 		if cmd.HasParent() {
 			parentPath := cmd.Parent().CommandPath()
-			dashParentPath := strings.ReplaceAll(parentPath, " ", "-")
-			seealso := fmt.Sprintf("**%s(%s)**", dashParentPath, header.Section)
+			parentPage := strings.ReplaceAll(parentPath, " ", separator)
+			seealso := fmt.Sprintf("**%s(%s)**", parentPage, header.Section)
 			seealsos = append(seealsos, seealso)
 			cmd.VisitParents(func(c *cobra.Command) {
 				if c.DisableAutoGenTag {
@@ -234,7 +240,8 @@ func genMan(cmd *cobra.Command, header *GenManHeader) []byte {
 			if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			seealso := fmt.Sprintf("**%s-%s(%s)**", dashCommandName, c.Name(), header.Section)
+			childPage := strings.ReplaceAll(c.CommandPath(), " ", separator)
+			seealso := fmt.Sprintf("**%s(%s)**", childPage, header.Section)
 			seealsos = append(seealsos, seealso)
 		}
 		buf.WriteString(strings.Join(seealsos, ", ") + "\n")

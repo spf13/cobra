@@ -183,6 +183,64 @@ func TestGenManTree(t *testing.T) {
 	}
 }
 
+func TestGenManTreeCommandSeparator(t *testing.T) {
+	for _, tc := range []struct {
+		name, option, separator string
+		legacy                  bool
+	}{
+		{name: "default options", separator: "_"},
+		{name: "custom separator", option: ".", separator: "."},
+		{name: "legacy separator", separator: "-", legacy: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := &cobra.Command{Use: "root", Run: emptyRun}
+			parent := &cobra.Command{Use: "parent", Run: emptyRun}
+			child := &cobra.Command{Use: "child", Run: emptyRun}
+			root.AddCommand(parent)
+			parent.AddCommand(child)
+
+			dir := t.TempDir()
+			header := &GenManHeader{Section: "2"}
+			if tc.legacy {
+				if err := GenManTree(root, header, dir); err != nil {
+					t.Fatal(err)
+				}
+			} else if err := GenManTreeFromOpts(root, GenManTreeOptions{
+				Header:           header,
+				Path:             dir,
+				CommandSeparator: tc.option,
+			}); err != nil {
+				t.Fatal(err)
+			}
+
+			parentName := "root" + tc.separator + "parent"
+			childName := parentName + tc.separator + "child"
+			for _, page := range []struct{ name, related string }{
+				{name: "root", related: parentName},
+				{name: parentName, related: "root"},
+				{name: childName, related: parentName},
+			} {
+				file, err := os.Open(filepath.Join(dir, page.name+".2"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer file.Close()
+				scanner := bufio.NewScanner(file)
+				if err := assertLineFound(scanner, ".SH SEE ALSO"); err != nil {
+					t.Fatalf("%s: %v", page.name, err)
+				}
+				references := fmt.Sprintf(`\fB%s(2)\fP`, page.related)
+				if page.name == parentName {
+					references += fmt.Sprintf(`, \fB%s(2)\fP`, childName)
+				}
+				if err := assertNextLineEquals(scanner, references); err != nil {
+					t.Errorf("%s SEE ALSO: %v", page.name, err)
+				}
+			}
+		})
+	}
+}
+
 func assertLineFound(scanner *bufio.Scanner, expectedLine string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
