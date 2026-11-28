@@ -287,3 +287,34 @@ func TestBashCompletionNoActiveHelp(t *testing.T) {
 	activeHelpVar := activeHelpEnvVar(c.Name())
 	check(t, output, fmt.Sprintf("%s=0", activeHelpVar))
 }
+
+func TestBashCompletionFlagCompletionFunc(t *testing.T) {
+	root := &Command{Use: "root", Run: emptyRun}
+	root.Flags().String("plain", "", "plain flag")
+	root.Flags().String("root-file", "", "root file")
+	child := &Command{Use: "child", Run: emptyRun}
+	child.Flags().String("child-file", "", "child file")
+	root.AddCommand(child)
+
+	noop := func(cmd *Command, args []string, toComplete string) ([]Completion, ShellCompDirective) {
+		return nil, ShellCompDirectiveDefault
+	}
+	assertNoErr(t, root.RegisterFlagCompletionFunc("root-file", noop))
+	assertNoErr(t, child.RegisterFlagCompletionFunc("child-file", noop))
+	t.Cleanup(func() {
+		flagCompletionMutex.Lock()
+		delete(flagCompletionFunctions, root.Flags().Lookup("root-file"))
+		delete(flagCompletionFunctions, child.Flags().Lookup("child-file"))
+		flagCompletionMutex.Unlock()
+	})
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, root.GenBashCompletion(buf))
+	output := buf.String()
+
+	handler := fmt.Sprintf(`flags_completion+=("__%s_handle_go_custom_completion")`, root.Name())
+	checkNumOccurrences(t, output, handler, 2)
+	checkRegex(t, output, `_root_root_command\(\)\n\{[^}]*flags_with_completion\+=\("--root-file"\)[^}]*`+regexp.QuoteMeta(handler))
+	checkRegex(t, output, `_root_child\(\)\n\{[^}]*flags_with_completion\+=\("--child-file"\)[^}]*`+regexp.QuoteMeta(handler))
+	checkOmit(t, output, `flags_with_completion+=("--plain")`)
+}
