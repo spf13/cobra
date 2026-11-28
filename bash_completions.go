@@ -549,7 +549,6 @@ func prepareCustomAnnotationsForFlags(cmd *Command) {
 }
 
 func writeFlags(buf io.StringWriter, cmd *Command) {
-	prepareCustomAnnotationsForFlags(cmd)
 	WriteStringAndCheck(buf, `    flags=()
     two_word_flags=()
     local_nonpersistent_flags=()
@@ -686,6 +685,7 @@ func (c *Command) GenBashCompletion(w io.Writer) error {
 	if len(c.BashCompletionFunction) > 0 {
 		buf.WriteString(c.BashCompletionFunction + "\n")
 	}
+	prepareCustomAnnotationsForFlags(c)
 	gen(buf, c)
 	writePostscript(buf, c.Name())
 
