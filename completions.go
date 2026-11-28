@@ -811,12 +811,21 @@ See each sub-command's help for details on how to use the generated script.
 	out := c.OutOrStdout()
 	noDesc := c.CompletionOptions.DisableDescriptions
 	haveInstallFlags := !c.CompletionOptions.DisableInstallFlag
-	var install bool
-	var installDir string
 	// run returns the RunE of a shell sub-command: print the script to the
-	// output or, when asked, write it to a completion directory.
+	// output or, when asked, write it to a completion directory. The install
+	// flags are read from the invoked command and cleared afterwards, so one
+	// invocation never leaks them into the next one on a reused root command.
 	run := func(shell string, gen func(io.Writer) error, genFile func(string) error) func(*Command, []string) error {
 		return func(cmd *Command, args []string) error {
+			install, _ := cmd.Flags().GetBool(compCmdInstallFlagName)
+			installDir, _ := cmd.Flags().GetString(compCmdInstallDirFlagName)
+			defer func() {
+				for _, name := range []string{compCmdInstallFlagName, compCmdInstallDirFlagName} {
+					if f := cmd.Flags().Lookup(name); f != nil {
+						_ = f.Value.Set(f.DefValue)
+					}
+				}
+			}()
 			if !install && installDir == "" {
 				return gen(out)
 			}
@@ -830,8 +839,8 @@ See each sub-command's help for details on how to use the generated script.
 	}
 	addInstallFlags := func(cmd *Command) {
 		if haveInstallFlags {
-			cmd.Flags().BoolVar(&install, compCmdInstallFlagName, false, compCmdInstallFlagDesc)
-			cmd.Flags().StringVar(&installDir, compCmdInstallDirFlagName, "", compCmdInstallDirFlagDesc)
+			cmd.Flags().Bool(compCmdInstallFlagName, false, compCmdInstallFlagDesc)
+			cmd.Flags().String(compCmdInstallDirFlagName, "", compCmdInstallDirFlagDesc)
 		}
 	}
 	shortDesc := "Generate the autocompletion script for %s"

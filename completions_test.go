@@ -4304,3 +4304,32 @@ func TestCompletionDisableInstallFlag(t *testing.T) {
 		}
 	}
 }
+
+// The install flags belong to one invocation: running another shell, or the
+// same one again, on the same root command must print again, not write.
+func TestCompletionInstallFlagsDoNotLeakAcrossInvocations(t *testing.T) {
+	home := setInstallEnv(t)
+	dir := t.TempDir()
+	root := newInstallRoot()
+
+	out, err := executeCommand(root, "completion", "bash", "--install-dir", dir)
+	assertNoErr(t, err)
+	if !strings.Contains(out, filepath.Join(dir, "prog")) {
+		t.Fatalf("Expected the first call to install into %q, got %q", dir, out)
+	}
+
+	for _, shell := range []string{"fish", "bash"} {
+		out, err = executeCommand(root, "completion", shell)
+		assertNoErr(t, err)
+		if strings.Contains(out, "written to") {
+			t.Errorf("%s: expected the script on the output, got %q", shell, out)
+		}
+	}
+	for _, d := range []string{dir, home} {
+		entries, err := os.ReadDir(d)
+		assertNoErr(t, err)
+		if d == dir && len(entries) != 1 || d == home && len(entries) != 0 {
+			t.Errorf("Unexpected files in %q: %v", d, entries)
+		}
+	}
+}
