@@ -468,6 +468,7 @@ fi
 
 // GenBashCompletionFileV2 generates Bash completion version 2.
 func (c *Command) GenBashCompletionFileV2(filename string, includeDesc bool) error {
+	//nolint:gosec // G703:the file name is chosen by the caller, for example from --install-dir.
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err

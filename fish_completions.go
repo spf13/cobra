@@ -282,6 +282,7 @@ func (c *Command) GenFishCompletion(w io.Writer, includeDesc bool) error {
 
 // GenFishCompletionFile generates fish completion file.
 func (c *Command) GenFishCompletionFile(filename string, includeDesc bool) error {
+	//nolint:gosec // G703:the file name is chosen by the caller, for example from --install-dir.
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err

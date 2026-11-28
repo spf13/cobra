@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -4125,5 +4126,210 @@ func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
 	}
 	if os.Args[2] != "x" {
 		t.Errorf("os.Args[2] was mutated: expected %q, got %q", "x", os.Args[2])
+	}
+}
+
+func newInstallRoot() *Command {
+	rootCmd := &Command{Use: "prog", Run: emptyRun}
+	rootCmd.AddCommand(&Command{Use: "sub", Run: emptyRun})
+	return rootCmd
+}
+
+func setInstallEnv(t *testing.T) (home string) {
+	t.Helper()
+	home = t.TempDir()
+	// os.UserHomeDir reads HOME on Unix and USERPROFILE on Windows.
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("XDG_DATA_HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	return home
+}
+
+func TestCompletionInstallDefaultDirs(t *testing.T) {
+	home := setInstallEnv(t)
+	xdg := t.TempDir()
+
+	tests := []struct {
+		name string
+		env  map[string]string
+		args []string
+		want string
+	}{
+		{"bash home", nil, []string{"completion", "bash", "--install"},
+			filepath.Join(home, ".local", "share", "bash-completion", "completions", "prog")},
+		{"bash xdg", map[string]string{"XDG_DATA_HOME": xdg}, []string{"completion", "bash", "--install"},
+			filepath.Join(xdg, "bash-completion", "completions", "prog")},
+		{"bash relative xdg ignored", map[string]string{"XDG_DATA_HOME": "relative"}, []string{"completion", "bash", "--install"},
+			filepath.Join(home, ".local", "share", "bash-completion", "completions", "prog")},
+		{"fish home", nil, []string{"completion", "fish", "--install"},
+			filepath.Join(home, ".config", "fish", "completions", "prog.fish")},
+		{"fish xdg", map[string]string{"XDG_CONFIG_HOME": xdg}, []string{"completion", "fish", "--install"},
+			filepath.Join(xdg, "fish", "completions", "prog.fish")},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			for k, v := range tc.env {
+				t.Setenv(k, v)
+			}
+			rootCmd := newInstallRoot()
+			out, err := executeCommand(rootCmd, tc.args...)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if !strings.Contains(out, "written to "+tc.want) {
+				t.Errorf("Expected output to name %q, got %q", tc.want, out)
+			}
+			got, err := os.ReadFile(tc.want)
+			if err != nil {
+				t.Fatalf("Expected a file at %q: %v", tc.want, err)
+			}
+
+			// The installed file is exactly what the command prints without the flag.
+			printed, err := executeCommand(newInstallRoot(), tc.args[0], tc.args[1])
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if string(got) != printed {
+				t.Errorf("Installed script differs from the printed script")
+			}
+		})
+	}
+}
+
+func TestCompletionInstallDir(t *testing.T) {
+	setInstallEnv(t)
+	dir := filepath.Join(t.TempDir(), "a", "b") // does not exist yet
+
+	for shell, name := range map[string]string{
+		"bash": "prog", "zsh": "_prog", "fish": "prog.fish", "powershell": "prog.ps1",
+	} {
+		// --install-dir alone is enough, and works for shells without a default directory.
+		out, err := executeCommand(newInstallRoot(), "completion", shell, "--install-dir", dir)
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", shell, err)
+		}
+		path := filepath.Join(dir, name)
+		if !strings.Contains(out, path) {
+			t.Errorf("%s: expected output to name %q, got %q", shell, path, out)
+		}
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("%s: expected a file at %q: %v", shell, path, err)
+		}
+	}
+}
+
+func TestCompletionInstallNoDescriptions(t *testing.T) {
+	setInstallEnv(t)
+	dir := t.TempDir()
+
+	_, err := executeCommand(newInstallRoot(), "completion", "fish", "--install-dir", dir, "--no-descriptions")
+	assertNoErr(t, err)
+	got, err := os.ReadFile(filepath.Join(dir, "prog.fish"))
+	assertNoErr(t, err)
+	printed, err := executeCommand(newInstallRoot(), "completion", "fish", "--no-descriptions")
+	assertNoErr(t, err)
+	if string(got) != printed {
+		t.Errorf("Installed script does not honour --no-descriptions")
+	}
+}
+
+func TestCompletionInstallShellWithoutDefaultDir(t *testing.T) {
+	home := setInstallEnv(t)
+
+	for _, shell := range []string{"zsh", "powershell"} {
+		_, err := executeCommand(newInstallRoot(), "completion", shell, "--install")
+		if err == nil || !strings.Contains(err.Error(), "--install-dir") {
+			t.Errorf("%s: expected an error pointing at --install-dir, got %v", shell, err)
+		}
+	}
+	// Nothing was written anywhere.
+	entries, err := os.ReadDir(home)
+	assertNoErr(t, err)
+	if len(entries) != 0 {
+		t.Errorf("Expected no file under HOME, got %v", entries)
+	}
+}
+
+func TestCompletionWithoutInstallPrintsOnly(t *testing.T) {
+	home := setInstallEnv(t)
+
+	out, err := executeCommand(newInstallRoot(), "completion", "bash")
+	assertNoErr(t, err)
+	if !strings.Contains(out, "# bash completion V2 for prog") {
+		t.Errorf("Expected the script on the output, got %q", out)
+	}
+	entries, err := os.ReadDir(home)
+	assertNoErr(t, err)
+	if len(entries) != 0 {
+		t.Errorf("Expected no file under HOME, got %v", entries)
+	}
+}
+
+func TestCompletionInstallOverwritesExistingFile(t *testing.T) {
+	setInstallEnv(t)
+	dir := t.TempDir()
+	path := filepath.Join(dir, "prog")
+	assertNoErr(t, os.WriteFile(path, []byte("old"), 0o600))
+
+	_, err := executeCommand(newInstallRoot(), "completion", "bash", "--install-dir", dir)
+	assertNoErr(t, err)
+	got, err := os.ReadFile(path)
+	assertNoErr(t, err)
+	if string(got) == "old" {
+		t.Errorf("Expected the existing file to be replaced")
+	}
+}
+
+func TestCompletionInstallDirIsAFile(t *testing.T) {
+	setInstallEnv(t)
+	file := filepath.Join(t.TempDir(), "file")
+	assertNoErr(t, os.WriteFile(file, nil, 0o600))
+
+	_, err := executeCommand(newInstallRoot(), "completion", "bash", "--install-dir", file)
+	if err == nil {
+		t.Errorf("Expected an error when the target directory is a file")
+	}
+}
+
+func TestCompletionDisableInstallFlag(t *testing.T) {
+	setInstallEnv(t)
+	rootCmd := newInstallRoot()
+	rootCmd.CompletionOptions.DisableInstallFlag = true
+
+	for _, flag := range []string{"--install", "--install-dir=x"} {
+		_, err := executeCommand(rootCmd, "completion", "bash", flag)
+		if err == nil || !strings.Contains(err.Error(), "unknown flag") {
+			t.Errorf("%s: expected an unknown flag error, got %v", flag, err)
+		}
+	}
+}
+
+// The install flags belong to one invocation: running another shell, or the
+// same one again, on the same root command must print again, not write.
+func TestCompletionInstallFlagsDoNotLeakAcrossInvocations(t *testing.T) {
+	home := setInstallEnv(t)
+	dir := t.TempDir()
+	root := newInstallRoot()
+
+	out, err := executeCommand(root, "completion", "bash", "--install-dir", dir)
+	assertNoErr(t, err)
+	if !strings.Contains(out, filepath.Join(dir, "prog")) {
+		t.Fatalf("Expected the first call to install into %q, got %q", dir, out)
+	}
+
+	for _, shell := range []string{"fish", "bash"} {
+		out, err = executeCommand(root, "completion", shell)
+		assertNoErr(t, err)
+		if strings.Contains(out, "written to") {
+			t.Errorf("%s: expected the script on the output, got %q", shell, out)
+		}
+	}
+	for _, d := range []string{dir, home} {
+		entries, err := os.ReadDir(d)
+		assertNoErr(t, err)
+		if d == dir && len(entries) != 1 || d == home && len(entries) != 0 {
+			t.Errorf("Unexpected files in %q: %v", d, entries)
+		}
 	}
 }
